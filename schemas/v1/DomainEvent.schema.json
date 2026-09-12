@@ -1,0 +1,147 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "DomainEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "anyOf": [
+            {
+              "maxLength": 1000000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "command_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "command_name": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "effects": {
+          "items": {
+            "enum": [
+              "REPUTATION_UPDATE_REQUIRED",
+              "RESULT_NOTIFICATION_REQUIRED",
+              "RESOLUTION_COMMITMENT_REQUIRED"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "new_state": {
+          "enum": [
+            "DRAFT",
+            "VALIDATING",
+            "OPEN",
+            "LOCKED",
+            "RESOLVING",
+            "PROPOSED",
+            "CHALLENGE",
+            "DISPUTED",
+            "ESCALATED",
+            "PAUSED",
+            "FINALIZED",
+            "ARCHIVED"
+          ],
+          "type": "string"
+        },
+        "occurred_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "old_state": {
+          "enum": [
+            "DRAFT",
+            "VALIDATING",
+            "OPEN",
+            "LOCKED",
+            "RESOLVING",
+            "PROPOSED",
+            "CHALLENGE",
+            "DISPUTED",
+            "ESCALATED",
+            "PAUSED",
+            "FINALIZED",
+            "ARCHIVED"
+          ],
+          "type": "string"
+        },
+        "previous_event_hash": {
+          "anyOf": [
+            {
+              "maxLength": 1000000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "state_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "forecast_id",
+        "command_id",
+        "command_name",
+        "old_state",
+        "new_state",
+        "revision",
+        "occurred_at_ms",
+        "specification_hash",
+        "state_hash",
+        "artifact_hash",
+        "previous_event_hash",
+        "effects"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/DomainEvent.schema.json",
+  "$ref": "#/$defs/DomainEvent",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DomainEvent"
+}

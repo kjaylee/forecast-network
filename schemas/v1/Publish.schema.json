@@ -1,0 +1,193 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "AIProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "input_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "model_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "output_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "policy_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "provider": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "task": {
+          "enum": [
+            "MARKET_COMPILER",
+            "AMBIGUITY_JUDGE",
+            "DUPLICATE_DETECTOR",
+            "SOURCE_VERIFIER",
+            "EVIDENCE_COLLECTOR",
+            "RESOLUTION_JUDGE",
+            "COUNTER_JUDGE",
+            "DISPUTE_ANALYST",
+            "INDEPENDENT_REJUDGE",
+            "ADJUDICATION"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "task",
+        "provider",
+        "model",
+        "model_version",
+        "policy_version",
+        "input_hash",
+        "output_hash",
+        "created_at_ms"
+      ],
+      "type": "object"
+    },
+    "Publish": {
+      "additionalProperties": false,
+      "properties": {
+        "assessment": {
+          "$ref": "#/$defs/ValidationAssessment"
+        },
+        "kind": {
+          "const": "publish"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "assessment",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "ValidationAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguity_judge": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "ambiguity_limit_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ambiguity_passed": {
+          "type": "boolean"
+        },
+        "compiler": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "deterministic_check_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "deterministic_passed": {
+          "type": "boolean"
+        },
+        "duplicate_check_completed": {
+          "type": "boolean"
+        },
+        "duplicate_detector": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "duplicate_similarity_threshold_bp": {
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "explanation": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "objectively_resolvable": {
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "validated_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "specification_hash",
+        "deterministic_check_version",
+        "deterministic_passed",
+        "objectively_resolvable",
+        "ambiguity_passed",
+        "duplicate_check_completed",
+        "ambiguity_limit_bp",
+        "duplicate_similarity_threshold_bp",
+        "compiler",
+        "ambiguity_judge",
+        "duplicate_detector",
+        "validated_at_ms",
+        "explanation"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/Publish.schema.json",
+  "$ref": "#/$defs/Publish",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Publish"
+}

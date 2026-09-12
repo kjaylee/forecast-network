@@ -1,0 +1,131 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "CommandReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "accepted_user_forecast": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UserForecast"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "command_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "event_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "forecast_id",
+        "idempotency_key",
+        "command_hash",
+        "revision",
+        "event_hash",
+        "accepted_at_ms",
+        "accepted_user_forecast"
+      ],
+      "type": "object"
+    },
+    "UserForecast": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "forecaster_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "YES",
+            "NO"
+          ],
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "submitted_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "forecaster_id",
+        "forecast_id",
+        "specification_hash",
+        "outcome",
+        "confidence",
+        "submitted_at_ms"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/CommandReceipt.schema.json",
+  "$ref": "#/$defs/CommandReceipt",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CommandReceipt"
+}

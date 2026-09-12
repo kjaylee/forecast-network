@@ -1,0 +1,26 @@
+name: Domain and contract checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  domain:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify domain, syntax and schema drift without installing dependencies
+        env:
+          TMPDIR: ${{ github.workspace }}/tmp
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python scripts/check.py

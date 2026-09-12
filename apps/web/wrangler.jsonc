@@ -1,0 +1,71 @@
+{
+  "name": "forecast-network",
+  "main": "src/entry.py",
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": [
+    "python_workers"
+  ],
+  "workers_dev": true,
+  "services": [
+    {
+      "binding": "SCHEDULED_JOBS",
+      "service": "forecast-network"
+    }
+  ],
+  "python_modules": {
+    "excludes": [
+      "**/*.pyc",
+      "**/__pycache__"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "forecast-network-enam",
+      "database_id": "28b62420-a829-41e7-8cfe-b2124497e23e",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+  "vars": {
+    "GEMINI_MODEL": "gemini-2.5-flash",
+    "CLOUDFLARE_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "APP_ORIGIN": "https://forecast.eastsea.xyz",
+    "AI_PROXY_URL": "https://forecast-ai-proxy.k-jaylee.workers.dev",
+    "SOURCE_WATCH_ENABLED": "true",
+    "LIVE_MARKETS_ENABLED": "false",
+    "BILLING_SANDBOX_ENABLED": "true",
+    "SOLANA_REGISTRY_ENABLED": "true",
+    "SOLANA_REGISTRY_RELAY_ENABLED": "false",
+    "SOLANA_RPC_URL": "https://api.devnet.solana.com",
+    "SOLANA_PROGRAM_ID": "BvZLYrSmzDGTP5jYb14cjreRfHqfMo2sRBfUPpAi5Sgp",
+    "SOLANA_RELAYER": "5GDUY5uyo1BVPHca6HJLYmZwbLyC5Ee78N7BkuWd5ULf",
+    "WALLET_LOGIN_REQUIRED": "true"
+  },
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "routes": [
+    {
+      "pattern": "forecast.eastsea.xyz",
+      "custom_domain": true
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  }
+}

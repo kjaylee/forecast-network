@@ -1,0 +1,159 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "PricingPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "atomic_units_per_point": {
+          "const": 1000000,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "liquidity_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "maximum_fill_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "maximum_owner_gross_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "maximum_owner_unsettled_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "minimum_fill_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "policy_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "quote_lifetime_ms": {
+          "maximum": 300000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "subsidy_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "atomic_units_per_point",
+        "liquidity_atomic",
+        "subsidy_atomic",
+        "minimum_fill_atomic",
+        "maximum_fill_atomic",
+        "maximum_owner_gross_atomic",
+        "maximum_owner_unsettled_atomic",
+        "quote_lifetime_ms"
+      ],
+      "type": "object"
+    },
+    "PricingState": {
+      "additionalProperties": false,
+      "properties": {
+        "closed_outcome": {
+          "anyOf": [
+            {
+              "enum": [
+                "YES",
+                "NO",
+                "INVALID"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deposits_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "market_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "no_claims_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "policy": {
+          "$ref": "#/$defs/PricingPolicy"
+        },
+        "reserve_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "yes_claims_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "market_id",
+        "specification_hash",
+        "policy",
+        "yes_claims_atomic",
+        "no_claims_atomic",
+        "deposits_atomic",
+        "reserve_atomic",
+        "revision",
+        "closed_outcome"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/PricingState.schema.json",
+  "$ref": "#/$defs/PricingState",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PricingState"
+}

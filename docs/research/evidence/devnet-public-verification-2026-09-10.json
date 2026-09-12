@@ -1,0 +1,69 @@
+{
+  "verifiedAt": "2026-09-10T06:19:35.140277+00:00",
+  "forecasts": {
+    "f_IklrwuvCXkq8PVKWnH1oaXjC": {
+      "revision": 6,
+      "specificationHash": "fe46f0e03b1809041a781c9dbea24de06d1d09e6937033f0c8e7c7694ab23111",
+      "auditHead": "173b4cef5cc9fe3ae416a940821b56c09c487063811675071f4ea4f0e545d5cb",
+      "account": "3ovuSPBt3ns3ZuG51RVVsebkaANFL9YmSNqL69mL1Cum",
+      "signature": "5tywTgFtVKMNpurrUG7pqfYhYo6SAydjLZknHEeGAVcGeiGgC44cZvpsrQEzHhqhjPNn1HxRbRsdM8rr6y6Lbhn",
+      "state": 6,
+      "applicationChallengeUntilMs": 1789185465360,
+      "chainFinalizeNotBeforeMs": 1789192767000
+    },
+    "f_NB_bVj_Y7gFrFB7vy61RZFU2": {
+      "revision": 2,
+      "specificationHash": "3d4dc753dc023c7663432dcf7015862b7ca32cf1122353a9fbcf6d579e3cf204",
+      "auditHead": "2b263f23b0d0fe39e34e6c92df90a6d114afcc6c1b0721bc37b3fe60ae6f4868",
+      "account": "6A2UfV2jdPEKe3CAakpzR99J1BUadQXH9r4rQGKbkEcc",
+      "signature": "2ijs9xyH8ZancE628rbP9N7H5Zzm2UNKV754rKo38phQfgcpTm45xDpGg1ND23JSc9qR7SRKLTiKSR7Y3eccsBip",
+      "state": 2,
+      "applicationChallengeUntilMs": 0,
+      "chainFinalizeNotBeforeMs": 0
+    },
+    "f_uZX0iFRUQspTLFrqf2CnOJcV": {
+      "revision": 2,
+      "specificationHash": "8bf0fb47a68b9d14b9ef6ee0bb468875f1cf0167d1119eef313c232dd1af9766",
+      "auditHead": "e2a91262dd32f1e628ee761fab902ce5f1792491f67d70cfddf7099af1e65963",
+      "account": "9FbxafpvULc5HPb1xE31F4hoxff1avqbhMc4rCvm9ezv",
+      "signature": "2X2ZvTC3L43VreNjW3zMB5QQjqMskmwMxzzuor2DJTyBUsKvH9gdxzFeJnHboG6CBvYTzmcdJn61Cxk7PXJ1pSqe",
+      "state": 2,
+      "applicationChallengeUntilMs": 0,
+      "chainFinalizeNotBeforeMs": 0
+    }
+  },
+  "health": {
+    "ok": true,
+    "version": "0.9.0"
+  },
+  "status": {
+    "serverTime": 1789021177544,
+    "version": "0.9.0",
+    "providers": [
+      "gemini",
+      "cloudflare"
+    ],
+    "challengeHours": 48,
+    "chain": {
+      "status": "configured",
+      "network": "devnet",
+      "programId": "BvZLYrSmzDGTP5jYb14cjreRfHqfMo2sRBfUPpAi5Sgp",
+      "relayEnabled": false,
+      "transaction": null
+    },
+    "features": {
+      "sourceWatch": true,
+      "liveMarkets": false,
+      "billing": {
+        "billable": false,
+        "mode": "sandbox"
+      }
+    }
+  },
+  "signingHealth": {
+    "signerVerified": true,
+    "rpcAvailable": false
+  },
+  "deliveryMethod": "one-time operator migration using the shared durable adapter",
+  "automaticHostedRelayVerified": false
+}

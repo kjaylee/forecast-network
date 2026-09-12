@@ -1,0 +1,13 @@
+{
+  "name": "forecast-ai-proxy",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-09",
+  "workers_dev": true,
+  "placement": {
+    "region": "gcp:us-east4"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  }
+}

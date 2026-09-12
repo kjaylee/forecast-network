@@ -1,0 +1,56 @@
+[
+  {
+    "forecastId": "f_IklrwuvCXkq8PVKWnH1oaXjC",
+    "translation": {
+      "specificationHash": "fe46f0e03b1809041a781c9dbea24de06d1d09e6937033f0c8e7c7694ab23111",
+      "language": "en",
+      "sourceLanguage": "ko",
+      "attribution": "Forecast editorial translation",
+      "title": "Will Apple announce a foldable iPhone by the end of 2026?",
+      "question": "Will Apple officially announce a foldable iPhone by 2026-12-31T23:59:00Z? A YES outcome requires an official press release about a foldable iPhone through Apple Newsroom (www.apple.com/newsroom or newsroom.apple.com). Rumors, patent filings and speculation do not count.",
+      "rules": [
+        {"clauseId": "yes_condition", "condition": "By 2026-12-31T23:59:00Z, Apple officially announces a foldable iPhone through Apple Newsroom (www.apple.com/newsroom or newsroom.apple.com). The announcement must be a press release explicitly confirming the existence of a foldable iPhone. Rumors, patents and speculation do not count."},
+        {"clauseId": "no_condition", "condition": "By 2026-12-31T23:59:00Z, Apple has not officially announced a foldable iPhone through Apple Newsroom (www.apple.com/newsroom or newsroom.apple.com). This includes no announcement, or an announcement that does not clearly and officially confirm a foldable iPhone."},
+        {"clauseId": "invalid_condition", "condition": "The question resolves INVALID if the required primary source, Apple Newsroom, is not available by 2026-12-31T23:59:00Z, no longer operates, or lacks clear and conclusive information needed to determine YES or NO."}
+      ],
+      "invalidationRules": ["The question resolves INVALID if the primary source, Apple Newsroom, becomes unavailable by 2026-12-31T23:59:00Z, no longer operates, or does not provide enough information to resolve this question."],
+      "aiRationale": "The supplied source confirms the existence and structure of Apple Newsroom but contains no information about a future foldable iPhone announcement. Apple tends to keep unannounced products confidential. An announcement during this period is possible, but there is currently no official evidence in the supplied material, so uncertainty is high."
+    }
+  },
+  {
+    "forecastId": "f_uZX0iFRUQspTLFrqf2CnOJcV",
+    "translation": {
+      "specificationHash": "8bf0fb47a68b9d14b9ef6ee0bb468875f1cf0167d1119eef313c232dd1af9766",
+      "language": "en",
+      "sourceLanguage": "ko",
+      "attribution": "Forecast editorial translation",
+      "title": "Will Apple announce an M6 Mac by the end of 2026?",
+      "question": "Will Apple officially announce a Mac computer with a chip named M6 by 2026-12-31T23:59:00Z? A YES outcome requires an official press release through Apple Newsroom (https://www.apple.com/newsroom/) about a Mac computer with an M6 chip. Rumors, patent filings, M5 products and speculation do not count.",
+      "rules": [
+        {"clauseId": "yes_condition", "condition": "By 2026-12-31T23:59:00Z, Apple officially announces a Mac computer with a chip named M6 through Apple Newsroom (https://www.apple.com/newsroom/). The announcement must be a press release explicitly confirming a Mac computer with an M6 chip. Rumors, patents, M5 products and speculation do not count."},
+        {"clauseId": "no_condition", "condition": "By 2026-12-31T23:59:00Z, Apple has not officially announced a Mac computer with a chip named M6 through Apple Newsroom (https://www.apple.com/newsroom/). This includes no announcement, or an announcement that does not clearly and officially confirm a Mac computer with an M6 chip."},
+        {"clauseId": "invalid_condition", "condition": "The question resolves INVALID if the required primary source, Apple Newsroom, is not available by 2026-12-31T23:59:00Z, no longer operates, or lacks clear and conclusive information needed to determine YES or NO."}
+      ],
+      "invalidationRules": ["The question resolves INVALID if the primary source, Apple Newsroom, becomes unavailable by 2026-12-31T23:59:00Z, no longer operates, or does not provide enough information to resolve this question."],
+      "aiRationale": "Apple generally updates its M-series chips on an approximately 18-to-24-month cycle, making an M6 Mac announcement by the end of 2026 likely. The model's original rationale states that M3 has been released and expects M4 and M5 to follow, with enough time for M6 development and an official announcement. It acknowledges uncertainty from unexpected delays, naming changes and the requirement that the announcement appear on the specified website."
+    }
+  },
+  {
+    "forecastId": "f_NB_bVj_Y7gFrFB7vy61RZFU2",
+    "translation": {
+      "specificationHash": "3d4dc753dc023c7663432dcf7015862b7ca32cf1122353a9fbcf6d579e3cf204",
+      "language": "en",
+      "sourceLanguage": "ko",
+      "attribution": "Forecast editorial translation",
+      "title": "Will Microsoft release Windows 12 by the end of 2026?",
+      "question": "By 2026-12-31T23:59:00Z, will Microsoft announce through its official newsroom at https://news.microsoft.com/ that an operating system named Windows 12 has officially been released to the general public? Developer previews and rumors do not count.",
+      "rules": [
+        {"clauseId": "yes_condition", "condition": "By 2026-12-31T23:59:00Z, Microsoft announces through its official newsroom (https://news.microsoft.com/) that an operating system named Windows 12 has officially been released to the general public. The announcement must be a press release explicitly confirming the general-public release of Windows 12. Developer previews, rumors and speculation do not count."},
+        {"clauseId": "no_condition", "condition": "By 2026-12-31T23:59:00Z, Microsoft has not announced through its official newsroom (https://news.microsoft.com/) that an operating system named Windows 12 has officially been released to the general public. This includes no announcement, or an announcement that does not clearly and officially confirm a general-public release of Windows 12, such as an announcement of a developer preview."},
+        {"clauseId": "invalid_condition", "condition": "The question resolves INVALID if the required primary source, Microsoft Newsroom (https://news.microsoft.com/), becomes unavailable by 2026-12-31T23:59:00Z, no longer operates, or lacks clear and conclusive information needed to determine YES or NO."}
+      ],
+      "invalidationRules": ["The question resolves INVALID if the primary source, Microsoft's official newsroom (https://news.microsoft.com/), becomes unavailable by 2026-12-31T23:59:00Z, no longer operates, or does not provide enough information to resolve this question."],
+      "aiRationale": "The supplied source text does not contain information about Windows 12 or a future Windows operating system release. Microsoft periodically releases new Windows versions, but there is no direct evidence that its official newsroom will announce a general-public release specifically named Windows 12 by the end of 2026. The available information rules out neither release nor non-release, so the model assigns an intermediate probability and notes substantial uncertainty."
+    }
+  }
+]

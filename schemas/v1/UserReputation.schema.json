@@ -1,0 +1,273 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "DomainScore": {
+      "additionalProperties": false,
+      "properties": {
+        "accuracy_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "brier_score_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "calibration_score_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "category": {
+          "enum": [
+            "TECHNOLOGY",
+            "CRYPTO",
+            "SCIENCE",
+            "ENTERTAINMENT",
+            "WORLD",
+            "SPORTS",
+            "OTHER"
+          ],
+          "type": "string"
+        },
+        "correct_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resolved_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "category",
+        "total_forecasts",
+        "resolved_forecasts",
+        "correct_forecasts",
+        "accuracy_bp",
+        "brier_score_bp",
+        "calibration_score_bp"
+      ],
+      "type": "object"
+    },
+    "UserReputation": {
+      "additionalProperties": false,
+      "properties": {
+        "accuracy_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "brier_score_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "calibration_score_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "consistency_score_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "correct_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "created_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "creator_quality_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "dispute_accuracy_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "domain_scores": {
+          "items": {
+            "$ref": "#/$defs/DomainScore"
+          },
+          "type": "array"
+        },
+        "invalid_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resolved_disputes": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resolved_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "successful_disputes": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total_disputes": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "updated_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "user_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "user_id",
+        "total_forecasts",
+        "resolved_forecasts",
+        "correct_forecasts",
+        "invalid_forecasts",
+        "accuracy_bp",
+        "brier_score_bp",
+        "calibration_score_bp",
+        "consistency_score_bp",
+        "domain_scores",
+        "total_disputes",
+        "resolved_disputes",
+        "successful_disputes",
+        "dispute_accuracy_bp",
+        "creator_quality_bp",
+        "created_at_ms",
+        "updated_at_ms"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/UserReputation.schema.json",
+  "$ref": "#/$defs/UserReputation",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UserReputation"
+}

@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-09-09T12:22:00.114682+00:00",
+  "assumptions": [
+    "Program sizes and binary layouts are design scenarios, not measured Forecast builds.",
+    "0.05 SOL fee reserve is a planning allocation, not an observed fee quote or lifetime budget.",
+    "Global config 256 bytes plus four 128-byte commitment accounts are planning allocations.",
+    "No account-rent refund is counted before safe archival and closure.",
+    "Excluded: servers, storage, indexer/prover/RPC charges, audits and continuing transaction spend.",
+    "Compression does not eliminate deployment rent for the custom Forecast program."
+  ],
+  "scenarios": [
+    {
+      "layout": "individual_pda",
+      "hypothetical_program_kib": 64,
+      "active_markets": 100,
+      "funded_market_accounts": 100,
+      "live_disputes": 5,
+      "lamports": {
+        "program_data": 416135097,
+        "program_account": 1038612,
+        "active_market_accounts": 309050400,
+        "live_dispute_receipts": 9119520,
+        "config_and_four_commitment_accounts": 8916864,
+        "planned_fee_reserve": 50000000
+      },
+      "initial_budget_lamports": 794260493,
+      "upgrade_buffer_reserve_lamports": 416135097,
+      "initial_plus_one_upgrade_buffer_lamports": 1210395590,
+      "initial_within_two_sol": true,
+      "including_upgrade_buffer_within_two_sol": true
+    },
+    {
+      "layout": "individual_pda",
+      "hypothetical_program_kib": 64,
+      "active_markets": 300,
+      "funded_market_accounts": 300,
+      "live_disputes": 15,
+      "lamports": {
+        "program_data": 416135097,
+        "program_account": 1038612,
+        "active_market_accounts": 927151200,
+        "live_dispute_receipts": 27358560,
+        "config_and_four_commitment_accounts": 8916864,
+        "planned_fee_reserve": 50000000
+      },
+      "initial_budget_lamports": 1430600333,
+      "upgrade_buffer_reserve_lamports": 416135097,
+      "initial_plus_one_upgrade_buffer_lamports": 1846735430,
+      "initial_within_two_sol": true,
+      "including_upgrade_buffer_within_two_sol": true
+    },
+    {
+      "layout": "individual_pda",
+      "hypothetical_program_kib": 64,
+      "active_markets": 500,
+      "funded_market_accounts": 500,
+      "live_disputes": 25,
+      "lamports": {
+        "program_data": 416135097,
+        "program_account": 1038612,
+        "active_market_accounts": 1545252000,
+        "live_dispute_receipts": 45597600,
+        "config_and_four_commitment_accounts": 8916864,
+        "planned_fee_reserve": 50000000
+      },
+      "initial_budget_lamports": 2066940173,
+      "upgrade_buffer_reserve_lamports": 416135097,
+      "initial_plus_one_upgrade_buffer_lamports": 2483075270,
+      "initial_within_two_sol": false,
+      "including_upgrade_buffer_within_two_sol": false
+    },
+    {
+      "layout": "16_per_page",
+      "hypothetical_program_kib": 64,
+      "active_markets": 500,
+      "funded_market_accounts": 32,
+      "live_disputes": 25,
+      "lamports": {
+        "program_data": 416135097,
+        "program_account": 1038612,
+        "active_market_accounts": 1206208512,
+        "live_dispute_receipts": 45597600,
+        "config_and_four_commitment_accounts": 8916864,
+        "planned_fee_reserve": 50000000
+      },
+      "initial_budget_lamports": 1727896685,
+      "upgrade_buffer_reserve_lamports": 416135097,
+      "initial_plus_one_upgrade_buffer_lamports": 2144031782,
+      "initial_within_two_sol": true,
+      "including_upgrade_buffer_within_two_sol": false
+    },
+    {
+      "layout": "16_per_page",
+      "hypothetical_program_kib": 48,
+      "active_markets": 500,
+      "funded_market_accounts": 32,
+      "live_disputes": 25,
+      "lamports": {
+        "program_data": 312375225,
+        "program_account": 1038612,
+        "active_market_accounts": 1206208512,
+        "live_dispute_receipts": 45597600,
+        "config_and_four_commitment_accounts": 8916864,
+        "planned_fee_reserve": 50000000
+      },
+      "initial_budget_lamports": 1624136813,
+      "upgrade_buffer_reserve_lamports": 312375225,
+      "initial_plus_one_upgrade_buffer_lamports": 1936512038,
+      "initial_within_two_sol": true,
+      "including_upgrade_buffer_within_two_sol": true
+    },
+    {
+      "layout": "individual_pda",
+      "hypothetical_program_kib": 96,
+      "active_markets": 300,
+      "funded_market_accounts": 300,
+      "live_disputes": 15,
+      "lamports": {
+        "program_data": 623654841,
+        "program_account": 1038612,
+        "active_market_accounts": 927151200,
+        "live_dispute_receipts": 27358560,
+        "config_and_four_commitment_accounts": 8916864,
+        "planned_fee_reserve": 50000000
+      },
+      "initial_budget_lamports": 1638120077,
+      "upgrade_buffer_reserve_lamports": 623654841,
+      "initial_plus_one_upgrade_buffer_lamports": 2261774918,
+      "initial_within_two_sol": true,
+      "including_upgrade_buffer_within_two_sol": false
+    },
+    {
+      "layout": "individual_pda",
+      "hypothetical_program_kib": 64,
+      "active_markets": 300,
+      "funded_market_accounts": 300,
+      "live_disputes": 256,
+      "lamports": {
+        "program_data": 416135097,
+        "program_account": 1038612,
+        "active_market_accounts": 927151200,
+        "live_dispute_receipts": 466919424,
+        "config_and_four_commitment_accounts": 8916864,
+        "planned_fee_reserve": 50000000
+      },
+      "initial_budget_lamports": 1870161197,
+      "upgrade_buffer_reserve_lamports": 416135097,
+      "initial_plus_one_upgrade_buffer_lamports": 2286296294,
+      "initial_within_two_sol": true,
+      "including_upgrade_buffer_within_two_sol": false
+    }
+  ],
+  "spl_tree_examples": [
+    {
+      "depth": 14,
+      "buffer": 64,
+      "canopy": 0,
+      "bytes": 31800,
+      "rent_lamports": 202200024
+    },
+    {
+      "depth": 14,
+      "buffer": 64,
+      "canopy": 10,
+      "bytes": 97272,
+      "rent_lamports": 616834200
+    }
+  ],
+  "light_v2_examples": [
+    {
+      "accounts": 1000,
+      "updates_each": 0,
+      "documented_fee_model_lamports": 20300000
+    },
+    {
+      "accounts": 1000,
+      "updates_each": 11,
+      "documented_fee_model_lamports": 133600000
+    },
+    {
+      "accounts": 10000,
+      "updates_each": 0,
+      "documented_fee_model_lamports": 203000000
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "is_official": {
+          "type": "boolean"
+        },
+        "name": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "source_id",
+        "name",
+        "url",
+        "is_official"
+      ],
+      "type": "object"
+    },
+    "SourcePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "fallback_sources": {
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "type": "array"
+        },
+        "primary_sources": {
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "primary_sources",
+        "fallback_sources"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/SourcePolicy.schema.json",
+  "$ref": "#/$defs/SourcePolicy",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SourcePolicy"
+}

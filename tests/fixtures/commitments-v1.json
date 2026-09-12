@@ -1,0 +1,53 @@
+{
+  "profile": "forecast-network:sha256:canonical-json:v1",
+  "vectors": [
+    {
+      "input": {
+        "b": [
+          true,
+          null,
+          "é한"
+        ],
+        "a": 1
+      },
+      "canonical_json": "{\"a\":1,\"b\":[true,null,\"é한\"]}",
+      "sha256": "2b6d9e4a37e7b541a89a4793f729203bba49825c15e9522abdc6283294d26846"
+    },
+    {
+      "input": {
+        "x": 9007199254740991
+      },
+      "canonical_json": "{\"x\":9007199254740991}",
+      "sha256": "1af7159a88a817855e4ac82f6295c0487778b7cc9fd323c6eea2472ea987283e"
+    },
+    {
+      "input": {
+        "b": [],
+        "a": {
+          "z": 0,
+          "y": 2
+        }
+      },
+      "canonical_json": "{\"a\":{\"y\":2,\"z\":0},\"b\":[]}",
+      "sha256": "f291daebbfbd25e9e6786f5df5a990eb413fec5dbdc8a78ed22c50087ac93c55"
+    },
+    {
+      "input": {
+        "😀": 1,
+        "": 2,
+        "2": 3,
+        "10": 4
+      },
+      "canonical_json": "{\"10\":4,\"2\":3,\"\":2,\"😀\":1}",
+      "sha256": "6dc74deba6ece1daf0a0b8d5e5700e6d1a46669d01fee137f7d6c0a35dc65cb5"
+    },
+    {
+      "input": {
+        "controls": "\b\f\n\r\t\u0000\\\"/",
+        "normalization": "é"
+      },
+      "canonical_json": "{\"controls\":\"\\b\\f\\n\\r\\t\\u0000\\\\\\\"/\",\"normalization\":\"é\"}",
+      "sha256": "80f6a3ea9c9db1fe30d731de81f1808f5e41564be4bf142e90f615502c70bb72"
+    }
+  ]
+}

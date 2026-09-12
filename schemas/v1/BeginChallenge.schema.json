@@ -1,0 +1,34 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "BeginChallenge": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "kind": {
+          "const": "begin_challenge"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "duration_ms",
+        "kind"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/BeginChallenge.schema.json",
+  "$ref": "#/$defs/BeginChallenge",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BeginChallenge"
+}

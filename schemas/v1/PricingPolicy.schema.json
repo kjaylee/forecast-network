@@ -1,0 +1,80 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "PricingPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "atomic_units_per_point": {
+          "const": 1000000,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "liquidity_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "maximum_fill_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "maximum_owner_gross_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "maximum_owner_unsettled_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "minimum_fill_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "policy_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "quote_lifetime_ms": {
+          "maximum": 300000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "subsidy_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "atomic_units_per_point",
+        "liquidity_atomic",
+        "subsidy_atomic",
+        "minimum_fill_atomic",
+        "maximum_fill_atomic",
+        "maximum_owner_gross_atomic",
+        "maximum_owner_unsettled_atomic",
+        "quote_lifetime_ms"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/PricingPolicy.schema.json",
+  "$ref": "#/$defs/PricingPolicy",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PricingPolicy"
+}

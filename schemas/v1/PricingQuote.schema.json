@@ -1,0 +1,127 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "PricingQuote": {
+      "additionalProperties": false,
+      "properties": {
+        "after_probability_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "before_probability_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "claims_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "expires_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "market_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "net_gain_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "owner_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "policy_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "price_impact_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "quoted_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "side": {
+          "enum": [
+            "YES",
+            "NO"
+          ],
+          "type": "string"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "spend_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "state_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "state_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "winning_total_atomic": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "market_id",
+        "owner_id",
+        "specification_hash",
+        "policy_hash",
+        "state_hash",
+        "state_revision",
+        "side",
+        "spend_atomic",
+        "claims_atomic",
+        "winning_total_atomic",
+        "net_gain_atomic",
+        "before_probability_bp",
+        "after_probability_bp",
+        "price_impact_bp",
+        "quoted_at_ms",
+        "expires_at_ms"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/PricingQuote.schema.json",
+  "$ref": "#/$defs/PricingQuote",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PricingQuote"
+}

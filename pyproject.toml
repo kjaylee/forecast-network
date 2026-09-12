@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=65"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forecast-network-domain"
+version = "0.1.0"
+description = "Deterministic forecasting domain and versioned contracts"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools]
+package-dir = {"" = "packages/domain/src"}
+
+[tool.setuptools.packages.find]
+where = ["packages/domain/src"]
+
+[tool.setuptools.package-data]
+forecast_domain = ["py.typed"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+cache-dir = "tmp/ruff-cache"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["packages/domain/src"]
+mypy_path = ["packages/domain/src", "packages/application/src"]
+cache_dir = "tmp/mypy-cache"

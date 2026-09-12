@@ -1,0 +1,28 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "Lock": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "lock"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/Lock.schema.json",
+  "$ref": "#/$defs/Lock",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lock"
+}

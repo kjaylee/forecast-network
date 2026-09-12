@@ -1,0 +1,47 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "RuleClause": {
+      "additionalProperties": false,
+      "properties": {
+        "clause_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "condition": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "YES",
+            "NO",
+            "INVALID"
+          ],
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "clause_id",
+        "outcome",
+        "condition"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/RuleClause.schema.json",
+  "$ref": "#/$defs/RuleClause",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RuleClause"
+}

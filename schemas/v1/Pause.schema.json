@@ -1,0 +1,81 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "Pause": {
+      "additionalProperties": false,
+      "properties": {
+        "configured_providers": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "paused_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "previous_state": {
+          "enum": [
+            "DRAFT",
+            "VALIDATING",
+            "OPEN",
+            "LOCKED",
+            "RESOLVING",
+            "PROPOSED",
+            "CHALLENGE",
+            "DISPUTED",
+            "ESCALATED",
+            "PAUSED",
+            "FINALIZED",
+            "ARCHIVED"
+          ],
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unavailable_providers": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "previous_state",
+        "paused_at_ms",
+        "configured_providers",
+        "unavailable_providers",
+        "reason"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/Pause.schema.json",
+  "$ref": "#/$defs/Pause",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pause"
+}

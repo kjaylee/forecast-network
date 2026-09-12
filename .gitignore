@@ -1,0 +1,17 @@
+tmp/
+.omx/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.DS_Store
+.gstack/
+.wrangler/
+.dev.vars*
+node_modules/

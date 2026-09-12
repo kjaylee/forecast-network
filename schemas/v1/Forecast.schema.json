@@ -1,0 +1,1255 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "AIProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "input_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "model_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "output_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "policy_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "provider": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "task": {
+          "enum": [
+            "MARKET_COMPILER",
+            "AMBIGUITY_JUDGE",
+            "DUPLICATE_DETECTOR",
+            "SOURCE_VERIFIER",
+            "EVIDENCE_COLLECTOR",
+            "RESOLUTION_JUDGE",
+            "COUNTER_JUDGE",
+            "DISPUTE_ANALYST",
+            "INDEPENDENT_REJUDGE",
+            "ADJUDICATION"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "task",
+        "provider",
+        "model",
+        "model_version",
+        "policy_version",
+        "input_hash",
+        "output_hash",
+        "created_at_ms"
+      ],
+      "type": "object"
+    },
+    "Dispute": {
+      "additionalProperties": false,
+      "properties": {
+        "claim": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "disputant_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "dispute_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceSnapshot"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "explanation": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "resolution_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "rule_clause_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "submitted_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "dispute_id",
+        "disputant_id",
+        "forecast_id",
+        "specification_hash",
+        "resolution_hash",
+        "claim",
+        "evidence",
+        "rule_clause_id",
+        "explanation",
+        "submitted_at_ms"
+      ],
+      "type": "object"
+    },
+    "DisputeReview": {
+      "additionalProperties": false,
+      "properties": {
+        "counter_analysis": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "disposition": {
+          "enum": [
+            "RETAIN_PROPOSAL",
+            "MATERIAL_CONFLICT",
+            "INVALID_EVIDENCE"
+          ],
+          "type": "string"
+        },
+        "dispute_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "evidence_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "evidence_validated": {
+          "type": "boolean"
+        },
+        "evidence_validation": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "independent_judge": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "material_conflict": {
+          "type": "boolean"
+        },
+        "reason_summary": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "resolution_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "reviewed_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "dispute_hash",
+        "specification_hash",
+        "resolution_hash",
+        "evidence_hash",
+        "evidence_validated",
+        "material_conflict",
+        "disposition",
+        "evidence_validation",
+        "counter_analysis",
+        "independent_judge",
+        "reason_summary",
+        "reviewed_at_ms"
+      ],
+      "type": "object"
+    },
+    "DomainEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "anyOf": [
+            {
+              "maxLength": 1000000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "command_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "command_name": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "effects": {
+          "items": {
+            "enum": [
+              "REPUTATION_UPDATE_REQUIRED",
+              "RESULT_NOTIFICATION_REQUIRED",
+              "RESOLUTION_COMMITMENT_REQUIRED"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "new_state": {
+          "enum": [
+            "DRAFT",
+            "VALIDATING",
+            "OPEN",
+            "LOCKED",
+            "RESOLVING",
+            "PROPOSED",
+            "CHALLENGE",
+            "DISPUTED",
+            "ESCALATED",
+            "PAUSED",
+            "FINALIZED",
+            "ARCHIVED"
+          ],
+          "type": "string"
+        },
+        "occurred_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "old_state": {
+          "enum": [
+            "DRAFT",
+            "VALIDATING",
+            "OPEN",
+            "LOCKED",
+            "RESOLVING",
+            "PROPOSED",
+            "CHALLENGE",
+            "DISPUTED",
+            "ESCALATED",
+            "PAUSED",
+            "FINALIZED",
+            "ARCHIVED"
+          ],
+          "type": "string"
+        },
+        "previous_event_hash": {
+          "anyOf": [
+            {
+              "maxLength": 1000000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "state_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "forecast_id",
+        "command_id",
+        "command_name",
+        "old_state",
+        "new_state",
+        "revision",
+        "occurred_at_ms",
+        "specification_hash",
+        "state_hash",
+        "artifact_hash",
+        "previous_event_hash",
+        "effects"
+      ],
+      "type": "object"
+    },
+    "DuplicateCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "explanation": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "materially_different_rules": {
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "similarity_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "forecast_id",
+        "specification_hash",
+        "similarity_bp",
+        "materially_different_rules",
+        "explanation"
+      ],
+      "type": "object"
+    },
+    "EvidenceSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "collected_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "collector": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AIProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "content_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "evidence_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "snapshot_uri": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "source_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "evidence_id",
+        "source_id",
+        "url",
+        "content_sha256",
+        "snapshot_uri",
+        "collected_at_ms",
+        "collector"
+      ],
+      "type": "object"
+    },
+    "Forecast": {
+      "additionalProperties": false,
+      "properties": {
+        "audit_head_hash": {
+          "anyOf": [
+            {
+              "maxLength": 1000000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "challenge_started_at_ms": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "challenge_until_ms": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "creator_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "dispute_reviews": {
+          "items": {
+            "$ref": "#/$defs/DisputeReview"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "disputes": {
+          "items": {
+            "$ref": "#/$defs/Dispute"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "finalized_outcome": {
+          "anyOf": [
+            {
+              "enum": [
+                "YES",
+                "NO",
+                "INVALID"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finalized_resolution_hash": {
+          "anyOf": [
+            {
+              "maxLength": 1000000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "latest_event": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DomainEvent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pause": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pause"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "published_at_ms": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Resolution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification": {
+          "$ref": "#/$defs/ForecastSpecification"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "DRAFT",
+            "VALIDATING",
+            "OPEN",
+            "LOCKED",
+            "RESOLVING",
+            "PROPOSED",
+            "CHALLENGE",
+            "DISPUTED",
+            "ESCALATED",
+            "PAUSED",
+            "FINALIZED",
+            "ARCHIVED"
+          ],
+          "type": "string"
+        },
+        "updated_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "validation_assessment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ValidationAssessment"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "forecast_id",
+        "creator_id",
+        "specification",
+        "specification_hash",
+        "created_at_ms",
+        "updated_at_ms",
+        "state",
+        "revision",
+        "published_at_ms",
+        "validation_assessment",
+        "resolution",
+        "challenge_started_at_ms",
+        "challenge_until_ms",
+        "disputes",
+        "dispute_reviews",
+        "pause",
+        "finalized_outcome",
+        "finalized_resolution_hash",
+        "latest_event",
+        "audit_head_hash"
+      ],
+      "type": "object"
+    },
+    "ForecastSpecification": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguity_score_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "canonical_question": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "TECHNOLOGY",
+            "CRYPTO",
+            "SCIENCE",
+            "ENTERTAINMENT",
+            "WORLD",
+            "SPORTS",
+            "OTHER"
+          ],
+          "type": "string"
+        },
+        "close_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "duplicate_candidates": {
+          "items": {
+            "$ref": "#/$defs/DuplicateCandidate"
+          },
+          "type": "array"
+        },
+        "invalidation_rules": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "open_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/RuleClause"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "share_title": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "source_policy": {
+          "$ref": "#/$defs/SourcePolicy"
+        }
+      },
+      "required": [
+        "schema_version",
+        "canonical_question",
+        "rules",
+        "open_at_ms",
+        "close_at_ms",
+        "source_policy",
+        "invalidation_rules",
+        "category",
+        "share_title",
+        "ambiguity_score_bp",
+        "duplicate_candidates"
+      ],
+      "type": "object"
+    },
+    "Pause": {
+      "additionalProperties": false,
+      "properties": {
+        "configured_providers": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "paused_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "previous_state": {
+          "enum": [
+            "DRAFT",
+            "VALIDATING",
+            "OPEN",
+            "LOCKED",
+            "RESOLVING",
+            "PROPOSED",
+            "CHALLENGE",
+            "DISPUTED",
+            "ESCALATED",
+            "PAUSED",
+            "FINALIZED",
+            "ARCHIVED"
+          ],
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unavailable_providers": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "previous_state",
+        "paused_at_ms",
+        "configured_providers",
+        "unavailable_providers",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "Resolution": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "conflict_explanation": {
+          "anyOf": [
+            {
+              "maxLength": 1000000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "conflict_status": {
+          "enum": [
+            "CLEAR",
+            "RESOLVED",
+            "UNRESOLVED"
+          ],
+          "type": "string"
+        },
+        "counter_judge": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "counter_judge_agrees": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceSnapshot"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "judge": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "proposed_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "proposed_outcome": {
+          "enum": [
+            "YES",
+            "NO",
+            "INVALID"
+          ],
+          "type": "string"
+        },
+        "reason_summary": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "rule_conflicts": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "rule_matches": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_verifications": {
+          "items": {
+            "$ref": "#/$defs/SourceVerification"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "forecast_id",
+        "specification_hash",
+        "proposed_outcome",
+        "confidence_bp",
+        "evidence",
+        "source_verifications",
+        "rule_matches",
+        "rule_conflicts",
+        "reason_summary",
+        "judge",
+        "counter_judge",
+        "counter_judge_agrees",
+        "conflict_status",
+        "proposed_at_ms",
+        "conflict_explanation"
+      ],
+      "type": "object"
+    },
+    "RuleClause": {
+      "additionalProperties": false,
+      "properties": {
+        "clause_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "condition": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "YES",
+            "NO",
+            "INVALID"
+          ],
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "clause_id",
+        "outcome",
+        "condition"
+      ],
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "is_official": {
+          "type": "boolean"
+        },
+        "name": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "source_id",
+        "name",
+        "url",
+        "is_official"
+      ],
+      "type": "object"
+    },
+    "SourcePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "fallback_sources": {
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "type": "array"
+        },
+        "primary_sources": {
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "primary_sources",
+        "fallback_sources"
+      ],
+      "type": "object"
+    },
+    "SourceVerification": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "explanation": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "verifier": {
+          "$ref": "#/$defs/AIProvenance"
+        }
+      },
+      "required": [
+        "schema_version",
+        "evidence_hash",
+        "source_id",
+        "verified",
+        "explanation",
+        "verifier"
+      ],
+      "type": "object"
+    },
+    "ValidationAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguity_judge": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "ambiguity_limit_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ambiguity_passed": {
+          "type": "boolean"
+        },
+        "compiler": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "deterministic_check_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "deterministic_passed": {
+          "type": "boolean"
+        },
+        "duplicate_check_completed": {
+          "type": "boolean"
+        },
+        "duplicate_detector": {
+          "$ref": "#/$defs/AIProvenance"
+        },
+        "duplicate_similarity_threshold_bp": {
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "explanation": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "objectively_resolvable": {
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "validated_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "specification_hash",
+        "deterministic_check_version",
+        "deterministic_passed",
+        "objectively_resolvable",
+        "ambiguity_passed",
+        "duplicate_check_completed",
+        "ambiguity_limit_bp",
+        "duplicate_similarity_threshold_bp",
+        "compiler",
+        "ambiguity_judge",
+        "duplicate_detector",
+        "validated_at_ms",
+        "explanation"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/Forecast.schema.json",
+  "$ref": "#/$defs/Forecast",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Forecast"
+}

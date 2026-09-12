@@ -1,0 +1,276 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "DuplicateCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "explanation": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "materially_different_rules": {
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "similarity_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "forecast_id",
+        "specification_hash",
+        "similarity_bp",
+        "materially_different_rules",
+        "explanation"
+      ],
+      "type": "object"
+    },
+    "EditSpecification": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "edit_specification"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification": {
+          "$ref": "#/$defs/ForecastSpecification"
+        }
+      },
+      "required": [
+        "schema_version",
+        "specification",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "ForecastSpecification": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguity_score_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "canonical_question": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "TECHNOLOGY",
+            "CRYPTO",
+            "SCIENCE",
+            "ENTERTAINMENT",
+            "WORLD",
+            "SPORTS",
+            "OTHER"
+          ],
+          "type": "string"
+        },
+        "close_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "duplicate_candidates": {
+          "items": {
+            "$ref": "#/$defs/DuplicateCandidate"
+          },
+          "type": "array"
+        },
+        "invalidation_rules": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "open_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/RuleClause"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "share_title": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "source_policy": {
+          "$ref": "#/$defs/SourcePolicy"
+        }
+      },
+      "required": [
+        "schema_version",
+        "canonical_question",
+        "rules",
+        "open_at_ms",
+        "close_at_ms",
+        "source_policy",
+        "invalidation_rules",
+        "category",
+        "share_title",
+        "ambiguity_score_bp",
+        "duplicate_candidates"
+      ],
+      "type": "object"
+    },
+    "RuleClause": {
+      "additionalProperties": false,
+      "properties": {
+        "clause_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "condition": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "YES",
+            "NO",
+            "INVALID"
+          ],
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "clause_id",
+        "outcome",
+        "condition"
+      ],
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "is_official": {
+          "type": "boolean"
+        },
+        "name": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "source_id",
+        "name",
+        "url",
+        "is_official"
+      ],
+      "type": "object"
+    },
+    "SourcePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "fallback_sources": {
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "type": "array"
+        },
+        "primary_sources": {
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "primary_sources",
+        "fallback_sources"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/EditSpecification.schema.json",
+  "$ref": "#/$defs/EditSpecification",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EditSpecification"
+}

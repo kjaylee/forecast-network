@@ -1,0 +1,21 @@
+{
+  "name": "forecast-network-web",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@solana-mobile/wallet-standard-mobile": "0.6.0",
+    "esbuild": "0.28.1",
+    "wrangler": "4.130.0"
+  },
+  "scripts": {
+    "build": "python3 ../../scripts/build_web.py",
+    "dev": "python3 ../../scripts/build_web.py && wrangler dev --config ../../tmp/web-build/wrangler.jsonc --persist-to ../../tmp/web-state",
+    "deploy": "python3 ../../scripts/deploy_web.py"
+  },
+  "overrides": {
+    "sharp": "0.35.4"
+  }
+}

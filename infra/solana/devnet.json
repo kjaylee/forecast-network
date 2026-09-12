@@ -1,0 +1,14 @@
+{
+  "cluster": "devnet",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "genesisHash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "programId": "BvZLYrSmzDGTP5jYb14cjreRfHqfMo2sRBfUPpAi5Sgp",
+  "administrator": "BoByBfy1fA7nj85iUW8p3dGqbqyXKwnf8qzhGnG4CgLo",
+  "upgradeAuthority": "BoByBfy1fA7nj85iUW8p3dGqbqyXKwnf8qzhGnG4CgLo",
+  "relayer": "5GDUY5uyo1BVPHca6HJLYmZwbLyC5Ee78N7BkuWd5ULf",
+  "keychainAccount": "forecast-network",
+  "deployed": true,
+  "programData": "37BxPnmJRQNXjeodFtPq5bAcMs17CGw4qCsPDixyqTX4",
+  "binaryBytes": 101008,
+  "binarySha256": "20e3140d28bc5438f0292983b96a0cbc30896074dcbb63678be3233f01a97890"
+}

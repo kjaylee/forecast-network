@@ -1,0 +1,61 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "PauseForProviderOutage": {
+      "additionalProperties": false,
+      "properties": {
+        "configured_providers": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "kind": {
+          "const": "pause_for_provider_outage"
+        },
+        "reason": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unavailable_providers": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "configured_providers",
+        "unavailable_providers",
+        "reason",
+        "kind"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/PauseForProviderOutage.schema.json",
+  "$ref": "#/$defs/PauseForProviderOutage",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PauseForProviderOutage"
+}

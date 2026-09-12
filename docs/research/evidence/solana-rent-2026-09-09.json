@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-09-09T12:22:00.114682+00:00",
+  "rpc_endpoint": "https://api.mainnet-beta.solana.com",
+  "commitment": "confirmed",
+  "slot_start": 445609765,
+  "slot_end": 445609783,
+  "method": "getMinimumBalanceForRentExemption",
+  "unit": "lamports",
+  "rent_by_data_bytes": {
+    "36": 1038612,
+    "128": 1621248,
+    "160": 1823904,
+    "256": 2431872,
+    "360": 3090504,
+    "512": 4053120,
+    "1024": 7295616,
+    "5824": 37694016,
+    "16429": 104855481,
+    "31800": 202200024,
+    "32805": 208564689,
+    "32813": 208615353,
+    "49189": 312324561,
+    "49197": 312375225,
+    "65573": 416084433,
+    "65581": 416135097,
+    "97272": 616834200,
+    "98341": 623604177,
+    "98349": 623654841,
+    "131117": 831174585,
+    "204845": 1298094009,
+    "262189": 1661253561,
+    "100": 1443924
+  },
+  "notes": [
+    "Read-only public RPC calls; no wallet accessed or transaction sent.",
+    "Queries span slots; this is an observation, not a future rent guarantee.",
+    "360/160/5824 are proposed application layouts, not measured compiled programs."
+  ],
+  "additional_observations": [
+    {
+      "observed_at_utc": "2026-09-09T12:24:33.403670+00:00",
+      "data_bytes": 100,
+      "rpc_response": {
+        "jsonrpc": "2.0",
+        "result": 1443924,
+        "id": 100
+      }
+    }
+  ]
+}

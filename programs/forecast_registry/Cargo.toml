@@ -1,0 +1,17 @@
+[package]
+name = "forecast-registry"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.84"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+no-entrypoint = []
+custom-heap = []
+custom-panic = []
+
+[dependencies]
+solana-program = "=2.2.0"

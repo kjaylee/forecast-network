@@ -1,0 +1,14 @@
+{
+  "release": "0.11.1",
+  "device": "Solana Seeker",
+  "walletLoginConfirmed": true,
+  "serverAuthentication": "wallet",
+  "returnedPayloadBytes": 64,
+  "requestedMessageBytes": 715,
+  "signatureVerifiedOverOriginalMessage": true,
+  "sameAccountAfterReload": true,
+  "noAdditionalGrantOnReload": true,
+  "recoveryCodeRequired": false,
+  "solanaTransactions": 0,
+  "evidenceScope": "User-approved native wallet response and live HTTPS session; no message, signature, key, address or account identifier retained here."
+}

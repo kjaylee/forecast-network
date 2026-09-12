@@ -1,0 +1,55 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "DuplicateCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "explanation": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])",
+          "type": "string"
+        },
+        "materially_different_rules": {
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "similarity_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "specification_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "forecast_id",
+        "specification_hash",
+        "similarity_bp",
+        "materially_different_rules",
+        "explanation"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/DuplicateCandidate.schema.json",
+  "$ref": "#/$defs/DuplicateCandidate",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DuplicateCandidate"
+}

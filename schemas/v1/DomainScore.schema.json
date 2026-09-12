@@ -1,0 +1,100 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "DomainScore": {
+      "additionalProperties": false,
+      "properties": {
+        "accuracy_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "brier_score_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "calibration_score_bp": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "maximum": 10000,
+          "minimum": 0
+        },
+        "category": {
+          "enum": [
+            "TECHNOLOGY",
+            "CRYPTO",
+            "SCIENCE",
+            "ENTERTAINMENT",
+            "WORLD",
+            "SPORTS",
+            "OTHER"
+          ],
+          "type": "string"
+        },
+        "correct_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resolved_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total_forecasts": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "category",
+        "total_forecasts",
+        "resolved_forecasts",
+        "correct_forecasts",
+        "accuracy_bp",
+        "brier_score_bp",
+        "calibration_score_bp"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/DomainScore.schema.json",
+  "$ref": "#/$defs/DomainScore",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DomainScore"
+}
