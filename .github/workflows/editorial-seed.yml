@@ -1,0 +1,37 @@
+name: Daily editorial seed
+
+# Publishes a few operator-curated questions every day so the feed never stalls.
+# Every candidate still passes the service's own compilation and independent AI
+# review; the run log lists what was published or skipped for operator review.
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 09:00 KST
+  workflow_dispatch:
+    inputs:
+      count:
+        description: questions to publish
+        default: '3'
+      dry_run:
+        description: propose only (true/false)
+        default: 'false'
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Propose and publish editorial questions
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          ARGS="--count ${{ github.event.inputs.count || '3' }}"
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python scripts/editorial_seed.py $ARGS

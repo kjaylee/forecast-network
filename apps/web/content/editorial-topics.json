@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "note": "Rotating editorial themes for the daily operator seed. Each theme lists official feeds whose latest headlines are shown to the proposer so questions concern what comes next, not what already happened.",
+  "themes": [
+    {
+      "name": "Apple",
+      "sources": [
+        "https://www.apple.com/newsroom/"
+      ],
+      "feeds": [
+        "https://www.apple.com/newsroom/rss-feed.rss"
+      ],
+      "hints": [
+        "product announcements",
+        "OS releases",
+        "events"
+      ]
+    },
+    {
+      "name": "Microsoft",
+      "sources": [
+        "https://news.microsoft.com/"
+      ],
+      "feeds": [
+        "https://news.microsoft.com/source/feed/"
+      ],
+      "hints": [
+        "Windows",
+        "Xbox",
+        "Copilot"
+      ]
+    },
+    {
+      "name": "Solana ecosystem",
+      "sources": [
+        "https://solana.com/news"
+      ],
+      "feeds": [
+        "https://solana.com/news/rss.xml"
+      ],
+      "hints": [
+        "Seeker",
+        "dApp Store",
+        "network upgrades",
+        "Firedancer"
+      ]
+    },
+    {
+      "name": "Space",
+      "sources": [
+        "https://www.nasa.gov/news/"
+      ],
+      "feeds": [
+        "https://www.nasa.gov/news-release/feed/"
+      ],
+      "hints": [
+        "launch dates",
+        "missions",
+        "Artemis"
+      ]
+    },
+    {
+      "name": "AI labs",
+      "sources": [
+        "https://openai.com/news/",
+        "https://blog.google/technology/ai/"
+      ],
+      "feeds": [
+        "https://openai.com/news/rss.xml",
+        "https://blog.google/technology/ai/rss/"
+      ],
+      "hints": [
+        "model releases",
+        "availability",
+        "features"
+      ]
+    },
+    {
+      "name": "Games",
+      "sources": [
+        "https://blog.playstation.com/"
+      ],
+      "feeds": [
+        "https://blog.playstation.com/feed/"
+      ],
+      "hints": [
+        "release dates",
+        "hardware",
+        "State of Play"
+      ]
+    },
+    {
+      "name": "Korea tech",
+      "sources": [
+        "https://news.samsung.com/global/"
+      ],
+      "feeds": [
+        "https://news.samsung.com/global/feed"
+      ],
+      "hints": [
+        "Galaxy",
+        "displays",
+        "Unpacked"
+      ]
+    }
+  ]
+}
