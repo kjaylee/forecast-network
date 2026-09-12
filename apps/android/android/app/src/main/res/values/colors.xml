@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Page ground of the web app; system bars and window background match it. -->
+    <color name="pageBackground">#f7f8fb</color>
+    <color name="brandBlue">#2456ed</color>
+    <color name="colorPrimary">#2456ed</color>
+    <color name="colorPrimaryDark">#f7f8fb</color>
+    <color name="colorAccent">#2456ed</color>
+</resources>

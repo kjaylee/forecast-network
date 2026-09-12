@@ -9,6 +9,7 @@ import {languageControlMarkup} from './language-control.mjs';
 import {createMarketClient,claimsInPoints,validateMarket} from './market-client.mjs';
 import {createWalletAuthClient} from './wallet-auth-client.mjs';
 import {initializeMobileWallet} from './mobile-wallet.mjs';
+import {registerNativeWallet} from './native-wallet.mjs';
 import {createForecastTranslations,TRANSLATION_LANGUAGES} from './forecast-translation.mjs';
 
 initializeLocale();
@@ -598,6 +599,8 @@ function authMarkup(){
   return `${languageControl('auth-language')}<div class="dialog-head"><h2 id="auth-title">${esc(t(migrate?'ui.migrateWallet':legacy?'ui.importLegacy':'ui.walletSignIn'))}</h2><button class="icon-button" data-action="close-auth" aria-label="${esc(t('ui.closeSignIn'))}">${icon('close')}</button></div>${legacy?'':`<p class="dialog-copy">${esc(t(migrate?'ui.walletMigrationHint':'ui.walletSignInHint'))}</p>`}${controls}${walletAuth.busy()?`<p class="loading-label" role="status">${esc(t(auth.phase==='canceling'?'ui.cancelingSignIn':'ui.waitingWallet'))}</p>`:''}<p class="error-message" id="auth-error" role="alert">${esc(auth.error?errorText(auth.error):state.authWalletError?errorText(state.authWalletError):'')}</p><p class="auth-note">${esc(t('ui.termsPrefix'))} <a href="/terms" target="_blank" rel="noopener">${esc(t('ui.terms'))}</a> ${esc(t('ui.and'))} <a href="/privacy" target="_blank" rel="noopener">${esc(t('ui.privacyPolicy'))}</a>.</p>`;
 }
 async function initializeAuthWallets(){
+  // The Android shell registers its native Mobile Wallet Adapter bridge; browsers use the web MWA flow.
+  if(registerNativeWallet()){state.authWalletError=null;if(authDialog.open)authDialog.innerHTML=authMarkup();return;}
   try{await initializeMobileWallet();state.authWalletError=null;}catch(error){state.authWalletError=error;}
   if(authDialog.open)authDialog.innerHTML=authMarkup();
 }
