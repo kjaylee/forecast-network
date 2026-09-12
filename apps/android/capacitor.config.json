@@ -1,0 +1,25 @@
+{
+  "appId": "xyz.eastsea.forecast",
+  "appName": "Forecast",
+  "webDir": "www",
+  "server": {
+    "url": "https://forecast.eastsea.xyz",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0b0b0b",
+    "adjustMarginsForEdgeToEdge": "force"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "backgroundColor": "#0b0b0b",
+      "launchAutoHide": true
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0b0b0b"
+    }
+  }
+}
