@@ -29,6 +29,21 @@ def families(specification: ForecastSpecification) -> tuple[str, ...]:
     return ()
 
 
+PUBLISHER_FEEDS = {
+    # Newsroom roots are not crawlable indexes; their feeds expose dated article links.
+    ('www.apple.com', '/newsroom'): 'https://www.apple.com/newsroom/rss-feed.rss',
+    ('apple.com', '/newsroom'): 'https://apple.com/newsroom/rss-feed.rss',
+    ('news.microsoft.com', ''): 'https://news.microsoft.com/source/feed/',
+    ('news.microsoft.com', '/source'): 'https://news.microsoft.com/source/feed/',
+}
+
+
+def publisher_feed_url(url: str) -> str:
+    """Map a published official-source root to the feed the watcher can actually read."""
+    parts = urlsplit(url)
+    return PUBLISHER_FEEDS.get((parts.hostname or '', parts.path.rstrip('/')), url)
+
+
 class ForecastAutomation:
     def __init__(self, app: Any, *, enabled: bool = False):
         self.app = app
@@ -60,8 +75,7 @@ class ForecastAutomation:
                 host = urlsplit(url).hostname
                 if host not in {'www.apple.com', 'apple.com', 'news.microsoft.com', 'blogs.microsoft.com', 'www.microsoft.com'}:
                     continue
-                if host in {'www.apple.com', 'apple.com'} and urlsplit(url).path.rstrip('/') == '/newsroom':
-                    url = 'https://' + host + '/newsroom/rss-feed.rss'
+                url = publisher_feed_url(url)
                 index_id = 'publisher-' + hashlib.sha256(url.encode()).hexdigest()[:32]
                 await self.watch.register(index_id, url, kind='index')
                 await self.watch.bind(row['id'], index_id, forecast['families'])

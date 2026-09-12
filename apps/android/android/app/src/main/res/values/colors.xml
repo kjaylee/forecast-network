@@ -3,6 +3,8 @@
     <!-- Page ground of the web app; system bars and window background match it. -->
     <color name="pageBackground">#f7f8fb</color>
     <color name="brandBlue">#2456ed</color>
+    <!-- Mobile tab bar surface; the navigation bar strip continues it. -->
+    <color name="tabBarBackground">#ffffff</color>
     <color name="colorPrimary">#2456ed</color>
     <color name="colorPrimaryDark">#f7f8fb</color>
     <color name="colorAccent">#2456ed</color>

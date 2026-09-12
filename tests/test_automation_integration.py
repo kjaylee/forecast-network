@@ -490,3 +490,15 @@ class AutomationIntegrationTests(unittest.IsolatedAsyncioTestCase):
                                 await app.markets.fund_treasury(700, self.random_token(), 'active')
                             self.assertEqual(caught.exception.code, 'market_unavailable')
         self.assertEqual(await self.db.all('SELECT * FROM market_funding'), [])
+
+
+class PublisherFeedMappingTests(unittest.TestCase):
+    def test_roots_map_to_readable_feeds_and_everything_else_is_untouched(self) -> None:
+        from forecast_application.automation import publisher_feed_url
+        self.assertEqual(publisher_feed_url("https://www.apple.com/newsroom/"), "https://www.apple.com/newsroom/rss-feed.rss")
+        self.assertEqual(publisher_feed_url("https://news.microsoft.com/"), "https://news.microsoft.com/source/feed/")
+        self.assertEqual(publisher_feed_url("https://news.microsoft.com"), "https://news.microsoft.com/source/feed/")
+        self.assertEqual(publisher_feed_url("https://news.microsoft.com/source/"), "https://news.microsoft.com/source/feed/")
+        article = "https://news.microsoft.com/source/2026/09/09/example/"
+        self.assertEqual(publisher_feed_url(article), article)
+        self.assertEqual(publisher_feed_url("https://blogs.microsoft.com/"), "https://blogs.microsoft.com/")

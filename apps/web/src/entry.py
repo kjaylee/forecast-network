@@ -130,9 +130,12 @@ async def bounded_bytes(message: Any, limit: int) -> bytes:
     length = message.headers.get("content-length")
     if length and str(length).isdigit() and int(length) > limit:
         raise ValueError("Payload exceeds size limit")
-    if message.body is None:
+    body = message.body
+    # A bodiless response (304, manual redirect, HEAD) arrives as JS null. Newer Pyodide
+    # builds surface that as a JsNull proxy rather than None, so test for the stream API.
+    if body is None or not hasattr(body, "getReader"):
         return b""
-    reader = message.body.getReader()
+    reader = body.getReader()
     result = bytearray()
     try:
         while True:

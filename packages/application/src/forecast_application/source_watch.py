@@ -10,6 +10,7 @@ import asyncio
 import hashlib
 import json
 import re
+import traceback
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 from html.parser import HTMLParser
@@ -410,6 +411,11 @@ class SourceWatch:
                 summary["polled"] += 1
             except Exception as exc:
                 summary["failed"] += 1
+                # Operator diagnostics: exception class and code locations only, never source bytes or URLs.
+                print(json.dumps({"event": "source_poll_failed", "sourceKind": source["kind"], "errorType": type(exc).__name__,
+                                  "detail": str(exc)[:120] if isinstance(exc, (AttributeError, TypeError, KeyError)) else None,
+                                  "frames": [{"function": f.name, "line": f.lineno, "file": f.filename.rsplit("/", 1)[-1]}
+                                             for f in traceback.extract_tb(exc.__traceback__)[-5:]]}))
                 await self.db.execute("UPDATE official_watch_sources SET failure_count=failure_count+1,last_error=?,next_poll=? WHERE id=? AND lease_token=?",
                                       (type(exc).__name__, self.now_ms()+min(3600000, source["interval_ms"]*2**min(source["failure_count"], 4)), source["id"], lease))
             finally:

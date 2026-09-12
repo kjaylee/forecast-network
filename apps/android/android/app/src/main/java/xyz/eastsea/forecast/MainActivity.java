@@ -1,6 +1,11 @@
 package xyz.eastsea.forecast;
 
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +20,7 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     private static final int PAGE_BACKGROUND = Color.parseColor("#f7f8fb");
+    private static final int TAB_BAR_BACKGROUND = Color.parseColor("#ffffff");
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -31,7 +37,8 @@ public class MainActivity extends BridgeActivity {
     private void keepPageClearOfSystemBars() {
         View webView = getBridge().getWebView();
         View root = getWindow().getDecorView();
-        root.setBackgroundColor(PAGE_BACKGROUND);
+        // Top strip continues the page ground; bottom strip continues the tab bar surface.
+        root.setBackground(new SystemBarBackground(PAGE_BACKGROUND, TAB_BAR_BACKGROUND));
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), root);
         controller.setAppearanceLightStatusBars(true);
@@ -45,8 +52,38 @@ public class MainActivity extends BridgeActivity {
             params.leftMargin = bars.left;
             params.rightMargin = bars.right;
             view.setLayoutParams(params);
+            ((SystemBarBackground) root.getBackground()).setSplit(root.getHeight() - bars.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(webView);
+    }
+
+    /** Two flat colours: page ground above the split line, tab-bar surface below it. */
+    private static final class SystemBarBackground extends Drawable {
+        private final Paint top = new Paint();
+        private final Paint bottom = new Paint();
+        private int split = Integer.MAX_VALUE;
+
+        SystemBarBackground(int topColor, int bottomColor) {
+            top.setColor(topColor);
+            bottom.setColor(bottomColor);
+        }
+
+        void setSplit(int y) {
+            split = y;
+            invalidateSelf();
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            int width = getBounds().width(), height = getBounds().height();
+            int line = Math.min(Math.max(split, 0), height);
+            canvas.drawRect(0, 0, width, line, top);
+            canvas.drawRect(0, line, width, height, bottom);
+        }
+
+        @Override public void setAlpha(int alpha) {}
+        @Override public void setColorFilter(ColorFilter filter) {}
+        @Override public int getOpacity() { return PixelFormat.OPAQUE; }
     }
 }
