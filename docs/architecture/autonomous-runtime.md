@@ -37,10 +37,16 @@ excerpts are bounded at 24 KiB. Discovery, source bindings, polling frequency,
 retries and leases have explicit limits. This is a deliberately narrow observer,
 not comprehensive monitoring of the web or a guarantee of instantaneous detection.
 
-A source lease closes the observation-to-review intake gap. When changed evidence
-is relevant enough for review, the observer records a participation hold before
-calling a model. Both legacy forecast updates and market fills must respect the
-current intake and hold guards. A model timeout or unavailable counter-review
+When changed evidence is relevant enough for review, the observer records a
+participation hold before calling a model. Forecast entry closes only for real
+evidence conditions: an operator or automatic hold, a pending or undismissed source
+review, a timing review, or an eligibility decision. Since migration 0017 (2026-09-13)
+a watch that is failing, stale, disabled or mid-poll no longer closes entry: those
+states describe the service's own infrastructure, and an outage was observed to lock
+a question for days. The receipt-eligibility cutoff still voids and refunds receipts
+that postdate evidence discovered later, which is what actually protects rewards.
+Point-market fills keep the stricter watch-health and lease guards because they price
+against other participants immediately. A model timeout or unavailable counter-review
 leaves entry contained; it cannot silently restore participation or settle points.
 
 Evidence qualification and counter-review require distinct configured providers.

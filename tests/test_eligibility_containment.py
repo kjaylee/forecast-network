@@ -132,27 +132,16 @@ class EligibilityContainmentTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.app.points.summary(self.other))['available'], 900)
         self.assertEqual((await self.app.points.summary(self.other))['committed'], 100)
 
-    async def test_legacy_intake_rejects_unhealthy_watch_and_undismissed_reviews(self):
+    async def test_legacy_intake_rejects_undismissed_reviews_but_tolerates_watch_outages(self):
         _, review_id, _ = await dismissal.AutomationDismissalTests.prepare(self, forecast=self.card)
-        for condition in ('pending', 'reviewed', 'exhausted', 'accepted_complete', 'failed',
-                          'unchecked', 'stale', 'disabled', 'polling'):
+        for condition in ('pending', 'reviewed', 'exhausted', 'accepted_complete'):
             with self.subTest(condition=condition):
                 await self.db.execute("UPDATE official_source_reviews SET state='complete',result='{\"accepted\":false,\"dismissible\":true}'")
                 await self.db.execute('UPDATE official_watch_sources SET enabled=1,failure_count=0,checked_at=?,lease_until=0', (self.now,))
                 if condition in ('pending', 'reviewed', 'exhausted'):
                     await self.db.execute('UPDATE official_source_reviews SET state=?,result=NULL WHERE id=?', (condition, review_id))
-                elif condition == 'accepted_complete':
-                    await self.db.execute("UPDATE official_source_reviews SET result='{\"accepted\":true}'")
-                elif condition == 'failed':
-                    await self.db.execute('UPDATE official_watch_sources SET failure_count=1')
-                elif condition == 'unchecked':
-                    await self.db.execute('UPDATE official_watch_sources SET checked_at=NULL')
-                elif condition == 'stale':
-                    await self.db.execute('UPDATE official_watch_sources SET checked_at=?', (self.now-360001,))
-                elif condition == 'disabled':
-                    await self.db.execute('UPDATE official_watch_sources SET enabled=0')
                 else:
-                    await self.db.execute('UPDATE official_watch_sources SET lease_until=?', (self.now+1,))
+                    await self.db.execute("UPDATE official_source_reviews SET result='{\"accepted\":true}'")
                 for amount in (None, 0, 100):
                     with self.subTest(amount=amount), self.assertRaises(AppError) as raised:
                         await self.app.submit_forecast(self.other, self.fid, 'YES', 100,
@@ -160,19 +149,31 @@ class EligibilityContainmentTests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(raised.exception.code, 'participation_on_hold')
                 self.assertEqual(await self.db.all('SELECT * FROM user_forecasts'), [])
                 self.assertEqual((await self.app.points.summary(self.other))['available'], 1000)
+        # Our own watch failing, never having run, going stale, being disabled or being
+        # mid-poll is not evidence: intake stays open and the eligibility cutoff protects
+        # rewards retroactively if evidence later turns out to predate the receipt.
         await self.db.execute("UPDATE official_source_reviews SET state='complete',result='{\"accepted\":false,\"dismissible\":true}'")
-        await self.db.execute('UPDATE official_watch_sources SET enabled=1,failure_count=0,checked_at=?,lease_until=0', (self.now-360000,))
-        accepted = await self.app.submit_forecast(self.other, self.fid, 'YES', 100,
-            self.card['revision'], 'watch-recovers-at-inclusive-boundary', 100)
-        self.assertEqual(accepted['stake']['amount'], 100)
+        revision = self.card['revision']
+        for condition, statement, params in (
+                ('failed', 'UPDATE official_watch_sources SET failure_count=1', ()),
+                ('unchecked', 'UPDATE official_watch_sources SET checked_at=NULL', ()),
+                ('stale', 'UPDATE official_watch_sources SET checked_at=?', (self.now-360001,)),
+                ('disabled', 'UPDATE official_watch_sources SET enabled=0', ()),
+                ('polling', 'UPDATE official_watch_sources SET lease_until=?', (self.now+1,))):
+            with self.subTest(condition=condition):
+                await self.db.execute(statement, params)
+                accepted = await self.app.submit_forecast(self.other, self.fid, 'YES', 100, revision,
+                                                          'open-during-'+condition, 100)
+                revision = accepted['forecast']['revision']
+                self.assertEqual(accepted['stake']['amount'], 100)
+                await self.db.execute('UPDATE official_watch_sources SET enabled=1,failure_count=0,checked_at=?,lease_until=0', (self.now,))
+        self.assertEqual((await self.app.points.summary(self.other))['committed'], 100)
 
-    async def test_watch_failure_between_read_and_vote_update_rolls_back_existing_position(self):
+    async def test_watch_failure_between_read_and_vote_update_keeps_the_edit(self):
         _, review_id, _ = await dismissal.AutomationDismissalTests.prepare(self, forecast=self.card)
         await self.db.execute("UPDATE official_source_reviews SET state='complete' WHERE id=?", (review_id,))
         accepted = await self.app.submit_forecast(self.other, self.fid, 'YES', 70,
             self.card['revision'], 'before-source-outage', 100)
-        before = await self.app._forecast(self.fid)
-        points = await self.app.points.summary(self.other)
         original = self.db.batch
 
         async def failure_at_commit(statements):
@@ -181,10 +182,7 @@ class EligibilityContainmentTests(unittest.IsolatedAsyncioTestCase):
             return await original(statements)
 
         self.db.batch = failure_at_commit
-        with self.assertRaises(AppError) as raised:
-            await self.app.submit_forecast(self.other, self.fid, 'NO', 100,
-                accepted['forecast']['revision'], 'after-source-outage', 1000)
-        self.assertEqual(raised.exception.code, 'participation_on_hold')
-        self.assertEqual(await self.app._forecast(self.fid), before)
-        self.assertEqual(await self.app.points.summary(self.other), points)
-        self.assertEqual((await self.db.first('SELECT outcome FROM user_forecasts'))['outcome'], 'YES')
+        edited = await self.app.submit_forecast(self.other, self.fid, 'NO', 100,
+            accepted['forecast']['revision'], 'after-source-outage', 1000)
+        self.assertEqual(edited['stake']['amount'], 1000)
+        self.assertEqual((await self.db.first('SELECT outcome FROM user_forecasts'))['outcome'], 'NO')

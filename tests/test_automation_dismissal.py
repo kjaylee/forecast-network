@@ -74,7 +74,7 @@ class AutomationDismissalTests(unittest.IsolatedAsyncioTestCase):
         await self.app.automation.dismiss(f['id'], result)
         self.assertIsNone(await self.app.participation_holds.active(f['id']))
 
-    async def test_legacy_vote_polling_gap_rolls_back_and_retries_after_poll(self):
+    async def test_legacy_vote_during_polling_gap_is_accepted(self):
         f, review_id, _ = await self.prepare()
         await self.db.execute("UPDATE official_source_reviews SET state='complete' WHERE id=?", (review_id,))
         original = self.db.batch
@@ -83,12 +83,8 @@ class AutomationDismissalTests(unittest.IsolatedAsyncioTestCase):
                 await self.db.execute('UPDATE official_watch_sources SET lease_until=?', (self.now+10000,))
             return await original(statements)
         self.db.batch = start_poll
-        with self.assertRaises(AppError) as raised:
-            await self.app.submit_forecast(self.other, f['id'], 'YES', 70, f['revision'], 'polling-gap-vote', 100)
-        self.assertEqual(raised.exception.code, 'participation_on_hold')
-        self.assertEqual((await self.app._forecast(f['id'])).revision, f['revision'])
-        self.assertEqual((await self.app.points.summary(self.other))['committed'], 0)
-        self.db.batch = original
-        await self.db.execute('UPDATE official_watch_sources SET lease_until=0')
+        # A poll in progress is not evidence; the receipt-eligibility cutoff voids late
+        # receipts retroactively if the poll turns up resolving news.
         accepted = await self.app.submit_forecast(self.other, f['id'], 'YES', 70, f['revision'], 'polling-gap-vote', 100)
         self.assertEqual(accepted['stake']['amount'], 100)
+        self.assertEqual((await self.app.points.summary(self.other))['committed'], 100)
