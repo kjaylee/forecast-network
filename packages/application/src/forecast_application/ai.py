@@ -1056,12 +1056,17 @@ class AiCoordinator:
         if precision == "instant" and publication is not None:
             event_at = int(datetime.fromisoformat(publication.replace("Z", "+00:00")).timestamp()*1000)
             basis = "published_instant"
+        # These two rejections are deterministic facts about timestamps, not a model's
+        # judgement, so they are dismissible: a page that predates the question (or the
+        # observation) can never be its resolving event and must not keep entry closed.
         if not spec.open_at_ms <= event_at <= observed:
-            return {"accepted": False, "trigger": None, "artifacts": (), "reason": "event_outside_open_window"}
+            return {"accepted": False, "trigger": None, "artifacts": (), "dismissible": True,
+                    "reason": "event_outside_open_window"}
         if precision == "date" and publication is not None:
             open_date = datetime.fromtimestamp(spec.open_at_ms/1000, timezone.utc).date().isoformat()
             if publication < open_date:
-                return {"accepted": False, "trigger": None, "artifacts": (), "reason": "publication_predates_open"}
+                return {"accepted": False, "trigger": None, "artifacts": (), "dismissible": True,
+                        "reason": "publication_predates_open"}
             observed_date = datetime.fromtimestamp(observed/1000, timezone.utc).date().isoformat()
             if publication > observed_date:
                 return {"accepted": False, "trigger": None, "artifacts": (), "reason": "publication_time_uncertain"}

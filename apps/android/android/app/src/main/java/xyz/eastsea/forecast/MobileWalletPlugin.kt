@@ -2,6 +2,7 @@ package xyz.eastsea.forecast
 
 import android.net.Uri
 import android.util.Base64
+import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
@@ -47,8 +48,12 @@ class MobileWalletPlugin : Plugin() {
                 iconUri = Uri.parse(ICON_PATH),
                 identityName = IDENTITY_NAME,
             ),
+            // Seed Vault asks for a physical double tap on the sensor; the 90 s default is tight.
+            timeout = WALLET_TIMEOUT_MS,
         )
         adapter.blockchain = Solana.Devnet
+        // Reusing the wallet's auth token skips the connect sheet after a restart or reinstall.
+        adapter.authToken = prefs().getString(PREF_AUTH_TOKEN, null)
     }
 
     @PluginMethod
@@ -64,12 +69,17 @@ class MobileWalletPlugin : Plugin() {
                     authorized = result.authResult.accounts.map {
                         Account(Base58.encode(it.publicKey), it.publicKey, it.accountLabel)
                     }
+                    rememberToken(result.authResult.authToken)
                     call.resolve(JSObject().put("accounts", accountsJson()))
                 }
                 is TransactionResult.NoWalletFound ->
                     call.reject("No Mobile Wallet Adapter wallet is installed", "ERROR_WALLET_NOT_FOUND")
-                is TransactionResult.Failure ->
+                is TransactionResult.Failure -> {
+                    // A stale token is the usual cause; drop it so the next attempt starts clean.
+                    adapter.authToken = null
+                    prefs().edit().remove(PREF_AUTH_TOKEN).apply()
                     call.reject(result.e.message ?: "Authorization failed", "ERROR_AUTHORIZATION_FAILED")
+                }
             }
         }
     }
@@ -99,6 +109,7 @@ class MobileWalletPlugin : Plugin() {
             }
             when (result) {
                 is TransactionResult.Success -> {
+                    rememberToken(result.authResult.authToken)
                     val signed = result.payload.messages.firstOrNull()
                     val signature = signed?.signatures?.firstOrNull()
                     if (signed == null || signature == null || signature.size != 64 || !signed.message.contentEquals(message)) {
@@ -157,6 +168,7 @@ class MobileWalletPlugin : Plugin() {
             }
             when (result) {
                 is TransactionResult.Success -> {
+                    rememberToken(result.authResult.authToken)
                     val signed = result.payload.signedPayloads.firstOrNull()
                     if (signed == null) {
                         call.reject("Wallet returned no signed transaction", "ERROR_SIGNING_FAILED")
@@ -187,8 +199,10 @@ class MobileWalletPlugin : Plugin() {
                 }
                 is TransactionResult.NoWalletFound ->
                     call.reject("No Mobile Wallet Adapter wallet is installed", "ERROR_WALLET_NOT_FOUND")
-                is TransactionResult.Failure ->
-                    call.reject(result.e.message ?: "Signing failed", "ERROR_SIGNING_FAILED")
+                is TransactionResult.Failure -> {
+                    Log.w(TAG, "signAndSendTransaction failed", result.e)
+                    call.reject((result.e::class.simpleName ?: "Failure") + ": " + (result.e.message ?: "signing failed"), "ERROR_SIGNING_FAILED")
+                }
             }
         }
     }
@@ -209,11 +223,18 @@ class MobileWalletPlugin : Plugin() {
     @PluginMethod
     fun deauthorize(call: PluginCall) {
         authorized = emptyList()
+        prefs().edit().remove(PREF_AUTH_TOKEN).apply()
         activity.lifecycleScope.launch {
             // Best effort: the wallet may already have discarded the session.
             runCatching { adapter.disconnect(sender) }
             call.resolve(JSObject())
         }
+    }
+
+    private fun prefs() = context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+
+    private fun rememberToken(token: String?) {
+        prefs().edit().putString(PREF_AUTH_TOKEN, token).apply()
     }
 
     private fun accountsJson(): JSArray {
@@ -234,6 +255,10 @@ class MobileWalletPlugin : Plugin() {
         const val ICON_PATH = "favicon.svg"
         const val IDENTITY_NAME = "Forecast"
         const val MAX_MESSAGE_BYTES = 4096
+        const val WALLET_TIMEOUT_MS = 180_000
+        const val PREFS_NAME = "forecast_wallet"
+        const val PREF_AUTH_TOKEN = "auth_token"
         const val RPC_URL = "https://api.devnet.solana.com"
+        const val TAG = "ForecastWallet"
     }
 }
