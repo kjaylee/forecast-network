@@ -38,9 +38,14 @@ is forecast-network.k-jaylee.workers.dev. Both were verified on 2026-09-09; see
 
 Credentials come from macOS Keychain services named in the operator-local file
 `~/.config/forecast-network/keychain.json` (override with `FORECAST_KEYCHAIN_CONFIG`),
-which maps `cloudflare`, `cloudflare_email`, `GEMINI_API_KEY`, `SESSION_SECRET`,
-`ADMIN_TOKEN`, `AI_PROXY_TOKEN` (and optional `ZAI_API_KEY`) to Keychain service names
-and carries the Cloudflare `account_id`; `scripts/cloudflare_keychain.py` reads it. The Cloudflare global key remains in deployment
+which maps `cloudflare` (a scoped API token: Workers Scripts, D1, Routes, Observability,
+read-only account and user details — never a Global API Key), `GEMINI_API_KEY`,
+`SESSION_SECRET`, `ADMIN_TOKEN` and `AI_PROXY_TOKEN` to Keychain service names and
+carries the Cloudflare `account_id`; `scripts/cloudflare_keychain.py` reads it.
+The main Worker holds no Gemini credential: the relay Worker alone does, and the
+daily editorial seed uses the same dedicated, API-restricted key from a GitHub
+Actions secret. Rotation touches three places per key (Keychain, `deploy_web.py`,
+`gh secret set`). The Cloudflare global key remains in deployment
 tooling only. It is not a Worker secret or browser asset. Runtime secrets are
 GEMINI_API_KEY, SESSION_SECRET and ADMIN_TOKEN, plus SOLANA_RELAYER_SEED when the
 Devnet registry is enabled. Cold Solana signing roles are never Worker secrets.

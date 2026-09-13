@@ -56,12 +56,12 @@ def main() -> None:
     # The bound database is the migration target; the name lives only in wrangler.jsonc.
     run([str(wrangler), "d1", "migrations", "apply", config["d1_databases"][0]["database_name"], "--remote"],
         cwd=STAGE, env=env)
-    payload = {name: secret(name) for name in ("GEMINI_API_KEY", "SESSION_SECRET", "ADMIN_TOKEN", "AI_PROXY_TOKEN")}
-    # The Gemini relay is a separate region-placed Worker sharing only the bearer token.
+    payload = {name: secret(name) for name in ("SESSION_SECRET", "ADMIN_TOKEN", "AI_PROXY_TOKEN")}
+    # The Gemini relay is a separate region-placed Worker; it alone holds the Gemini key.
     proxy = ROOT / "apps/ai-proxy"
     run([str(wrangler), "deploy"], cwd=proxy, env=env)
     run([str(wrangler), "secret", "bulk"], cwd=proxy, env=env,
-        input_text=json.dumps({"PROXY_TOKEN": payload["AI_PROXY_TOKEN"]}))
+        input_text=json.dumps({"PROXY_TOKEN": payload["AI_PROXY_TOKEN"], "GEMINI_API_KEY": secret("GEMINI_API_KEY")}))
     if config.get("vars", {}).get("SOLANA_REGISTRY_ENABLED") == "true":
         from solana_keychain import Keychain, base58, public_bytes
         seed = Keychain().read("relayer")

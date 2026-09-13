@@ -16,8 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 # account id. It lives outside the repository; see docs/deployment.md for the shape.
 CONFIG_PATH = Path(os.environ.get("FORECAST_KEYCHAIN_CONFIG",
                                   Path.home() / ".config/forecast-network/keychain.json"))
-REQUIRED = ("cloudflare", "cloudflare_email", "GEMINI_API_KEY", "SESSION_SECRET", "ADMIN_TOKEN",
-            "AI_PROXY_TOKEN", "account_id")
+# "cloudflare" names the Keychain entry holding a scoped API token (Workers Scripts,
+# D1, Routes, Observability, read-only account/user details). A Global API Key is never used.
+REQUIRED = ("cloudflare", "GEMINI_API_KEY", "SESSION_SECRET", "ADMIN_TOKEN", "AI_PROXY_TOKEN", "account_id")
 
 
 def _config() -> dict[str, str]:
@@ -51,8 +52,7 @@ def deployment_environment() -> dict[str, str]:
     scratch = ROOT / "tmp/cloudflare"
     scratch.mkdir(parents=True, exist_ok=True)
     return {
-        **os.environ, "CLOUDFLARE_API_KEY": secret("cloudflare"),
-        "CLOUDFLARE_EMAIL": secret("cloudflare_email"), "CLOUDFLARE_ACCOUNT_ID": ACCOUNT_ID,
+        **os.environ, "CLOUDFLARE_API_TOKEN": secret("cloudflare"), "CLOUDFLARE_ACCOUNT_ID": ACCOUNT_ID,
         "TMPDIR": str(ROOT / "tmp"), "PYTHONDONTWRITEBYTECODE": "1",
         "WRANGLER_LOG_PATH": str(scratch / "wrangler.log"),
         "WRANGLER_SEND_METRICS": "false", "CI": "true",
@@ -69,8 +69,7 @@ def api(path: str, *, method: str = "GET", body: dict[str, object] | None = None
         "https://api.cloudflare.com/client/v4/" + path.lstrip("/"),
         data=json.dumps(body).encode() if body is not None else None,
         method=method,
-        headers={"X-Auth-Key": secret("cloudflare"), "X-Auth-Email": secret("cloudflare_email"),
-                 "Content-Type": "application/json"},
+        headers={"Authorization": "Bearer " + secret("cloudflare"), "Content-Type": "application/json"},
     )
     with urllib.request.urlopen(request, timeout=45) as response:
         return json.load(response)

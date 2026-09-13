@@ -4,11 +4,11 @@
  * The Forecast Worker itself now runs at the edge next to its users; Gemini rejects
  * some of those execution locations, so only this Worker is pinned to a permitted
  * region. It forwards nothing but authenticated POSTs to the one allowed host and
- * passes through only the headers Gemini needs. It has no bindings and no secrets
- * beyond the shared bearer token.
+ * passes through only the headers Gemini needs. Its only secrets are the shared
+ * bearer token and the Gemini credential, which no other Worker holds.
  */
 const ALLOWED_HOST = 'generativelanguage.googleapis.com';
-const FORWARDED_HEADERS = ['content-type', 'x-goog-api-key'];
+const FORWARDED_HEADERS = ['content-type'];
 const MAX_BODY_BYTES = 1024 * 1024;
 
 function constantTimeEqual(left, right) {
@@ -42,6 +42,11 @@ export default {
       const value = request.headers.get(name);
       if (value) headers.set(name, value);
     }
+    // The Gemini credential exists only here; callers never send one.
+    if (typeof env.GEMINI_API_KEY !== 'string' || env.GEMINI_API_KEY.length < 20) {
+      return new Response(null, { status: 503 });
+    }
+    headers.set('x-goog-api-key', env.GEMINI_API_KEY);
     return fetch(target.toString(), { method: 'POST', headers, body, redirect: 'manual' });
   },
 };

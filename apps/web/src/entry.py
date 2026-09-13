@@ -262,9 +262,11 @@ class Default(WorkerEntrypoint):
         if not isinstance(session_secret, str) or len(session_secret) < 32:
             raise AppError(503, "configuration_unavailable", "Service configuration is temporarily unavailable.")
         providers = []
-        gemini = getattr(self.env, "GEMINI_API_KEY", "")
+        # The Gemini credential lives only in the relay Worker; this Worker sends a
+        # placeholder that the relay replaces. A direct key is honoured only without a relay.
+        gemini = "relay" if self.gemini_relay() else str(getattr(self.env, "GEMINI_API_KEY", "") or "")
         if gemini:
-            providers.append(ProviderConfig("gemini", str(self.env.GEMINI_MODEL), str(gemini)))
+            providers.append(ProviderConfig("gemini", str(self.env.GEMINI_MODEL), gemini))
         if getattr(self.env, "AI", None) is not None:
             providers.append(ProviderConfig("cloudflare", str(self.env.CLOUDFLARE_AI_MODEL)))
         ai = AiCoordinator(providers, self.request_json, self.request_text, timeout_seconds=45)
@@ -280,6 +282,13 @@ class Default(WorkerEntrypoint):
             registry=self.registry(db),
         )
 
+    def gemini_relay(self) -> tuple[str, str] | None:
+        proxy = str(getattr(self.env, "AI_PROXY_URL", "") or "")
+        token = getattr(self.env, "AI_PROXY_TOKEN", None)
+        if proxy and isinstance(token, str) and len(token) >= 32:
+            return proxy, token
+        return None
+
     async def request_json(self, url: str, method: str, headers: dict[str, str],
                            body: dict[str, Any]) -> dict[str, Any]:
         if url.startswith("workers-ai://"):
@@ -293,12 +302,13 @@ class Default(WorkerEntrypoint):
         if parsed.scheme != "https" or parsed.hostname not in {GEMINI_HOST, "api.openai.com"}:
             raise ValueError("Unapproved AI endpoint")
         fetch_url, fetch_headers = url, dict(headers)
-        proxy = str(getattr(self.env, "AI_PROXY_URL", "") or "")
-        proxy_token = getattr(self.env, "AI_PROXY_TOKEN", None)
-        if parsed.hostname == GEMINI_HOST and proxy and isinstance(proxy_token, str) and len(proxy_token) >= 32:
-            # Gemini rejects some default execution locations; the proxy Worker is region-placed.
-            fetch_url = proxy
-            fetch_headers.update({"X-Forecast-Proxy-Target": url, "Authorization": "Bearer " + proxy_token})
+        relay = self.gemini_relay()
+        if parsed.hostname == GEMINI_HOST and relay:
+            # Gemini rejects some default execution locations; the relay Worker is region-placed
+            # and holds the only Gemini credential, so no key header leaves this Worker.
+            fetch_url = relay[0]
+            fetch_headers = {name: value for name, value in fetch_headers.items() if name.lower() != "x-goog-api-key"}
+            fetch_headers.update({"X-Forecast-Proxy-Target": url, "Authorization": "Bearer " + relay[1]})
         try:
             response = await js_fetch(fetch_url, javascript({
                 "method": method, "headers": fetch_headers, "body": json.dumps(body), "redirect": "manual",
@@ -481,11 +491,12 @@ class Default(WorkerEntrypoint):
             if path == "/api/admin/ai/health" and method == "GET":
                 probe = await self.request_json(
                     f"https://{GEMINI_HOST}/v1beta/models/{self.env.GEMINI_MODEL}:generateContent", "POST",
-                    {"Content-Type": "application/json", "x-goog-api-key": str(getattr(self.env, "GEMINI_API_KEY", ""))},
+                    {"Content-Type": "application/json",
+                     "x-goog-api-key": "relay" if self.gemini_relay() else str(getattr(self.env, "GEMINI_API_KEY", "") or "")},
                     {"contents": [{"parts": [{"text": "Reply with the single word OK."}]}],
                      "generationConfig": {"maxOutputTokens": 8}})
                 return api_response({"provider": "gemini", "ok": bool(probe.get("candidates")),
-                                     "proxied": bool(str(getattr(self.env, "AI_PROXY_URL", "") or ""))})
+                                     "proxied": self.gemini_relay() is not None})
             if path == "/api/admin/automation" and method == "GET":
                 return api_response(await app.automation.status())
             if path == "/api/admin/automation/run" and method == "POST":
