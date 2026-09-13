@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "xyz.eastsea.forecast",
+      "sha256_cert_fingerprints": [
+        "D3:0E:E0:80:5C:0F:2C:09:CE:A0:42:71:2E:31:E3:4C:7F:EF:A7:BC:AC:7D:C2:37:59:6F:B5:EE:50:17:61:FF",
+        "7F:7F:FF:9E:28:53:E2:40:AE:35:13:8A:AA:74:10:13:A5:43:2F:62:00:1D:17:86:6B:B1:5B:CD:EC:57:64:B9"
+      ]
+    }
+  }
+]

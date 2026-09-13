@@ -27,6 +27,16 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(MobileWalletPlugin.class);
         super.onCreate(savedInstanceState);
         keepPageClearOfSystemBars();
+        ResultNotifications.INSTANCE.ensureChannel(this);
+        ResultNotifications.INSTANCE.requestPermission(this);
+        ResultNotifications.INSTANCE.schedule(this);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        // Leaving the app is the moment a result notification becomes useful.
+        ResultNotifications.INSTANCE.checkNow(this);
     }
 
     /**

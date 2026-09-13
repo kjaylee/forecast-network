@@ -15,3 +15,7 @@ dist/
 .wrangler/
 .dev.vars*
 node_modules/
+# Android release signing lives outside the tree (see docs/android.md)
+*.jks
+*.keystore
+docs/.pdca-snapshots/

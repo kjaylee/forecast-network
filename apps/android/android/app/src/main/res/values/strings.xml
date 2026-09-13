@@ -4,4 +4,6 @@
     <string name="title_activity_main">Forecast</string>
     <string name="package_name">xyz.eastsea.forecast</string>
     <string name="custom_url_scheme">xyz.eastsea.forecast</string>
+    <string name="channel_results">Forecast results</string>
+    <string name="channel_results_description">Outcomes of forecasts you took part in and new questions from creators you follow.</string>
 </resources>

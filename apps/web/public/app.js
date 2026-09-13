@@ -10,9 +10,14 @@ import {createMarketClient,claimsInPoints,validateMarket} from './market-client.
 import {createWalletAuthClient} from './wallet-auth-client.mjs';
 import {initializeMobileWallet} from './mobile-wallet.mjs';
 import {registerNativeWallet,nativePluginAvailable,attestForecast} from './native-wallet.mjs';
+import {installNativeShare} from './native-share.mjs';
+import {installNativeLinks} from './native-links.mjs';
 import {createForecastTranslations,TRANSLATION_LANGUAGES} from './forecast-translation.mjs';
 
 initializeLocale();
+// Inside the Android shell the WebView lacks navigator.share; the bridge fills it in
+// before any share dialog is rendered so the existing buttons light up unchanged.
+const nativeShareInstalled=installNativeShare();
 let pendingWrites=0;
 let localePainting=false;
 const requestApi=createApi();
@@ -811,6 +816,9 @@ async function shareAction(action){
     }else if(action==='copy-caption'&&session.kind==='profile'){
       await copyText(`${session.caption}\n${session.url}`);
       toast(tr('ui.captionCopied'));
+    }else if(action==='download-share'&&session.file&&nativeShareInstalled){
+      // The WebView cannot save a blob download; the Android share sheet offers "Save" instead.
+      await shareAction('native-share');
     }else if(action==='download-share'&&session.file){
       const url=URL.createObjectURL(session.file);
       const link=document.createElement('a');link.href=url;link.download=session.file.name;
@@ -906,6 +914,7 @@ document.addEventListener('submit',async event=>{
   if(form.id==='profile-form')await withForm(form,'profile-error',async()=>{const data=await api('/api/me',{method:'PATCH',body:Object.fromEntries(new FormData(form))});state.user=data.user;updateAccount();toast(t('ui.nameUpdated'));void renderRoute();},t('ui.saving'));
 });
 window.addEventListener('popstate',()=>{void renderRoute();});
+installNativeLinks(url=>navigate(url));
 const authLoaded=api('/api/me').then(data=>{state.me=data;state.user=data.user;if(data.user&&data.points)acceptPoints(data.points,data.user.id);updateAccount();}).catch(()=>{state.user=null;resetPoints();});
 void api('/api/status').then(data=>{state.status=data;}).catch(()=>{});
 void renderRoute();

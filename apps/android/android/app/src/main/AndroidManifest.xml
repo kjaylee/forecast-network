@@ -19,6 +19,18 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Android App Links: forecast and creator pages open in the app once
+                 https://forecast.eastsea.xyz/.well-known/assetlinks.json verifies. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="forecast.eastsea.xyz" />
+                <data android:pathPrefix="/forecasts/" />
+                <data android:pathPrefix="/creators/" />
+                <data android:path="/activity" />
+                <data android:path="/explore" />
+            </intent-filter>
         </activity>
 
         <provider
@@ -33,4 +45,5 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
