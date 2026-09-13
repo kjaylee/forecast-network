@@ -143,6 +143,8 @@ class ForecastAutomation:
         if self.app.now_ms() < current.specification.close_at_ms:
             await self.app._mutate(current, LockEarly(trigger=trigger),
                 key='early:' + trigger.trigger_hash, extra=extra)
+            # The first community report that surfaced this exact retained evidence earns the fixed reward.
+            await self.app.reward_evidence_report(forecast_id, [evidence.content_sha256 for evidence in trigger.evidence])
         else:
             # A delayed accounting correction cannot backdate an early lock.
             # The ordinary lifecycle still waits for its original deadline.

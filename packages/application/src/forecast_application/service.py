@@ -81,7 +81,7 @@ from .points import PointsService, reservation_sql, settlement_sql
 from .resolution_timing import ResolutionTiming
 from .service_billing import SandboxServiceBilling
 from .solana_registry import SolanaRegistry, registry_enable_sql, registry_intent_sql
-from .sources import Artifact, SourceUnavailable
+from .sources import Artifact, SourceRejected, SourceUnavailable, validate_public_url
 
 HOUR_MS = 3_600_000
 DAY_MS = 24 * HOUR_MS
@@ -89,6 +89,7 @@ CHALLENGE_MS = 48 * HOUR_MS
 MAX_ARTIFACT_BYTES = 524288
 MAX_DAILY_AI_CALLS = 240
 MAX_DAILY_USER_AI_CALLS = 10
+EVIDENCE_REWARD_POINTS = 100
 AI_WORKFLOW_TIMEOUT_SECONDS = 240
 LEASE_MS = 300000
 _T = TypeVar("_T")
@@ -900,7 +901,12 @@ class Application:
         item["earlyResolution"] = self._early_projection(forecast)
         if self.registry is not None:
             item["chain"] = await self.registry.status(forecast_id)
+        reports = await self.db.first(
+            "SELECT COUNT(*) AS n,(SELECT status FROM evidence_reports WHERE forecast_id=? AND user_id=? ORDER BY created_at DESC LIMIT 1) AS mine "
+            "FROM evidence_reports WHERE forecast_id=?", (forecast_id, user_id or "", forecast_id))
         return {"forecast": item, "market": await self.markets.get(forecast_id), "resolution": resolution, "disputes": disputes, "audit": audit,
+                "evidenceReports": {"count": reports["n"] if reports else 0, "mine": reports["mine"] if reports else None,
+                                    "reward": EVIDENCE_REWARD_POINTS},
                 "eligibility": await self.eligibility_status(forecast_id, user_id),
                 "points": await self.points.summary(user_id) if user_id else None,
                 "stake": await self.points.position(user_id, forecast_id) if user_id else None,
@@ -1169,8 +1175,92 @@ class Application:
             "followerCount": followers["n"] if followers else 0, "reputation": await self.reputation(creator_id)},
             "forecasts": [projections.card(row) for row in rows], "isFollowing": following is not None}
 
-    async def seed(self, question: str, creator_name: str = "Forecast Editorial") -> dict[str, Any]:
-        """Operator-only caller; creates genuine compiler-reviewed questions, no votes."""
+    async def report_evidence(self, user_id: str, forecast_id: str, url: str) -> dict[str, Any]:
+        """A forecaster reports an official announcement that may settle an open question.
+
+        The URL must belong to one of the question's published official sources. Supported
+        publishers are fetched immediately and enter the same hold-before-review path as the
+        automatic watcher; other official sources are recorded for operator review. Reports
+        never resolve anything by themselves.
+        """
+        await self._user(user_id)
+        forecast = await self._forecast(forecast_id)
+        if forecast.state not in {LifecycleState.OPEN, LifecycleState.LOCKED}:
+            raise AppError(409, "evidence_report_closed", "This forecast is no longer accepting evidence reports.")
+        if type(url) is not str or len(url) > 2048:
+            raise invalid()
+        try:
+            host = validate_public_url(url, official=True)
+        except SourceRejected as exc:
+            raise AppError(400, "evidence_report_url", "Report a public https page on one of this question's official sources.") from exc
+        allowed = {validate_public_url(source.url, official=True)
+                   for source in forecast.specification.source_policy.primary_sources if source.is_official}
+        if host not in allowed:
+            raise AppError(400, "evidence_report_source", "Only the question's published official sources can be reported.")
+        await self.rate_limit("evidence-report:" + user_id, 10, DAY_MS)
+        existing = await self.db.first("SELECT id,status FROM evidence_reports WHERE forecast_id=? AND user_id=? AND url=?",
+                                       (forecast_id, user_id, url))
+        if existing:
+            return {"reportId": existing["id"], "status": existing["status"], "duplicate": True}
+        report_id, now = "er_" + self.random_token()[:24], self.now_ms()
+        await self.db.execute("INSERT INTO evidence_reports(id,forecast_id,user_id,url,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?)",
+                              (report_id, forecast_id, user_id, url, "received", now, now))
+        status = "received"
+        observation = None
+        watch = self.automation.watch
+        if watch is not None:
+            # The reported page hangs off the publisher feed the watcher would poll for this
+            # source, whether or not a keyword binding exists yet.
+            from .automation import publisher_feed_url
+            publisher = next(source.url for source in forecast.specification.source_policy.primary_sources
+                             if source.is_official and validate_public_url(source.url, official=True) == host)
+            index_url = publisher_feed_url(publisher)
+            index_id = "publisher-" + hashlib.sha256(index_url.encode()).hexdigest()[:32]
+            try:
+                await watch.register(index_id, index_url, kind="index")
+                observation = await watch.ingest_report(forecast_id, url, index_id=index_id)
+            except ValueError:
+                observation = None
+            if observation is not None:
+                held = await self.participation_holds.active(forecast_id)
+                status = "held" if held else "unrelated"
+                await self.db.execute("UPDATE evidence_reports SET article_id=?,observation_id=?,artifact_hash=?,status=?,updated_at=? WHERE id=?",
+                                      ("article-" + hashlib.sha256(url.encode()).hexdigest()[:32], observation["id"],
+                                       observation.get("artifactHash"), status, self.now_ms(), report_id))
+        return {"reportId": report_id, "status": status, "duplicate": False}
+
+    async def reward_evidence_report(self, forecast_id: str, evidence_hashes: Sequence[str]) -> dict[str, Any] | None:
+        """Credit the earliest held report whose retained evidence the accepted trigger cites."""
+        if not evidence_hashes:
+            return None
+        placeholders = ",".join("?" for _ in evidence_hashes)
+        report = await self.db.first(
+            "SELECT r.* FROM evidence_reports r WHERE r.forecast_id=? AND r.status='held' AND r.artifact_hash IN (" + placeholders + ") "
+            "AND NOT EXISTS(SELECT 1 FROM point_evidence_rewards w WHERE w.forecast_id=r.forecast_id) ORDER BY r.created_at,r.id LIMIT 1",
+            (forecast_id, *evidence_hashes))
+        if report is None:
+            return None
+        account = await self.db.first("SELECT available,committed FROM point_accounts WHERE user_id=?", (report["user_id"],))
+        if account is None:
+            return None
+        now = self.now_ms()
+        await self.db.batch((
+            ("UPDATE point_accounts SET available=available+?,updated_at=? WHERE user_id=?", (EVIDENCE_REWARD_POINTS, now, report["user_id"])),
+            ("INSERT INTO point_evidence_rewards(id,report_id,user_id,forecast_id,amount,available_after,committed_after,created_at) "
+             "VALUES(?,?,?,?,?,?,?,?)", ("pr_" + self.random_token()[:24], report["id"], report["user_id"], forecast_id,
+                                       EVIDENCE_REWARD_POINTS, account["available"] + EVIDENCE_REWARD_POINTS, account["committed"], now)),
+            ("UPDATE evidence_reports SET status='rewarded',updated_at=? WHERE id=?", (now, report["id"])),
+        ))
+        return {"reportId": report["id"], "userId": report["user_id"], "amount": EVIDENCE_REWARD_POINTS}
+
+    async def seed(self, question: str, creator_name: str = "Forecast Editorial", *,
+                   uncertainty_band: tuple[int, int] | None = (15, 85)) -> dict[str, Any]:
+        """Operator-only caller; creates genuine compiler-reviewed questions, no votes.
+
+        Editorial questions must be genuinely open: when the compiler's own forecast
+        falls outside the uncertainty band the draft is discarded instead of published,
+        so "will there be a new version" style questions never reach the feed.
+        """
         creator = await self.db.first("SELECT id FROM users WHERE id='system_editorial'")
         if creator is None:
             await self.db.execute(
@@ -1184,6 +1274,13 @@ class Application:
         if previous:
             return {"forecast": await self._card(previous["forecast_id"])}
         draft = await self.compile_forecast(creator["id"], question)
+        probability = (draft.get("aiForecast") or {}).get("probability")
+        if uncertainty_band is not None and isinstance(probability, (int, float)):
+            low, high = uncertainty_band
+            if not low <= probability <= high:
+                raise AppError(409, "seed_not_uncertain",
+                               f"The compiler already expects this outcome ({probability:.0f}% YES); "
+                               "editorial questions must be genuinely open.")
         return await self.publish_forecast(creator["id"], draft["draftId"], seed_key)
 
     async def adjudicate_forecast(self, forecast_id: str, resolution: Resolution,

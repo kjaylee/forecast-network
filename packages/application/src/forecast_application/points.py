@@ -144,7 +144,7 @@ class PointsService:
         # Older migration snapshots remain readable during controlled upgrades; one probe covers all optional tables.
         installed = {row["name"] for row in await self.db.all(
             "SELECT name FROM sqlite_master WHERE type='table' AND name IN "
-            "('market_account_ledger','point_eligibility_adjustments','market_fill_voids')")}
+            "('market_account_ledger','point_eligibility_adjustments','market_fill_voids','point_evidence_rewards')")}
         markets_installed = "market_account_ledger" in installed
         eligibility_installed = "point_eligibility_adjustments" in installed
         voids_installed = "market_fill_voids" in installed
@@ -161,6 +161,9 @@ class PointsService:
                 "e.available_delta,e.committed_delta,e.available_after,e.committed_after,e.old_amount,"
                 "MAX(0,e.available_delta),e.forecast_id,e.created_at FROM point_eligibility_adjustments e "
                 "WHERE e.user_id=a.user_id AND e.available_delta!=0 ")
+        if "point_evidence_rewards" in installed:
+            history += ("UNION ALL SELECT w.id,'evidence_reward',w.amount,0,w.available_after,w.committed_after,0,w.amount,"
+                        "w.forecast_id,w.created_at FROM point_evidence_rewards w WHERE w.user_id=a.user_id ")
         if voids_installed:
             history += ("UNION ALL SELECT 'market-void:'||v.fill_id,'market_void_refund',v.spend,-v.spend,"
                 "v.available_before+v.spend,v.committed_before-v.spend,v.spend,v.spend,v.forecast_id,v.created_at "

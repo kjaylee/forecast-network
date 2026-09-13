@@ -693,7 +693,7 @@ class Default(WorkerEntrypoint):
         if path == "/api/forecasts" and method == "POST":
             return api_response(await app.publish_forecast(user_id, body.get("draftId", ""),
                                                           body.get("idempotencyKey", "")), status=201)
-        match = re.fullmatch(r"/api/forecasts/([A-Za-z0-9_.:-]{1,128})/(forecast|disputes|comments|share)", path)
+        match = re.fullmatch(r"/api/forecasts/([A-Za-z0-9_.:-]{1,128})/(forecast|disputes|comments|share|evidence)", path)
         if match and method == "POST":
             identifier, action = match.groups()
             if action == "forecast":
@@ -711,6 +711,8 @@ class Default(WorkerEntrypoint):
             elif action == "comments":
                 result = await app.add_comment(user_id, identifier, body.get("text", ""),
                                                body.get("idempotencyKey", ""))
+            elif action == "evidence":
+                result = await app.report_evidence(user_id, identifier, body.get("url", ""))
             else:
                 result = await app.record_share(identifier, user_id)
             return api_response(result)

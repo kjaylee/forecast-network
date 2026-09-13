@@ -114,9 +114,10 @@ class AutomationIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sources, [{'url': 'https://www.apple.com/newsroom/rss-feed.rss'}])
         self.assertEqual(await self.app._forecast(card['id']), original)
 
-    async def reviewed_trigger(self, *, basis='published_instant', retain=True):
+    async def reviewed_trigger(self, *, basis='published_instant', retain=True, url=None, content=SOURCE_BODY):
         record = await self.app._forecast(self.fid)
-        evidence = model.evidence(record.specification, collected_at_ms=self.base+100, content=SOURCE_BODY)
+        evidence = model.evidence(record.specification, collected_at_ms=self.base+100, content=content,
+                                  **({'url': url} if url else {}))
         verification = model.source_verification(evidence)
         observed = self.base + 110
         event = observed if basis == 'observed_upper_bound' else self.base + 90
@@ -133,7 +134,7 @@ class AutomationIntegrationTests(unittest.IsolatedAsyncioTestCase):
             event_at_ms=event, observed_at_ms=observed, event_time_basis=basis,
             qualification=explanation, qualifier=qualifier, counter_qualifier=counter)
         if retain:
-            await self.db.batch(self.app._artifact_sql((Artifact(evidence.content_sha256, 'source', SOURCE_BODY, 'text/plain'),)))
+            await self.db.batch(self.app._artifact_sql((Artifact(evidence.content_sha256, 'source', content, 'text/plain'),)))
         self.now = self.base + 200
         return t
 
@@ -502,3 +503,90 @@ class PublisherFeedMappingTests(unittest.TestCase):
         article = "https://news.microsoft.com/source/2026/09/09/example/"
         self.assertEqual(publisher_feed_url(article), article)
         self.assertEqual(publisher_feed_url("https://blogs.microsoft.com/"), "https://blogs.microsoft.com/")
+
+
+class EvidenceReportTests(AutomationIntegrationTests):
+    """A forecaster's report enters the watcher path, pauses entry, and earns the reward once accepted."""
+
+    ARTICLE = "https://www.apple.com/newsroom/2026/09/product-x-announced/"
+    ARTICLE_HTML = ('<html><head><title>Apple announces Product X</title>'
+                    '<meta property="article:published_time" content="2027-01-15T14:00:00Z"></head>'
+                    '<body><main><h1>Apple announces Product X</h1><p>Retained official local-test announcement: '
+                    'Acme announced Product X, available to order today from apple.com.</p></main></body></html>')
+
+    async def apple_forecast_with_watcher(self):
+        from dataclasses import replace
+
+        from forecast_application.automation import ForecastAutomation
+        from forecast_application.sources import SourceCollector, TextResponse
+        original_compile = self.ai.compile_question
+
+        async def apple_compile(question, candidates, now_ms):
+            result = await original_compile(question, candidates, now_ms)
+            policy = result.specification.source_policy
+            source = replace(policy.primary_sources[0], url="https://www.apple.com/newsroom", is_official=True)
+            spec = replace(result.specification, source_policy=replace(policy, primary_sources=(source,)))
+            return CompileResult(spec, model.validation(spec, validated_at_ms=now_ms), result.artifacts)
+        self.ai.compile_question = apple_compile
+        draft = await self.app.compile_forecast(self.uid, "Will Apple officially announce Product X before the deadline?")
+        card = (await self.app.publish_forecast(self.uid, draft["draftId"], "publish-report-test"))["forecast"]
+        self.fetched = []
+
+        async def fetch(url, method, headers):
+            self.fetched.append(url)
+            if url == self.ARTICLE:
+                return TextResponse(200, self.ARTICLE_HTML, {"content-type": "text/html"})
+            return TextResponse(404, "", {"content-type": "text/plain"})
+        self.app.ai.collector = SourceCollector(fetch)
+        self.app.automation = ForecastAutomation(self.app, enabled=True)
+        await self.app.automation.bootstrap()
+        return card
+
+    async def test_report_holds_entry_then_accepted_trigger_rewards_the_first_reporter(self):
+        card = await self.apple_forecast_with_watcher()
+        fid = card["id"]
+        before = (await self.app.points.summary(self.other))["available"]
+        # Not an official publisher, an official publisher the question does not cite, then the real source.
+        with self.assertRaises(AppError) as raised:
+            await self.app.report_evidence(self.other, fid, "https://example.com/news/product-x")
+        self.assertEqual(raised.exception.code, "evidence_report_url")
+        with self.assertRaises(AppError) as raised:
+            await self.app.report_evidence(self.other, fid, "https://news.microsoft.com/source/2026/09/09/product-x/")
+        self.assertEqual(raised.exception.code, "evidence_report_source")
+        report = await self.app.report_evidence(self.other, fid, self.ARTICLE)
+        self.assertEqual(report["status"], "held")
+        self.assertEqual(self.fetched, [self.ARTICLE])
+        self.assertIsNotNone(await self.app.participation_holds.active(fid))
+        with self.assertRaises(AppError) as blocked:
+            await self.app.submit_forecast(self.uid, fid, "YES", 70, card["revision"], "after-report", 0)
+        self.assertEqual(blocked.exception.code, "participation_on_hold")
+        self.assertEqual((await self.app.report_evidence(self.other, fid, self.ARTICLE))["duplicate"], True)
+        detail = await self.app.forecast_detail(fid, self.other)
+        self.assertEqual(detail["evidenceReports"], {"count": 1, "mine": "held", "reward": 100})
+        # The review accepts the very evidence the report retained.
+        self.fid = fid
+        record = await self.app._forecast(fid)
+        evidence = model.evidence(record.specification, collected_at_ms=self.base+100, content=self.ARTICLE_HTML, url=self.ARTICLE)
+        stored = await self.db.first("SELECT artifact_hash FROM evidence_reports WHERE id=?", (report["reportId"],))
+        self.assertEqual(stored["artifact_hash"], evidence.content_sha256)
+        trigger = await self.reviewed_trigger(url=self.ARTICLE, content=self.ARTICLE_HTML)
+        # The review job records its accepted verdict (as production does) before calling accept.
+        await self.db.execute("UPDATE official_source_reviews SET state='reviewed',result=? WHERE forecast_id=?",
+                              (json.dumps({"accepted": True, "trigger": to_dict(trigger)}, sort_keys=True, separators=(",", ":")), fid))
+        await self.accept(trigger)
+        self.assertEqual((await self.app.points.summary(self.other))["available"], before + 100)
+        self.assertEqual((await self.db.first("SELECT status FROM evidence_reports WHERE id=?", (report["reportId"],)))["status"], "rewarded")
+        entries = (await self.app.points.summary(self.other))["entries"]
+        self.assertEqual(entries[0]["kind"], "evidence_reward")
+        self.assertEqual(entries[0]["amount"], 100)
+        # Accepting again (idempotent replay) cannot pay twice.
+        await self.accept(trigger)
+        self.assertEqual((await self.app.points.summary(self.other))["available"], before + 100)
+
+    async def test_reports_close_with_the_question_and_are_rate_limited(self):
+        card = await self.apple_forecast_with_watcher()
+        for index in range(10):
+            await self.app.report_evidence(self.other, card["id"], f"https://www.apple.com/newsroom/2026/09/other-{index}/")
+        with self.assertRaises(AppError) as raised:
+            await self.app.report_evidence(self.other, card["id"], "https://www.apple.com/newsroom/2026/09/eleventh/")
+        self.assertEqual(raised.exception.code, "rate_limited")

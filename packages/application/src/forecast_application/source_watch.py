@@ -25,6 +25,7 @@ from .sources import (
     Artifact,
     SourceCollector,
     SourceRejected,
+    SourceUnavailable,
     TextResponse,
     validate_public_url,
 )
@@ -300,6 +301,34 @@ class SourceWatch:
         rows = await self.db.all("SELECT body FROM official_source_observations ORDER BY observed_at DESC LIMIT 100")
         return [value for row in rows if urlsplit((value := json.loads(row["body"]))["url"]).hostname in hosts
                 and relevant(value["excerpt"], families)]
+
+    async def ingest_report(self, forecast_id: str, url: str, *, index_id: str) -> dict[str, Any] | None:
+        """Register a reported article under its watched publisher, fetch it now and queue
+        review for this forecast regardless of keyword relevance. Returns the observation,
+        or None when the fetch yields nothing reviewable."""
+        article_id = "article-" + _hash(url)[:32]
+        await self.register(article_id, url, kind="article", interval_ms=3600000, parent_id=index_id, pinned=True)
+        lease = self.token()
+        claim = await self.db.execute("UPDATE official_watch_sources SET lease_token=?,lease_until=? WHERE id=? AND lease_until<=? RETURNING id",
+                                      (lease, self.now_ms()+LEASE_MS, article_id, self.now_ms()))
+        if not claim.get("results"):
+            return None
+        source = await self.db.first("SELECT * FROM official_watch_sources WHERE id=?", (article_id,))
+        if source is None:
+            return None
+        try:
+            await self._poll(source, lease)
+        except (SourceRejected, SourceUnavailable, _NotModified):
+            pass
+        finally:
+            await self.db.execute("UPDATE official_watch_sources SET lease_token=NULL,lease_until=0 WHERE id=? AND lease_token=?", (article_id, lease))
+        row = await self.db.first("SELECT body FROM official_source_observations WHERE source_id=? AND url=? ORDER BY observed_at DESC LIMIT 1",
+                                  (index_id, url))
+        if row is None:
+            return None
+        observation: dict[str, Any] = json.loads(row["body"])
+        await self._enqueue(forecast_id, observation)
+        return observation
 
     async def _enqueue(self, forecast_id: str, observation: dict[str, Any]) -> None:
         forecast = await self.load_forecast(forecast_id)
