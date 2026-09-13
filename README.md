@@ -102,6 +102,29 @@ See [runtime architecture](docs/architecture/autonomous-runtime.md) and
 The earlier economics proposal (private research record) is not part of this repository. Advertising is excluded; question creation is still
 free, no payment adapter is enabled, and operating costs remain operator-funded.
 
+## Solana Seeker app (CLOCK IN hackathon)
+
+Forecast ships as a native Android shell for the Solana Seeker, built on
+Mobile Wallet Adapter and the Seeker's Seed Vault. Everything below runs on a
+real device today.
+
+| | |
+| --- | --- |
+| APK | [forecast-0.9.0.apk](https://github.com/kjaylee/forecast-network/releases/download/v0.9.0/forecast-0.9.0.apk) (signed release, `xyz.eastsea.forecast`) |
+| Source | [`apps/android`](apps/android) — Capacitor shell, [`MobileWalletPlugin.kt`](apps/android/android/app/src/main/java/xyz/eastsea/forecast/MobileWalletPlugin.kt), [`ResultNotifications.kt`](apps/android/android/app/src/main/java/xyz/eastsea/forecast/ResultNotifications.kt) |
+| Docs | [docs/android.md](docs/android.md) |
+
+What the Seeker does that the browser cannot:
+
+- **Sign in with Seed Vault** — MWA `signMessagesDetached` ownership proof; no password, no recovery code, keys never leave the vault.
+- **Stamp a forecast on-chain** — after recording a forecast, the wallet co-signs a Devnet memo carrying the receipt hash. The service pays the fee as a partially signed transaction; the phone fetches the blockhash, submits and reports the signature (`packages/application/.../attestation.py`). Nothing of value moves and the forecast itself stays private.
+- **Seeker Genesis Token badge** — the service checks mainnet for the Token-2022 SGT in the signed-in wallet and shows a verified Seeker badge on the public record (`seeker.py`).
+- **Native share sheet, App Links, result notifications** — record-card PNGs go straight to the Android share sheet; `forecast.eastsea.xyz/forecasts/*` links open in the app; a background job turns finalized outcomes into local notifications.
+
+Everything else — multilingual questions, probability forecasts, points, evidence
+reports, AI-assisted resolution with a 48-hour challenge window — is the same
+production service the web uses.
+
 ## Run the checks
 
 Python 3.11 or newer is required. The domain and its test suite have **no third-party
