@@ -69,6 +69,7 @@ from forecast_domain.models import (
 from forecast_domain.serialization import COMMITMENT_PREFIX
 
 from . import projections
+from .attestation import Attestations
 from .auth import Authentication, public_user, text
 from .automation import ForecastAutomation
 from .database import Database, Statement
@@ -109,7 +110,9 @@ class Application:
     def __init__(self, db: Database, ai: Any, *, now_ms: Callable[[], int],
                  token_hash: Callable[[str], str], random_token: Callable[[], str],
                  source_watch_enabled: bool = False, live_markets_enabled: bool = False,
-                 billing_sandbox_enabled: bool = False, registry: SolanaRegistry | None = None):
+                 billing_sandbox_enabled: bool = False, registry: SolanaRegistry | None = None,
+                 attestation_relayer: bytes | None = None,
+                 attestation_sign: Callable[[bytes], Awaitable[bytes]] | None = None):
         self.db, self.ai, self.now_ms = db, ai, now_ms
         self.registry = registry
         self.auth = Authentication(db, now_ms, token_hash, random_token)
@@ -122,6 +125,8 @@ class Application:
         self.automation = ForecastAutomation(self, enabled=source_watch_enabled)
         self.markets = PointMarkets(db, now_ms, self.random_token, live_enabled=live_markets_enabled and self.automation.enabled)
         self.billing = SandboxServiceBilling(db, now_ms, enabled=billing_sandbox_enabled)
+        self.attestations = Attestations(db, relayer=attestation_relayer, sign=attestation_sign, now_ms=now_ms,
+                                         random_token=self.random_token, rate_limit=self.rate_limit)
         if ai is not None:
             ai.read_artifact = self.read_artifact
 
@@ -907,6 +912,7 @@ class Application:
         return {"forecast": item, "market": await self.markets.get(forecast_id), "resolution": resolution, "disputes": disputes, "audit": audit,
                 "evidenceReports": {"count": reports["n"] if reports else 0, "mine": reports["mine"] if reports else None,
                                     "reward": EVIDENCE_REWARD_POINTS},
+                "attestation": await self.attestations.status(user_id, forecast_id),
                 "eligibility": await self.eligibility_status(forecast_id, user_id),
                 "points": await self.points.summary(user_id) if user_id else None,
                 "stake": await self.points.position(user_id, forecast_id) if user_id else None,

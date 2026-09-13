@@ -14,7 +14,14 @@ import com.solana.mobilewalletadapter.clientlib.ConnectionIdentity
 import com.solana.mobilewalletadapter.clientlib.MobileWalletAdapter
 import com.solana.mobilewalletadapter.clientlib.Solana
 import com.solana.mobilewalletadapter.clientlib.TransactionResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * Message-signing-only bridge to the Mobile Wallet Adapter.
@@ -108,6 +115,97 @@ class MobileWalletPlugin : Plugin() {
         }
     }
 
+    /**
+     * Devnet RPC from the handset. Cloudflare's egress is refused by public Solana RPC, so
+     * the phone fetches the blockhash and submits the wallet-signed transaction itself.
+     */
+    @PluginMethod
+    fun latestBlockhash(call: PluginCall) {
+        activity.lifecycleScope.launch(Dispatchers.IO) {
+            val outcome: Result<JSObject> = runCatching {
+                val result = rpc("getLatestBlockhash", JSONArray().put(JSONObject().put("commitment", "confirmed"))) as JSONObject
+                val value = result.getJSONObject("value")
+                JSObject().put("blockhash", value.getString("blockhash"))
+                    .put("lastValidBlockHeight", value.getLong("lastValidBlockHeight"))
+            }
+            outcome.onSuccess { call.resolve(it) }
+                .onFailure { call.reject(it.message ?: "RPC unavailable", "ERROR_RPC_UNAVAILABLE") }
+        }
+    }
+
+    /**
+     * The wallet co-signs a transaction the service already signed as fee payer; the phone
+     * then submits it and waits briefly for confirmation. No transaction is ever built or
+     * altered here: bytes in, signature out.
+     */
+    @PluginMethod
+    fun signAndSendTransaction(call: PluginCall) {
+        val encoded = call.getString("transaction")
+        val transaction = try {
+            Base64.decode(encoded, Base64.DEFAULT)
+        } catch (e: IllegalArgumentException) {
+            call.reject("Transaction must be base64", "ERROR_INVALID_TRANSACTION")
+            return
+        }
+        if (transaction.isEmpty() || transaction.size > 1232) {
+            call.reject("Transaction size is out of range", "ERROR_INVALID_TRANSACTION")
+            return
+        }
+        activity.lifecycleScope.launch {
+            val result = adapter.transact(sender) { _ ->
+                signTransactions(arrayOf(transaction))
+            }
+            when (result) {
+                is TransactionResult.Success -> {
+                    val signed = result.payload.signedPayloads.firstOrNull()
+                    if (signed == null) {
+                        call.reject("Wallet returned no signed transaction", "ERROR_SIGNING_FAILED")
+                        return@launch
+                    }
+                    val outcome: Result<JSObject> = withContext(Dispatchers.IO) {
+                        runCatching {
+                            val signature = rpc("sendTransaction", JSONArray()
+                                .put(Base64.encodeToString(signed, Base64.NO_WRAP))
+                                .put(JSONObject().put("encoding", "base64").put("preflightCommitment", "confirmed")
+                                    .put("maxRetries", 3))).toString()
+                            var slot: Long? = null
+                            for (attempt in 0 until 20) {
+                                val statuses = rpc("getSignatureStatuses", JSONArray().put(JSONArray().put(signature))) as JSONObject
+                                val status = statuses.getJSONArray("value").optJSONObject(0)
+                                if (status != null && !status.isNull("confirmationStatus") && status.getString("confirmationStatus") != "processed") {
+                                    slot = status.optLong("slot"); break
+                                }
+                                delay(1500)
+                            }
+                            val response = JSObject().put("signature", signature)
+                            if (slot != null) response.put("slot", slot) else response.put("slot", JSONObject.NULL)
+                            response
+                        }
+                    }
+                    outcome.onSuccess { call.resolve(it) }
+                        .onFailure { call.reject(it.message ?: "Submission failed", "ERROR_RPC_UNAVAILABLE") }
+                }
+                is TransactionResult.NoWalletFound ->
+                    call.reject("No Mobile Wallet Adapter wallet is installed", "ERROR_WALLET_NOT_FOUND")
+                is TransactionResult.Failure ->
+                    call.reject(result.e.message ?: "Signing failed", "ERROR_SIGNING_FAILED")
+            }
+        }
+    }
+
+    private fun rpc(method: String, params: JSONArray): Any {
+        val connection = (URL(RPC_URL).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"; connectTimeout = 15_000; readTimeout = 20_000; doOutput = true
+            setRequestProperty("Content-Type", "application/json")
+        }
+        val body = JSONObject().put("jsonrpc", "2.0").put("id", 1).put("method", method).put("params", params)
+        connection.outputStream.use { it.write(body.toString().toByteArray()) }
+        val text = connection.inputStream.bufferedReader().use { it.readText() }
+        val json = JSONObject(text)
+        if (json.has("error")) throw IllegalStateException("RPC " + method + ": " + json.getJSONObject("error").optString("message"))
+        return json.get("result")
+    }
+
     @PluginMethod
     fun deauthorize(call: PluginCall) {
         authorized = emptyList()
@@ -136,5 +234,6 @@ class MobileWalletPlugin : Plugin() {
         const val ICON_PATH = "favicon.svg"
         const val IDENTITY_NAME = "Forecast"
         const val MAX_MESSAGE_BYTES = 4096
+        const val RPC_URL = "https://api.devnet.solana.com"
     }
 }

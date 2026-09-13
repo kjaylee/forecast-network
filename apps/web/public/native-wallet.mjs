@@ -84,3 +84,19 @@ export function registerNativeWallet(root=globalThis){
   root.addEventListener('wallet-standard:app-ready',event=>{if(typeof event.detail?.register==='function')register(event.detail);});
   return true;
 }
+
+/** Stamp the signed-in forecaster's receipt on Devnet through the native bridge.
+ * The phone fetches the blockhash and submits; the service signs as fee payer. */
+export async function attestForecast(forecastId,{api,plugin=globalThis.Capacitor?.Plugins?.MobileWallet}={}){
+  if(!plugin)throw Object.assign(new Error('Native wallet bridge unavailable'),{code:'ERROR_WALLET_NOT_FOUND'});
+  let recent;
+  try{recent=await plugin.latestBlockhash();}catch(error){throw bridgeError(error);}
+  if(typeof recent?.blockhash!=='string')throw new Error('Devnet blockhash unavailable');
+  const prepared=await api(`/api/forecasts/${encodeURIComponent(forecastId)}/attest/prepare`,{method:'POST',body:{blockhash:recent.blockhash}});
+  let sent;
+  try{sent=await plugin.signAndSendTransaction({transaction:prepared.transaction});}catch(error){throw bridgeError(error);}
+  if(typeof sent?.signature!=='string')throw new Error('Transaction signature unavailable');
+  const body={attestationId:prepared.attestationId,signature:sent.signature};
+  if(Number.isInteger(sent.slot))body.slot=sent.slot;
+  return api(`/api/forecasts/${encodeURIComponent(forecastId)}/attest/confirm`,{method:'POST',body});
+}

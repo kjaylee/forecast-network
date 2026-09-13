@@ -38,21 +38,24 @@ public class MainActivity extends BridgeActivity {
         View webView = getBridge().getWebView();
         View root = getWindow().getDecorView();
         // Top strip continues the page ground; bottom strip continues the tab bar surface.
-        root.setBackground(new SystemBarBackground(PAGE_BACKGROUND, TAB_BAR_BACKGROUND));
+        final SystemBarBackground bars = new SystemBarBackground(PAGE_BACKGROUND, TAB_BAR_BACKGROUND);
+        root.setBackground(bars);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), root);
         controller.setAppearanceLightStatusBars(true);
         controller.setAppearanceLightNavigationBars(true);
         ViewCompat.setOnApplyWindowInsetsListener(webView, (view, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            Insets insetsBars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
             ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
-            params.topMargin = bars.top;
-            params.bottomMargin = Math.max(bars.bottom, ime.bottom);
-            params.leftMargin = bars.left;
-            params.rightMargin = bars.right;
+            params.topMargin = insetsBars.top;
+            params.bottomMargin = Math.max(insetsBars.bottom, ime.bottom);
+            params.leftMargin = insetsBars.left;
+            params.rightMargin = insetsBars.right;
             view.setLayoutParams(params);
-            ((SystemBarBackground) root.getBackground()).setSplit(root.getHeight() - bars.bottom);
+            // The theme may have swapped the decor background back to a plain colour; keep ours.
+            if (root.getBackground() != bars) root.setBackground(bars);
+            bars.setSplit(root.getHeight() - insetsBars.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(webView);

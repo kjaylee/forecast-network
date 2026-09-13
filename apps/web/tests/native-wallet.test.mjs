@@ -63,3 +63,17 @@ test('registration only happens inside the native shell and reaches discovery ei
   registerNativeWallet(lateRoot);                      // shell registers first
   assert.equal(discoverWallets(late).get().length,1);
 });
+
+test('attestation orchestrates blockhash, prepare, wallet signing, submission and confirmation in order',async()=>{
+  const {attestForecast}=await import('../public/native-wallet.mjs');
+  const calls=[];
+  const plugin={async latestBlockhash(){calls.push('blockhash');return {blockhash:'H'.repeat(43),lastValidBlockHeight:10};},
+    async signAndSendTransaction({transaction}){calls.push(['sign',transaction]);return {signature:'S'.repeat(87),slot:42};}};
+  const api=async(path,options)=>{calls.push([path,options.body]);return path.endsWith('/prepare')?{attestationId:'at_1',transaction:'dHg='}:{status:'submitted',signature:options.body.signature};};
+  const result=await attestForecast('f_1',{api,plugin});
+  assert.deepEqual(calls,['blockhash',['/api/forecasts/f_1/attest/prepare',{blockhash:'H'.repeat(43)}],['sign','dHg='],['/api/forecasts/f_1/attest/confirm',{attestationId:'at_1',signature:'S'.repeat(87),slot:42}]]);
+  assert.equal(result.status,'submitted');
+  await assert.rejects(attestForecast('f_1',{api,plugin:null}),error=>error.code==='ERROR_WALLET_NOT_FOUND');
+  const rejecting={...plugin,async signAndSendTransaction(){throw {message:'declined',code:'ERROR_AUTHORIZATION_FAILED'};}};
+  await assert.rejects(attestForecast('f_1',{api,plugin:rejecting}),error=>error.code==='ERROR_AUTHORIZATION_FAILED');
+});

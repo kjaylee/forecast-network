@@ -280,7 +280,20 @@ class Default(WorkerEntrypoint):
             live_markets_enabled=str(getattr(self.env, "LIVE_MARKETS_ENABLED", "false")).lower() == "true",
             billing_sandbox_enabled=str(getattr(self.env, "BILLING_SANDBOX_ENABLED", "false")).lower() == "true",
             registry=self.registry(db),
+            attestation_relayer=self.relayer_public_key(),
+            attestation_sign=self.sign_registry_message if self.relayer_public_key() else None,
         )
+
+    def relayer_public_key(self) -> bytes | None:
+        """The hot relayer pays attestation fees; only present when its seed is deployed."""
+        relayer = str(getattr(self.env, "SOLANA_RELAYER", "") or "")
+        seed = getattr(self.env, "SOLANA_RELAYER_SEED", None)
+        if not relayer or not isinstance(seed, str) or not seed:
+            return None
+        try:
+            return base58_decode(relayer, length=32)
+        except ValueError:
+            return None
 
     def gemini_relay(self) -> tuple[str, str] | None:
         proxy = str(getattr(self.env, "AI_PROXY_URL", "") or "")
@@ -693,6 +706,11 @@ class Default(WorkerEntrypoint):
         if path == "/api/forecasts" and method == "POST":
             return api_response(await app.publish_forecast(user_id, body.get("draftId", ""),
                                                           body.get("idempotencyKey", "")), status=201)
+        attest = re.fullmatch(r"/api/forecasts/([A-Za-z0-9_.:-]{1,128})/attest/(prepare|confirm)", path)
+        if attest and method == "POST":
+            if attest[2] == "prepare":
+                return api_response(await app.attestations.prepare(user_id, attest[1], body), status=201)
+            return api_response(await app.attestations.confirm(user_id, attest[1], body))
         match = re.fullmatch(r"/api/forecasts/([A-Za-z0-9_.:-]{1,128})/(forecast|disputes|comments|share|evidence)", path)
         if match and method == "POST":
             identifier, action = match.groups()

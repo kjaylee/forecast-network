@@ -580,6 +580,13 @@ const rows = [
   ['evidenceReportUnrelated','The page was captured but did not change this question. Thank you.','페이지를 확보했지만 이 질문에는 영향이 없었습니다. 감사합니다.','ページを取得しましたが、この質問には影響しませんでした。ありがとうございます。','已擷取頁面，但未影響此問題。謝謝。'],
   ['evidenceReportRewarded','Your report settled this question early. Reward points were added to your balance.','회원님의 신고로 이 질문이 조기 확정되었습니다. 보상 포인트가 지급되었습니다.','あなたの報告によりこの質問は早期確定しました。報酬ポイントを付与しました。','您的回報讓此問題提前確定，獎勵點數已加入餘額。'],
   ['evidenceReportCount','{count} reports so far.','지금까지 신고 {count}건.','これまでの報告 {count}件。','目前共 {count} 筆回報。'],
+  ['attestTitle','Stamp your forecast on Solana','내 예측을 솔라나에 기록','予測をSolanaに刻む','將您的預測刻在 Solana 上'],
+  ['attestHint','Your Seeker wallet co-signs a Devnet memo carrying the commitment of the forecast you just recorded. The service pays the fee; nothing of value moves, and your choice stays private.','Seeker 지갑이 방금 기록한 예측의 약정 해시를 담은 Devnet 메모에 함께 서명합니다. 수수료는 서비스가 부담하고, 가치가 이동하지 않으며 선택 내용은 공개되지 않습니다.','Seekerウォレットが、記録した予測のコミットメントを含むDevnetメモに共同署名します。手数料はサービスが負担し、価値の移動はなく、選択内容は非公開のままです。','您的 Seeker 錢包會共同簽署一則含有預測承諾雜湊的 Devnet 備忘。手續費由服務支付，不移轉任何價值，您的選擇保持私密。'],
+  ['attestAction','Sign with Seeker wallet','Seeker 지갑으로 서명','Seekerウォレットで署名','以 Seeker 錢包簽署'],
+  ['attestWaiting','Waiting for the wallet and the Devnet confirmation…','지갑 서명과 Devnet 확정을 기다리는 중…','ウォレットの署名とDevnetの確定を待っています…','正在等待錢包簽署與 Devnet 確認…'],
+  ['attestStamped','Recorded on Solana Devnet.','솔라나 Devnet에 기록되었습니다.','Solana Devnetに記録されました。','已記錄至 Solana Devnet。'],
+  ['attestMemo','Memo carried by the transaction','트랜잭션에 담긴 메모','トランザクションに含まれるメモ','交易所含備忘'],
+  ['attestViewExplorer','View on Solana Explorer','Solana Explorer에서 보기','Solana Explorerで見る','在 Solana Explorer 檢視'],
   ['nameUpdated','Display name updated.','이름을 변경했습니다.','表示名を更新しました。','顯示名稱已更新。'],
   ['saving','Saving…','저장 중…','保存中…','正在儲存…'],
 ];
