@@ -2544,3 +2544,27 @@ dialog>.language-control {margin-bottom:8px}
 .market-quote{margin-block:20px 12px;font-variant-numeric:tabular-nums}.market-quote>div{display:flex;justify-content:space-between;gap:16px;padding-block:10px;border-bottom:1px solid #dce1e9}.market-quote dt{color:#626a7a}.market-quote dd{margin:0;text-align:end;font-weight:600;overflow-wrap:anywhere}.market-return dd{font-size:22px;color:#2456ed}.market-receipt{line-height:1.6}.market-panel .choice{min-height:44px}.market-panel #market-balance{font-size:13px;color:#626a7a;margin-block:12px}
 @media(max-width:480px){.market-panel{padding:18px}.market-input-row{flex-wrap:wrap}.market-input-row input{flex:0 1 90px}.market-input-row .button{min-width:140px;font-size:14px}.market-quote{font-size:14px}}
 .early-resolution a { color:var(--accent);font-size:13px;display:inline-flex;align-items:center;gap:6px;min-height:44px }
+
+/* Seeker ownership badge (mainnet-verified Seeker Genesis Token) */
+.seeker-status strong {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.seeker-status strong svg,
+.seeker-badge svg {
+  width:14px;
+  height:14px;
+}
+.seeker-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:2px 8px;
+  border-radius:999px;
+  background:var(--accent-soft, #e8edff);
+  color:var(--accent);
+  font-size:12px;
+  font-weight:600;
+  vertical-align:middle;
+}

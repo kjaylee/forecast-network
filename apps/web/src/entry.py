@@ -282,7 +282,44 @@ class Default(WorkerEntrypoint):
             registry=self.registry(db),
             attestation_relayer=self.relayer_public_key(),
             attestation_sign=self.sign_registry_message if self.relayer_public_key() else None,
+            mainnet_rpc=self.mainnet_rpc if self.mainnet_rpc_urls() else None,
         )
+
+    def mainnet_rpc_urls(self) -> list[str]:
+        """A keyed endpoint (secret) first, then the public failover list from the vars."""
+        keyed = getattr(self.env, "SOLANA_MAINNET_RPC_KEYED", None)
+        public = str(getattr(self.env, "SOLANA_MAINNET_RPC", "") or "")
+        urls = [str(keyed)] if isinstance(keyed, str) and keyed else []
+        return urls + [url.strip() for url in public.split(",") if url.strip()]
+
+    async def mainnet_rpc(self, method: str, params: list[Any]) -> Any:
+        """Read-only mainnet JSON-RPC. Public endpoints throttle Cloudflare egress, so each
+        configured URL is tried in turn and a throttled or failing one is skipped."""
+        body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params})
+        last: Exception | None = None
+        for url in self.mainnet_rpc_urls():
+            try:
+                response = await js_fetch(url, javascript({
+                    "method": "POST", "headers": {"Content-Type": "application/json"}, "body": body,
+                }))
+            except JsException as exc:
+                last = RuntimeError("mainnet RPC transport failed")
+                last.__cause__ = exc
+                continue
+            if response.status != 200:
+                print(json.dumps({"event": "mainnet_rpc_status", "method": method, "status": response.status,
+                                  "endpoint": urlsplit(url).hostname}))
+                last = RuntimeError(f"mainnet RPC status {response.status}")
+                continue
+            payload = json.loads(await response.text())
+            if "error" in payload:
+                code = (payload["error"] or {}).get("code") if isinstance(payload["error"], dict) else None
+                print(json.dumps({"event": "mainnet_rpc_error", "method": method, "code": code,
+                                  "endpoint": urlsplit(url).hostname}))
+                last = RuntimeError("mainnet RPC error " + str(code))
+                continue
+            return payload.get("result")
+        raise last or RuntimeError("no mainnet RPC endpoint is configured")
 
     def relayer_public_key(self) -> bytes | None:
         """The hot relayer pays attestation fees; only present when its seed is deployed."""
@@ -678,6 +715,9 @@ class Default(WorkerEntrypoint):
                                "Your signed-in profile changed. Reload your profile before sharing.")
             await app.rate_limit("profile-card:" + user_id, 10, 3600000)
             return api_response(await app.create_profile_card(user_id), status=201)
+        if path == "/api/seeker/verify" and method == "POST":
+            require_expected_user(body, user_id)
+            return api_response(await app.seeker.verify(user_id))
         if path == "/api/wallet" or path.startswith("/api/wallet/"):
             if method != "GET":
                 if str(getattr(self.env, "WALLET_LOGIN_REQUIRED", "true")).lower() == "true":

@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 from build_web import ROOT, STAGE, build
-from cloudflare_keychain import deployment_environment, secret
+from cloudflare_keychain import KEYCHAIN_SERVICES, deployment_environment, secret
 
 
 def run(command: list[str], *, cwd: Path, env: dict[str, str], input_text: str | None = None) -> None:
@@ -68,6 +68,9 @@ def main() -> None:
         if seed is None or base58(public_bytes(seed)) != config["vars"]["SOLANA_RELAYER"]:
             raise RuntimeError("Devnet relayer Keychain identity does not match deployment")
         payload["SOLANA_RELAYER_SEED"] = base64.b64encode(seed).decode("ascii")
+    # Optional keyed mainnet RPC (Helius/QuickNode/...): public endpoints throttle Cloudflare.
+    if "SOLANA_MAINNET_RPC_KEYED" in KEYCHAIN_SERVICES:
+        payload["SOLANA_MAINNET_RPC_KEYED"] = secret("SOLANA_MAINNET_RPC_KEYED")
     run([str(wrangler), "secret", "bulk"], cwd=STAGE, env=env, input_text=json.dumps(payload))
     del payload
     run([*cli, "deploy"], cwd=STAGE, env=env)

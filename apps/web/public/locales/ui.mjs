@@ -589,6 +589,16 @@ const rows = [
   ['attestViewExplorer','View on Solana Explorer','Solana Explorer에서 보기','Solana Explorerで見る','在 Solana Explorer 檢視'],
   ['nameUpdated','Display name updated.','이름을 변경했습니다.','表示名を更新しました。','顯示名稱已更新。'],
   ['saving','Saving…','저장 중…','保存中…','正在儲存…'],
+  ['seekerTitle','Seeker owner','Seeker 소유자','Seekerオーナー','Seeker 持有者'],
+  ['seekerIntro','Verify that your signed-in wallet holds a Seeker Genesis Token. The service reads Solana mainnet; nothing is signed and nothing moves.','로그인한 지갑에 Seeker Genesis Token이 있는지 확인합니다. 서비스가 솔라나 메인넷을 읽기만 하며, 서명이나 이체는 없습니다.','ログイン中のウォレットにSeeker Genesis Tokenがあるか確認します。サービスはSolanaメインネットを読むだけで、署名も送金もありません。','確認登入的錢包是否持有 Seeker Genesis Token。服務只讀取 Solana 主網，不會簽名也不會轉移資產。'],
+  ['seekerVerify','Verify my Seeker','내 Seeker 인증','Seekerを認証','驗證我的 Seeker'],
+  ['seekerVerifying','Checking mainnet…','메인넷 확인 중…','メインネットを確認中…','正在查詢主網…'],
+  ['seekerVerified','Seeker Genesis Token #{number} verified','Seeker Genesis Token #{number} 인증 완료','Seeker Genesis Token #{number} 認証済み','已驗證 Seeker Genesis Token #{number}'],
+  ['seekerSkr','SKR in wallet: {amount}','지갑 내 SKR: {amount}','ウォレット内SKR: {amount}','錢包內 SKR：{amount}'],
+  ['seekerRefresh','Refresh','새로 고침','更新','重新整理'],
+  ['seekerVerifiedToast','Seeker verified. The badge now shows on your public record.','Seeker 인증이 완료되었습니다. 공개 기록에 배지가 표시됩니다.','Seekerを認証しました。公開記録にバッジが表示されます。','Seeker 已驗證，徽章會顯示在您的公開紀錄上。'],
+  ['seekerBadge','Seeker #{number}','Seeker #{number}','Seeker #{number}','Seeker #{number}'],
+  ['seekerNeedsWallet','Sign in with your Seeker wallet to verify.','인증하려면 Seeker 지갑으로 로그인하세요.','認証にはSeekerウォレットでのログインが必要です。','請以 Seeker 錢包登入後再驗證。'],
 ];
 
 export const uiMessages=Object.fromEntries(['en','ko','ja','zh-Hant'].map((locale,index)=>[

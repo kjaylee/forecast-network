@@ -80,6 +80,7 @@ from .markets import PointMarkets
 from .participation_holds import ParticipationHolds, on_hold
 from .points import PointsService, reservation_sql, settlement_sql
 from .resolution_timing import ResolutionTiming
+from .seeker import SeekerVerification
 from .service_billing import SandboxServiceBilling
 from .solana_registry import SolanaRegistry, registry_enable_sql, registry_intent_sql
 from .sources import Artifact, SourceRejected, SourceUnavailable, validate_public_url
@@ -112,7 +113,8 @@ class Application:
                  source_watch_enabled: bool = False, live_markets_enabled: bool = False,
                  billing_sandbox_enabled: bool = False, registry: SolanaRegistry | None = None,
                  attestation_relayer: bytes | None = None,
-                 attestation_sign: Callable[[bytes], Awaitable[bytes]] | None = None):
+                 attestation_sign: Callable[[bytes], Awaitable[bytes]] | None = None,
+                 mainnet_rpc: Callable[[str, list[Any]], Awaitable[Any]] | None = None):
         self.db, self.ai, self.now_ms = db, ai, now_ms
         self.registry = registry
         self.auth = Authentication(db, now_ms, token_hash, random_token)
@@ -127,6 +129,7 @@ class Application:
         self.billing = SandboxServiceBilling(db, now_ms, enabled=billing_sandbox_enabled)
         self.attestations = Attestations(db, relayer=attestation_relayer, sign=attestation_sign, now_ms=now_ms,
                                          random_token=self.random_token, rate_limit=self.rate_limit)
+        self.seeker = SeekerVerification(db, rpc=mainnet_rpc, now_ms=now_ms, rate_limit=self.rate_limit)
         if ai is not None:
             ai.read_artifact = self.read_artifact
 
@@ -183,7 +186,7 @@ class Application:
 
     async def me(self, user_id: str | None) -> dict[str, Any]:
         if user_id is None:
-            return {"user": None, "reputation": None, "myForecasts": [], "activity": [], "points": None}
+            return {"user": None, "reputation": None, "myForecasts": [], "activity": [], "points": None, "seeker": None}
         user = await self._user(user_id)
         identity = await self.db.first("SELECT address FROM wallet_identities WHERE user_id=? AND status='active' "
                                        "AND converted_at IS NOT NULL", (user_id,))
@@ -208,7 +211,8 @@ class Application:
         return {"user": public_user(user), "reputation": await self.reputation(user_id),
                 "authentication": {"method": "wallet" if identity else "legacy", "address": identity["address"] if identity else None},
                 "myForecasts": cards, "activity": (await self.activity(user_id))["items"],
-                "points": await self.points.summary(user_id)}
+                "points": await self.points.summary(user_id),
+                "seeker": {"available": self.seeker.available, "status": await self.seeker.status(user_id)}}
 
     async def reputation(self, user_id: str) -> dict[str, Any]:
         # Scores are computed from the latest accepted submission at finalization.
@@ -1178,7 +1182,8 @@ class Application:
         return {"creator": {**public_user(user), "marketsCreated": stats["created"] if stats else 0,
             "resolvedMarkets": stats["resolved"] if stats else 0, "invalidMarkets": stats["invalid"] or 0 if stats else 0,
             "disputedMarkets": stats["disputed"] or 0 if stats else 0,
-            "followerCount": followers["n"] if followers else 0, "reputation": await self.reputation(creator_id)},
+            "followerCount": followers["n"] if followers else 0, "reputation": await self.reputation(creator_id),
+            "seeker": await self.seeker.public_badge(creator_id)},
             "forecasts": [projections.card(row) for row in rows], "isFollowing": following is not None}
 
     async def report_evidence(self, user_id: str, forecast_id: str, url: str) -> dict[str, Any]:
