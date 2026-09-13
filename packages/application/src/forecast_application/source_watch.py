@@ -313,6 +313,10 @@ class SourceWatch:
                                       (lease, self.now_ms()+LEASE_MS, article_id, self.now_ms()))
         if not claim.get("results"):
             return None
+        # A report must be judged on the page as it is now: fetch unconditionally even if
+        # the article was polled before, so a fresh observation exists under this publisher.
+        await self.db.execute("UPDATE official_watch_sources SET etag=NULL,last_modified=NULL WHERE id=? AND lease_token=?",
+                              (article_id, lease))
         source = await self.db.first("SELECT * FROM official_watch_sources WHERE id=?", (article_id,))
         if source is None:
             return None
@@ -322,11 +326,18 @@ class SourceWatch:
             pass
         finally:
             await self.db.execute("UPDATE official_watch_sources SET lease_token=NULL,lease_until=0 WHERE id=? AND lease_token=?", (article_id, lease))
-        row = await self.db.first("SELECT body FROM official_source_observations WHERE source_id=? AND url=? ORDER BY observed_at DESC LIMIT 1",
-                                  (index_id, url))
+        row = await self.db.first("SELECT body FROM official_source_observations WHERE url=? ORDER BY observed_at DESC LIMIT 1", (url,))
         if row is None:
             return None
         observation: dict[str, Any] = json.loads(row["body"])
+        # A page published before the question opened cannot be its resolving event; say so
+        # immediately instead of pausing participation for a review that must reject it.
+        forecast = await self.load_forecast(forecast_id)
+        published = observation.get("publicationDate")
+        if observation.get("datePrecision") == "instant" and isinstance(published, str):
+            event_at = int(datetime.fromisoformat(published.replace("Z", "+00:00")).timestamp() * 1000)
+            if event_at < int(forecast["specification"]["open_at_ms"]):
+                return {**observation, "predatesQuestion": True}
         await self._enqueue(forecast_id, observation)
         return observation
 

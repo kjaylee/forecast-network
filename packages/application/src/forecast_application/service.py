@@ -1223,7 +1223,7 @@ class Application:
                 observation = None
             if observation is not None:
                 held = await self.participation_holds.active(forecast_id)
-                status = "held" if held else "unrelated"
+                status = "unrelated" if observation.get("predatesQuestion") else "held" if held else "unrelated"
                 await self.db.execute("UPDATE evidence_reports SET article_id=?,observation_id=?,artifact_hash=?,status=?,updated_at=? WHERE id=?",
                                       ("article-" + hashlib.sha256(url.encode()).hexdigest()[:32], observation["id"],
                                        observation.get("artifactHash"), status, self.now_ms(), report_id))

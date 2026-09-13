@@ -583,6 +583,16 @@ class EvidenceReportTests(AutomationIntegrationTests):
         await self.accept(trigger)
         self.assertEqual((await self.app.points.summary(self.other))["available"], before + 100)
 
+    async def test_report_of_a_page_that_predates_the_question_never_pauses_it(self):
+        card = await self.apple_forecast_with_watcher()
+        self.ARTICLE_HTML = self.ARTICLE_HTML.replace("2027-01-15T14:00:00Z", "2020-01-15T14:00:00Z")
+        report = await self.app.report_evidence(self.other, card["id"], self.ARTICLE)
+        self.assertEqual(report["status"], "unrelated")
+        self.assertIsNone(await self.app.participation_holds.active(card["id"]))
+        self.assertEqual(await self.db.all("SELECT id FROM official_source_reviews"), [])
+        accepted = await self.app.submit_forecast(self.uid, card["id"], "YES", 70, card["revision"], "still-open", 0)
+        self.assertEqual(accepted["forecast"]["revision"], card["revision"] + 1)
+
     async def test_reports_close_with_the_question_and_are_rate_limited(self):
         card = await self.apple_forecast_with_watcher()
         for index in range(10):
