@@ -68,7 +68,7 @@ from forecast_domain.models import (
 )
 from forecast_domain.serialization import COMMITMENT_PREFIX
 
-from . import projections
+from . import discovery, projections, reputation
 from .attestation import Attestations
 from .auth import Authentication, public_user, text
 from .automation import ForecastAutomation
@@ -91,6 +91,7 @@ CHALLENGE_MS = 48 * HOUR_MS
 MAX_ARTIFACT_BYTES = 524288
 MAX_DAILY_AI_CALLS = 240
 MAX_DAILY_USER_AI_CALLS = 10
+MAX_DAILY_RISK_SEEDS = 24
 EVIDENCE_REWARD_POINTS = 100
 AI_WORKFLOW_TIMEOUT_SECONDS = 240
 LEASE_MS = 300000
@@ -172,7 +173,7 @@ class Application:
         return loads_forecast(row["snapshot"])
 
     async def _card(self, forecast_id: str) -> dict[str, Any]:
-        row = await self.db.first(projections.CARD_SQL + " WHERE f.id=?", (forecast_id,))
+        row = await self.db.first(projections.quality_card_sql(self.now_ms(), [forecast_id]) + " WHERE f.id=?", (forecast_id,))
         if row is None:
             raise AppError(404, "forecast_not_found", "Forecast not found.")
         return projections.card(row)
@@ -190,9 +191,11 @@ class Application:
         user = await self._user(user_id)
         identity = await self.db.first("SELECT address FROM wallet_identities WHERE user_id=? AND status='active' "
                                        "AND converted_at IS NOT NULL", (user_id,))
-        rows = await self.db.all(
-            projections.CARD_SQL + " WHERE f.id IN (SELECT forecast_id FROM user_forecasts "
+        selected = await self.db.all(
+            "SELECT f.id FROM forecasts f WHERE f.id IN (SELECT forecast_id FROM user_forecasts "
             "WHERE user_id=?) ORDER BY f.updated_at DESC LIMIT 100", (user_id,))
+        rows = await self.db.all(projections.quality_card_sql(self.now_ms(), [row["id"] for row in selected])
+                                 + " ORDER BY f.updated_at DESC")
         accepted = await self.db.all(
             "SELECT forecast_id,body,revision FROM eligible_user_forecasts WHERE user_id=? "
             "ORDER BY submitted_at DESC LIMIT 1000", (user_id,))
@@ -218,6 +221,11 @@ class Application:
         # Scores are computed from the latest accepted submission at finalization.
         rows = await self.db.all("SELECT * FROM eligible_reputation_scores WHERE user_id=?", (user_id,))
         result = projections.scores(rows)
+        quality_now = self.now_ms()
+        quality_rows = await self.db.all(
+            "SELECT * FROM forecast_quality_history WHERE user_id=? AND finalized_at<=? AND eligibility_at<=?",
+            (user_id, quality_now, quality_now))
+        result.update(reputation.reputation_quality(quality_rows, as_of_ms=quality_now))
         total = await self.db.first("SELECT COUNT(*) AS n FROM eligible_user_forecasts WHERE user_id=?", (user_id,))
         result["totalForecasts"] = total["n"] if total else 0
         categories = sorted({row["category"] for row in rows})
@@ -333,38 +341,43 @@ class Application:
         if sort == "following":
             clauses.append("f.creator_id IN (SELECT creator_id FROM follows WHERE follower_id=?)")
             params.append(user_id or "")
+        now = self.now_ms()
+        # Quality SQL orders the full filtered inventory before LIMIT. Card/cohort
+        # aggregation then reads only this page, never an unbounded Python history.
         order = {
-            "trending": "CASE WHEN f.state='OPEN' AND h.id IS NULL THEN 0 ELSE 1 END,"
-                        "((participant_count*3+comment_count+MIN(f.share_count,20)+1)*"
-                        "(1.0-json_extract(f.snapshot,'$.specification.ambiguity_score_bp')/10000.0)/"
-                        "(1.0+MAX(0,?-f.created_at)/86400000.0)) DESC,f.created_at DESC",
-            "newest": "f.created_at DESC", "following": "f.created_at DESC",
-            "ending": "CASE WHEN f.state='OPEN' AND h.id IS NULL AND f.close_at>? THEN 0 ELSE 1 END,f.close_at ASC",
+            "trending": "active_quality DESC,quality_score DESC,discovery_tie,f.id",
+            "newest": "f.created_at DESC,f.id DESC", "following": "f.created_at DESC,f.id DESC",
+            "ending": "CASE WHEN active_quality=1 THEN 0 ELSE 1 END,f.close_at ASC,f.id DESC",
             "ai-gap": "CASE WHEN probability IS NULL OR f.ai_forecast IS NULL THEN 1 ELSE 0 END,"
-                      "ABS(probability-COALESCE(json_extract(f.ai_forecast,'$.probability'),probability)) DESC",
+                      "ABS(probability-COALESCE(json_extract(f.ai_forecast,'$.probability'),probability)) DESC,f.id DESC",
         }[sort]
-        if sort in {"ending", "trending"}:
-            params.append(self.now_ms())
-        # Stable across one UTC day and across page reloads, personalized when signed in.
-        day = str(self.now_ms() // DAY_MS)
+        # Translation columns are already projected by candidate_sql's inner join.
+        clauses = [clause.replace("t.body", "f.display_translation") for clause in clauses]
+        base = discovery.candidate_sql(now, user_id)
+        daily_sql = "WITH inventory AS (" + base + "), daily AS (SELECT *,ROW_NUMBER() OVER("
+        daily_sql += "PARTITION BY category,(creator_finalized_count<5 AND clarity>=7000) "
+        daily_sql += "ORDER BY quality_score DESC,discovery_tie,id) AS position FROM inventory WHERE active_quality=1) "
+        daily_sql += "SELECT * FROM daily WHERE position<=5"
         rows, count_rows, daily = [result["results"] for result in await self.db.batch((
-            (projections.CARD_SQL + " WHERE " + " AND ".join(clauses)
-             + " ORDER BY " + order + ",f.id DESC LIMIT 31 OFFSET ?", tuple([*params, offset])),
+            (base + " WHERE " + " AND ".join(clauses) + " ORDER BY " + order + " LIMIT 31 OFFSET ?",
+             tuple([*params, offset])),
             ("SELECT COUNT(*) AS total,SUM(CASE WHEN state='OPEN' AND open_at<=? AND close_at>? "
              "AND NOT EXISTS(SELECT 1 FROM active_participation_holds h WHERE h.forecast_id=forecasts.id) THEN 1 ELSE 0 END) "
-             "AS active,(SELECT COUNT(DISTINCT user_id) FROM eligible_user_forecasts) AS participants FROM forecasts",
-             (self.now_ms(), self.now_ms())),
-            ("SELECT id FROM forecasts WHERE state='OPEN' AND open_at<=? AND close_at>? "
-             "AND NOT EXISTS(SELECT 1 FROM active_participation_holds h WHERE h.forecast_id=forecasts.id) "
-             "ORDER BY created_at DESC LIMIT 500", (self.now_ms(), self.now_ms()))))]
+             "AS active,(SELECT COUNT(DISTINCT user_id) FROM eligible_user_forecasts) AS participants FROM forecasts", (now, now)),
+            (daily_sql, ())))]
         counts = count_rows[0] if count_rows else None
-        daily.sort(key=lambda row: hashlib.sha256((day + (user_id or "") + row["id"]).encode()).hexdigest())
-        return {"items": [projections.card(row) for row in rows[:30]],
-                "nextCursor": str(offset+30) if len(rows) > 30 else None,
+        cards = await self.db.all(projections.quality_card_sql(now, [row["id"] for row in rows[:30]]))
+        by_id = {row["id"]: projections.card(row) for row in cards}
+        items = [{**by_id[row["id"]], "quality": discovery.score_forecast(row, as_of_ms=now)} for row in rows[:30]]
+        picks = discovery.recommendations(daily, as_of_ms=now, user_id=user_id)
+        return {"items": items, "nextCursor": str(offset+30) if len(rows) > 30 else None,
                 "counts": {"total": counts["total"] if counts else 0,
                            "active": counts["active"] or 0 if counts else 0,
                            "participants": counts["participants"] if counts else 0},
-                "dailyIds": [row["id"] for row in daily[:5]]}
+                "dailyIds": [row["id"] for row in picks],
+                "dailyRecommendations": [{"id": row["id"], "quality": row["quality"],
+                                          "reason": row["recommendationReason"]} for row in picks],
+                "discoveryMethodologyVersion": discovery.DISCOVERY_VERSION}
 
     async def read_artifact(self, digest: str) -> str | None:
         row = await self.db.first("SELECT body FROM artifacts WHERE hash=?", (digest,))
@@ -424,6 +437,8 @@ class Application:
             await self.rate_limit("ai:global", MAX_DAILY_AI_CALLS, DAY_MS)
             if owner.startswith("user:"):
                 await self.rate_limit("ai:" + owner, MAX_DAILY_USER_AI_CALLS, DAY_MS)
+            elif owner == "risk-seed:canonical":
+                await self.rate_limit("ai:risk-seed", MAX_DAILY_RISK_SEEDS, DAY_MS)
         except Exception:
             await self._release_ai(owner, token)
             raise
@@ -499,15 +514,21 @@ class Application:
         return result
 
     async def compile_forecast(self, user_id: str, question: str) -> dict[str, Any]:
+        return await self._compile_forecast(user_id, question, owner="user:" + user_id)
+
+    async def _compile_forecast(self, user_id: str, question: str, *, owner: str,
+                                canonical_series: bool = False) -> dict[str, Any]:
         await self._user(user_id)
         text(question, 1000, minimum=10)
         if len(question) > 1000:
             raise invalid("The original question must contain at most 1,000 characters.")
-        owner = "user:" + user_id
         lease = await self._ai_lease(owner)
         try:
             candidates = await self._candidate_forecasts(question)
-            result = await self._bounded_ai(self.ai.compile_question(question, candidates, self.now_ms()))
+            # Only operator-declared canonical series may treat a shifted explicit
+            # measurement interval as a distinct contract; user questions never do.
+            options = {"distinct_measurement_windows": True} if canonical_series else {}
+            result = await self._bounded_ai(self.ai.compile_question(question, candidates, self.now_ms(), **options))
             result.assessment.require_publishable(result.specification)
             await self.automation.check_creation(result.specification)
             now = self.now_ms()
@@ -847,10 +868,11 @@ class Application:
     async def forecast_detail(self, forecast_id: str, user_id: str | None = None) -> dict[str, Any]:
         # One D1 round trip for every independent read; batch() is a single JS promise, which the
         # Workers Python runtime handles safely where concurrent Python tasks do not.
+        detail_now = self.now_ms()
         (snapshot_rows, card_rows, job_rows, events, comments, history, own_rows,
-         translation_rows) = [result["results"] for result in await self.db.batch((
+         translation_rows, quality_rows) = [result["results"] for result in await self.db.batch((
             ("SELECT snapshot FROM forecasts WHERE id=?", (forecast_id,)),
-            (projections.CARD_SQL + " WHERE f.id=?", (forecast_id,)),
+            (projections.quality_card_sql(self.now_ms(), [forecast_id]) + " WHERE f.id=?", (forecast_id,)),
             ("SELECT job_error,retry_at FROM forecasts WHERE id=?", (forecast_id,)),
             ("SELECT event,hash FROM events WHERE forecast_id=? ORDER BY revision DESC LIMIT 500", (forecast_id,)),
             ("SELECT c.*,u.display_name,u.handle FROM comments c JOIN users u ON u.id=c.user_id "
@@ -864,11 +886,14 @@ class Application:
              (forecast_id, user_id or "")),
             ("SELECT body AS display_translation,translated_at,content_hash AS translation_hash,specification_hash "
              "FROM forecast_translations WHERE forecast_id=? AND language='en' "
-             "AND specification_hash=(SELECT specification_hash FROM forecasts WHERE id=?)", (forecast_id, forecast_id))))]
+             "AND specification_hash=(SELECT specification_hash FROM forecasts WHERE id=?)", (forecast_id, forecast_id)),
+            (discovery.candidate_sql(detail_now) + " WHERE f.id=?", (forecast_id,))))]
         if not snapshot_rows or not card_rows:
             raise AppError(404, "forecast_not_found", "Forecast not found.")
         forecast = loads_forecast(snapshot_rows[0]["snapshot"])
         item = projections.card(card_rows[0])
+        if quality_rows:
+            item["quality"] = discovery.score_forecast(quality_rows[0], as_of_ms=detail_now)
         job = job_rows[0] if job_rows else None
         own = own_rows[0] if own_rows else None
         translation_row = translation_rows[0] if translation_rows else None
@@ -1168,8 +1193,10 @@ class Application:
         user = await self.db.first("SELECT * FROM users WHERE id=?", (creator_id,))
         if not user:
             raise AppError(404, "creator_not_found", "Creator not found.")
-        rows = await self.db.all(projections.CARD_SQL + " WHERE f.creator_id=? ORDER BY f.created_at DESC LIMIT 100",
-                                 (creator_id,))
+        selected = await self.db.all("SELECT id FROM forecasts WHERE creator_id=? ORDER BY created_at DESC LIMIT 100",
+                                     (creator_id,))
+        rows = await self.db.all(projections.quality_card_sql(self.now_ms(), [row["id"] for row in selected])
+                                 + " ORDER BY f.created_at DESC")
         stats = await self.db.first(
             "SELECT COUNT(*) AS created,COUNT(finalized_outcome) AS resolved,"
             "SUM(CASE WHEN finalized_outcome='INVALID' THEN 1 ELSE 0 END) AS invalid,"
@@ -1265,7 +1292,8 @@ class Application:
         return {"reportId": report["id"], "userId": report["user_id"], "amount": EVIDENCE_REWARD_POINTS}
 
     async def seed(self, question: str, creator_name: str = "Forecast Editorial", *,
-                   uncertainty_band: tuple[int, int] | None = (15, 85)) -> dict[str, Any]:
+                   uncertainty_band: tuple[int, int] | None = (15, 85),
+                   canonical_risk: bool = False) -> dict[str, Any]:
         """Operator-only caller; creates genuine compiler-reviewed questions, no votes.
 
         Editorial questions must be genuinely open: when the compiler's own forecast
@@ -1284,7 +1312,9 @@ class Application:
                                        (creator["id"], seed_key))
         if previous:
             return {"forecast": await self._card(previous["forecast_id"])}
-        draft = await self.compile_forecast(creator["id"], question)
+        draft = (await self._compile_forecast(creator["id"], question, owner="risk-seed:canonical",
+                                              canonical_series=True)
+                 if canonical_risk else await self.compile_forecast(creator["id"], question))
         probability = (draft.get("aiForecast") or {}).get("probability")
         if uncertainty_band is not None and isinstance(probability, (int, float)):
             low, high = uncertainty_band

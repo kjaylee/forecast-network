@@ -32,6 +32,7 @@ from forecast_application.sources import (
     SourceUnavailable,
     TextResponse,
     evidence_excerpt,
+    market_json_excerpt,
     validate_public_url,
 )
 from forecast_domain.lifecycle import (
@@ -68,6 +69,18 @@ def compiler_wire():
     wire["close_at_utc"] = "1970-01-01T00:06:40Z"
     wire["compiler_wire_version"] = COMPILER_WIRE_VERSION
     return wire
+
+
+
+def measurement_compile_outputs(start="1970-01-01T00:02:00Z", end="1970-01-02T00:06:40Z"):
+    outputs=compile_outputs()
+    interval=f"[{start}, {end})"
+    outputs[0]["close_at_utc"]=end
+    outputs[0]["canonical_question"]=f"During {interval}, will Apple officially announce Product X?"
+    for rule in outputs[0]["rules"]:
+        if rule["outcome"] in {"YES","NO"}:
+            rule["condition"]=rule["condition"].split(" Deadline:")[0]+f" Measurement interval: {interval}."
+    return outputs
 
 
 class Transport:
@@ -575,6 +588,322 @@ class AITests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(AIRejected):
             await coordinator(Transport(outputs)).compile_question("Will Apple announce X before 2027?", (), NOW)
 
+    async def test_compiler_short_reference_binds_exact_candidate_and_retained_receipt(self):
+        candidates = tuple(create_forecast(forecast_id=f"candidate-{i}", creator_id="creator-ai",
+            specification=model.specification(canonical_question=f"Different known candidate event {i}?"), now_ms=0)
+            for i in range(9))
+        outputs = compile_outputs()
+        outputs[0]["duplicate_candidates"] = [{"schema_version": 1, "candidate_ref": "c7", "similarity_bp": 100,
+            "materially_different_rules": True, "explanation": "Different event with an exact supplied identity."}]
+        transport = Transport(outputs)
+        result = await coordinator(transport).compile_question("Will Apple announce X before 2027?", candidates, NOW)
+        schema = transport.calls[0]["body"]["generationConfig"]["responseJsonSchema"]
+        fields = schema["properties"]["duplicate_candidates"]["items"]["properties"]
+        self.assertEqual(fields["candidate_ref"]["enum"], [f"c{i}" for i in range(9)])
+        self.assertNotIn("forecast_id", fields)
+        self.assertNotIn("specification_hash", fields)
+        resolved = result.specification.duplicate_candidates[0]
+        self.assertEqual((resolved.forecast_id,resolved.specification_hash),
+                         (candidates[7].forecast_id,candidates[7].specification_hash))
+        raw = next(item for item in result.artifacts if item.kind == "ai-decision")
+        raw_record = json.loads(raw.body)
+        self.assertEqual(raw_record["output"]["duplicate_candidates"], outputs[0]["duplicate_candidates"])
+        receipt_artifact = next(item for item in result.artifacts if item.kind == "compiler-normalization")
+        receipt = json.loads(receipt_artifact.body)
+        self.assertEqual(receipt["raw_decision_artifact_hash"],raw.content_hash)
+        self.assertEqual(receipt["compiler_input_hash"],content_hash(raw_record["input"]))
+        self.assertEqual(receipt["candidate_context_hash"],content_hash(raw_record["input"]["candidates"]))
+        self.assertEqual(receipt["candidate_lookup_hash"],content_hash(receipt["candidate_lookup"]))
+        self.assertEqual(receipt["candidate_lookup"][7], {"candidate_ref":"c7", "forecast_id":candidates[7].forecast_id,
+                         "specification_hash":candidates[7].specification_hash})
+        self.assertEqual(receipt_artifact.content_hash,content_hash(receipt))
+        self.assertEqual(receipt["specification_hash"],content_hash(receipt["normalized_specification"]))
+        # The independent semantic judge receives the normalized physical IDs/hashes.
+        judge = json.loads(transport.calls[2]["body"]["contents"][0]["parts"][0]["text"])
+        self.assertEqual(judge["specification"]["duplicate_candidates"][0]["forecast_id"],candidates[7].forecast_id)
+
+    async def test_unknown_reference_injected_identity_and_mixed_versions_are_rejected(self):
+        candidates = tuple(create_forecast(forecast_id=f"candidate-{i}", creator_id="creator-ai",
+            specification=model.specification(canonical_question=f"Different known candidate event {i}?"), now_ms=0)
+            for i in range(2))
+        item = {"schema_version":1,"candidate_ref":"c0","similarity_bp":100,
+                "materially_different_rules":True,"explanation":"Exact supplied comparison."}
+        cases = [{**item,"candidate_ref":"c2"}, {**item,"forecast_id":candidates[1].forecast_id},
+                 {**item,"specification_hash":candidates[1].specification_hash}, {**item,"schema_version":2}]
+        for malformed in cases:
+            outputs = compile_outputs()
+            outputs[0]["duplicate_candidates"] = [malformed]
+            transport = Transport(outputs)
+            with self.subTest(malformed=malformed), self.assertRaises(AIRejected):
+                await coordinator(transport).compile_question("Will Apple announce X before 2027?", candidates, NOW)
+            self.assertEqual(len(transport.calls),1)
+            self.assertEqual(transport.source_calls,[])
+        for version in ("compiler-utc-v2","compiler-candidate-ref-v2"):
+            outputs=compile_outputs()
+            outputs[0]["compiler_wire_version"]=version
+            with self.subTest(version=version), self.assertRaises(AIRejected):
+                await coordinator(Transport(outputs)).compile_question("Will Apple announce X before 2027?", candidates, NOW)
+
+    async def test_duplicate_reference_and_mutated_candidate_context_rejected(self):
+        candidates = [create_forecast(forecast_id=f"candidate-{i}",creator_id="creator-ai",
+            specification=model.specification(canonical_question=f"Candidate event {i}?"),now_ms=0) for i in range(2)]
+        item = {"schema_version":1,"candidate_ref":"c0","similarity_bp":100,
+                "materially_different_rules":True,"explanation":"Exact supplied comparison."}
+        outputs=compile_outputs()
+        outputs[0]["duplicate_candidates"]=[item,dict(item)]
+        with self.assertRaises(AIRejected) as caught:
+            await coordinator(Transport(outputs)).compile_question("Will Apple announce X before 2027?",candidates,NOW)
+        self.assertEqual(caught.exception.code,"compiler_candidate_reference")
+        for when in (1,4):
+            current=list(candidates)
+            transport=Transport(compile_outputs())
+            original=transport.json
+            async def mutate(url,method,headers,body):
+                response=await original(url,method,headers,body)
+                if len(transport.calls)==when:
+                    current.reverse()
+                return response
+            transport.json=mutate
+            with self.subTest(when=when), self.assertRaises(AIRejected) as caught:
+                await coordinator(transport).compile_question("Will Apple announce X before 2027?",current,NOW)
+            self.assertEqual(caught.exception.code,"compiler_candidate_context_changed")
+            self.assertTrue(caught.exception.artifacts)
+
+    async def test_zero_and_maximum_candidate_short_reference_schemas(self):
+        from forecast_application.ai import _spec_schema
+        empty=_spec_schema(())
+        self.assertEqual(empty["properties"]["duplicate_candidates"]["maxItems"],0)
+        self.assertNotIn("enum",empty["properties"]["duplicate_candidates"]["items"]["properties"]["candidate_ref"])
+        candidates = tuple(create_forecast(forecast_id=f"candidate-{i}",creator_id="creator-ai",
+            specification=model.specification(canonical_question=f"Candidate event {i}?"),now_ms=0) for i in range(MAX_CANDIDATES))
+        schema=_spec_schema(candidates)
+        fields=schema["properties"]["duplicate_candidates"]["items"]["properties"]
+        self.assertEqual(fields["candidate_ref"]["enum"],[f"c{i}" for i in range(MAX_CANDIDATES)])
+        self.assertTrue(all(len(reference)<=3 for reference in fields["candidate_ref"]["enum"]))
+        self.assertNotIn("specification_hash",fields)
+
+    async def test_compiler_provenance_cannot_substitute_candidate_context(self):
+        candidate = create_forecast(forecast_id="candidate-0",creator_id="creator-ai",
+                                   specification=model.specification(),now_ms=0)
+        for kind in ("request_mutation","retained_origin_mutation"):
+            ai=coordinator(Transport(compile_outputs()))
+            original=ai._call
+            async def substitute(task,payload,schema,**kwargs):
+                decision=await original(task,payload,schema,**kwargs)
+                if task is AITask.MARKET_COMPILER:
+                    if kind=="request_mutation":
+                        payload["candidates"][0]["specification_hash"]="f"*64
+                    else:
+                        changed=json.loads(decision.artifact.body)
+                        changed["input"]["candidates"][0]["forecast_id"]="different-origin"
+                        decision=replace(decision,artifact=Artifact(content_hash(changed),"ai-decision",canonical_bytes(changed).decode()))
+                return decision
+            ai._call=substitute
+            with self.subTest(kind=kind),self.assertRaises(AIRejected) as caught:
+                await ai.compile_question("Will Apple announce X before 2027?",(candidate,),NOW)
+            self.assertEqual(caught.exception.code,"compiler_candidate_context_changed")
+            self.assertTrue(caught.exception.artifacts)
+
+    async def test_ambiguous_supplied_candidate_ids_rejected_before_provider_call(self):
+        candidate = create_forecast(forecast_id="candidate-0",creator_id="creator-ai",
+                                   specification=model.specification(),now_ms=0)
+        transport=Transport([])
+        with self.assertRaises(AIRejected):
+            await coordinator(transport).compile_question("Will Apple announce X before 2027?",(candidate,candidate),NOW)
+        self.assertEqual(transport.calls,[])
+
+    async def test_gemini_compiler_provider_copy_preserves_local_limits_and_other_schemas(self):
+        from forecast_application.ai import _gemini_compiler_schema, _spec_schema
+        candidates=tuple(create_forecast(forecast_id=f"candidate-{i}",creator_id="creator-ai",
+            specification=model.specification(canonical_question=f"Candidate event {i}?"),now_ms=0) for i in range(MAX_CANDIDATES))
+        strict=_spec_schema(candidates)
+        before=canonical_bytes(strict)
+        provider=_gemini_compiler_schema(strict)
+        self.assertEqual(canonical_bytes(strict),before)
+        self.assertEqual(strict["properties"]["duplicate_candidates"]["maxItems"],MAX_CANDIDATES)
+        self.assertNotIn("maxItems",provider["properties"]["duplicate_candidates"])
+        self.assertEqual(provider["properties"]["duplicate_candidates"]["items"]["properties"]["candidate_ref"]["enum"],
+                         [f"c{i}" for i in range(MAX_CANDIDATES)])
+        provider["properties"]["duplicate_candidates"]["items"]["properties"]["candidate_ref"]["enum"].clear()
+        self.assertEqual(canonical_bytes(strict),before)
+        self.assertEqual(_gemini_compiler_schema(_spec_schema(()))["properties"]["duplicate_candidates"]["maxItems"],0)
+        transport=Transport(compile_outputs())
+        await coordinator(transport).compile_question("Will Apple announce X before 2027?",candidates,NOW)
+        actual=transport.calls[0]["body"]["generationConfig"]["responseJsonSchema"]
+        self.assertNotIn("maxItems",actual["properties"]["duplicate_candidates"])
+        from forecast_application.ai import _AMBIGUITY
+        self.assertEqual(transport.calls[1]["body"]["generationConfig"]["responseJsonSchema"],_AMBIGUITY)
+        openai=Transport(compile_outputs())
+        await coordinator(openai,providers=(ProviderConfig("openai","gpt-test","test-key"),)).compile_question(
+            "Will Apple announce X before 2027?",candidates,NOW)
+        self.assertEqual(openai.calls[0]["body"]["text"]["format"]["schema"],strict)
+
+    async def test_gemini_compiler_still_rejects_forty_one_output_candidates_locally(self):
+        candidates=tuple(create_forecast(forecast_id=f"candidate-{i}",creator_id="creator-ai",
+            specification=model.specification(canonical_question=f"Candidate event {i}?"),now_ms=0) for i in range(MAX_CANDIDATES))
+        outputs=compile_outputs()
+        outputs[0]["duplicate_candidates"]=[{"schema_version":1,"candidate_ref":f"c{i%MAX_CANDIDATES}",
+            "similarity_bp":100,"materially_different_rules":True,"explanation":"Supplied comparison."}
+            for i in range(MAX_CANDIDATES+1)]
+        transport=Transport(outputs)
+        with self.assertRaises(AIRejected):
+            await coordinator(transport).compile_question("Will Apple announce X before 2027?",candidates,NOW)
+        self.assertEqual(len(transport.calls),1)
+        self.assertEqual(transport.source_calls,[])
+
+    async def test_compiler_accepts_real_decoded_forecast_v2_candidate(self):
+        from forecast_domain.early_resolution import ForecastV2, loads_forecast
+        from forecast_domain.lifecycle import Finalize
+
+        from tests import test_early_resolution_domain as early
+        finalized=early.step(early.early_states()[-1],Finalize(),760).forecast
+        candidate=loads_forecast(dumps(finalized))
+        self.assertIsInstance(candidate,ForecastV2)
+        candidate.__post_init__()
+        outputs=compile_outputs()
+        outputs[0]["duplicate_candidates"]=[{"schema_version":1,"candidate_ref":"c0","similarity_bp":100,
+            "materially_different_rules":True,"explanation":"The published early-result question concerns a different event."}]
+        result=await coordinator(Transport(outputs)).compile_question("Will Apple announce X before 2027?",(candidate,),NOW)
+        resolved=result.specification.duplicate_candidates[0]
+        self.assertEqual((resolved.forecast_id,resolved.specification_hash),(candidate.forecast_id,candidate.specification_hash))
+        receipt=next(json.loads(item.body) for item in result.artifacts if item.kind=="compiler-normalization")
+        self.assertEqual(receipt["candidate_lookup"][0]["specification_hash"],candidate.specification_hash)
+
+    async def test_compiler_rejects_duck_typed_candidate_before_provider_cost(self):
+        from types import SimpleNamespace
+        candidate=create_forecast(forecast_id="candidate",creator_id="creator",specification=model.specification(),now_ms=0)
+        fake=SimpleNamespace(forecast_id=candidate.forecast_id,specification_hash=candidate.specification_hash,
+                             specification=candidate.specification,__post_init__=lambda:None)
+        transport=Transport([])
+        with self.assertRaises(AIRejected):
+            await coordinator(transport).compile_question("Will Apple announce X before 2027?",(fake,),NOW)
+        self.assertEqual(transport.calls,[])
+
+    async def test_bracket_measurement_window_preserves_distinct_utc_roles_and_receipt(self):
+        start,end="1970-01-01T00:02:00Z","1970-01-02T00:06:40Z"
+        interval=f"[{start}, {end})"
+        question=f"During {interval}, will Apple announce Product X? Submissions close exactly {end}."
+        outputs=measurement_compile_outputs(start,end)
+        untouched=json.loads(json.dumps(outputs[0]))
+        transport=Transport(outputs)
+        result=await coordinator(transport).compile_question(question,(),NOW)
+        self.assertIn(interval,result.specification.canonical_question)
+        for rule in result.specification.rules:
+            if rule.outcome.value in {"YES","NO"}:
+                self.assertIn(interval,rule.condition)
+        self.assertEqual(result.specification.close_at_ms,86800000)
+        self.assertEqual(outputs[0],untouched)
+        raw=next(json.loads(item.body) for item in result.artifacts if item.kind=="ai-decision")
+        receipt=next(json.loads(item.body) for item in result.artifacts if item.kind=="compiler-normalization")
+        window=receipt["measurement_window"]
+        self.assertEqual(window["version"],"single-bracket-utc-window-v1")
+        self.assertEqual(window["start_at_ms"],120000)
+        self.assertEqual(window["end_at_ms"],86800000)
+        self.assertEqual(window["canonical_expression"],interval)
+        self.assertTrue(window["start_inclusive"] and window["end_exclusive"])
+        self.assertEqual(receipt["normalization_version"],"exact-utc-window-and-candidate-reference-v4")
+        self.assertEqual(raw["input"]["measurement_window"],window)
+        self.assertIn("copy measurement_window.canonical_expression exactly once",raw["input"]["policy"])
+        self.assertEqual(receipt["specification_hash"],content_hash(receipt["normalized_specification"]))
+
+    async def test_distinct_measurement_intervals_are_separate_canonical_episodes_only_when_declared(self):
+        start,end="1970-01-01T00:02:00Z","1970-01-02T00:06:40Z"
+        earlier="[1970-01-01T00:01:00Z, 1970-01-02T00:05:40Z)"
+        question=f"During [{start}, {end}), will Apple announce Product X? Submissions close exactly {end}."
+        episode=create_forecast(forecast_id="episode-1", creator_id="creator-ai",
+            specification=model.specification(canonical_question=f"During {earlier}, will Apple announce Product X?"),
+            now_ms=0)
+        plain=create_forecast(forecast_id="plain-0", creator_id="creator-ai",
+            specification=model.specification(canonical_question="Will Apple announce Product X before the deadline?"),
+            now_ms=0)
+        def outputs():
+            value=measurement_compile_outputs(start,end)
+            value[0]["duplicate_candidates"]=[
+                {"schema_version":1,"candidate_ref":"c0","similarity_bp":9500,"materially_different_rules":False,
+                 "explanation":"Only the time window differs."},
+                {"schema_version":1,"candidate_ref":"c1","similarity_bp":9100,"materially_different_rules":False,
+                 "explanation":"Same event without a window."}]
+            return value
+        # Ordinary compilation keeps the model's verdict: a shifted window is still a duplicate.
+        with self.assertRaises(AIRejected) as rejected:
+            await coordinator(Transport(outputs())).compile_question(question,(episode,plain),NOW)
+        self.assertEqual(rejected.exception.code,"compiler_not_publishable")
+        # A declared canonical series treats a different explicit [start, end) as a distinct contract,
+        # while a candidate without its own interval keeps the model's duplicate verdict.
+        with self.assertRaises(AIRejected) as still:
+            await coordinator(Transport(outputs())).compile_question(question,(episode,plain),NOW,
+                                                                     distinct_measurement_windows=True)
+        self.assertEqual(still.exception.code,"compiler_not_publishable")
+        single=outputs()
+        single[0]["duplicate_candidates"]=single[0]["duplicate_candidates"][:1]
+        transport=Transport(single)
+        result=await coordinator(transport).compile_question(question,(episode,),NOW,distinct_measurement_windows=True)
+        candidate=result.specification.duplicate_candidates[0]
+        self.assertEqual((candidate.forecast_id,candidate.similarity_bp,candidate.materially_different_rules),
+                         ("episode-1",9500,True))
+        self.assertTrue(candidate.explanation.startswith(f"Distinct measurement interval [{start}, {end}) versus {earlier}"))
+        raw=next(json.loads(item.body) for item in result.artifacts if item.kind=="ai-decision")
+        self.assertFalse(raw["output"]["duplicate_candidates"][0]["materially_different_rules"])  # raw decision untouched
+        receipt=next(json.loads(item.body) for item in result.artifacts if item.kind=="compiler-normalization")
+        self.assertEqual(receipt["distinct_measurement_windows"],["episode-1"])
+        judge=json.loads(transport.calls[2]["body"]["contents"][0]["parts"][0]["text"])
+        self.assertIn("distinct measurement contracts by policy",judge["policy"])
+
+    async def test_changed_omitted_or_duplicated_model_measurement_window_rejected(self):
+        start,end="1970-01-01T00:02:00Z","1970-01-02T00:06:40Z"
+        interval=f"[{start}, {end})"
+        question=f"During {interval}, will Apple announce Product X? Deadline {end}."
+        replacements=[f"[{end}, {start})",f"[1970-01-01T00:03:00Z, {end})",f"[{start}, 1970-01-03T00:06:40Z)",
+                      end,interval+" and "+interval,interval[:-1]+"]"]
+        for target in ("canonical_question","YES","NO"):
+            for value in replacements:
+                outputs=measurement_compile_outputs(start,end)
+                if target=="canonical_question":
+                    outputs[0][target]=outputs[0][target].replace(interval,value)
+                else:
+                    rule=next(r for r in outputs[0]["rules"] if r["outcome"]==target)
+                    rule["condition"]=rule["condition"].replace(interval,value)
+                transport=Transport(outputs)
+                with self.subTest(target=target,value=value),self.assertRaises(AIRejected):
+                    await coordinator(transport).compile_question(question,(),NOW)
+                self.assertEqual(transport.source_calls,[])
+
+    async def test_window_start_or_additional_time_outside_bracket_is_not_a_deadline(self):
+        start,end="1970-01-01T00:02:00Z","1970-01-02T00:06:40Z"
+        interval=f"[{start}, {end})"
+        question=f"During {interval}, will Apple announce Product X? Deadline {end}."
+        additions=[f" Separate deadline {start}."," Additional date 1970-01-03."," Additional time 12:34 UTC."]
+        for target in ("input","canonical_question","YES","NO","INVALID","invalidation"):
+            for suffix in additions:
+                outputs=measurement_compile_outputs(start,end)
+                requested=question
+                if target=="input":
+                    requested+=suffix
+                elif target=="canonical_question":
+                    outputs[0][target]+=suffix
+                elif target=="invalidation":
+                    outputs[0]["invalidation_rules"][0]+=suffix
+                else:
+                    next(r for r in outputs[0]["rules"] if r["outcome"]==target)["condition"]+=suffix
+                with self.subTest(target=target,suffix=suffix),self.assertRaises(AIRejected):
+                    await coordinator(Transport(outputs)).compile_question(requested,(),NOW)
+        outputs=measurement_compile_outputs(start,end)
+        outputs[0]["close_at_utc"]=start
+        with self.assertRaises(AIRejected):
+            await coordinator(Transport(outputs)).compile_question(question,(),NOW)
+
+    async def test_invalid_or_multiple_input_intervals_are_not_guessed(self):
+        start,end="1970-01-01T00:02:00Z","1970-01-02T00:06:40Z"
+        interval=f"[{start}, {end})"
+        bad=[f"[{end}, {start})",f"[{end}, {end})",interval+" and "+interval,
+             interval[:-1]+"]",f"({start}, {end})",f"[1970-02-30T00:00:00Z, {end})",
+             f"[1970-01-01T00:02:00+00:00, {end})"]
+        for expression in bad:
+            transport=Transport([])
+            with self.subTest(expression=expression),self.assertRaises(AIRejected):
+                await coordinator(transport).compile_question(f"During {expression}, will Apple announce Product X?",(),NOW)
+            self.assertEqual(transport.calls,[])
+
     async def test_past_or_invented_open_time_rejected(self):
         for field, value in (("open_at_ms", 999), ("close_at_utc", "1970-01-01T00:00:02Z")):
             outputs = compile_outputs()
@@ -734,6 +1063,28 @@ class AITests(unittest.IsolatedAsyncioTestCase):
 
 
 class SourceTests(unittest.IsolatedAsyncioTestCase):
+    def test_daily_ohlc_excerpt_preserves_all_rows_fields_and_metadata(self):
+        rows = [{"timestamp": str(1800000000+i*300), "open": "1.0000", "close": "0.9901",
+                 "high": "1.0001", "low": "0.9900", "volume": "123.12345678"} for i in range(288)]
+        original = {"data": {"pair": "USDC/USD", "ohlc": rows}, "status": "ok"}
+        body = json.dumps(original)
+        self.assertGreater(len(body.encode()), MAX_EXCERPT_BYTES)
+        excerpt = market_json_excerpt(body, "https://www.bitstamp.net/api/v2/ohlc/usdcusd/?step=300&limit=288")
+        self.assertLessEqual(len(excerpt.encode()), MAX_EXCERPT_BYTES)
+        decoded = json.loads(excerpt)
+        table = decoded["data"]["ohlc"]
+        decoded["data"]["ohlc"] = [dict(zip(table["columns"], values, strict=True)) for values in table["rows"]]
+        self.assertEqual(decoded, original)
+        self.assertEqual(json.loads(body), original)
+
+    def test_unknown_or_heterogeneous_ohlc_never_claims_lossless_compaction(self):
+        body = '{"data":{"ohlc":[{"close":"1"},{"close":"1","volume":"2"}]}}'
+        self.assertEqual(market_json_excerpt(body, "https://www.bitstamp.net/api/v2/ohlc/usdcusd/"), evidence_excerpt(body))
+        self.assertEqual(market_json_excerpt(body, "https://www.bitstamp.net/unrelated/"), evidence_excerpt(body))
+        for raw in ('{"data":{"ohlc":[{"close":0.123456789012345678901}]}}',
+                    '{"data":{"ohlc":[{"close":"1","close":"2"}]}}'):
+            self.assertEqual(market_json_excerpt(raw, "https://www.bitstamp.net/api/v2/ohlc/usdcusd/"), evidence_excerpt(raw))
+
     def test_excerpt_limit_counts_utf8_bytes_and_preserves_retained_source(self):
         body = "<p>" + "한글근거 " * 10000 + "</p>"
         excerpt = evidence_excerpt(body)
@@ -759,6 +1110,23 @@ class SourceTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(SourceRejected):
             await SourceCollector(transport).collect(specification().source_policy.sources[0], NOW)
         self.assertEqual(len(calls), 1)
+
+    async def test_registered_exchange_json_keeps_raw_evidence_and_exact_host_guards(self):
+        body = '{"error":[],"result":{"USDCUSD":[[1000,"1.00","1.01","0.99","1.00","1.00","10",3]],"last":1000}}'
+        for url in ("https://api.kraken.com/0/public/OHLC?pair=USDCUSD&interval=5",
+                    "https://www.bitstamp.net/api/v2/ohlc/usdcusd/?step=300&limit=288"):
+            async def transport(address, method, headers):
+                self.assertEqual(method, "GET")
+                return TextResponse(200, body, {"content-type": "application/json"})
+            source = Source(source_id="exchange", name="Official market data", url=url, is_official=True)
+            result = await SourceCollector(transport).collect(source, NOW)
+            self.assertEqual(result.artifact.body, body)
+            self.assertEqual(result.snapshot.content_sha256, hashlib.sha256(body.encode()).hexdigest())
+        for url in ("https://api.kraken.com.evil.com/0/public/OHLC",
+                    "https://www.bitstamp.net.evil.com/api/", "https://user@api.kraken.com/",
+                    "http://api.kraken.com/", "https://api.kraken.com:8443/"):
+            with self.subTest(url=url), self.assertRaises(SourceRejected):
+                validate_public_url(url, official=True)
 
     async def test_same_host_redirect_retains_final_url_and_raw_body(self):
         calls = []

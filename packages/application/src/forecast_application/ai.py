@@ -8,6 +8,7 @@ never become fabricated approvals or automatic outcomes.
 from __future__ import annotations
 
 import asyncio
+import copy
 import hashlib
 import json
 import re
@@ -66,7 +67,7 @@ from .sources import (
 )
 
 POLICY_VERSION = "forecast-ai-policy-v4-timeless-titles"
-COMPILER_WIRE_VERSION = "compiler-utc-v2"
+COMPILER_WIRE_VERSION = "compiler-utc-candidate-ref-v3"
 MAX_MODEL_OUTPUT_BYTES = 64000
 MAX_CANDIDATES = 40
 MAX_CANDIDATE_CONTEXT_BYTES = 128 * 1024
@@ -118,6 +119,12 @@ class CompileResult:
     assessment: ValidationAssessment
     artifacts: tuple[Artifact, ...]
     ai_forecast: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PredictionResult:
+    artifacts: tuple[Artifact, ...]
+    ai_forecast: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -330,7 +337,7 @@ def _validate_output(value: Any, schema: dict[str, Any], *, depth: int = 0) -> N
             raise AIRejected("AI output numeric value is outside its permitted range", code="ai_output_range")
 
 
-def _spec_schema() -> dict[str, Any]:
+def _spec_schema(candidates: Sequence[Forecast] | None = None) -> dict[str, Any]:
     generated = schema_for(ForecastSpecification)
     definitions = generated["$defs"]
 
@@ -360,11 +367,143 @@ def _spec_schema() -> dict[str, Any]:
         "Concise timeless English question: no deadline, date, year-end, before/by date, "
         "this/next year or other timeframe phrase. Preserve product names and model numbers."
     )
+    duplicates = result["properties"]["duplicate_candidates"]
+    count = len(candidates) if candidates is not None else 0
+    duplicates["maxItems"] = min(MAX_CANDIDATES, count)
+    fields = duplicates["items"]["properties"]
+    # Keep domain-generated semantic fields; only the compiler wire substitutes
+    # a bounded short reference for the physically verified identity/hash pair.
+    del fields["forecast_id"]
+    del fields["specification_hash"]
+    fields["candidate_ref"] = {"type": "string", "minLength": 2, "maxLength": 3}
+    if count:
+        fields["candidate_ref"]["enum"] = [f"c{i}" for i in range(count)]
+    duplicates["items"]["required"] = list(fields)
     result["required"] = list(result["properties"])
     return result
 
 
-def _normalize_compiler_output(output: dict[str, Any], original_question: str) -> dict[str, Any]:
+
+def _gemini_compiler_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Avoid Gemini's bounded-array state expansion without weakening local guards."""
+    provider_schema = copy.deepcopy(schema)
+    duplicates = provider_schema["properties"]["duplicate_candidates"]
+    if duplicates.get("maxItems", 0) > 0:
+        del duplicates["maxItems"]
+    return provider_schema
+
+
+def _candidate_context(candidates: Sequence[Forecast]) -> list[dict[str, Any]]:
+    if len(candidates) > MAX_CANDIDATES:
+        raise AIRejected("Duplicate candidate set exceeds the validated search boundary")
+    if any(not isinstance(item, Forecast) for item in candidates):
+        raise AIRejected("Duplicate candidate context must contain canonical forecasts", code="compiler_candidate_context")
+    if len({item.forecast_id for item in candidates}) != len(candidates):
+        raise AIRejected("Duplicate candidate identities are ambiguous", code="compiler_candidate_context")
+    result = []
+    for index, item in enumerate(candidates):
+        item.__post_init__()
+        specification = to_dict(item.specification)
+        if content_hash(specification) != item.specification_hash:
+            raise AIRejected("Candidate specification commitment mismatch", code="compiler_candidate_context")
+        result.append({"candidate_ref": f"c{index}", "forecast_id": item.forecast_id,
+                       "specification_hash": item.specification_hash, "specification": specification})
+    return result
+
+
+def _assert_candidate_context(candidates: Sequence[Forecast], expected_hash: str) -> None:
+    if content_hash(_candidate_context(candidates)) != expected_hash:
+        raise AIRejected("Duplicate candidate input changed during compilation", code="compiler_candidate_context_changed")
+
+
+_UTC_WINDOW = re.compile(r"\[\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)\s*,\s*"
+                         r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)\s*\)")
+_WINDOW_OPEN = re.compile(r"[\[(]\s*\d{4}-\d{2}-\d{2}T[^,\]\)]{0,100},")
+
+
+def _measurement_window(text: str) -> dict[str, Any] | None:
+    """Recognize one explicit half-open ISO UTC interval; never infer time roles."""
+    matches = list(_UTC_WINDOW.finditer(text))
+    if len(matches) > 1 or len(list(_WINDOW_OPEN.finditer(text))) != len(matches):
+        raise AIRejected("Use one exact half-open UTC measurement interval [start, end).",
+                         code="compiler_measurement_window")
+    if not matches:
+        return None
+    match = matches[0]
+    start, end = match.groups()
+    try:
+        start_time = datetime.strptime(start, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        end_time = datetime.strptime(end, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except ValueError as exc:
+        raise AIRejected("The measurement interval has an invalid UTC date.", code="compiler_measurement_window") from exc
+    if start_time >= end_time:
+        raise AIRejected("Measurement start must precede its exclusive end.", code="compiler_measurement_window")
+    epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
+    def milliseconds(value: datetime) -> int:
+        delta = value-epoch
+        return (delta.days*86400+delta.seconds)*1000
+    return {"version": "single-bracket-utc-window-v1", "start_at_utc": start, "end_at_utc": end,
+            "start_at_ms": milliseconds(start_time), "end_at_ms": milliseconds(end_time),
+            "start_inclusive": True, "end_exclusive": True,
+            "input_expression": match.group(), "canonical_expression": f"[{start}, {end})"}
+
+
+measurement_window = _measurement_window
+
+
+def _outside_measurement_window(text: str, window: dict[str, Any], *, required: bool) -> tuple[str, str, bool]:
+    matches = list(_UTC_WINDOW.finditer(text))
+    if (len(matches) > 1 or len(list(_WINDOW_OPEN.finditer(text))) != len(matches)
+            or required and len(matches) != 1):
+        raise AIRejected("Preserve the exact measurement interval once in each question and YES/NO criterion.",
+                         code="compiler_measurement_window")
+    if not matches:
+        return text, "", False
+    match = matches[0]
+    if match.groups() != (window["start_at_utc"], window["end_at_utc"]):
+        raise AIRejected("The compiler changed measurement start or end.", code="compiler_measurement_window")
+    return text[:match.start()], text[match.end():], True
+
+
+def _candidate_window(candidate: dict[str, Any]) -> dict[str, Any] | None:
+    """A retained candidate specification's own explicit interval, if it declares exactly one."""
+    try:
+        return _measurement_window(str(candidate["specification"]["canonical_question"]))
+    except (AIRejected, KeyError, TypeError):
+        return None
+
+
+def _normalize_compiler_output(output: dict[str, Any], original_question: str,
+                               candidate_context: Sequence[dict[str, Any]] = (), *,
+                               distinct_windows: bool = False) -> dict[str, Any]:
+    if output.get("compiler_wire_version") != COMPILER_WIRE_VERSION:
+        raise AIRejected("Compiler wire version mismatch", code="compiler_wire_version")
+    lookup = {item["candidate_ref"]: item for item in candidate_context}
+    window = _measurement_window(original_question)
+    duplicates = []
+    distinct: list[str] = []
+    seen: set[str] = set()
+    for item in output["duplicate_candidates"]:
+        if set(item) != {"schema_version", "candidate_ref", "similarity_bp", "materially_different_rules", "explanation"}:
+            raise AIRejected("Duplicate output must use only the current reference wire", code="compiler_candidate_fields")
+        reference = item["candidate_ref"]
+        if type(reference) is not str or reference not in lookup or reference in seen:
+            raise AIRejected("Duplicate candidate reference is unknown or repeated", code="compiler_candidate_reference")
+        seen.add(reference)
+        candidate = lookup[reference]
+        resolved = {key: value for key, value in item.items() if key != "candidate_ref"} | {
+            "forecast_id": candidate["forecast_id"], "specification_hash": candidate["specification_hash"]}
+        other = _candidate_window(candidate) if distinct_windows and window is not None else None
+        if window is not None and other is not None and other["canonical_expression"] != window["canonical_expression"]:
+            # A declared canonical series: the same predicate over a different explicit
+            # [start, end) is a separate measurement contract, not a duplicate. The raw
+            # model verdict stays in its artifact; only the normalized specification changes.
+            resolved["materially_different_rules"] = True
+            resolved["explanation"] = (f"Distinct measurement interval {window['canonical_expression']} versus "
+                                       f"{other['canonical_expression']}: separate canonical episode. "
+                                       + str(resolved["explanation"]))
+            distinct.append(str(candidate["forecast_id"]))
+        duplicates.append(resolved)
     timestamp: str = output["close_at_utc"]
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", timestamp):
         raise AIRejected("The deadline must specify an exact UTC time.", code="compiler_deadline_timezone")
@@ -388,30 +527,57 @@ def _normalize_compiler_output(output: dict[str, Any], original_question: str) -
             raise AIRejected("The compiler changed the requested UTC deadline; publication is blocked.", code="compiler_deadline_mismatch")
         return timestamp
 
-    for match in utc_spelling.finditer(original_question):
+    if window is not None and window["end_at_utc"] != timestamp:
+        raise AIRejected("The exclusive measurement end must equal the closing deadline.", code="compiler_deadline_mismatch")
+    original_outside = original_question
+    if window is not None:
+        before, after, _ = _outside_measurement_window(original_question, window, required=True)
+        original_outside = before + " " + after
+    for match in utc_spelling.finditer(original_outside):
         equivalent_utc(match)
-    # Equivalent Korean/ISO date spellings may be emitted despite the wire schema.
-    # Normalize only after exact instant equality; leave the retained raw decision
-    # untouched, and never perform this transformation on published specifications.
-    normalized = {key: value for key, value in output.items()
-                  if key not in {"close_at_utc", "compiler_wire_version"}}
-    normalized["canonical_question"] = utc_spelling.sub(equivalent_utc, output["canonical_question"])
-    normalized["rules"] = [{**rule, "condition": utc_spelling.sub(equivalent_utc, rule["condition"])}
-                           for rule in output["rules"]]
-    texts = [normalized["canonical_question"], *(rule["condition"] for rule in normalized["rules"]
-                                                 if rule["outcome"] in {"YES", "NO"})]
-    if any(timestamp not in text for text in texts):
-        raise AIRejected("The question and YES/NO criteria must use the same deadline.", code="compiler_deadline_mismatch")
-    # Catch contradictory explicit date/time statements alongside an otherwise
-    # correct echo. Numeric thresholds without calendar syntax are unaffected.
-    expected_date = (instant.year, instant.month, instant.day)
-    for text in [normalized["canonical_question"], *(rule["condition"] for rule in normalized["rules"])]:
+
+    def check_dates(text: str) -> None:
         for other in re.findall(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})", text):
             if other != timestamp:
                 raise AIRejected("The criteria contain conflicting deadlines.", code="compiler_deadline_mismatch")
         for date in re.findall(r"(\d{4})\s*(?:년\s*|[-/])(\d{1,2})\s*(?:월\s*|[-/])(\d{1,2})(?:일)?", text):
-            if tuple(int(part) for part in date) != expected_date:
+            if tuple(int(part) for part in date) != (instant.year, instant.month, instant.day):
                 raise AIRejected("The question and criteria contain conflicting dates.", code="compiler_deadline_mismatch")
+        if window is not None and re.search(r"(?<!\d)\d{1,2}:\d{2}(?::\d{2})?", text.replace(timestamp, " ")):
+            raise AIRejected("Additional times outside the measurement interval need the exact closing UTC instant.",
+                             code="compiler_deadline_mismatch")
+
+    def normalize_time_text(text: str, *, required_window: bool = False) -> str:
+        if window is None:
+            return utc_spelling.sub(equivalent_utc, text)
+        before, after, present = _outside_measurement_window(text, window, required=required_window)
+        before = utc_spelling.sub(equivalent_utc, before)
+        after = utc_spelling.sub(equivalent_utc, after)
+        check_dates(before + " " + after)
+        return before + (window["canonical_expression"] if present else "") + after
+
+    if window is not None:
+        check_dates(utc_spelling.sub(equivalent_utc, original_outside))
+    # Only validated temporal roles are transformed. Retained raw artifacts and
+    # already-published domain specifications are never edited.
+    normalized = {key: value for key, value in output.items()
+                  if key not in {"close_at_utc", "compiler_wire_version"}}
+    normalized["duplicate_candidates"] = duplicates
+    normalized["canonical_question"] = normalize_time_text(output["canonical_question"], required_window=window is not None)
+    normalized["rules"] = [{**rule, "condition": normalize_time_text(rule["condition"],
+                            required_window=window is not None and rule["outcome"] in {"YES", "NO"})}
+                           for rule in output["rules"]]
+    if window is not None:
+        normalized["invalidation_rules"] = [normalize_time_text(text) for text in output["invalidation_rules"]]
+    if distinct:
+        normalized["_distinct_measurement_windows"] = distinct
+    texts = [normalized["canonical_question"], *(rule["condition"] for rule in normalized["rules"]
+                                                 if rule["outcome"] in {"YES", "NO"})]
+    if any(timestamp not in text for text in texts):
+        raise AIRejected("The question and YES/NO criteria must use the same deadline.", code="compiler_deadline_mismatch")
+    if window is None:
+        for text in [normalized["canonical_question"], *(rule["condition"] for rule in normalized["rules"])]:
+            check_dates(text)
     delta = instant - datetime(1970, 1, 1, tzinfo=timezone.utc)
     normalized["close_at_ms"] = (delta.days * 86400 + delta.seconds) * 1000
     return normalized
@@ -505,7 +671,8 @@ class AiCoordinator:
                 url = "https://generativelanguage.googleapis.com/v1beta/models/" + config.model + ":generateContent"
                 headers["x-goog-api-key"] = config.api_key
                 generation: dict[str, Any] = {"responseMimeType": "application/json",
-                    "responseJsonSchema": schema,
+                    "responseJsonSchema": (_gemini_compiler_schema(schema)
+                                           if task_name == AITask.MARKET_COMPILER.value else schema),
                     "maxOutputTokens": 8192 if task_name == AITask.MARKET_COMPILER.value or display_language else 4096}
                 # Official 2.5 Flash supports a bounded thinkingBudget; its thought
                 # tokens otherwise consume the same output budget and truncate JSON.
@@ -665,16 +832,20 @@ class AiCoordinator:
             raise AIUnavailable(str(exc)) from exc
 
     async def compile_question(self, question: str, candidates: Sequence[Forecast],
-                               now_ms: int) -> CompileResult:
+                               now_ms: int, *, distinct_measurement_windows: bool = False) -> CompileResult:
+        """distinct_measurement_windows applies only to declared canonical series (operator seeds)."""
         if type(question) is not str or not 12 <= len(question.strip()) <= 1000:
             raise AIRejected("Use 12–1,000 characters and include a specific subject and deadline.")
         if len(candidates) > MAX_CANDIDATES:
             raise AIRejected("Duplicate candidate set exceeds the validated search boundary")
-        candidate_payload = [{"forecast_id": item.forecast_id, "specification_hash": item.specification_hash,
-                              "specification": to_dict(item.specification)} for item in candidates]
+        measurement_window = _measurement_window(question)
+        candidate_payload = _candidate_context(candidates)
+        candidate_context_hash = content_hash(candidate_payload)
+        candidate_lookup = [{key: value for key, value in item.items() if key != "specification"}
+                            for item in candidate_payload]
         if len(canonical_bytes(candidate_payload)) > MAX_CANDIDATE_CONTEXT_BYTES:
             raise AIRejected("Duplicate candidate context exceeds the validated byte limit")
-        payload = {"schema_version": 1, "question": question, "now_ms": now_ms,
+        payload: dict[str, Any] = {"schema_version": 1, "question": question, "now_ms": now_ms,
                    "output_language": "en",
                    "compiler_wire_version": COMPILER_WIRE_VERSION,
                    "approved_official_hosts": OFFICIAL_HOSTS, "approved_fallback_hosts": FALLBACK_HOSTS,
@@ -700,12 +871,31 @@ class AiCoordinator:
                    "the approved hosts; all primary sources must be official. No login pages, search "
                    "redirects, generic company homepage without resolution evidence, PDFs or private "
                    "personal information. Document exhaustive YES/NO/INVALID clauses and source failure "
-                   "rules. Identify every supplied semantically similar candidate including matching "
-                   "IDs/hashes; assess material rule differences. Integer ambiguity score 0..10000."}
-        compiler = await self._call(AITask.MARKET_COMPILER, payload, _spec_schema())
+                   "rules. Identify every supplied semantically similar candidate by candidate_ref (c0, c1, etc.) "
+                   "only; NEVER output or copy forecast_id or specification_hash in duplicate_candidates. "
+                   "References select the exact supplied identity and specification; assess similarity and material "
+                   "rule differences. Never invent or repeat a reference. Integer ambiguity score 0..10000."}
+        if measurement_window is not None:
+            payload["measurement_window"] = measurement_window
+            payload["policy"] += (
+                " This input specifies one measurement window. Its start and end have different roles: "
+                "copy measurement_window.canonical_expression exactly once into canonical_question and each YES/NO "
+                "rule condition, including the opening [ and closing ). Set close_at_utc to its end_at_utc. "
+                "Never replace start by end, move the window, omit it or use start as a separate deadline. "
+                "Outside that bracket interval, every explicit time must be the exact closing UTC timestamp; "
+                "the earlier instruction to avoid alternative dates does not remove this verified window start.")
+        compiler_input_hash = content_hash(payload)
+        compiler = await self._call(AITask.MARKET_COMPILER, payload, _spec_schema(candidates))
         artifacts = [compiler.artifact]
         try:
-            normalized = _normalize_compiler_output(compiler.output, question)
+            _assert_candidate_context(candidates, candidate_context_hash)
+            retained = json.loads(compiler.artifact.body)
+            if (content_hash(payload) != compiler_input_hash or content_hash(retained) != compiler.artifact.content_hash
+                    or content_hash(retained["input"]) != compiler_input_hash or retained["output"] != compiler.output):
+                raise AIRejected("Compiler decision provenance changed", code="compiler_candidate_context_changed")
+            normalized = _normalize_compiler_output(compiler.output, question, candidate_payload,
+                                                    distinct_windows=distinct_measurement_windows)
+            distinct_windows = normalized.pop("_distinct_measurement_windows", [])
             spec = from_dict(ForecastSpecification, normalized)
             _require_english_public_text([
                 spec.canonical_question, spec.share_title,
@@ -716,8 +906,15 @@ class AiCoordinator:
             artifacts.append(_artifact("compiler-normalization", {
                 "schema_version": 1, "kind": "compiler_normalization",
                 "compiler_wire_version": COMPILER_WIRE_VERSION,
-                "normalization_version": "exact-utc-spelling-and-epoch-v1",
+                "normalization_version": ("exact-utc-window-and-candidate-reference-v4" if measurement_window is not None
+                                          else "exact-utc-and-candidate-reference-v3"),
+                **({"measurement_window": measurement_window} if measurement_window is not None else {}),
+                **({"distinct_measurement_windows": distinct_windows} if distinct_windows else {}),
                 "raw_decision_artifact_hash": compiler.artifact.content_hash,
+                "compiler_input_hash": compiler_input_hash,
+                "candidate_context_hash": candidate_context_hash,
+                "candidate_lookup": candidate_lookup,
+                "candidate_lookup_hash": content_hash(candidate_lookup),
                 "close_at_utc": compiler.output["close_at_utc"], "close_at_ms": spec.close_at_ms,
                 "normalized_specification": normalized, "specification_hash": spec.specification_hash,
             }))
@@ -745,12 +942,12 @@ class AiCoordinator:
                                 unavailable_providers=exc.unavailable_providers) from exc
         sources = collection.sources
         artifacts.extend(collection.artifacts)
+        source_documents = [{"url": item.snapshot.url, "text": item.excerpt} for item in sources]
         review_payload = {"schema_version": 1, "specification": to_dict(spec),
                           "original_question": question,
                           "output_language": "en",
                           "source_collection": collection.context,
-                          "source_documents": [{"url": item.snapshot.url, "text": item.excerpt}
-                                               for item in sources],
+                          "source_documents": source_documents,
                           "policy": "Independently judge exact criteria for objective coverage, "
                           "non-overlap, timeframe, missing definitions and whether fetched source "
                           "documents and dates preserve the original user's question without changing intent. Verify "
@@ -776,7 +973,10 @@ class AiCoordinator:
                 "policy": "Independently compare every supplied candidate. Verify specification.duplicate_candidates "
                 "includes every semantically similar candidate, IDs/hashes and material rule differences. "
                 "Report candidates_accurate=false if any match is omitted or misclassified. Threshold 8500 "
-                "basis points. An empty candidate search is complete, never invent matching forecasts.",
+                "basis points. An empty candidate search is complete, never invent matching forecasts."
+                + (" Candidates whose published question declares a different explicit [start, end) "
+                   "measurement interval are distinct measurement contracts by policy; their "
+                   "materially_different_rules=true classification is accurate." if distinct_windows else ""),
             }, _DUPLICATE)
         except AIRejected as exc:
             raise AIRejected(str(exc), (*artifacts, *exc.artifacts), code=exc.code) from exc
@@ -811,40 +1011,85 @@ class AiCoordinator:
         # resolution. Its optional failure cannot fabricate 50% or hide valid work.
         ai_forecast = None
         try:
-            prediction = await self._call("AI_FORECAST", {
-                "schema_version": 1, "specification": to_dict(spec), "as_of_ms": now_ms,
-                "as_of_utc": datetime.fromtimestamp(now_ms // 1000, timezone.utc).replace(
-                    microsecond=(now_ms % 1000) * 1000).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
-                "source_documents": review_payload["source_documents"],
-                "policy": "Estimate the probability of the published YES clause ultimately being "
-                "satisfied, given only the supplied source context and knowledge you actually have "
-                "as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish "
-                "facts supported by the retained source documents from prior or historical knowledge. "
-                "Do not assert a product is currently the latest version, a company currently does "
-                "something, or any other current fact unless the retained source documents support it. "
-                "If source context lacks current information, explicitly acknowledge that uncertainty "
-                "instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or "
-                "evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale "
-                "acknowledging important uncertainty. Never invent web research, crowd forecasts "
-                "or observations. No betting, payouts or investment advice.",
-            }, _AI_FORECAST, provider=compiler.provider)
-            estimate = {"schema_version": 1, "kind": "ai_forecast",
-                        "specification_hash": digest, "as_of_ms": now_ms,
-                        "provider": prediction.provider.provider, "model": prediction.provider.model,
-                        "model_version": prediction.version, "policy_version": POLICY_VERSION,
-                        "yes_probability_bp": prediction.output["yesProbabilityBp"],
-                        "rationale": prediction.output["rationale"],
-                        "decision_artifact_hash": prediction.artifact.content_hash}
-            estimate_artifact = _artifact("ai-forecast", estimate)
-            artifacts.extend((prediction.artifact, estimate_artifact))
-            ai_forecast = {"probability": prediction.output["yesProbabilityBp"] / 100,
-                           "provider": prediction.provider.provider, "model": prediction.provider.model,
-                           "modelVersion": prediction.version, "asOf": now_ms,
-                           "specificationHash": digest, "artifactHash": estimate_artifact.content_hash,
-                           "rationale": prediction.output["rationale"]}
+            estimate = await self._estimate_probability(spec, source_documents, now_ms,
+                                                        provider=compiler.provider)
+            artifacts.extend(estimate.artifacts)
+            ai_forecast = estimate.ai_forecast
         except (AIUnavailable, AIRejected) as exc:
             artifacts.extend(exc.artifacts)
+        try:
+            _assert_candidate_context(candidates, candidate_context_hash)
+        except AIRejected as exc:
+            raise AIRejected(str(exc), tuple(artifacts), code=exc.code) from exc
         return CompileResult(spec, assessment, tuple(artifacts), ai_forecast)
+
+    async def _estimate_probability(self, spec: ForecastSpecification,
+                                    source_documents: list[dict[str, str]], now_ms: int, *,
+                                    provider: ProviderConfig | None = None,
+                                    source_provenance_hash: str | None = None) -> PredictionResult:
+        digest = spec.specification_hash
+        payload = {
+            "schema_version": 1, "specification": to_dict(spec), "as_of_ms": now_ms,
+            "as_of_utc": datetime.fromtimestamp(now_ms // 1000, timezone.utc).replace(
+                microsecond=(now_ms % 1000) * 1000).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+            "source_documents": source_documents,
+            "policy": "Estimate the probability of the published YES clause ultimately being "
+            "satisfied, given only the supplied source context and knowledge you actually have "
+            "as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish "
+            "facts supported by the retained source documents from prior or historical knowledge. "
+            "Do not assert a product is currently the latest version, a company currently does "
+            "something, or any other current fact unless the retained source documents support it. "
+            "If source context lacks current information, explicitly acknowledge that uncertainty "
+            "instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or "
+            "evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale "
+            "acknowledging important uncertainty. Never invent web research, crowd forecasts "
+            "or observations. No betting, payouts or investment advice.",
+        }
+        if source_provenance_hash is not None:
+            payload["source_provenance_hash"] = source_provenance_hash
+        prediction = await self._call("AI_FORECAST", payload, _AI_FORECAST, provider=provider)
+        estimate = {"schema_version": 1, "kind": "ai_forecast",
+                    "specification_hash": digest, "as_of_ms": now_ms,
+                    "provider": prediction.provider.provider, "model": prediction.provider.model,
+                    "model_version": prediction.version, "policy_version": POLICY_VERSION,
+                    "yes_probability_bp": prediction.output["yesProbabilityBp"],
+                    "rationale": prediction.output["rationale"],
+                    "decision_artifact_hash": prediction.artifact.content_hash}
+        if source_provenance_hash is not None:
+            estimate["source_provenance_hash"] = source_provenance_hash
+        estimate_artifact = _artifact("ai-forecast", estimate)
+        ai_forecast = {"probability": prediction.output["yesProbabilityBp"] / 100,
+                       "provider": prediction.provider.provider, "model": prediction.provider.model,
+                       "modelVersion": prediction.version, "asOf": now_ms,
+                       "specificationHash": digest, "artifactHash": estimate_artifact.content_hash,
+                       "rationale": prediction.output["rationale"]}
+        return PredictionResult((prediction.artifact, estimate_artifact), ai_forecast)
+
+    async def refresh_prediction(self, spec: ForecastSpecification, now_ms: int,
+                                 clock: Callable[[], int]) -> PredictionResult:
+        """Recollect immutable sources; create a new estimate, never a new specification."""
+        if not spec.open_at_ms <= now_ms < spec.close_at_ms:
+            raise AIRejected("Only an open forecast can receive a fresh estimate")
+        collection = await self._collect(spec, now_ms)
+        evaluated_at = clock()
+        if type(evaluated_at) is not int or not now_ms <= evaluated_at < spec.close_at_ms:
+            raise AIRejected("Forecast clock or deadline changed during source collection",
+                             collection.artifacts)
+        provenance = _artifact("risk-prediction-sources", {
+            "version": "risk-prediction-sources-v1", "specification_hash": spec.specification_hash,
+            "evaluated_at_ms": evaluated_at, "collection": collection.context,
+            "snapshots": [to_dict(item.snapshot) for item in collection.sources],
+        })
+        try:
+            estimate = await self._estimate_probability(spec,
+                [{"url": item.snapshot.url, "text": item.excerpt} for item in collection.sources],
+                evaluated_at, source_provenance_hash=provenance.content_hash)
+        except AIRejected as exc:
+            raise AIRejected(str(exc), (*collection.artifacts, provenance, *exc.artifacts), code=exc.code) from exc
+        except AIUnavailable as exc:
+            raise AIUnavailable(str(exc), (*collection.artifacts, provenance, *exc.artifacts),
+                                unavailable_providers=exc.unavailable_providers) from exc
+        return PredictionResult((*collection.artifacts, provenance, *estimate.artifacts), estimate.ai_forecast)
 
     async def propose_resolution(self, forecast: Forecast, now_ms: int) -> ResolutionResult:
         spec = forecast.specification
