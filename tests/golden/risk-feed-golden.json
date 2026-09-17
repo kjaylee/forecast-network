@@ -1,0 +1,229 @@
+{
+  "v1": {
+    "envelope": {
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "purpose": "forecast-risk-feed-v1",
+        "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+        "feed_id": "devnet-stable-risk",
+        "sequence": 1,
+        "key_id": "feed-key-1",
+        "issued_at_ms": 1800000000000,
+        "expires_at_ms": 1800000120000,
+        "bindings": [
+          {
+            "schema_version": 1,
+            "binding_id": "usdc-depeg-1d-v1",
+            "version": "canonical-risk-binding-v1",
+            "forecast_id": "forecast-usdc-001",
+            "specification_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "channel": "depegRisk1d",
+            "horizon_hours": 24,
+            "asset": "USDC",
+            "category": "CRYPTO",
+            "valid_from_ms": 1799999999000,
+            "valid_until_ms": 1800086400000
+          }
+        ],
+        "signals": [
+          {
+            "schema_version": 1,
+            "binding_id": "usdc-depeg-1d-v1",
+            "source": "crowd",
+            "probability_bp": 1200,
+            "confidence_bp": 3500,
+            "sample_count": 5,
+            "units": "basis-points",
+            "observed_at_ms": 1799999999900,
+            "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "dependence_group": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "calibration_status": "provisional"
+          }
+        ],
+        "weight_set_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "weight_set_version": "source-calibration-v1"
+      },
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "signature_hex": "2e59bd259830754f162288e98921e42c6f5f05741678fc9bb11f28104ba8259d4ef9078603f90f1b32dab20b33bb6a9198aefe24b4fc2e1f39f0e0ea807c5504"
+    },
+    "payload_hash": "06472bde0ece989c85b82e4922a3047323388222fe0c0dfb6c971a00a68b173d",
+    "envelope_hash": "de16d833be6d8f4ecaf6a7fff5ab67e54a49fc25f27895a60e50f437b1a610c7",
+    "signing_bytes_sha256": "58c7cd631e03361dee717384930a1ce8384c865069459390f8358d723c3e6317",
+    "canonical_payload": "{\"bindings\":[{\"asset\":\"USDC\",\"binding_id\":\"usdc-depeg-1d-v1\",\"category\":\"CRYPTO\",\"channel\":\"depegRisk1d\",\"forecast_id\":\"forecast-usdc-001\",\"horizon_hours\":24,\"schema_version\":1,\"specification_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"valid_from_ms\":1799999999000,\"valid_until_ms\":1800086400000,\"version\":\"canonical-risk-binding-v1\"}],\"expires_at_ms\":1800000120000,\"feed_id\":\"devnet-stable-risk\",\"genesis_hash\":\"EtWTRABZaYq6iMfeYKouRu166VU2xqa1\",\"issued_at_ms\":1800000000000,\"key_id\":\"feed-key-1\",\"purpose\":\"forecast-risk-feed-v1\",\"schema_version\":1,\"sequence\":1,\"signals\":[{\"binding_id\":\"usdc-depeg-1d-v1\",\"calibration_status\":\"provisional\",\"confidence_bp\":3500,\"dependence_group\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"evidence_hash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"observed_at_ms\":1799999999900,\"probability_bp\":1200,\"sample_count\":5,\"schema_version\":1,\"source\":\"crowd\",\"units\":\"basis-points\"}],\"weight_set_hash\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"weight_set_version\":\"source-calibration-v1\"}"
+  },
+  "v2": {
+    "envelope": {
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "purpose": "forecast-risk-feed-v2",
+        "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+        "feed_id": "devnet-stable-risk-v2",
+        "sequence": 1,
+        "key_id": "feed-key-1",
+        "issued_at_ms": 1800007200000,
+        "expires_at_ms": 1800007320000,
+        "bindings": [
+          {
+            "schema_version": 1,
+            "binding_id": "usdc-depeg-1d-2026-09-15T09-v2",
+            "version": "canonical-risk-binding-v2",
+            "forecast_id": "forecast-usdc-048",
+            "specification_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "channel": "depegRisk1d",
+            "asset": "USDC",
+            "category": "CRYPTO",
+            "series_id": "usdc-depeg-1d-w48",
+            "episode_id": "2026-09-15T09:00:00Z",
+            "target_start_ms": 1800000000000,
+            "target_end_ms": 1800172800000,
+            "interval": "[start,end)",
+            "policy_horizon_ms": 86400000,
+            "definition_hash": "9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be",
+            "mapping_profile_id": "monotone-any-event-containment",
+            "mapping_profile_version": "containment-profile-v1",
+            "mapping_profile_hash": "dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d",
+            "mapping_kind": "containing_upper_estimate",
+            "question_event_definition_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "approval_artifact_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+            "authorization_valid_from_ms": 1799978400000,
+            "authorization_valid_until_ms": 1800176400000,
+            "operational_valid_from_ms": 1800000000000,
+            "operational_valid_until_ms": 1800086400000
+          }
+        ],
+        "signals": [
+          {
+            "schema_version": 1,
+            "binding_id": "usdc-depeg-1d-2026-09-15T09-v2",
+            "source": "ai",
+            "value_kind": "question_probability",
+            "question_probability_bp": 150,
+            "confidence_bp": 6000,
+            "sample_count": 1,
+            "units": "basis-points",
+            "forecast_as_of_ms": 1800001800000,
+            "information_cutoff_ms": 1800001800000,
+            "evaluation_started_at_ms": 1800001801000,
+            "evaluation_completed_at_ms": 1800001840000,
+            "source_capture_started_at_ms": 1800001780000,
+            "source_capture_completed_at_ms": 1800001800000,
+            "source_watermark_ms": 1800001500000,
+            "source_bundle_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+            "estimate_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+            "coverage_evidence_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+            "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "dependence_group": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "estimator_version": "gemini-2.5-flash:refresh-v1",
+            "oldest_member_as_of_ms": null,
+            "newest_member_as_of_ms": null,
+            "constituent_dataset_hash": null,
+            "calibration_status": "provisional"
+          }
+        ],
+        "channel_coverage": [
+          {
+            "schema_version": 1,
+            "channel": "depegRisk1d",
+            "status": "covered",
+            "binding_id": "usdc-depeg-1d-2026-09-15T09-v2",
+            "reason": null
+          },
+          {
+            "schema_version": 1,
+            "channel": "depegRisk7d",
+            "status": "unsupported",
+            "binding_id": null,
+            "reason": "no reviewed containment profile"
+          }
+        ],
+        "profile_set_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+        "weight_set_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "weight_set_version": "source-calibration-v2",
+        "calibration_cohort_id": "usdc-depeg-1d-w48-containing"
+      },
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "signature_hex": "d906de8900e3621c8496f6035647a764bc80b64a50c11b207a45f26f1b417deb654c96776c1204dfe9b0adc4e4adf628ff6b90830347b0f2cd346fba55f3e608"
+    },
+    "payload_hash": "89be80bbccaccf6175e7ce257caf52d54cff7a6672eff9f27d5e686de3ee9e37",
+    "envelope_hash": "57006a8175140fed4d2ccfb5e7f68f0087485ef1788bd5334c5779068531d29f",
+    "signing_bytes_sha256": "591af0e68ba7b8386bbf442e764c78a8c34adaecc4bb6a15dd4d2a9cc6995a35",
+    "canonical_payload": "{\"bindings\":[{\"approval_artifact_hash\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"asset\":\"USDC\",\"authorization_valid_from_ms\":1799978400000,\"authorization_valid_until_ms\":1800176400000,\"binding_id\":\"usdc-depeg-1d-2026-09-15T09-v2\",\"category\":\"CRYPTO\",\"channel\":\"depegRisk1d\",\"definition_hash\":\"9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be\",\"episode_id\":\"2026-09-15T09:00:00Z\",\"forecast_id\":\"forecast-usdc-048\",\"interval\":\"[start,end)\",\"mapping_kind\":\"containing_upper_estimate\",\"mapping_profile_hash\":\"dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d\",\"mapping_profile_id\":\"monotone-any-event-containment\",\"mapping_profile_version\":\"containment-profile-v1\",\"operational_valid_from_ms\":1800000000000,\"operational_valid_until_ms\":1800086400000,\"policy_horizon_ms\":86400000,\"question_event_definition_hash\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"schema_version\":1,\"series_id\":\"usdc-depeg-1d-w48\",\"specification_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"target_end_ms\":1800172800000,\"target_start_ms\":1800000000000,\"version\":\"canonical-risk-binding-v2\"}],\"calibration_cohort_id\":\"usdc-depeg-1d-w48-containing\",\"channel_coverage\":[{\"binding_id\":\"usdc-depeg-1d-2026-09-15T09-v2\",\"channel\":\"depegRisk1d\",\"reason\":null,\"schema_version\":1,\"status\":\"covered\"},{\"binding_id\":null,\"channel\":\"depegRisk7d\",\"reason\":\"no reviewed containment profile\",\"schema_version\":1,\"status\":\"unsupported\"}],\"expires_at_ms\":1800007320000,\"feed_id\":\"devnet-stable-risk-v2\",\"genesis_hash\":\"EtWTRABZaYq6iMfeYKouRu166VU2xqa1\",\"issued_at_ms\":1800007200000,\"key_id\":\"feed-key-1\",\"profile_set_hash\":\"5555555555555555555555555555555555555555555555555555555555555555\",\"purpose\":\"forecast-risk-feed-v2\",\"schema_version\":1,\"sequence\":1,\"signals\":[{\"binding_id\":\"usdc-depeg-1d-2026-09-15T09-v2\",\"calibration_status\":\"provisional\",\"confidence_bp\":6000,\"constituent_dataset_hash\":null,\"coverage_evidence_hash\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"dependence_group\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"estimate_hash\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"estimator_version\":\"gemini-2.5-flash:refresh-v1\",\"evaluation_completed_at_ms\":1800001840000,\"evaluation_started_at_ms\":1800001801000,\"evidence_hash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"forecast_as_of_ms\":1800001800000,\"information_cutoff_ms\":1800001800000,\"newest_member_as_of_ms\":null,\"oldest_member_as_of_ms\":null,\"question_probability_bp\":150,\"sample_count\":1,\"schema_version\":1,\"source\":\"ai\",\"source_bundle_hash\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"source_capture_completed_at_ms\":1800001800000,\"source_capture_started_at_ms\":1800001780000,\"source_watermark_ms\":1800001500000,\"units\":\"basis-points\",\"value_kind\":\"question_probability\"}],\"weight_set_hash\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"weight_set_version\":\"source-calibration-v2\"}",
+    "definition": {
+      "schema_version": 1,
+      "definition_id": "usdc-depeg-1d",
+      "definition_version": "canonical-risk-definition-v2.1",
+      "asset": "USDC",
+      "channel": "depegRisk1d",
+      "policy_horizon_ms": 86400000,
+      "predicate": "any completed 5-minute candle closes strictly below threshold on both primary sources",
+      "units": "USD",
+      "threshold": "0.9900",
+      "sampling_grid_ms": 300000,
+      "witness_semantics": "candle start timestamp inside [start,end)",
+      "interval_rule": "[start,end)",
+      "baseline_policy": "absolute threshold; no fixed-start baseline",
+      "source_policy": "Kraken and Bitstamp OHLC; both required; missing data is INVALID",
+      "invalid_data_policy": "INVALID, never NO",
+      "mapping_profile_id": "monotone-any-event-containment",
+      "mapping_profile_version": "containment-profile-v1",
+      "mapping_kind": "containing_upper_estimate",
+      "source_freshness_max_ms": 120000,
+      "inference_freshness_max_ms": 7200000,
+      "clock_skew_max_ms": 5000,
+      "calibration_cohort_id": "usdc-depeg-1d-w48-containing"
+    },
+    "definition_hash": "9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be",
+    "profile": {
+      "schema_version": 1,
+      "profile_id": "monotone-any-event-containment",
+      "profile_version": "containment-profile-v1",
+      "mapping_kind": "containing_upper_estimate",
+      "predicate_class": "monotone_any_event",
+      "max_forecast_age_ms": 7200000,
+      "max_policy_lag_ms": 0,
+      "source_freshness_max_ms": 120000,
+      "clock_skew_max_ms": 5000,
+      "review_reference": "risk-feed-window-v2 plan, section B"
+    },
+    "profile_hash": "dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d",
+    "series": {
+      "schema_version": 1,
+      "series_id": "usdc-depeg-1d-w48",
+      "version": "canonical-risk-series-v2",
+      "feed_id": "devnet-stable-risk-v2",
+      "channel": "depegRisk1d",
+      "asset": "USDC",
+      "definition_hash": "9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be",
+      "mapping_profile_hash": "dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d",
+      "mapping_kind": "containing_upper_estimate",
+      "policy_horizon_ms": 86400000,
+      "window_ms": 172800000,
+      "cadence_ms": 43200000,
+      "lead_ms": 10800000,
+      "question_template": "During [{start}, {end}), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly {end}."
+    },
+    "series_hash": "691aaedcc660cd5d4d5f33c7f36fbacb032c4441378c0709855931612a31707a"
+  },
+  "canonical_edge": {
+    "value": {
+      "a": "한글 ✓ 😀",
+      "b": "quote \" backslash \\ slash / tab\t newline\n del nul\u0000",
+      "c": [
+        1,
+        true,
+        false,
+        null,
+        {
+          "z": 1,
+          "y": []
+        }
+      ],
+      "d": 9007199254740991,
+      "e": "  "
+    },
+    "canonical": "{\"a\":\"한글 ✓ 😀\",\"b\":\"quote \\\" backslash \\\\ slash / tab\\t newline\\n del nul\\u0000\",\"c\":[1,true,false,null,{\"y\":[],\"z\":1}],\"d\":9007199254740991,\"e\":\"  \"}",
+    "hash": "0e8e5e80033e78701b13cb0e12aed0ca48e220fb516cec2aa638b28ee8f3bc51"
+  }
+}

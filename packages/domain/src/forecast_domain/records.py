@@ -124,7 +124,7 @@ class Record:
                     raise ValidationError(f"{path}: requires at least {limit} entries")
                 if key in ("maxLength", "maxItems") and len(value) > limit:
                     raise ValidationError(f"{path}: allows at most {limit} entries")
-                if key == "pattern" and re.search(limit, value) is None:
+                if key == "pattern" and re.fullmatch(limit, value) is None:
                     raise ValidationError(f"{path}: malformed value")
                 if key == "uniqueItems" and limit:
                     if any(value[index] in value[:index] for index in range(len(value))):
