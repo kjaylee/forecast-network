@@ -22,7 +22,11 @@ SKR_MINT = "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3"
 SKR_DECIMALS = 6
 TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-REFRESH_MS = 6 * 3_600_000
+
+_CURRENT_ADDRESS = (
+    "COALESCE((SELECT address FROM wallet_identities WHERE user_id=? AND status='active' "
+    "AND converted_at IS NOT NULL),(SELECT address FROM wallet_links WHERE user_id=?))"
+)
 
 Rpc = Callable[[str, list[Any]], Awaitable[Any]]
 
@@ -43,7 +47,49 @@ def candidate_mints(token_accounts: list[Any]) -> list[str]:
         amount = info.get("tokenAmount") or {}
         if amount.get("decimals") == 0 and amount.get("amount") == "1" and isinstance(info.get("mint"), str):
             mints.append(info["mint"])
-    return mints
+    return list(dict.fromkeys(mints))
+
+
+def _rpc_values(reply: Any) -> list[Any]:
+    if not isinstance(reply, dict) or not isinstance(reply.get("value"), list):
+        raise ValueError("Incomplete RPC response")
+    return list(reply["value"])
+
+
+def _token_accounts(reply: Any) -> list[Any]:
+    accounts = _rpc_values(reply)
+    for entry in accounts:
+        info = _parsed_info(entry.get("account")) if isinstance(entry, dict) else {}
+        amount = info.get("tokenAmount")
+        if (not isinstance(info.get("mint"), str) or not isinstance(amount, dict)
+                or type(amount.get("decimals")) is not int or type(amount.get("amount")) is not str
+                or not amount["amount"].isascii() or not amount["amount"].isdecimal()):
+            raise ValueError("Incomplete token account")
+    return accounts
+
+
+def _mint_accounts(reply: Any, count: int) -> list[Any]:
+    accounts = _rpc_values(reply)
+    if len(accounts) != count:
+        raise ValueError("Incomplete mint accounts")
+    for account in accounts:
+        info = _parsed_info(account)
+        supply, extensions = info.get("supply"), info.get("extensions", [])
+        if (type(info.get("decimals")) is not int or not isinstance(supply, str)
+                or not supply.isascii() or not supply.isdecimal() or not isinstance(extensions, list)):
+            raise ValueError("Incomplete mint account")
+        for extension in extensions:
+            if not isinstance(extension, dict) or not isinstance(extension.get("extension"), str):
+                raise ValueError("Incomplete mint extension")
+            if extension["extension"] == "tokenGroupMember":
+                state = extension.get("state")
+                if not isinstance(state, dict) or not all(isinstance(state.get(key), str) for key in ("group", "mint")):
+                    raise ValueError("Incomplete token group member")
+    return accounts
+
+
+def _changed() -> AppError:
+    return AppError(409, "seeker_verification_changed", "Your wallet or verification changed. Try verifying again.")
 
 
 def genesis_member(mint_accounts: list[Any], mints: list[str]) -> tuple[str, int | None] | None:
@@ -95,11 +141,15 @@ class SeekerVerification:
         return self.rpc is not None
 
     async def status(self, user_id: str) -> dict[str, Any] | None:
-        return projection(await self.db.first("SELECT * FROM seeker_verifications WHERE user_id=?", (user_id,)))
+        # Evidence has no passive TTL: explicit complete refreshes invalidate it.
+        # A historical proof must not badge a different or disconnected wallet.
+        return projection(await self.db.first(
+            "SELECT * FROM seeker_verifications WHERE user_id=? AND invalidated_at IS NULL AND address=" + _CURRENT_ADDRESS,
+            (user_id, user_id, user_id)))
 
     async def public_badge(self, user_id: str) -> dict[str, Any] | None:
-        row = await self.db.first("SELECT member_number FROM seeker_verifications WHERE user_id=?", (user_id,))
-        return {"memberNumber": row["member_number"]} if row else None
+        status = await self.status(user_id)
+        return {"memberNumber": status["memberNumber"]} if status else None
 
     async def _address(self, user_id: str) -> str:
         identity = await self.db.first("SELECT address FROM wallet_identities WHERE user_id=? AND status='active' "
@@ -116,36 +166,53 @@ class SeekerVerification:
             raise AppError(503, "seeker_unavailable", "Seeker verification is not configured.")
         await self.rate_limit("seeker-verify:" + user_id, 6, 3_600_000)
         address = await self._address(user_id)
+        previous = await self.db.first("SELECT revision,address FROM seeker_verifications WHERE user_id=?", (user_id,))
+        revision = previous["revision"] if previous else -1
         try:
             token_2022 = await self.rpc("getTokenAccountsByOwner",
                                         [address, {"programId": TOKEN_2022_PROGRAM}, {"encoding": "jsonParsed"}])
-            mints = candidate_mints((token_2022 or {}).get("value") or [])
+            mints = candidate_mints(_token_accounts(token_2022))
             member = None
-            if mints:
-                accounts = await self.rpc("getMultipleAccounts", [mints[:100], {"encoding": "jsonParsed"}])
-                member = genesis_member((accounts or {}).get("value") or [], mints[:100])
+            for offset in range(0, len(mints), 100):
+                batch = mints[offset:offset+100]
+                # Await one binding promise at a time; Pyodide cannot fan out RPC.
+                accounts = _mint_accounts(await self.rpc("getMultipleAccounts", [batch, {"encoding": "jsonParsed"}]), len(batch))
+                member = genesis_member(accounts, batch)
+                if member is not None:
+                    break
             skr = await self.rpc("getTokenAccountsByOwner",
                                  [address, {"mint": SKR_MINT}, {"encoding": "jsonParsed"}])
+            atomic = skr_atomic(_token_accounts(skr))
+            slot = int((skr.get("context") or {}).get("slot") or 0)
         except AppError:
             raise
         except Exception as exc:  # transport or malformed RPC reply; never leak the endpoint
             raise AppError(503, "seeker_rpc_unavailable", "Solana could not be reached. Try again shortly.") from exc
         if member is None:
+            if previous is not None and previous["address"] == address:
+                result = await self.db.execute(
+                    "UPDATE seeker_verifications SET invalidated_at=?,revision=revision+1 "
+                    "WHERE user_id=? AND address=? AND revision=? AND address=" + _CURRENT_ADDRESS,
+                    (self.now_ms(), user_id, address, revision, user_id, user_id))
+                if result["meta"]["changes"] != 1:
+                    raise _changed()
             raise AppError(409, "seeker_not_found", "No Seeker Genesis Token was found in this wallet.")
         mint, number = member
-        slot = int(((skr or {}).get("context") or {}).get("slot") or 0)
-        atomic = skr_atomic((skr or {}).get("value") or [])
         now = self.now_ms()
         taken = await self.db.first("SELECT user_id FROM seeker_verifications WHERE genesis_mint=? AND user_id!=?",
                                     (mint, user_id))
         if taken:
             raise AppError(409, "seeker_already_claimed", "This Seeker is already verified on another account.")
-        await self.db.execute(
+        result = await self.db.execute(
             "INSERT INTO seeker_verifications(user_id,address,genesis_mint,member_number,skr_atomic,slot,verified_at,refreshed_at) "
-            "VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET address=excluded.address,"
+            "SELECT ?,?,?,?,?,?,?,? WHERE ?=" + _CURRENT_ADDRESS + " ON CONFLICT(user_id) DO UPDATE SET address=excluded.address,"
             "genesis_mint=excluded.genesis_mint,member_number=excluded.member_number,skr_atomic=excluded.skr_atomic,"
-            "slot=excluded.slot,refreshed_at=excluded.refreshed_at",
-            (user_id, address, mint, number, str(atomic), slot, now, now))
+            "slot=excluded.slot,refreshed_at=excluded.refreshed_at,invalidated_at=NULL,revision=seeker_verifications.revision+1 "
+            "WHERE seeker_verifications.revision=?",
+            (user_id, address, mint, number, str(atomic), slot, now, now, address, user_id, user_id, revision))
+        if result["meta"]["changes"] != 1:
+            raise _changed()
         status = await self.status(user_id)
-        assert status is not None
+        if status is None:
+            raise _changed()
         return status
