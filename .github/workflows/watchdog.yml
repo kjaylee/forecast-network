@@ -1,0 +1,102 @@
+name: Watchdog
+
+# The pipeline monitor runs on the operator host, so it goes down with the thing
+# it watches, and nothing polls the Worker at all. This runs on a GitHub runner:
+# a third failure domain, observing the operator host and Cloudflare from outside
+# both. It reads only public endpoints and needs no secret.
+#
+# GitHub treats scheduled workflows as best effort — a run can be delayed under
+# load, and the schedule is disabled after 60 days without repository activity.
+# That makes this a backstop, not a pager. It is here to make an outage last
+# minutes instead of the days one just lasted.
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Observe the public service
+        id: service
+        run: |
+          status=0
+          python3 scripts/watchdog.py > watchdog.json || status=$?
+          cat watchdog.json
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Read the state of the main branch checks
+        id: checks
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          conclusion=$(gh run list --workflow=checks.yml --branch main --limit 1 \
+            --json conclusion --jq '.[0].conclusion // "unknown"')
+          echo "conclusion=$conclusion" >> "$GITHUB_OUTPUT"
+          echo "checks.yml on main last concluded: $conclusion"
+
+      - name: Raise, update or clear the service alert
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title='[watchdog] the public service is not answering correctly'
+          number=$(gh issue list --state open --limit 100 --json number,title \
+            --jq '.[] | select(.title == "'"$title"'") | .number' | head -1)
+
+          if [ "${{ steps.service.outputs.status }}" = "0" ]; then
+            if [ -n "$number" ]; then
+              gh issue close "$number" --comment "Recovered $(date -u +%FT%TZ)."
+            fi
+            exit 0
+          fi
+
+          {
+            printf 'Observed %s by a GitHub runner, outside the operator host and outside Cloudflare.\n\n' "$(date -u +%FT%TZ)"
+            python3 -c 'import json; print("\n".join("- " + p for p in json.load(open("watchdog.json"))["problems"]))'
+            printf '\nRun: %s/%s/actions/runs/%s\n' "${{ github.server_url }}" "${{ github.repository }}" "${{ github.run_id }}"
+          } > alert.md
+
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file alert.md
+          else
+            gh issue create --title "$title" --body-file alert.md
+          fi
+          exit 1
+
+      - name: Raise, update or clear the checks alert
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title='[watchdog] checks.yml is failing on main'
+          number=$(gh issue list --state open --limit 100 --json number,title \
+            --jq '.[] | select(.title == "'"$title"'") | .number' | head -1)
+          conclusion='${{ steps.checks.outputs.conclusion }}'
+
+          if [ "$conclusion" != "failure" ]; then
+            if [ -n "$number" ]; then
+              gh issue close "$number" --comment "checks.yml concluded ${conclusion} $(date -u +%FT%TZ)."
+            fi
+            exit 0
+          fi
+
+          # A single red run on a push is ordinary. Only an unchanged red run means
+          # nobody has looked, which is what happened for four days.
+          printf 'checks.yml has failed on main since at least %s.\n\nRun: %s/%s/actions/runs/%s\n' \
+            "$(date -u +%FT%TZ)" "${{ github.server_url }}" "${{ github.repository }}" "${{ github.run_id }}" > alert.md
+
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file alert.md
+          else
+            gh issue create --title "$title" --body-file alert.md
+          fi
+          exit 1
