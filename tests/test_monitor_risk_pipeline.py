@@ -8,7 +8,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-import monitor_risk_pipeline as monitor  # noqa: E402
+try:
+    import monitor_risk_pipeline as monitor  # noqa: E402
+except RuntimeError as error:  # pragma: no cover
+    # The monitor reads the operator's keychain map on import, and that map lives on
+    # the operator host. A CI runner has no operator configuration and should not
+    # pretend to.
+    raise unittest.SkipTest(f"operator configuration is required: {error}") from error
 
 NOW = 1_800_000_000_000
 
