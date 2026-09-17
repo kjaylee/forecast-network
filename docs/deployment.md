@@ -136,7 +136,8 @@ Earlier releases left Solana effects in `awaiting_adapter`. Release `0.9.0` adds
 the Devnet registry adapter and durable delivery records; only verified finalized
 RPC observations may mark a particular revision confirmed. All three current
 public revisions were confirmed through a one-time Mac operator run; hosted
-automatic delivery remains blocked by RPC access. See
+automatic delivery was blocked by RPC access at that time and resumed once the
+authenticated RPC proxy was deployed. See
 [Devnet verification](verification-devnet.md).
 
 AI limits are 240 workflows/day globally and 10/day per user. These are workflows,
@@ -253,10 +254,13 @@ replacement for Cloudflare scheduled execution. Its success cannot prove that
 subsequent revisions will be delivered automatically.
 
 Release configuration keeps `SOLANA_REGISTRY_ENABLED=true` for history reads and
-durable intents, but sets **`SOLANA_REGISTRY_RELAY_ENABLED=false`** to pause cron
-relay while RPC access is unresolved. `SOLANA_RPC_URL` returns to the official
-`https://api.devnet.solana.com` default after the alternate public endpoint failed.
-Do not enable automatic relay merely because historical revisions are confirmed.
+durable intents and sets **`SOLANA_REGISTRY_RELAY_ENABLED=true`**, with
+`SOLANA_RPC_PROXY_URL` pointing at the authenticated Devnet RPC proxy
+(`https://forecast-rpc.eastsea.xyz/rpc`), which rejects unauthenticated requests
+and runs under launchd alongside its tunnel. `SOLANA_RPC_URL` remains the official
+`https://api.devnet.solana.com` default; the failed alternate public endpoint is not
+promoted. Do not treat confirmed historical revisions as evidence of continuous
+future delivery — the 48-hour finalization interval is still unobserved.
 
 The authenticated `POST /api/admin/registry/run` remains available for explicit
 operator probes. `GET /api/admin/registry/health` checks the hot signing identity

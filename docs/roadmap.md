@@ -34,7 +34,7 @@ primary public documentation and product default are English.
 | Wallet-first sign-in | Deployed; actual Seeker login verified in 0.11.1 | Signed login, existing-profile migration, no new site recovery codes, browser-bound sessions, signature-only wallet compatibility and restoration after reload |
 | Funded point markets | Shadow runtime verified locally | Persistent quotes/fills and changing prices; isolated test balances; active point adapter disabled |
 | Service-cost and refund accounting | Nonbillable sandbox verified locally | Uncertain costs, refunds and replay protection; no payment adapter or revenue claim |
-| M2: Solana registry | Program deployed; three public revisions confirmed by operator synchronization | Exact binary and finalized current histories verified; Cloudflare automatic delivery remains blocked by RPC access; elapsed 48-hour finalization remains unverified |
+| M2: Solana registry | Program deployed; three public revisions confirmed by operator synchronization, automatic delivery resumed via an authenticated RPC proxy | Exact binary and finalized current histories verified; scheduled sweep delivers and confirms revisions unattended; elapsed 48-hour finalization remains unverified |
 | Key custody | Four roles stored in this Mac's Keychain | Separate relayer, upgrade/administrator, program and buffer identities; only the hot relayer is a Worker secret; off-device recovery is not yet verified |
 | M6: reliability | Core safeguards tested; operational hardening continues | Retries, concurrency, CSRF, resolution and outbox regression coverage; 48-hour lifecycle, recovery drills and long-running operations pending |
 | M7: load and simulation | Planned | Actual-adapter load and adversarial scenarios pending |
@@ -55,15 +55,17 @@ earlier release counts do not certify it.
 The `0.9.0` baseline passed **555 Python tests, 131 frontend tests, 23 Rust guard
 tests and 52 schemas**, plus Ruff and strict mypy across 28 source files. The
 Devnet program is real, and all three current public revisions were confirmed
-through a one-time Mac operator run of the durable adapter. Automatic delivery
-from Cloudflare remains blocked by RPC access. See
+through a one-time Mac operator run of the durable adapter, and a later
+authenticated RPC proxy allowed automatic delivery to resume. See
 [Devnet evidence and remaining gates](verification-devnet.md)
 and [storage and trust](architecture/storage-and-trust.md).
 
-Registry history stays enabled; automatic cron relay is explicitly disabled until
-a working authenticated RPC is available. The official public Devnet URL remains
-the configured default. Readable confirmed history is not a claim of continuous
-delivery of future revisions.
+Registry history stays enabled, and automatic cron relay is enabled following the
+deployment of an authenticated Devnet RPC proxy; the live `/api/status` reports
+`relayEnabled: true` and the scheduled sweep has delivered and confirmed canonical
+revisions unattended. The official public Devnet URL remains the configured
+default. Readable confirmed history is still not a claim of continuous delivery of
+future revisions, and the 48-hour finalization interval remains unobserved.
 
 Shipping the web portions of M3–M5 first does not renumber the handoff or complete
 M2. Web records must not appear chain-verified before Solana integration. Native

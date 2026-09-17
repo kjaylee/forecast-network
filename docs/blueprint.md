@@ -104,12 +104,11 @@ Fresh accounts and newly generated wallets still require a stronger Sybil policy
 All three current public forecast revisions are confirmed on Devnet: iPhone at
 revision 6 / CHALLENGE, Windows and M6 Mac at revision 2 / OPEN. A one-time operator
 command on this Mac replayed their histories through the same durable adapter.
-Cloudflare's public RPC requests are still failing; automatic hosted anchoring is
-not verified. An authenticated RPC endpoint and actual scheduled-delivery checks
-are required before describing registry operation as autonomous.
-Until then, history reads and durable delivery intents remain enabled and the
-automatic relay flag is false. No confirmed historical record is removed by
-pausing delivery.
+Cloudflare's direct public RPC requests had been failing. An authenticated Devnet
+RPC proxy is now deployed and scheduled delivery has been exercised, so hosted
+anchoring runs with the automatic relay flag true while history reads and durable
+delivery intents remain enabled. The 48-hour finalization interval is still
+unobserved, so registry operation is not described as fully autonomous.
 
 ## 3. The user loop
 

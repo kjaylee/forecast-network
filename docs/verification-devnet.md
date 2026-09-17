@@ -150,12 +150,16 @@ therefore remains blocked. An authenticated provider endpoint must be configured
 securely and verified from the actual Worker, followed by a real scheduled update.
 The Mac's successful public-RPC access is insufficient evidence of hosted operation.
 
-The final runtime configuration preserves `SOLANA_REGISTRY_ENABLED=true` for
-history and durable intents and sets `SOLANA_REGISTRY_RELAY_ENABLED=false` to
-pause automatic cron relay. The official public Devnet RPC remains the default;
-the failed alternate endpoint is not promoted. Explicit administrative relay
-probes remain possible. Confirmed records remain readable while newer intents
-await a working relay.
+**Update, 2026-09-17.** The hosted-delivery blocker described above was resolved
+for the deployed system after this audit. An authenticated Devnet RPC proxy
+(`https://forecast-rpc.eastsea.xyz/rpc`, declared as `SOLANA_RPC_PROXY_URL`) is
+deployed and rejects unauthenticated requests, the release configuration sets
+`SOLANA_REGISTRY_RELAY_ENABLED=true`, and the live `/api/status` reports
+`relayEnabled: true`. The five-minute scheduled sweep has delivered and confirmed
+canonical revisions unattended. The findings above stand as the state at
+2026-09-10. The deployed health route's `rpcAvailable` value has not been
+re-verified since the proxy was installed, and the 48-hour finalization interval
+remains unobserved end to end.
 
 The administrative health route checked the hot key with a fixed non-transaction
 message in the actual deployed Worker. It returned `signerVerified=true` and

@@ -39,11 +39,13 @@ unauthorized, duplicate, stale and premature-finalization requests. The real
 48-hour finalization interval has not yet been observed. The public iPhone question
 is confirmed at revision 6 / CHALLENGE; Windows and M6 Mac are confirmed at revision
 2 / OPEN. These records were synchronized from this Mac through the same durable
-adapter. Cloudflare-to-RPC access still prevents autonomous registry delivery;
-the one-time synchronization does not establish a working hosted relayer.
-Registry history and delivery intents remain enabled, while automatic relay is
-explicitly paused (`SOLANA_REGISTRY_RELAY_ENABLED=false`) until authenticated RPC
-access is verified. Existing confirmed records remain readable.
+adapter. Cloudflare RPC access was subsequently restored through an authenticated
+Devnet RPC proxy, and automatic relay is enabled
+(`SOLANA_REGISTRY_RELAY_ENABLED=true`), which the live `/api/status` reports. The
+five-minute scheduled sweep has delivered and confirmed canonical registry
+revisions unattended. The 48-hour finalization interval has still not been observed
+end to end, so continuous delivery of future revisions is not claimed. Existing
+confirmed records remain readable.
 See [Devnet verification](docs/verification-devnet.md) and
 [storage and trust](docs/architecture/storage-and-trust.md).
 

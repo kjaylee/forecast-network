@@ -48,8 +48,13 @@ participant. It stays under timing review. A newer article cannot erase that hol
   this release does not impose it retroactively.
 - Active paid-value assets do not exist. Active point markets remain disabled in
   production; shadow balances are isolated, and billing remains nonbillable.
-- Hosted automatic Solana relay remains paused pending authenticated RPC access.
-  Initial public histories and the hosted signing key were separately verified.
+- Hosted automatic Solana relay was paused pending authenticated RPC access at the
+  time of this verification. Initial public histories and the hosted signing key
+  were separately verified.
+
+**Update, 2026-09-17.** The relay is no longer paused: an authenticated Devnet RPC
+proxy is deployed and the live `/api/status` reports `relayEnabled: true`. The rest
+of this record stands as written.
 
 Evidence files include `tmp/eligibility-ship-check.log`,
 `tmp/eligibility-frontend-final.log`, `tmp/eligibility-ui/results.json` and

@@ -86,5 +86,7 @@ or proof of a unique human. Keep `WALLET_LOGIN_REQUIRED=true`; the old optional
 linking fallback is disabled in production.
 
 Wallet login uses message verification and works independently of Solana RPC.
-Cloudflare's automatic Devnet registry relay remains paused pending a usable
-authenticated RPC. This release does not claim to resolve that separate blocker.
+Cloudflare's automatic Devnet registry relay was paused pending a usable
+authenticated RPC at the time of this verification. **Update, 2026-09-17:**
+an authenticated Devnet RPC proxy is now deployed and the relay flag is true; this
+release does not otherwise depend on it.
