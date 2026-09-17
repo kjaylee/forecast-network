@@ -22,6 +22,18 @@ Three failure domains carry five production-critical processes between them, and
 there is no observer standing outside any of them. When the operator host stops,
 the process that would say so stops with it.
 
+## The target state
+
+Stated 2026-09-18: production must end up **separated from this operator's own
+system**. No Mac, no NAS, no house supply, no home connection on the critical
+path. That is the direction every step below is measured against.
+
+A second box in the same house is a step, not the destination. Two machines
+sharing a power supply, a connection and a location are one failure domain with
+extra latency; that buys redundancy against a dead machine and nothing against a
+dead site. The destination is that nothing on the critical path belongs to the
+operator at all.
+
 ## The inventory
 
 Measured on 2026-09-17 from `launchctl list` and the Worker configuration.
@@ -128,9 +140,35 @@ None of these should be taken without the custodian of that boundary saying so.
 
 **2. Take the RPC path off this Mac.** This is the deeper item: it is dependency
 2 above, it is on the production registry delivery path, and it is the reason
-the host cannot be allowed to sleep. Resolving it means finding a provider that
-answers Cloudflare's Workers, which was attempted before and failed for the
-alternates tested. Research first, then code.
+the host cannot be allowed to sleep.
+
+Measured on 2026-09-18 by deploying a throwaway Worker (`forecast-rpc-reach-probe`,
+since deleted) that called `getGenesisHash` on each candidate from inside
+Cloudflare:
+
+| Endpoint reached from a Worker | Result |
+| --- | --- |
+| `api.devnet.solana.com` | 403, `"Your IP or provider is blocked from this endpoint"` |
+| `api.mainnet-beta.solana.com` | 403, same |
+| `solana-devnet-rpc.publicnode.com` | 404, no such host |
+| `solana-devnet.api.onfinality.io/public` | 429, rate limited |
+| `endpoints.omniatech.io/v1/sol/devnet/public` | 429, rate limited |
+| `rpc.ankr.com/solana_devnet` | requires an API key |
+| `solana.leorpc.com` | 200, but it answers with **mainnet** genesis `5eykt4Us…` |
+
+So no keyless Devnet endpoint answers Workers, and the one endpoint that does
+answer is the wrong network. The proxy is load-bearing, and the pinning is not
+the obstacle to be worked around: `apps/web/src/entry.py` requires
+`SOLANA_RPC_URL == "https://api.devnet.solana.com"` and admits only the exact
+approved gateway, which is what stops a third-party endpoint — leorpc among
+them — from silently serving the wrong chain. That check is why the wrong
+network was caught here at all.
+
+Removing this host therefore needs a **keyed** Devnet endpoint (Helius,
+QuickNode and similar offer Devnet on free tiers) plus a deliberate widening of
+the pinned-endpoint rule to admit it, with the genesis check retained as the
+thing that proves the network. That is an account and a custody decision, not a
+code change to make unilaterally.
 
 **3. Move the keeper's key, deliberately.** The keeper signs with a Keychain
 identity on this host. Moving it is a key-custody decision, not an ops tidy-up,
