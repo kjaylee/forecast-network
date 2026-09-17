@@ -15,6 +15,12 @@ The product and architecture handoff is maintained in the private companion repo
 - Run `python3 scripts/check.py`; run `python3 scripts/check.py --tools` when the
   existing Ruff/mypy tools are available. Do not add runtime dependencies without
   an explicit request.
+- Commit each completed work unit before starting the next, especially during a
+  long autonomous run. Leave the repository committable at every stopping point:
+  never let days of work accumulate in the working tree, and never leave code that
+  is serving production untracked. Migrations, generated schemas and the tests for
+  a change belong in the same commit as that change. A commit is a checkpoint, not
+  a reward for finishing.
 - Store temporary files, build copies and caches under repository `tmp/`. Set
   `TMPDIR` to its absolute path and use `PYTHONDONTWRITEBYTECODE=1` during ad hoc
   Python work. Set tool-specific cache paths there as needed.
