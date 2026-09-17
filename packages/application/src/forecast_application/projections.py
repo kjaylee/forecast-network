@@ -108,33 +108,6 @@ def profile_card_json(payload: dict[str, Any]) -> str:
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
 
-CARD_SQL = """
-WITH qualified AS (
- SELECT user_id,AVG(brier_score) AS brier FROM reputation_scores
- WHERE brier_score IS NOT NULL GROUP BY user_id HAVING COUNT(*)>=10
-), ranked AS (
- SELECT user_id,ROW_NUMBER() OVER(ORDER BY brier,user_id) AS position,
- COUNT(*) OVER() AS total FROM qualified
-), top_people AS (
- SELECT user_id FROM ranked WHERE position<=MAX(1,CAST((total+9)/10 AS INTEGER))
-)
-SELECT f.*,u.display_name AS creator_name,u.handle AS creator_handle,
- t.body AS display_translation,t.translated_at,t.content_hash AS translation_hash,
- h.body AS participation_hold,
- (SELECT AVG(v.yes_probability) FROM eligible_user_forecasts v WHERE v.forecast_id=f.id) AS probability,
- (SELECT COUNT(*) FROM eligible_user_forecasts v WHERE v.forecast_id=f.id) AS participant_count,
- (SELECT AVG(v.yes_probability) FROM eligible_user_forecasts v JOIN top_people t ON t.user_id=v.user_id
-  WHERE v.forecast_id=f.id) AS top_probability,
- (SELECT COUNT(*) FROM eligible_user_forecasts v JOIN top_people t ON t.user_id=v.user_id
-  WHERE v.forecast_id=f.id) AS top_count,
- (SELECT COUNT(*) FROM comments c WHERE c.forecast_id=f.id) AS comment_count
-FROM forecasts f JOIN users u ON u.id=f.creator_id
-LEFT JOIN active_participation_holds h ON h.forecast_id=f.id
-LEFT JOIN forecast_translations t ON t.forecast_id=f.id AND t.language='en'
- AND t.specification_hash=f.specification_hash
-"""
-
-
 def display_translation(row: dict[str, Any]) -> dict[str, Any] | None:
     raw = row.get("display_translation")
     if not raw:
@@ -151,6 +124,16 @@ def card(row: dict[str, Any]) -> dict[str, Any]:
     if ai and translation and translation["aiRationale"] is not None:
         ai = {**ai, "rationale": translation["aiRationale"], "rationaleLanguage": "en",
               "rationaleAttribution": translation["attribution"]}
+    if ai:
+        probability = ai.get("probability")
+        observed = ai.get("asOf", row["created_at"])
+        cutoff = row.get("quality_as_of", row["created_at"])
+        valid_ai = (type(probability) in (int, float) and 0 <= probability <= 100
+                    and type(observed) is int and 0 <= observed <= cutoff
+                    and type(ai.get("provider")) is str and bool(ai["provider"])
+                    and type(ai.get("model")) is str and bool(ai["model"]))
+        ai = {**ai, "probability": probability if valid_ai else None,
+              "count": 1 if valid_ai else 0, "asOf": observed}
     return {
         "id": row["id"], "title": translation["title"] if translation else row["title"],
         "question": translation["question"] if translation else row["question"],
@@ -166,7 +149,10 @@ def card(row: dict[str, Any]) -> dict[str, Any]:
                     "handle": row["creator_handle"]},
         "crowd": {"probability": row["probability"], "count": row["participant_count"]},
         "top": {"probability": row["top_probability"], "count": row["top_count"]},
-        "ai": ai or {"probability": None, "provider": None, "model": None},
+        "expert": {"probability": row.get("expert_probability"), "count": row.get("expert_count", 0)},
+        "cohortMethodology": {"version": "forecast-quality-v2", "asOf": row.get("quality_as_of"),
+                              "expertise": "Demonstrated category forecasting record, not professional credentials."},
+        "ai": ai or {"probability": None, "provider": None, "model": None, "count": 0},
         "commentCount": row["comment_count"], "shareCount": row["share_count"],
         "specificationHash": row["specification_hash"],
         "chain": {"network": None, "status": "unconnected", "transaction": None},
@@ -214,3 +200,69 @@ def scores(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "accuracy": correct/count*100 if count else None, "brierScore": brier,
             "calibrationScore": 1-calibration_error/count if count else None,
             "consistencyScore": None}
+
+
+def quality_card_sql(as_of_ms: int, forecast_ids: list[str]) -> str:
+    """Bound card reads to selected IDs; qualification excludes each target result.
+
+    SQL performs aggregate work, not one network history read per participant.
+    The caller supplies a maximum of 100 IDs after full-inventory ordering.
+    """
+    if type(as_of_ms) is not int or as_of_ms < 0 or len(forecast_ids) > 100:
+        raise ValueError("Invalid quality card scope")
+    if any(type(value) is not str or not value or len(value) > 120 for value in forecast_ids):
+        raise ValueError("Invalid forecast identifier")
+    identifiers = ",".join("'" + value.replace("'", "''") + "'" for value in forecast_ids) or "NULL"
+    now = as_of_ms
+    return f"""
+WITH candidates AS (SELECT * FROM forecasts WHERE id IN ({identifiers})), history AS (
+ SELECT *,(probability-CASE outcome WHEN 'YES' THEN 100 ELSE 0 END)*
+ (probability-CASE outcome WHEN 'YES' THEN 100 ELSE 0 END) AS loss
+ FROM forecast_quality_history WHERE finalized_at<={now} AND eligibility_at<={now}
+), samples AS (
+ SELECT f.id AS target_id,h.* FROM candidates f JOIN history h ON h.forecast_id<>f.id
+), global_scores AS (
+ SELECT target_id,user_id,AVG(loss) AS loss FROM samples GROUP BY target_id,user_id HAVING COUNT(*)>=10
+), ranked AS (
+ SELECT *,ROW_NUMBER() OVER(PARTITION BY target_id ORDER BY loss,user_id) AS position,
+ COUNT(*) OVER(PARTITION BY target_id) AS total FROM global_scores
+), top_people AS (SELECT target_id,user_id FROM ranked WHERE position<=(total+9)/10),
+ domain_samples AS (SELECT * FROM samples WHERE finalized_at>={max(0, now - 365 * 86400000)}),
+ bins AS (
+ SELECT target_id,user_id,category,MIN(9,probability/10) AS bin,
+ ABS(SUM(probability)-SUM(CASE outcome WHEN 'YES' THEN 100 ELSE 0 END)) AS error
+ FROM domain_samples GROUP BY target_id,user_id,category,MIN(9,probability/10)
+), calibration AS (
+ SELECT target_id,user_id,category,SUM(error) AS error FROM bins GROUP BY target_id,user_id,category
+), experts AS (
+ SELECT s.target_id,s.user_id,s.category FROM domain_samples s
+ JOIN calibration c ON c.target_id=s.target_id AND c.user_id=s.user_id AND c.category=s.category
+ GROUP BY s.target_id,s.user_id,s.category HAVING COUNT(*)>=20
+ AND COUNT(DISTINCT s.finalized_at/86400000)>=3 AND SUM(s.loss)<=2000*COUNT(*) AND MAX(c.error)<=30*COUNT(*)
+), votes AS (
+ SELECT v.* FROM eligible_user_forecasts v JOIN candidates f ON f.id=v.forecast_id
+ LEFT JOIN forecast_eligibility_decisions d ON d.forecast_id=f.id
+ LEFT JOIN forecast_eligibility_completions c ON c.decision_id=d.id
+ WHERE v.submitted_at<={now} AND (d.id IS NULL OR c.created_at<={now})
+), cohorts AS (
+ SELECT v.forecast_id,AVG(v.yes_probability) AS probability,COUNT(*) AS participant_count,
+ AVG(CASE WHEN t.user_id IS NOT NULL THEN v.yes_probability END) AS top_probability,
+ COUNT(t.user_id) AS top_count,
+ AVG(CASE WHEN x.user_id IS NOT NULL THEN v.yes_probability END) AS expert_probability,
+ COUNT(x.user_id) AS expert_count
+ FROM votes v JOIN candidates f ON f.id=v.forecast_id
+ LEFT JOIN top_people t ON t.target_id=v.forecast_id AND t.user_id=v.user_id
+ LEFT JOIN experts x ON x.target_id=v.forecast_id AND x.user_id=v.user_id AND x.category=f.category
+ GROUP BY v.forecast_id
+)
+SELECT f.*,u.display_name AS creator_name,u.handle AS creator_handle,
+ t.body AS display_translation,t.translated_at,t.content_hash AS translation_hash,
+ h.body AS participation_hold,c.probability,COALESCE(c.participant_count,0) AS participant_count,
+ c.top_probability,COALESCE(c.top_count,0) AS top_count,
+ c.expert_probability,COALESCE(c.expert_count,0) AS expert_count,{now} AS quality_as_of,
+ (SELECT COUNT(*) FROM comments c WHERE c.forecast_id=f.id AND c.created_at<={now}) AS comment_count
+FROM candidates f JOIN users u ON u.id=f.creator_id
+LEFT JOIN cohorts c ON c.forecast_id=f.id
+LEFT JOIN active_participation_holds h ON h.forecast_id=f.id
+LEFT JOIN forecast_translations t ON t.forecast_id=f.id AND t.language='en' AND t.specification_hash=f.specification_hash
+"""

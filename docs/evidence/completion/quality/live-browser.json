@@ -1,0 +1,103 @@
+{
+  "capturedAt": "2026-09-14T23:33:11.214Z",
+  "freshContexts": true,
+  "authenticated": false,
+  "blockedWrites": [],
+  "submittedMutations": 0,
+  "scenarios": [
+    {
+      "width": 1280,
+      "surface": "feed",
+      "locale": "en",
+      "url": "https://forecast.eastsea.xyz/",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "surface": "feed",
+      "locale": "ko",
+      "url": "https://forecast.eastsea.xyz/",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "surface": "detail",
+      "locale": "en",
+      "url": "https://forecast.eastsea.xyz/forecasts/f_Ctsi6HW_e8b443IrxRXe5gsf",
+      "overflow": false,
+      "expertIsEmpty": true
+    },
+    {
+      "width": 1280,
+      "surface": "detail",
+      "locale": "ko",
+      "url": "https://forecast.eastsea.xyz/forecasts/f_Ctsi6HW_e8b443IrxRXe5gsf",
+      "overflow": false,
+      "expertIsEmpty": true
+    },
+    {
+      "width": 1280,
+      "surface": "creator",
+      "locale": "en",
+      "url": "https://forecast.eastsea.xyz/creators/system_editorial",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "surface": "creator",
+      "locale": "ko",
+      "url": "https://forecast.eastsea.xyz/creators/system_editorial",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "surface": "feed",
+      "locale": "en",
+      "url": "https://forecast.eastsea.xyz/",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "surface": "feed",
+      "locale": "ko",
+      "url": "https://forecast.eastsea.xyz/",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "surface": "detail",
+      "locale": "en",
+      "url": "https://forecast.eastsea.xyz/forecasts/f_Ctsi6HW_e8b443IrxRXe5gsf",
+      "overflow": false,
+      "expertIsEmpty": true
+    },
+    {
+      "width": 390,
+      "surface": "detail",
+      "locale": "ko",
+      "url": "https://forecast.eastsea.xyz/forecasts/f_Ctsi6HW_e8b443IrxRXe5gsf",
+      "overflow": false,
+      "expertIsEmpty": true
+    },
+    {
+      "width": 390,
+      "surface": "creator",
+      "locale": "en",
+      "url": "https://forecast.eastsea.xyz/creators/system_editorial",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "surface": "creator",
+      "locale": "ko",
+      "url": "https://forecast.eastsea.xyz/creators/system_editorial",
+      "overflow": false
+    }
+  ],
+  "pageErrors": [],
+  "workerVersion": {
+    "id": "7fa5d458-ab74-4d2a-b28d-e655f2c4577e",
+    "source": "root deployment receipt tmp/complete-capabilities-deploy.log"
+  },
+  "appVersion": "0.12.0"
+}

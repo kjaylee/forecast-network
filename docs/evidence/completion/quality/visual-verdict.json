@@ -1,0 +1,24 @@
+{
+  "score": 94,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [],
+  "suggestions": [],
+  "reasoning": "Live desktop/mobile comparisons and native disclosures preserve the established editorial layout; English and Korean have no horizontal overflow. The initial premature creator-quality inference was retracted after D1 finalization timing was established.",
+  "workerVersion": "7fa5d458-ab74-4d2a-b28d-e655f2c4577e",
+  "appVersion": "0.12.0",
+  "screenshots": {
+    "live-public-profile-new-en.png": "853b4b24854c14bc1266bd1d363754881deca9a8cb9d3d5a93af90ca375cabc1",
+    "live-desktop-detail-en.png": "5e6a9e39ebfa0c9532d387c7f5113d3c1e4b1ad6f7c15434705898acf6aa121f",
+    "live-mobile-recommendation-en.png": "f059cc1d902ecc1cc53ad1320e98c4c4fbcb58e8612370845ebb89d306f02d97",
+    "live-mobile-comparison-ko.png": "3aad3f84d00d87f78b22b62d75de1a897977beb044cd0f2b5dc5db5be4b36077"
+  },
+  "temporalReconciliation": {
+    "priorFixRecommendation": "retracted",
+    "finalizedAt": 1789428681239,
+    "currentFinalizedQuestions": 1,
+    "currentCreatorQuality": 1,
+    "personalEligibleHistory": 0,
+    "remainingObservation": "Discovery creatorFinalized remains0; inspect eligibility/hold population differences before drawing conclusions."
+  }
+}

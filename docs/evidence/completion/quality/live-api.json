@@ -1,0 +1,1708 @@
+{
+  "capturedAt": "2026-09-14T23:32:56.196Z",
+  "health": {
+    "url": "https://forecast.eastsea.xyz/api/health",
+    "status": 200,
+    "body": {
+      "data": {
+        "ok": true,
+        "version": "0.12.0"
+      }
+    }
+  },
+  "feed": {
+    "url": "https://forecast.eastsea.xyz/api/forecasts",
+    "status": 200,
+    "body": {
+      "data": {
+        "items": [
+          {
+            "id": "f_2OLC-vN2qZSzSUfGhyaYUyO8",
+            "title": "Microsoft announce new generation Xbox console release date?",
+            "question": "Will Microsoft officially announce a release date for a new generation Xbox console via its official Newsroom (news.microsoft.com) by 2027-01-20T00:00:00Z? For a 'YES' outcome, an official press release explicitly stating a release date for a new generation Xbox console must be published. This excludes rumors, patent filings, or speculation about minor hardware revisions, new colors, or bundles of existing consoles.",
+            "translationLanguage": null,
+            "sourceLanguage": null,
+            "participationHold": null,
+            "category": "technology",
+            "state": "OPEN",
+            "revision": 2,
+            "openAt": 1789344202153,
+            "closeAt": 1800403200000,
+            "createdAt": 1789344221939,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": null,
+              "count": 0
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428775598,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "f878c7ffd86ae11823392b085cfcbcd6eac07b182b21ce3733656cddbc7aa18e",
+              "asOf": 1789344202153,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 55,
+              "provider": "gemini",
+              "rationale": "The provided source document from news.microsoft.com shows that Xbox remains an active product line, with \"XBOX commemorates over 20 years in Japan at Tokyo Game Show 2026\" listed as a 'Latest News' item. This indicates ongoing activity and announcements related to Xbox within the forecast period (by January 20, 2027). Historically, Microsoft has released new Xbox console generations approximately every 6-7 years. The current generation (Xbox Series X/S) launched in late 2020. Given this typical cycle, a new generation announcement and release date reveal would fall within the latter part of the forecast window. While there is no explicit mention of a future console in the provided text, the continued investment in the Xbox brand and the established console refresh cycle make an announcement by January 2027 a reasonable possibility. However, exact timing is uncertain, as companies can adjust release schedules based on market conditions and technological advancements.",
+              "specificationHash": "a512dd74eb7b6bfe5ce735cfb983d1323f00f61f23751ce42db71a195a54f9e0",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "a512dd74eb7b6bfe5ce735cfb983d1323f00f61f23751ce42db71a195a54f9e0",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            },
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 6750,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 0,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 0
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 0,
+                "freshness": 10000
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            }
+          },
+          {
+            "id": "f_xCcaozMqE4aTI1_HQQwgu5GP",
+            "title": "Apple announce new Apple Watch Ultra with 72+ hr battery?",
+            "question": "Will Apple officially announce a new Apple Watch Ultra with a battery life exceeding 72 hours in low power mode via Apple Newsroom (https://www.apple.com/newsroom/) by 2026-12-14T23:59:59Z? For a 'YES' outcome, an official press release explicitly stating a new Apple Watch Ultra with a battery life exceeding 72 hours in low power mode must be published. This excludes rumors, patent filings, or speculation.",
+            "translationLanguage": null,
+            "sourceLanguage": null,
+            "participationHold": null,
+            "category": "technology",
+            "state": "OPEN",
+            "revision": 2,
+            "openAt": 1789344178766,
+            "closeAt": 1797292799000,
+            "createdAt": 1789344198817,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": null,
+              "count": 0
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428775598,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "5539abb261d28c269d4a48936455951bbf12919003fe4ac6295483770eaed126",
+              "asOf": 1789344178766,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 20,
+              "provider": "gemini",
+              "rationale": "The supplied source confirms that Apple Newsroom is an official channel for announcements. Apple regularly updates its product lines, including the Apple Watch, and often introduces new models with improved features such as battery life. However, there is no information in the provided source or current general knowledge as of 2026-09-14 to specifically indicate that a new Apple Watch Ultra model with battery life exceeding 72 hours in low power mode will be announced via Apple Newsroom by the specified deadline. The probability reflects a possibility of such an announcement as part of a future product cycle, but without any direct supporting evidence for this specific feature or timeline.",
+              "specificationHash": "48c6068916e23680d51e10a3fba82583b235d88c7aa51e11d3225fa3e3391a62",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "48c6068916e23680d51e10a3fba82583b235d88c7aa51e11d3225fa3e3391a62",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            },
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 6750,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 0,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 0
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 0,
+                "freshness": 10000
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            }
+          },
+          {
+            "id": "f_Ctsi6HW_e8b443IrxRXe5gsf",
+            "title": "NASA announce new crewed ISS mission?",
+            "question": "Will NASA publish a press release on the NASA Newsroom (https://www.nasa.gov/news/) announcing a new crewed mission to the International Space Station by 2026-11-19T23:59:59Z?",
+            "translationLanguage": null,
+            "sourceLanguage": null,
+            "participationHold": null,
+            "category": "science",
+            "state": "OPEN",
+            "revision": 3,
+            "openAt": 1789231533246,
+            "closeAt": 1795132799000,
+            "createdAt": 1789231552300,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": 70,
+              "count": 1
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428775598,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "c03e43d769d302fa1a0662c39b356da1d3b495543e84eb080be34721799b291e",
+              "asOf": 1789231533246,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 80,
+              "provider": "gemini",
+              "rationale": "The NASA Newsroom is actively publishing news releases, with multiple articles updated within days or weeks of the current date (2026-09-12). The International Space Station (ISS) is a prominent topic on the NASA website, listed under \"Missions\" and \"Humans in Space,\" indicating it remains a key area of focus. While the provided snapshot does not contain an immediate announcement of a new crewed ISS mission, it does show a \"NASA’s SpaceX Crew-12 to Discuss Station Mission, Upcoming Return News Release\" from an unspecified date, confirming that ISS crew-related announcements are made via this newsroom. Given the active nature of ISS operations and the regular cadence of crew rotations, it is highly probable that NASA will announce a new crewed mission to the International Space Station within the next two months before the November 19, 2026, deadline, maintaining transparency about future missions. However, the exact timing and nature of such an announcement remain uncertain.",
+              "specificationHash": "b1fc7db509d03732029af121f2c451b52bab338033491aa250a1267f95772af7",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "b1fc7db509d03732029af121f2c451b52bab338033491aa250a1267f95772af7",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            },
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 6106,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 1,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 2
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 157,
+                "freshness": 3333
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            }
+          },
+          {
+            "id": "f_kgEbr59Up2vdZXkshS3_HPsa",
+            "title": "Samsung announce new Galaxy Z Fold/Flip?",
+            "question": "Will Samsung Global Newsroom (news.samsung.com/global/) announce a new generation of Galaxy Z Fold or Galaxy Z Flip phones by 2027-01-31T23:59:59Z? For a 'YES' outcome, an official press release regarding a new generation of Galaxy Z Fold or Galaxy Z Flip phones must be published via Samsung Global Newsroom. This excludes rumors, patent filings, or speculation.",
+            "translationLanguage": null,
+            "sourceLanguage": null,
+            "participationHold": null,
+            "category": "technology",
+            "state": "OPEN",
+            "revision": 3,
+            "openAt": 1789231509124,
+            "closeAt": 1801439999000,
+            "createdAt": 1789231528880,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": 70,
+              "count": 1
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428775598,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "409f7c7a6268775946ab0b72ac258003c70152a83c144e557dbaf3a68c8f6799",
+              "asOf": 1789231509124,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 95,
+              "provider": "gemini",
+              "rationale": "The provided source text, a snapshot of the Samsung Global Newsroom as of September 2026, already references the 'Galaxy Z Fold8 Series' and 'Galaxy Z Flip8' multiple times, with articles published in August and September 2026. This indicates that new generations of both the Galaxy Z Fold and Galaxy Z Flip lines have recently been announced or released. Samsung has a consistent history of releasing new iterations of its flagship phone lines, including the Galaxy Z Fold and Z Flip, on an annual or near-annual basis. Given that the Z Fold8 and Z Flip8 were current in late 2026, it is highly probable that Samsung will announce a 'Galaxy Z Fold9' and/or 'Galaxy Z Flip9' (or equivalent next generation) by January 31, 2027, maintaining its product cycle. The probability is not 100% due to unforeseeable circumstances, but the established pattern makes it very likely.",
+              "specificationHash": "3a32d5e6d5611415ec2da58c851488ade5c47d4fe5047d7ff91dde1f72759c13",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "3a32d5e6d5611415ec2da58c851488ade5c47d4fe5047d7ff91dde1f72759c13",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            },
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 6106,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 1,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 2
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 157,
+                "freshness": 3333
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            }
+          },
+          {
+            "id": "f_NB_bVj_Y7gFrFB7vy61RZFU2",
+            "title": "Will Microsoft release Windows 12 by the end of 2026?",
+            "question": "By 2026-12-31T23:59:00Z, will Microsoft announce through its official newsroom at https://news.microsoft.com/ that an operating system named Windows 12 has officially been released to the general public? Developer previews and rumors do not count.",
+            "translationLanguage": "en",
+            "sourceLanguage": "ko",
+            "participationHold": null,
+            "category": "technology",
+            "state": "OPEN",
+            "revision": 7,
+            "openAt": 1788965074128,
+            "closeAt": 1798761540000,
+            "createdAt": 1788965092505,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": 55,
+              "count": 2
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428775598,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "83a46404b6263bb68ada1a9fd7e3d92378c9566260054fa15a6728782998b824",
+              "asOf": 1788965074128,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 50,
+              "provider": "gemini",
+              "rationale": "The supplied source text does not contain information about Windows 12 or a future Windows operating system release. Microsoft periodically releases new Windows versions, but there is no direct evidence that its official newsroom will announce a general-public release specifically named Windows 12 by the end of 2026. The available information rules out neither release nor non-release, so the model assigns an intermediate probability and notes substantial uncertainty.",
+              "specificationHash": "3d4dc753dc023c7663432dcf7015862b7ca32cf1122353a9fbcf6d579e3cf204",
+              "rationaleLanguage": "en",
+              "rationaleAttribution": "Forecast editorial translation",
+              "count": 1
+            },
+            "commentCount": 2,
+            "shareCount": 2,
+            "specificationHash": "3d4dc753dc023c7663432dcf7015862b7ca32cf1122353a9fbcf6d579e3cf204",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            },
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 5995,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 2,
+                "commentsCapped": 2,
+                "sharesCapped": 2,
+                "ageDays": 5
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 526,
+                "freshness": 1666
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            }
+          },
+          {
+            "id": "f_uZX0iFRUQspTLFrqf2CnOJcV",
+            "title": "Will Apple announce an M6 Mac by the end of 2026?",
+            "question": "Will Apple officially announce a Mac computer with a chip named M6 by 2026-12-31T23:59:00Z? A YES outcome requires an official press release through Apple Newsroom (https://www.apple.com/newsroom/) about a Mac computer with an M6 chip. Rumors, patent filings, M5 products and speculation do not count.",
+            "translationLanguage": "en",
+            "sourceLanguage": "ko",
+            "participationHold": {
+              "action": "hold",
+              "actor": "authenticated_admin",
+              "createdAt": 1789146353790,
+              "evidenceUrl": "https://www.apple.com/newsroom/2026/09/get-ready-to-experience-iphone-18-pro-the-new-apple-watch-lineup-and-airpods-5/",
+              "forecastId": "f_uZX0iFRUQspTLFrqf2CnOJcV",
+              "holdId": "Gux4_uUXi-2u6SGkvZcsIok7ibgcyMOYkw3hq9DF3pI",
+              "id": "Gux4_uUXi-2u6SGkvZcsIok7ibgcyMOYkw3hq9DF3pI",
+              "reason": "known_outcome_review",
+              "revision": 1,
+              "specificationHash": "8bf0fb47a68b9d14b9ef6ee0bb468875f1cf0167d1119eef313c232dd1af9766"
+            },
+            "category": "technology",
+            "state": "CHALLENGE",
+            "revision": 6,
+            "openAt": 1788965050129,
+            "closeAt": 1798761540000,
+            "createdAt": 1788965070031,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": null,
+              "count": 0
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428775598,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "6435f55b73cc69f4a55af992b7af312f64af79d6a8088d9686b97ed53b1e5702",
+              "asOf": 1788965050129,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 85,
+              "provider": "gemini",
+              "rationale": "Apple generally updates its M-series chips on an approximately 18-to-24-month cycle, making an M6 Mac announcement by the end of 2026 likely. The model's original rationale states that M3 has been released and expects M4 and M5 to follow, with enough time for M6 development and an official announcement. It acknowledges uncertainty from unexpected delays, naming changes and the requirement that the announcement appear on the specified website.",
+              "specificationHash": "8bf0fb47a68b9d14b9ef6ee0bb468875f1cf0167d1119eef313c232dd1af9766",
+              "rationaleLanguage": "en",
+              "rationaleAttribution": "Forecast editorial translation",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "8bf0fb47a68b9d14b9ef6ee0bb468875f1cf0167d1119eef313c232dd1af9766",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            },
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": false,
+              "scoreBp": 5916,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 0,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 5
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 0,
+                "freshness": 1666
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            }
+          },
+          {
+            "id": "f_IklrwuvCXkq8PVKWnH1oaXjC",
+            "title": "Will Apple announce a foldable iPhone by the end of 2026?",
+            "question": "Will Apple officially announce a foldable iPhone by 2026-12-31T23:59:00Z? A YES outcome requires an official press release about a foldable iPhone through Apple Newsroom (www.apple.com/newsroom or newsroom.apple.com). Rumors, patent filings and speculation do not count.",
+            "translationLanguage": "en",
+            "sourceLanguage": "ko",
+            "participationHold": null,
+            "category": "technology",
+            "state": "FINALIZED",
+            "revision": 7,
+            "openAt": 1788964798136,
+            "closeAt": 1798761540000,
+            "createdAt": 1788964814396,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": null,
+              "count": 0
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428775598,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "cad604b449b59312e271099e3dfabdc849c811c120ff62664fbace71572b51c0",
+              "asOf": 1788964798136,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 30,
+              "provider": "gemini",
+              "rationale": "The supplied source confirms the existence and structure of Apple Newsroom but contains no information about a future foldable iPhone announcement. Apple tends to keep unannounced products confidential. An announcement during this period is possible, but there is currently no official evidence in the supplied material, so uncertainty is high.",
+              "specificationHash": "fe46f0e03b1809041a781c9dbea24de06d1d09e6937033f0c8e7c7694ab23111",
+              "rationaleLanguage": "en",
+              "rationaleAttribution": "Forecast editorial translation",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "fe46f0e03b1809041a781c9dbea24de06d1d09e6937033f0c8e7c7694ab23111",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            },
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": false,
+              "scoreBp": 5916,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 0,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 5
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 0,
+                "freshness": 1666
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            }
+          }
+        ],
+        "nextCursor": null,
+        "counts": {
+          "total": 7,
+          "active": 5,
+          "participants": 3
+        },
+        "dailyIds": [
+          "f_2OLC-vN2qZSzSUfGhyaYUyO8",
+          "f_xCcaozMqE4aTI1_HQQwgu5GP",
+          "f_Ctsi6HW_e8b443IrxRXe5gsf",
+          "f_kgEbr59Up2vdZXkshS3_HPsa",
+          "f_NB_bVj_Y7gFrFB7vy61RZFU2"
+        ],
+        "dailyRecommendations": [
+          {
+            "id": "f_2OLC-vN2qZSzSUfGhyaYUyO8",
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 6750,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 0,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 0
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 0,
+                "freshness": 10000
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            },
+            "reason": "quality"
+          },
+          {
+            "id": "f_xCcaozMqE4aTI1_HQQwgu5GP",
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 6750,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 0,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 0
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 0,
+                "freshness": 10000
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            },
+            "reason": "quality"
+          },
+          {
+            "id": "f_Ctsi6HW_e8b443IrxRXe5gsf",
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 6106,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 1,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 2
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 157,
+                "freshness": 3333
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            },
+            "reason": "quality"
+          },
+          {
+            "id": "f_kgEbr59Up2vdZXkshS3_HPsa",
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 6106,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 1,
+                "commentsCapped": 0,
+                "sharesCapped": 0,
+                "ageDays": 2
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 157,
+                "freshness": 3333
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            },
+            "reason": "quality"
+          },
+          {
+            "id": "f_NB_bVj_Y7gFrFB7vy61RZFU2",
+            "quality": {
+              "version": "forecast-discovery-v2",
+              "asOf": 1789428775598,
+              "active": true,
+              "scoreBp": 5995,
+              "inputs": {
+                "ambiguityScoreBp": 0,
+                "creatorFinalized": 0,
+                "creatorInvalid": 0,
+                "reviewedDisputes": 0,
+                "materialDisputes": 0,
+                "participantsCapped": 2,
+                "commentsCapped": 2,
+                "sharesCapped": 2,
+                "ageDays": 5
+              },
+              "componentsBp": {
+                "clarity": 10000,
+                "creator": 5000,
+                "adjudication": 5000,
+                "engagement": 526,
+                "freshness": 1666
+              },
+              "weightsBp": {
+                "clarity": 4000,
+                "creator": 2000,
+                "adjudication": 1500,
+                "engagement": 1500,
+                "freshness": 1000
+              },
+              "creatorSampleStatus": "new",
+              "reasons": [
+                "Measured question clarity",
+                "Finalized creator outcomes with a neutral four-result prior",
+                "Resolved material disputes with a neutral four-review prior",
+                "Participation, comments and shares capped at 15% of total score",
+                "UTC-day freshness"
+              ]
+            },
+            "reason": "clear-cold-start"
+          }
+        ],
+        "discoveryMethodologyVersion": "forecast-discovery-v2"
+      }
+    }
+  },
+  "detail": {
+    "url": "https://forecast.eastsea.xyz/api/forecasts/f_Ctsi6HW_e8b443IrxRXe5gsf",
+    "status": 200,
+    "body": {
+      "data": {
+        "forecast": {
+          "id": "f_Ctsi6HW_e8b443IrxRXe5gsf",
+          "title": "NASA announce new crewed ISS mission?",
+          "question": "Will NASA publish a press release on the NASA Newsroom (https://www.nasa.gov/news/) announcing a new crewed mission to the International Space Station by 2026-11-19T23:59:59Z?",
+          "translationLanguage": null,
+          "sourceLanguage": null,
+          "participationHold": null,
+          "category": "science",
+          "state": "OPEN",
+          "revision": 3,
+          "openAt": 1789231533246,
+          "closeAt": 1795132799000,
+          "createdAt": 1789231552300,
+          "creator": {
+            "id": "system_editorial",
+            "displayName": "Forecast Editorial",
+            "handle": "forecast_editorial"
+          },
+          "crowd": {
+            "probability": 70,
+            "count": 1
+          },
+          "top": {
+            "probability": null,
+            "count": 0
+          },
+          "expert": {
+            "probability": null,
+            "count": 0
+          },
+          "cohortMethodology": {
+            "version": "forecast-quality-v2",
+            "asOf": 1789428775803,
+            "expertise": "Demonstrated category forecasting record, not professional credentials."
+          },
+          "ai": {
+            "artifactHash": "c03e43d769d302fa1a0662c39b356da1d3b495543e84eb080be34721799b291e",
+            "asOf": 1789231533246,
+            "model": "gemini-2.5-flash",
+            "modelVersion": "gemini-2.5-flash",
+            "probability": 80,
+            "provider": "gemini",
+            "rationale": "The NASA Newsroom is actively publishing news releases, with multiple articles updated within days or weeks of the current date (2026-09-12). The International Space Station (ISS) is a prominent topic on the NASA website, listed under \"Missions\" and \"Humans in Space,\" indicating it remains a key area of focus. While the provided snapshot does not contain an immediate announcement of a new crewed ISS mission, it does show a \"NASA’s SpaceX Crew-12 to Discuss Station Mission, Upcoming Return News Release\" from an unspecified date, confirming that ISS crew-related announcements are made via this newsroom. Given the active nature of ISS operations and the regular cadence of crew rotations, it is highly probable that NASA will announce a new crewed mission to the International Space Station within the next two months before the November 19, 2026, deadline, maintaining transparency about future missions. However, the exact timing and nature of such an announcement remain uncertain.",
+            "specificationHash": "b1fc7db509d03732029af121f2c451b52bab338033491aa250a1267f95772af7",
+            "count": 1
+          },
+          "commentCount": 0,
+          "shareCount": 0,
+          "specificationHash": "b1fc7db509d03732029af121f2c451b52bab338033491aa250a1267f95772af7",
+          "chain": {
+            "cluster": "devnet",
+            "programId": "BvZLYrSmzDGTP5jYb14cjreRfHqfMo2sRBfUPpAi5Sgp",
+            "account": "3wPcvARNDWQpL8u3heWJ4Wmy6o2FNxEqJxCQ8UJk7pT2",
+            "localRevision": 3,
+            "localState": "OPEN",
+            "confirmedRevision": null,
+            "confirmedSlot": null,
+            "signature": null,
+            "status": "pending",
+            "pendingReason": null,
+            "trust": "authority-attested commitments; upgradeable program"
+          },
+          "quality": {
+            "version": "forecast-discovery-v2",
+            "asOf": 1789428775801,
+            "active": true,
+            "scoreBp": 6106,
+            "inputs": {
+              "ambiguityScoreBp": 0,
+              "creatorFinalized": 0,
+              "creatorInvalid": 0,
+              "reviewedDisputes": 0,
+              "materialDisputes": 0,
+              "participantsCapped": 1,
+              "commentsCapped": 0,
+              "sharesCapped": 0,
+              "ageDays": 2
+            },
+            "componentsBp": {
+              "clarity": 10000,
+              "creator": 5000,
+              "adjudication": 5000,
+              "engagement": 157,
+              "freshness": 3333
+            },
+            "weightsBp": {
+              "clarity": 4000,
+              "creator": 2000,
+              "adjudication": 1500,
+              "engagement": 1500,
+              "freshness": 1000
+            },
+            "creatorSampleStatus": "new",
+            "reasons": [
+              "Measured question clarity",
+              "Finalized creator outcomes with a neutral four-result prior",
+              "Resolved material disputes with a neutral four-review prior",
+              "Participation, comments and shares capped at 15% of total score",
+              "UTC-day freshness"
+            ]
+          },
+          "specification": {
+            "canonicalQuestion": "Will NASA publish a press release on the NASA Newsroom (https://www.nasa.gov/news/) announcing a new crewed mission to the International Space Station by 2026-11-19T23:59:59Z?",
+            "shareTitle": "NASA announce new crewed ISS mission?",
+            "category": "science",
+            "openAt": 1789231533246,
+            "closeAt": 1795132799000,
+            "rules": [
+              {
+                "clauseId": "yes_condition",
+                "outcome": "YES",
+                "condition": "NASA publishes a press release on the NASA Newsroom (https://www.nasa.gov/news/) announcing a new crewed mission to the International Space Station by 2026-11-19T23:59:59Z. The press release must explicitly state a new crewed mission to the International Space Station."
+              },
+              {
+                "clauseId": "no_condition",
+                "outcome": "NO",
+                "condition": "NASA does not publish a press release on the NASA Newsroom (https://www.nasa.gov/news/) announcing a new crewed mission to the International Space Station by 2026-11-19T23:59:59Z. This includes cases where no announcement is made, or an announcement is made but does not constitute a clear official confirmation of a new crewed mission to the International Space Station."
+              },
+              {
+                "clauseId": "invalid_condition",
+                "outcome": "INVALID",
+                "condition": "The primary source, NASA Newsroom (https://www.nasa.gov/news/), becomes unavailable by 2026-11-19T23:59:59Z, ceases to operate, or the primary source does not contain clear and conclusive information sufficient to resolve the question as 'YES' or 'NO'."
+              }
+            ],
+            "primarySources": [
+              {
+                "name": "NASA Newsroom",
+                "url": "https://www.nasa.gov/news/"
+              }
+            ],
+            "fallbackSources": [],
+            "invalidationRules": [
+              "If the primary source, NASA Newsroom (https://www.nasa.gov/news/), becomes unavailable or ceases to operate by 2026-11-19T23:59:59Z, or if it does not provide sufficient information to resolve this question, then the question will resolve as 'INVALID'."
+            ],
+            "ambiguityScore": 0
+          },
+          "challengeUntil": null,
+          "finalizedOutcome": null,
+          "pauseReason": null,
+          "retryAt": null,
+          "earlyResolution": null
+        },
+        "market": null,
+        "resolution": null,
+        "disputes": [],
+        "audit": [
+          {
+            "command": "begin_validation",
+            "oldState": "DRAFT",
+            "newState": "VALIDATING",
+            "at": 1789231552300,
+            "hash": "9f924a03d075affc7c0cc6343cc2fa3038ab3a1859589d802ba90d09274cc005",
+            "artifactHash": null,
+            "revision": 1
+          },
+          {
+            "command": "publish",
+            "oldState": "VALIDATING",
+            "newState": "OPEN",
+            "at": 1789231552300,
+            "hash": "f66039ec1ac8c86226f7d2d1b887aed1b062828ea1cf9852057bc85f99216539",
+            "artifactHash": "b04165b1b7cd6619733c48ee18e4601a2405fdc0f7cabec742dc92f8c8df554e",
+            "revision": 2
+          },
+          {
+            "command": "submit_forecast",
+            "oldState": "OPEN",
+            "newState": "OPEN",
+            "at": 1789338532468,
+            "hash": "ed2068938765027044a4179a9041c51a91e560a35e46dcfe21d941ff2387b82f",
+            "artifactHash": "36e6a885c6e432df56eecba935e1d35697b411039d57283263111f79ea296ba5",
+            "revision": 3
+          }
+        ],
+        "evidenceReports": {
+          "count": 0,
+          "mine": null,
+          "reward": 100
+        },
+        "attestation": null,
+        "eligibility": {
+          "status": "none",
+          "cutoffAt": null,
+          "timeBasis": null,
+          "publishedEvidenceUrl": null,
+          "policyVersion": "evidence-cutoff-v1",
+          "personal": null
+        },
+        "points": null,
+        "stake": null,
+        "displayTranslation": null,
+        "auditTruncated": false,
+        "historyTruncated": false,
+        "comments": [],
+        "myForecast": null,
+        "history": [
+          {
+            "at": 1789338532468,
+            "probability": 70,
+            "count": 1
+          }
+        ]
+      }
+    }
+  },
+  "creator": {
+    "url": "https://forecast.eastsea.xyz/api/creators/system_editorial",
+    "status": 200,
+    "body": {
+      "data": {
+        "creator": {
+          "id": "system_editorial",
+          "displayName": "Forecast Editorial",
+          "handle": "forecast_editorial",
+          "createdAt": 1788963786064,
+          "marketsCreated": 7,
+          "resolvedMarkets": 1,
+          "invalidMarkets": 0,
+          "disputedMarkets": 0,
+          "followerCount": 0,
+          "reputation": {
+            "resolvedForecasts": 0,
+            "correctForecasts": 0,
+            "invalidForecasts": 0,
+            "accuracy": null,
+            "brierScore": null,
+            "calibrationScore": null,
+            "consistencyScore": null,
+            "methodologyVersion": "forecast-quality-v2",
+            "asOf": 1789428776064,
+            "consistency": {
+              "status": "new",
+              "minimumPerWindow": 5,
+              "windowDays": 30,
+              "windows": [
+                {
+                  "start": 1781652776064,
+                  "end": 1784244776064,
+                  "count": 0,
+                  "brierScore": null,
+                  "calibrationScore": null
+                },
+                {
+                  "start": 1784244776064,
+                  "end": 1786836776064,
+                  "count": 0,
+                  "brierScore": null,
+                  "calibrationScore": null
+                },
+                {
+                  "start": 1786836776064,
+                  "end": 1789428776064,
+                  "count": 0,
+                  "brierScore": null,
+                  "calibrationScore": null
+                }
+              ],
+              "meaning": "Stability of mean Brier loss across three windows; consistency does not imply accuracy."
+            },
+            "expertise": [],
+            "eligibleHistoryCount": 0,
+            "totalForecasts": 0,
+            "domainScores": [],
+            "totalDisputes": 0,
+            "resolvedDisputes": 0,
+            "successfulDisputes": 0,
+            "disputeAccuracy": null,
+            "creatorQuality": 1
+          },
+          "seeker": null
+        },
+        "forecasts": [
+          {
+            "id": "f_2OLC-vN2qZSzSUfGhyaYUyO8",
+            "title": "Microsoft announce new generation Xbox console release date?",
+            "question": "Will Microsoft officially announce a release date for a new generation Xbox console via its official Newsroom (news.microsoft.com) by 2027-01-20T00:00:00Z? For a 'YES' outcome, an official press release explicitly stating a release date for a new generation Xbox console must be published. This excludes rumors, patent filings, or speculation about minor hardware revisions, new colors, or bundles of existing consoles.",
+            "translationLanguage": null,
+            "sourceLanguage": null,
+            "participationHold": null,
+            "category": "technology",
+            "state": "OPEN",
+            "revision": 2,
+            "openAt": 1789344202153,
+            "closeAt": 1800403200000,
+            "createdAt": 1789344221939,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": null,
+              "count": 0
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428776000,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "f878c7ffd86ae11823392b085cfcbcd6eac07b182b21ce3733656cddbc7aa18e",
+              "asOf": 1789344202153,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 55,
+              "provider": "gemini",
+              "rationale": "The provided source document from news.microsoft.com shows that Xbox remains an active product line, with \"XBOX commemorates over 20 years in Japan at Tokyo Game Show 2026\" listed as a 'Latest News' item. This indicates ongoing activity and announcements related to Xbox within the forecast period (by January 20, 2027). Historically, Microsoft has released new Xbox console generations approximately every 6-7 years. The current generation (Xbox Series X/S) launched in late 2020. Given this typical cycle, a new generation announcement and release date reveal would fall within the latter part of the forecast window. While there is no explicit mention of a future console in the provided text, the continued investment in the Xbox brand and the established console refresh cycle make an announcement by January 2027 a reasonable possibility. However, exact timing is uncertain, as companies can adjust release schedules based on market conditions and technological advancements.",
+              "specificationHash": "a512dd74eb7b6bfe5ce735cfb983d1323f00f61f23751ce42db71a195a54f9e0",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "a512dd74eb7b6bfe5ce735cfb983d1323f00f61f23751ce42db71a195a54f9e0",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            }
+          },
+          {
+            "id": "f_xCcaozMqE4aTI1_HQQwgu5GP",
+            "title": "Apple announce new Apple Watch Ultra with 72+ hr battery?",
+            "question": "Will Apple officially announce a new Apple Watch Ultra with a battery life exceeding 72 hours in low power mode via Apple Newsroom (https://www.apple.com/newsroom/) by 2026-12-14T23:59:59Z? For a 'YES' outcome, an official press release explicitly stating a new Apple Watch Ultra with a battery life exceeding 72 hours in low power mode must be published. This excludes rumors, patent filings, or speculation.",
+            "translationLanguage": null,
+            "sourceLanguage": null,
+            "participationHold": null,
+            "category": "technology",
+            "state": "OPEN",
+            "revision": 2,
+            "openAt": 1789344178766,
+            "closeAt": 1797292799000,
+            "createdAt": 1789344198817,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": null,
+              "count": 0
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428776000,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "5539abb261d28c269d4a48936455951bbf12919003fe4ac6295483770eaed126",
+              "asOf": 1789344178766,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 20,
+              "provider": "gemini",
+              "rationale": "The supplied source confirms that Apple Newsroom is an official channel for announcements. Apple regularly updates its product lines, including the Apple Watch, and often introduces new models with improved features such as battery life. However, there is no information in the provided source or current general knowledge as of 2026-09-14 to specifically indicate that a new Apple Watch Ultra model with battery life exceeding 72 hours in low power mode will be announced via Apple Newsroom by the specified deadline. The probability reflects a possibility of such an announcement as part of a future product cycle, but without any direct supporting evidence for this specific feature or timeline.",
+              "specificationHash": "48c6068916e23680d51e10a3fba82583b235d88c7aa51e11d3225fa3e3391a62",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "48c6068916e23680d51e10a3fba82583b235d88c7aa51e11d3225fa3e3391a62",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            }
+          },
+          {
+            "id": "f_Ctsi6HW_e8b443IrxRXe5gsf",
+            "title": "NASA announce new crewed ISS mission?",
+            "question": "Will NASA publish a press release on the NASA Newsroom (https://www.nasa.gov/news/) announcing a new crewed mission to the International Space Station by 2026-11-19T23:59:59Z?",
+            "translationLanguage": null,
+            "sourceLanguage": null,
+            "participationHold": null,
+            "category": "science",
+            "state": "OPEN",
+            "revision": 3,
+            "openAt": 1789231533246,
+            "closeAt": 1795132799000,
+            "createdAt": 1789231552300,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": 70,
+              "count": 1
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428776000,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "c03e43d769d302fa1a0662c39b356da1d3b495543e84eb080be34721799b291e",
+              "asOf": 1789231533246,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 80,
+              "provider": "gemini",
+              "rationale": "The NASA Newsroom is actively publishing news releases, with multiple articles updated within days or weeks of the current date (2026-09-12). The International Space Station (ISS) is a prominent topic on the NASA website, listed under \"Missions\" and \"Humans in Space,\" indicating it remains a key area of focus. While the provided snapshot does not contain an immediate announcement of a new crewed ISS mission, it does show a \"NASA’s SpaceX Crew-12 to Discuss Station Mission, Upcoming Return News Release\" from an unspecified date, confirming that ISS crew-related announcements are made via this newsroom. Given the active nature of ISS operations and the regular cadence of crew rotations, it is highly probable that NASA will announce a new crewed mission to the International Space Station within the next two months before the November 19, 2026, deadline, maintaining transparency about future missions. However, the exact timing and nature of such an announcement remain uncertain.",
+              "specificationHash": "b1fc7db509d03732029af121f2c451b52bab338033491aa250a1267f95772af7",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "b1fc7db509d03732029af121f2c451b52bab338033491aa250a1267f95772af7",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            }
+          },
+          {
+            "id": "f_kgEbr59Up2vdZXkshS3_HPsa",
+            "title": "Samsung announce new Galaxy Z Fold/Flip?",
+            "question": "Will Samsung Global Newsroom (news.samsung.com/global/) announce a new generation of Galaxy Z Fold or Galaxy Z Flip phones by 2027-01-31T23:59:59Z? For a 'YES' outcome, an official press release regarding a new generation of Galaxy Z Fold or Galaxy Z Flip phones must be published via Samsung Global Newsroom. This excludes rumors, patent filings, or speculation.",
+            "translationLanguage": null,
+            "sourceLanguage": null,
+            "participationHold": null,
+            "category": "technology",
+            "state": "OPEN",
+            "revision": 3,
+            "openAt": 1789231509124,
+            "closeAt": 1801439999000,
+            "createdAt": 1789231528880,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": 70,
+              "count": 1
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428776000,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "409f7c7a6268775946ab0b72ac258003c70152a83c144e557dbaf3a68c8f6799",
+              "asOf": 1789231509124,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 95,
+              "provider": "gemini",
+              "rationale": "The provided source text, a snapshot of the Samsung Global Newsroom as of September 2026, already references the 'Galaxy Z Fold8 Series' and 'Galaxy Z Flip8' multiple times, with articles published in August and September 2026. This indicates that new generations of both the Galaxy Z Fold and Galaxy Z Flip lines have recently been announced or released. Samsung has a consistent history of releasing new iterations of its flagship phone lines, including the Galaxy Z Fold and Z Flip, on an annual or near-annual basis. Given that the Z Fold8 and Z Flip8 were current in late 2026, it is highly probable that Samsung will announce a 'Galaxy Z Fold9' and/or 'Galaxy Z Flip9' (or equivalent next generation) by January 31, 2027, maintaining its product cycle. The probability is not 100% due to unforeseeable circumstances, but the established pattern makes it very likely.",
+              "specificationHash": "3a32d5e6d5611415ec2da58c851488ade5c47d4fe5047d7ff91dde1f72759c13",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "3a32d5e6d5611415ec2da58c851488ade5c47d4fe5047d7ff91dde1f72759c13",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            }
+          },
+          {
+            "id": "f_NB_bVj_Y7gFrFB7vy61RZFU2",
+            "title": "Will Microsoft release Windows 12 by the end of 2026?",
+            "question": "By 2026-12-31T23:59:00Z, will Microsoft announce through its official newsroom at https://news.microsoft.com/ that an operating system named Windows 12 has officially been released to the general public? Developer previews and rumors do not count.",
+            "translationLanguage": "en",
+            "sourceLanguage": "ko",
+            "participationHold": null,
+            "category": "technology",
+            "state": "OPEN",
+            "revision": 7,
+            "openAt": 1788965074128,
+            "closeAt": 1798761540000,
+            "createdAt": 1788965092505,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": 55,
+              "count": 2
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428776000,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "83a46404b6263bb68ada1a9fd7e3d92378c9566260054fa15a6728782998b824",
+              "asOf": 1788965074128,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 50,
+              "provider": "gemini",
+              "rationale": "The supplied source text does not contain information about Windows 12 or a future Windows operating system release. Microsoft periodically releases new Windows versions, but there is no direct evidence that its official newsroom will announce a general-public release specifically named Windows 12 by the end of 2026. The available information rules out neither release nor non-release, so the model assigns an intermediate probability and notes substantial uncertainty.",
+              "specificationHash": "3d4dc753dc023c7663432dcf7015862b7ca32cf1122353a9fbcf6d579e3cf204",
+              "rationaleLanguage": "en",
+              "rationaleAttribution": "Forecast editorial translation",
+              "count": 1
+            },
+            "commentCount": 2,
+            "shareCount": 2,
+            "specificationHash": "3d4dc753dc023c7663432dcf7015862b7ca32cf1122353a9fbcf6d579e3cf204",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            }
+          },
+          {
+            "id": "f_uZX0iFRUQspTLFrqf2CnOJcV",
+            "title": "Will Apple announce an M6 Mac by the end of 2026?",
+            "question": "Will Apple officially announce a Mac computer with a chip named M6 by 2026-12-31T23:59:00Z? A YES outcome requires an official press release through Apple Newsroom (https://www.apple.com/newsroom/) about a Mac computer with an M6 chip. Rumors, patent filings, M5 products and speculation do not count.",
+            "translationLanguage": "en",
+            "sourceLanguage": "ko",
+            "participationHold": {
+              "action": "hold",
+              "actor": "authenticated_admin",
+              "createdAt": 1789146353790,
+              "evidenceUrl": "https://www.apple.com/newsroom/2026/09/get-ready-to-experience-iphone-18-pro-the-new-apple-watch-lineup-and-airpods-5/",
+              "forecastId": "f_uZX0iFRUQspTLFrqf2CnOJcV",
+              "holdId": "Gux4_uUXi-2u6SGkvZcsIok7ibgcyMOYkw3hq9DF3pI",
+              "id": "Gux4_uUXi-2u6SGkvZcsIok7ibgcyMOYkw3hq9DF3pI",
+              "reason": "known_outcome_review",
+              "revision": 1,
+              "specificationHash": "8bf0fb47a68b9d14b9ef6ee0bb468875f1cf0167d1119eef313c232dd1af9766"
+            },
+            "category": "technology",
+            "state": "CHALLENGE",
+            "revision": 6,
+            "openAt": 1788965050129,
+            "closeAt": 1798761540000,
+            "createdAt": 1788965070031,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": null,
+              "count": 0
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428776000,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "6435f55b73cc69f4a55af992b7af312f64af79d6a8088d9686b97ed53b1e5702",
+              "asOf": 1788965050129,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 85,
+              "provider": "gemini",
+              "rationale": "Apple generally updates its M-series chips on an approximately 18-to-24-month cycle, making an M6 Mac announcement by the end of 2026 likely. The model's original rationale states that M3 has been released and expects M4 and M5 to follow, with enough time for M6 development and an official announcement. It acknowledges uncertainty from unexpected delays, naming changes and the requirement that the announcement appear on the specified website.",
+              "specificationHash": "8bf0fb47a68b9d14b9ef6ee0bb468875f1cf0167d1119eef313c232dd1af9766",
+              "rationaleLanguage": "en",
+              "rationaleAttribution": "Forecast editorial translation",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "8bf0fb47a68b9d14b9ef6ee0bb468875f1cf0167d1119eef313c232dd1af9766",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            }
+          },
+          {
+            "id": "f_IklrwuvCXkq8PVKWnH1oaXjC",
+            "title": "Will Apple announce a foldable iPhone by the end of 2026?",
+            "question": "Will Apple officially announce a foldable iPhone by 2026-12-31T23:59:00Z? A YES outcome requires an official press release about a foldable iPhone through Apple Newsroom (www.apple.com/newsroom or newsroom.apple.com). Rumors, patent filings and speculation do not count.",
+            "translationLanguage": "en",
+            "sourceLanguage": "ko",
+            "participationHold": null,
+            "category": "technology",
+            "state": "FINALIZED",
+            "revision": 7,
+            "openAt": 1788964798136,
+            "closeAt": 1798761540000,
+            "createdAt": 1788964814396,
+            "creator": {
+              "id": "system_editorial",
+              "displayName": "Forecast Editorial",
+              "handle": "forecast_editorial"
+            },
+            "crowd": {
+              "probability": null,
+              "count": 0
+            },
+            "top": {
+              "probability": null,
+              "count": 0
+            },
+            "expert": {
+              "probability": null,
+              "count": 0
+            },
+            "cohortMethodology": {
+              "version": "forecast-quality-v2",
+              "asOf": 1789428776000,
+              "expertise": "Demonstrated category forecasting record, not professional credentials."
+            },
+            "ai": {
+              "artifactHash": "cad604b449b59312e271099e3dfabdc849c811c120ff62664fbace71572b51c0",
+              "asOf": 1788964798136,
+              "model": "gemini-2.5-flash",
+              "modelVersion": "gemini-2.5-flash",
+              "probability": 30,
+              "provider": "gemini",
+              "rationale": "The supplied source confirms the existence and structure of Apple Newsroom but contains no information about a future foldable iPhone announcement. Apple tends to keep unannounced products confidential. An announcement during this period is possible, but there is currently no official evidence in the supplied material, so uncertainty is high.",
+              "specificationHash": "fe46f0e03b1809041a781c9dbea24de06d1d09e6937033f0c8e7c7694ab23111",
+              "rationaleLanguage": "en",
+              "rationaleAttribution": "Forecast editorial translation",
+              "count": 1
+            },
+            "commentCount": 0,
+            "shareCount": 0,
+            "specificationHash": "fe46f0e03b1809041a781c9dbea24de06d1d09e6937033f0c8e7c7694ab23111",
+            "chain": {
+              "network": null,
+              "status": "unconnected",
+              "transaction": null
+            }
+          }
+        ],
+        "isFollowing": false
+      }
+    }
+  },
+  "recalculation": [
+    {
+      "id": "f_2OLC-vN2qZSzSUfGhyaYUyO8",
+      "score": 6750,
+      "components": {
+        "clarity": 10000,
+        "creator": 5000,
+        "adjudication": 5000,
+        "engagement": 0,
+        "freshness": 10000
+      },
+      "tie": 278289,
+      "active": true
+    },
+    {
+      "id": "f_xCcaozMqE4aTI1_HQQwgu5GP",
+      "score": 6750,
+      "components": {
+        "clarity": 10000,
+        "creator": 5000,
+        "adjudication": 5000,
+        "engagement": 0,
+        "freshness": 10000
+      },
+      "tie": 292742,
+      "active": true
+    },
+    {
+      "id": "f_Ctsi6HW_e8b443IrxRXe5gsf",
+      "score": 6106,
+      "components": {
+        "clarity": 10000,
+        "creator": 5000,
+        "adjudication": 5000,
+        "engagement": 157,
+        "freshness": 3333
+      },
+      "tie": 260321,
+      "active": true
+    },
+    {
+      "id": "f_kgEbr59Up2vdZXkshS3_HPsa",
+      "score": 6106,
+      "components": {
+        "clarity": 10000,
+        "creator": 5000,
+        "adjudication": 5000,
+        "engagement": 157,
+        "freshness": 3333
+      },
+      "tie": 283621,
+      "active": true
+    },
+    {
+      "id": "f_NB_bVj_Y7gFrFB7vy61RZFU2",
+      "score": 5995,
+      "components": {
+        "clarity": 10000,
+        "creator": 5000,
+        "adjudication": 5000,
+        "engagement": 526,
+        "freshness": 1666
+      },
+      "tie": 271711,
+      "active": true
+    },
+    {
+      "id": "f_uZX0iFRUQspTLFrqf2CnOJcV",
+      "score": 5916,
+      "components": {
+        "clarity": 10000,
+        "creator": 5000,
+        "adjudication": 5000,
+        "engagement": 0,
+        "freshness": 1666
+      },
+      "tie": 289472,
+      "active": false
+    },
+    {
+      "id": "f_IklrwuvCXkq8PVKWnH1oaXjC",
+      "score": 5916,
+      "components": {
+        "clarity": 10000,
+        "creator": 5000,
+        "adjudication": 5000,
+        "engagement": 0,
+        "freshness": 1666
+      },
+      "tie": 291258,
+      "active": false
+    }
+  ],
+  "rankVerified": true,
+  "dailySelectionVerified": true
+}
