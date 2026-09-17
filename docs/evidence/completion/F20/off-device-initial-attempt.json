@@ -1,0 +1,17 @@
+{
+  "backupId": "forecast-20260915T000404Z-d5d64db73393",
+  "status": "excluded-from-successful-recovery-evidence",
+  "sourceCiphertextSha256": "662a7c0b72829de356d5d0cf34e0dbfb5e0d4626e89b38d0dfe1dbfc532f4943",
+  "initialPermissions": {
+    "keyFileMode": "0o777",
+    "keyDirectoryMode": "0o777",
+    "archiveDirectoryMode": "0o777"
+  },
+  "issue": "NAS inherited ACL overrode initial requested modes; rsync rejected canonical path before archive transfer.",
+  "mitigation": "Only newly created project/key/archive paths immediately chmodded to0700/0600; fresh wrapping key and separate newID used after fchmod-before-write hardening.",
+  "archiveTransferredToNas": false,
+  "sourceDevnetSeedsWrittenPlaintext": false,
+  "failedArtifactsRetained": true,
+  "operationalKeysRotated": false,
+  "approvedSuccessor": "forecast-20260915T000652Z-127b62155a3b"
+}

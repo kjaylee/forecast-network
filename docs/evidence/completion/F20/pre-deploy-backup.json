@@ -1,0 +1,9 @@
+{
+  "createdAt": "2026-09-14T23:26:26.546099+00:00",
+  "source": "Cloudflare D1 remote export",
+  "bytes": 19335458,
+  "sha256": "556aae93a6fb7302d2f41162a60143a71f6d110424198399bb9616540886758f",
+  "path": "/Volumes/workspace/forecast/tmp/complete-capabilities-backup/before-0.12.sql",
+  "mode": "0o600",
+  "restoreVerified": false
+}
