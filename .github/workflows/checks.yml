@@ -1,4 +1,4 @@
-name: Domain and contract checks
+name: Application, domain and contract checks
 
 on:
   push:
@@ -24,3 +24,66 @@ jobs:
           TMPDIR: ${{ github.workspace }}/tmp
           PYTHONDONTWRITEBYTECODE: '1'
         run: python scripts/check.py
+
+  static:
+    runs-on: ubuntu-latest
+    env:
+      TMPDIR: ${{ github.workspace }}/tmp
+      PYTHONDONTWRITEBYTECODE: '1'
+      PIP_CACHE_DIR: ${{ github.workspace }}/tmp/pip-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare existing static-analysis tools
+        run: |
+          mkdir -p "$TMPDIR"
+          python -m pip install ruff==0.15.8 mypy==1.19.1
+      - name: Verify lint and strict types
+        run: |
+          ruff check packages tests scripts apps/web/src
+          mypy --strict packages/domain/src packages/application/src
+
+  frontend:
+    runs-on: ubuntu-latest
+    env:
+      TMPDIR: ${{ github.workspace }}/tmp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify browser modules and regressions
+        run: |
+          mkdir -p "$TMPDIR"
+          node --test apps/web/tests/*.mjs
+
+  registry:
+    runs-on: ubuntu-latest
+    env:
+      TMPDIR: ${{ github.workspace }}/tmp
+      CARGO_HOME: ${{ github.workspace }}/tmp/cargo-home
+      CARGO_TARGET_DIR: ${{ github.workspace }}/tmp/cargo-target
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify registry guards with the locked dependencies
+        run: |
+          mkdir -p "$TMPDIR"
+          cargo test --workspace --locked
+
+  domain-rs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy, rustfmt
+      - name: Verify the Rust domain crate reproduces the Python golden vectors
+        working-directory: packages/domain-rs
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+          cargo build --release --target wasm32-unknown-unknown

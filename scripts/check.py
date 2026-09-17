@@ -29,7 +29,10 @@ def main() -> int:
         str(ROOT / "packages/domain/src"), str(ROOT / "packages/application/src"), str(ROOT),
     ])
     # Parse every source file without emitting bytecode outside tmp/.
-    files = [*ROOT.glob("packages/**/*.py"), *ROOT.glob("tests/**/*.py"), *ROOT.glob("scripts/*.py")]
+    files = [
+        *ROOT.glob("packages/**/*.py"), *ROOT.glob("tests/**/*.py"),
+        *ROOT.glob("scripts/*.py"), *ROOT.glob("apps/web/src/**/*.py"),
+    ]
     for path in files:
         ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     print(f"Syntax verified: {len(files)} Python files", flush=True)
@@ -43,7 +46,7 @@ def main() -> int:
             if shutil.which(tool) is None:
                 parser.error(f"{tool} is unavailable; run dependency-free checks without --tools")
         commands.extend([
-            ["ruff", "check", "packages", "tests", "scripts"],
+            ["ruff", "check", "packages", "tests", "scripts", "apps/web/src"],
             ["mypy", "--strict", "packages/domain/src", "packages/application/src"],
         ])
     for command in commands:
