@@ -73,10 +73,10 @@ def schema_version(cls: type[Record]) -> int:
 
 
 def all_record_types() -> tuple[type[Record], ...]:
-    from . import early_resolution, lifecycle, models, pricing
+    from . import early_resolution, lifecycle, models, pricing, risk_feed
 
     result: dict[str, type[Record]] = {}
-    for module in (models, lifecycle, early_resolution, pricing):
+    for module in (models, lifecycle, early_resolution, pricing, risk_feed):
         for value in vars(module).values():
             if (isinstance(value, type) and issubclass(value, Record)
                     and value.__module__ == module.__name__):
