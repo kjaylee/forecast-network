@@ -36,11 +36,12 @@
     "APP_ORIGIN": "https://forecast.eastsea.xyz",
     "AI_PROXY_URL": "https://forecast-ai-proxy.k-jaylee.workers.dev",
     "SOURCE_WATCH_ENABLED": "true",
-    "LIVE_MARKETS_ENABLED": "false",
+    "LIVE_MARKETS_ENABLED": "true",
     "BILLING_SANDBOX_ENABLED": "true",
     "SOLANA_REGISTRY_ENABLED": "true",
-    "SOLANA_REGISTRY_RELAY_ENABLED": "false",
+    "SOLANA_REGISTRY_RELAY_ENABLED": "true",
     "SOLANA_RPC_URL": "https://api.devnet.solana.com",
+    "SOLANA_RPC_PROXY_URL": "https://forecast-rpc.eastsea.xyz/rpc",
     "SOLANA_PROGRAM_ID": "BvZLYrSmzDGTP5jYb14cjreRfHqfMo2sRBfUPpAi5Sgp",
     "SOLANA_RELAYER": "5GDUY5uyo1BVPHca6HJLYmZwbLyC5Ee78N7BkuWd5ULf",
     "SOLANA_MAINNET_RPC": "https://solana-rpc.publicnode.com,https://solana.leorpc.com/?api_key=FREE,https://solana.api.onfinality.io/public,https://endpoints.omniatech.io/v1/sol/mainnet/public",
@@ -54,12 +55,6 @@
       "/api/*"
     ]
   },
-  "routes": [
-    {
-      "pattern": "forecast.eastsea.xyz",
-      "custom_domain": true
-    }
-  ],
   "triggers": {
     "crons": [
       "*/5 * * * *"

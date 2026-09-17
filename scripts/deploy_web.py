@@ -68,6 +68,12 @@ def main() -> None:
         if seed is None or base58(public_bytes(seed)) != config["vars"]["SOLANA_RELAYER"]:
             raise RuntimeError("Devnet relayer Keychain identity does not match deployment")
         payload["SOLANA_RELAYER_SEED"] = base64.b64encode(seed).decode("ascii")
+        if config.get("vars", {}).get("SOLANA_RPC_PROXY_URL"):
+            proxy_seed = Keychain(services={"gateway": "forecast-network-devnet-rpc-gateway-v1"},
+                                  account=b"forecast-rpc").read("gateway")
+            if proxy_seed is None:
+                raise RuntimeError("Scoped Devnet RPC gateway credential must be provisioned first")
+            payload["SOLANA_RPC_PROXY_TOKEN"] = proxy_seed.hex()
     # Optional keyed mainnet RPC (Helius/QuickNode/...): public endpoints throttle Cloudflare.
     if "SOLANA_MAINNET_RPC_KEYED" in KEYCHAIN_SERVICES:
         payload["SOLANA_MAINNET_RPC_KEYED"] = secret("SOLANA_MAINNET_RPC_KEYED")

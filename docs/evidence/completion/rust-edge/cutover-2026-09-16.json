@@ -1,0 +1,77 @@
+{
+  "date": "2026-09-16",
+  "edge_worker": "forecast-network-edge (apps/web-rs, workers-rs 0.8, wasm32)",
+  "native_routes": [
+    "/api/health",
+    "/api/status",
+    "/api/risk/feeds/{id}",
+    "/api/risk/v2/feeds/{id}",
+    "static assets",
+    "/api/forecasts (list; session cookie -> user id via HMAC session hash)",
+    "/api/forecasts/{id} (detail: snapshot projection, market LMSR view, eligibility, points, registry PDA status, attestation)",
+    "/api/profile-cards/{hash}",
+    "/api/forecasts/{id}/integrity",
+    "/api/forecasts/{id}/market (GET)",
+    "/api/forecasts/{id}/translation (GET)",
+    "/api/me",
+    "/api/me/markets",
+    "/api/creators/{id}",
+    "/api/points",
+    "/api/activity",
+    "/api/wallet (GET)",
+    "/api/billing/estimate"
+  ],
+  "forwarded": "every other path via service binding LEGACY -> forecast-network (Python Worker)",
+  "parity": {
+    "method": "GET each native route on workers.dev edge and on the Python custom domain; compare JSON bodies minus serverTime/version and the security headers",
+    "result": "SAME for /api/status, /api/health, /api/risk/feeds/devnet-stable-risk-v2, /api/risk/v2/feeds/devnet-stable-risk-v2; invalid feed id -> 400 invalid_request on both"
+  },
+  "load": {
+    "request": "100 concurrent GET /api/risk/v2/feeds/devnet-stable-risk-v2",
+    "edge": {
+      "ok": 100,
+      "avg_s": 0.17,
+      "max_s": 0.24,
+      "wall_s": 0.59
+    },
+    "python": {
+      "ok": 100,
+      "avg_s": 0.41,
+      "max_s": 1.17,
+      "wall_s": 1.48
+    }
+  },
+  "cutover": "wrangler deploy (non-TTY) moves the custom domain with override_existing_origin; apps/web/wrangler.jsonc no longer declares routes so Python deploys cannot reclaim it",
+  "rollback": "add routes back to apps/web/wrangler.jsonc and run scripts/deploy_web.py (non-TTY override moves the domain back)",
+  "post_cutover_checks": [
+    "/api/status version 0.13.0 on forecast.eastsea.xyz",
+    "/api/forecasts forwarded (Python data)",
+    "POST /api/forecasts with Origin reaches authentication_required (origin passthrough)",
+    "root, app.js, docs pages served from edge assets",
+    "feed current sequence 774"
+  ],
+  "forecasts_parity": {
+    "method": "18 query combinations (sorts, categories, search escapes, cursors, invalid inputs) against forecast-network-edge-preview vs forecast-network on workers.dev; bodies compared minus clocks",
+    "result": "18/18 SAME including 400 error codes"
+  },
+  "forecasts_load": {
+    "request": "100 concurrent GET /api/forecasts?sort=trending",
+    "edge": {
+      "ok": 100,
+      "avg_s": 1.03
+    },
+    "python": {
+      "ok": 100,
+      "avg_s": 0.96
+    },
+    "note": "D1 candidate scoring dominates; route is database-bound on both"
+  },
+  "detail_parity": {
+    "method": "17 ids (OPEN/CHALLENGE/FINALIZED states + missing/invalid ids) preview edge vs Python on workers.dev",
+    "result": "17/17 SAME bodies and status codes; Python intermittently returned Cloudflare 1101 on one id while the edge stayed 200"
+  },
+  "reads_parity": {
+    "method": "43 paths (anonymous) preview edge vs Python on workers.dev",
+    "result": "39/43 byte-equal; the 4 differences were 3 Python Cloudflare 1101 flakes (edge 200) and creator consistency windows that embed the request clock"
+  }
+}
