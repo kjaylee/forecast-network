@@ -120,6 +120,22 @@ class ScheduledTransportTests(unittest.TestCase):
         self.assertNotIn(env.ADMIN_TOKEN, output.getvalue())
         self.assertEqual(json.loads(output.getvalue())["httpStatus"], 200)
 
+    def test_per_minute_cron_dispatches_only_the_risk_v2_operation(self) -> None:
+        calls: list[tuple[Any, ...]] = []
+
+        async def fetch(resource: str, **options: Any) -> Any:
+            calls.append((resource, options))
+            return SimpleNamespace(status=200)
+
+        env = SimpleNamespace(ADMIN_TOKEN="test-operator-secret-" + "x"*40,
+                              APP_ORIGIN="https://forecast.example", SCHEDULED_JOBS=SimpleNamespace(fetch=fetch))
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            entry = self.entrypoint(env)
+            asyncio.run(entry.scheduled(SimpleNamespace(cron="* * * * *"), SimpleNamespace(), entry.ctx))
+        self.assertEqual([url for url, _ in calls], ["https://forecast.example/api/admin/risk/v2/operate"])
+        self.assertEqual(json.loads(output.getvalue())["event"], "scheduled_risk_v2")
+
     def test_missing_operator_secret_never_dispatches(self) -> None:
         for token in (None, "short"):
             with self.subTest(token=token), self.assertRaises(RuntimeError):

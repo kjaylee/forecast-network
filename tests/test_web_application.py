@@ -75,9 +75,10 @@ class TestAI:
         self.last_question = None
         self.ai_forecast = None
 
-    async def compile_question(self, question, candidates, now_ms):
+    async def compile_question(self, question, candidates, now_ms, *, distinct_measurement_windows=False):
         self.calls += 1
         self.last_candidates = list(candidates)
+        self.last_distinct_windows = distinct_measurement_windows
         self.last_question = question
         if self.gate:
             await self.gate.wait()

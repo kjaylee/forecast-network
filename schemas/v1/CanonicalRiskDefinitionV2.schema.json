@@ -1,0 +1,173 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "CanonicalRiskDefinitionV2": {
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Z][A-Z0-9]{0,15}$",
+          "type": "string"
+        },
+        "baseline_policy": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "calibration_cohort_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "channel": {
+          "enum": [
+            "depegRisk1d",
+            "depegRisk7d",
+            "depegRisk30d",
+            "reserveLossRisk",
+            "liquidityStressRisk",
+            "stableCollateralRisk",
+            "btcCrashRisk",
+            "ethCrashRisk",
+            "solCrashRisk",
+            "oracleFailureRisk",
+            "bridgeFailureRisk",
+            "counterpartyRisk"
+          ]
+        },
+        "clock_skew_max_ms": {
+          "maximum": 600000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "definition_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "definition_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "inference_freshness_max_ms": {
+          "maximum": 21600000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "interval_rule": {
+          "const": "[start,end)"
+        },
+        "invalid_data_policy": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "mapping_kind": {
+          "enum": [
+            "exact_dated",
+            "containing_upper_estimate"
+          ]
+        },
+        "mapping_profile_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "mapping_profile_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "policy_horizon_ms": {
+          "maximum": 31536000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "predicate": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "sampling_grid_ms": {
+          "maximum": 86400000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_freshness_max_ms": {
+          "maximum": 86400000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "source_policy": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "threshold": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "units": {
+          "maxLength": 32,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "witness_semantics": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "definition_id",
+        "definition_version",
+        "asset",
+        "channel",
+        "policy_horizon_ms",
+        "predicate",
+        "units",
+        "threshold",
+        "sampling_grid_ms",
+        "witness_semantics",
+        "interval_rule",
+        "baseline_policy",
+        "source_policy",
+        "invalid_data_policy",
+        "mapping_profile_id",
+        "mapping_profile_version",
+        "mapping_kind",
+        "source_freshness_max_ms",
+        "inference_freshness_max_ms",
+        "clock_skew_max_ms",
+        "calibration_cohort_id"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/CanonicalRiskDefinitionV2.schema.json",
+  "$ref": "#/$defs/CanonicalRiskDefinitionV2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CanonicalRiskDefinitionV2"
+}

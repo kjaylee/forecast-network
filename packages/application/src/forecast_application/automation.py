@@ -226,7 +226,7 @@ class ForecastAutomation:
         if self.watch is None:
             return {'enabled': False, 'polled': 0, 'reviewed': 0, 'failed': 0}
         await self.bootstrap()
-        return {'enabled': True, **await self.watch.run(limit=max(1, min(1, limit)))}
+        return {'enabled': True, **await self.watch.run(limit=max(1, min(6, limit)))}
 
     async def status(self) -> dict[str, Any]:
         counts = await self.app.db.first("SELECT COUNT(*) AS sources, SUM(enabled) AS enabled FROM official_watch_sources")

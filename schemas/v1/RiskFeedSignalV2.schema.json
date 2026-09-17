@@ -1,0 +1,206 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "RiskFeedSignalV2": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "calibration_status": {
+          "enum": [
+            "new",
+            "provisional",
+            "established"
+          ]
+        },
+        "confidence_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "constituent_dataset_hash": {
+          "anyOf": [
+            {
+              "maxLength": 1000000,
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "coverage_evidence_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "dependence_group": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "estimate_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "estimator_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "evaluation_completed_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "evaluation_started_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "evidence_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "forecast_as_of_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "information_cutoff_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "newest_member_as_of_ms": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "oldest_member_as_of_ms": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "question_probability_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sample_count": {
+          "maximum": 1000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source": {
+          "enum": [
+            "ai",
+            "crowd",
+            "top",
+            "market"
+          ]
+        },
+        "source_bundle_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "source_capture_completed_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_capture_started_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_watermark_ms": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "units": {
+          "const": "basis-points"
+        },
+        "value_kind": {
+          "const": "question_probability"
+        }
+      },
+      "required": [
+        "schema_version",
+        "binding_id",
+        "source",
+        "value_kind",
+        "question_probability_bp",
+        "confidence_bp",
+        "sample_count",
+        "units",
+        "forecast_as_of_ms",
+        "information_cutoff_ms",
+        "evaluation_started_at_ms",
+        "evaluation_completed_at_ms",
+        "source_capture_started_at_ms",
+        "source_capture_completed_at_ms",
+        "source_watermark_ms",
+        "source_bundle_hash",
+        "estimate_hash",
+        "coverage_evidence_hash",
+        "evidence_hash",
+        "dependence_group",
+        "estimator_version",
+        "oldest_member_as_of_ms",
+        "newest_member_as_of_ms",
+        "constituent_dataset_hash",
+        "calibration_status"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/RiskFeedSignalV2.schema.json",
+  "$ref": "#/$defs/RiskFeedSignalV2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RiskFeedSignalV2"
+}

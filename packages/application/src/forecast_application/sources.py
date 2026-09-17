@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import ipaddress
+import json
 import re
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -24,7 +25,7 @@ from forecast_domain.models import EvidenceSnapshot, ForecastSpecification, Sour
 MAX_SOURCE_BYTES = 512 * 1024
 MAX_EXCERPT_BYTES = 24000
 MAX_SOURCE_REDIRECTS = 3
-SOURCE_POLICY_VERSION = "public-official-hosts-v1"
+SOURCE_POLICY_VERSION = "public-official-hosts-v2"
 
 # Host registrations assert authority, not that every page proves every question.
 # SourceVerifier and the immutable outcome clauses must still assess each page.
@@ -44,6 +45,8 @@ OFFICIAL_HOSTS: dict[str, str] = {
     "www.bok.or.kr": "Bank of Korea", "kostat.go.kr": "Statistics Korea",
     "www.kostat.go.kr": "Statistics Korea", "www.kma.go.kr": "KMA",
     "solana.com": "Solana", "ethereum.org": "Ethereum",
+    "api.kraken.com": "Kraken public market data",
+    "www.bitstamp.net": "Bitstamp public market data",
     "www.fifa.com": "FIFA", "www.olympics.com": "Olympics",
 }
 FALLBACK_HOSTS: dict[str, str] = {
@@ -135,6 +138,45 @@ def evidence_excerpt(body: str) -> str:
     return text.encode("utf-8")[:MAX_EXCERPT_BYTES].decode("utf-8", errors="ignore")
 
 
+def market_json_excerpt(body: str, url: str) -> str:
+    """Losslessly remove repeated OHLC field names, never dates or prices.
+
+    Bitstamp's 288 daily five-minute records exceed the ordinary excerpt budget
+    solely because each row repeats its keys. Preserve every field and scalar in
+    an explicitly labelled column table. Full original JSON remains the artifact.
+    """
+    parsed = urlsplit(url)
+    if parsed.hostname != "www.bitstamp.net" or not re.fullmatch(r"/api/v2/ohlc/[a-z0-9]+/", parsed.path):
+        return evidence_excerpt(body)
+    def pairs(items: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, item in items:
+            if key in result:
+                raise ValueError("Duplicate source key cannot be projected losslessly")
+            result[key] = item
+        return result
+
+    def non_integer(_value: str) -> None:
+        raise ValueError("Decimal JSON numbers require original-text evidence")
+
+    try:
+        value = json.loads(body, object_pairs_hook=pairs, parse_float=non_integer, parse_constant=non_integer)
+        rows = value["data"]["ohlc"]
+        if not isinstance(rows, list) or not rows or len(rows) > 1000 or not isinstance(rows[0], dict):
+            return evidence_excerpt(body)
+        columns = sorted(rows[0])
+        if not columns or any(not isinstance(row, dict) or sorted(row) != columns for row in rows):
+            return evidence_excerpt(body)
+        value["data"]["ohlc"] = {"representation": "lossless-json-columns-v1",
+            "columns": columns, "rows": [[row[key] for key in columns] for row in rows]}
+        compact = json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+        if len(compact.encode("utf-8")) <= MAX_EXCERPT_BYTES:
+            return compact
+    except (ValueError, TypeError, KeyError, RecursionError):
+        pass
+    return evidence_excerpt(body)
+
+
 class SourceCollector:
     def __init__(self, request_text: TextFetcher, *, timeout_seconds: float = 15) -> None:
         self.request_text = request_text
@@ -180,7 +222,8 @@ class SourceCollector:
                 raise SourceRejected("Evidence response is not a supported text document")
             if not raw.strip() or len(raw) > MAX_SOURCE_BYTES:
                 raise SourceRejected("Evidence is empty or exceeds the retained-source byte limit")
-            excerpt = evidence_excerpt(response.body)
+            excerpt = (market_json_excerpt(response.body, current) if media_type == "application/json"
+                       else evidence_excerpt(response.body))
             if len(excerpt) < 40:
                 raise SourceRejected("Evidence document contains insufficient readable content")
             digest = hashlib.sha256(raw).hexdigest()

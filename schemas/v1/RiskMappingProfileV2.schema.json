@@ -1,0 +1,83 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "RiskMappingProfileV2": {
+      "additionalProperties": false,
+      "properties": {
+        "clock_skew_max_ms": {
+          "maximum": 600000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "mapping_kind": {
+          "enum": [
+            "exact_dated",
+            "containing_upper_estimate"
+          ]
+        },
+        "max_forecast_age_ms": {
+          "maximum": 21600000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_policy_lag_ms": {
+          "maximum": 31536000000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "predicate_class": {
+          "enum": [
+            "monotone_any_event",
+            "exact_target"
+          ]
+        },
+        "profile_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "profile_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "review_reference": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_freshness_max_ms": {
+          "maximum": 86400000,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "profile_id",
+        "profile_version",
+        "mapping_kind",
+        "predicate_class",
+        "max_forecast_age_ms",
+        "max_policy_lag_ms",
+        "source_freshness_max_ms",
+        "clock_skew_max_ms",
+        "review_reference"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/RiskMappingProfileV2.schema.json",
+  "$ref": "#/$defs/RiskMappingProfileV2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RiskMappingProfileV2"
+}

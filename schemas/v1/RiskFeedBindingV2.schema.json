@@ -1,0 +1,195 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "RiskFeedBindingV2": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_artifact_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "asset": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Z][A-Z0-9]{0,15}$",
+          "type": "string"
+        },
+        "authorization_valid_from_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "authorization_valid_until_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "binding_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "TECHNOLOGY",
+            "CRYPTO",
+            "SCIENCE",
+            "ENTERTAINMENT",
+            "WORLD",
+            "SPORTS",
+            "OTHER"
+          ],
+          "type": "string"
+        },
+        "channel": {
+          "enum": [
+            "depegRisk1d",
+            "depegRisk7d",
+            "depegRisk30d",
+            "reserveLossRisk",
+            "liquidityStressRisk",
+            "stableCollateralRisk",
+            "btcCrashRisk",
+            "ethCrashRisk",
+            "solCrashRisk",
+            "oracleFailureRisk",
+            "bridgeFailureRisk",
+            "counterpartyRisk"
+          ]
+        },
+        "definition_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "episode_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "forecast_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "interval": {
+          "const": "[start,end)"
+        },
+        "mapping_kind": {
+          "enum": [
+            "exact_dated",
+            "containing_upper_estimate"
+          ]
+        },
+        "mapping_profile_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "mapping_profile_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "mapping_profile_version": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "operational_valid_from_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "operational_valid_until_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "policy_horizon_ms": {
+          "maximum": 31536000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "question_event_definition_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "series_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "specification_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "target_end_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "target_start_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "version": {
+          "const": "canonical-risk-binding-v2"
+        }
+      },
+      "required": [
+        "schema_version",
+        "binding_id",
+        "version",
+        "forecast_id",
+        "specification_hash",
+        "channel",
+        "asset",
+        "category",
+        "series_id",
+        "episode_id",
+        "target_start_ms",
+        "target_end_ms",
+        "interval",
+        "policy_horizon_ms",
+        "definition_hash",
+        "mapping_profile_id",
+        "mapping_profile_version",
+        "mapping_profile_hash",
+        "mapping_kind",
+        "question_event_definition_hash",
+        "approval_artifact_hash",
+        "authorization_valid_from_ms",
+        "authorization_valid_until_ms",
+        "operational_valid_from_ms",
+        "operational_valid_until_ms"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/RiskFeedBindingV2.schema.json",
+  "$ref": "#/$defs/RiskFeedBindingV2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RiskFeedBindingV2"
+}

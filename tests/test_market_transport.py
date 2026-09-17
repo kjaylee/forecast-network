@@ -82,10 +82,19 @@ class MarketTransportTests(unittest.TestCase):
             self.assertEqual(raised.exception.status, 403)
             self.assertEqual(self.calls, [])
         self.route('/api/admin/sweep', 'POST', {}, admin=True)
-        self.assertEqual(self.calls, [('automation', (), {'limit': 1})])
+        self.assertEqual(self.calls, [('automation', (), {'limit': 4})])
 
     def test_billing_estimate_is_explicitly_not_a_charge(self):
         self.assertEqual(self.route('/api/billing/estimate', user=None)['data'], {'billable': False})
+        self.assertEqual(self.calls, [])
+
+    def test_operator_treasury_read_selects_actual_ledger_mode(self):
+        self.route('/api/admin/markets/treasury?mode=active', admin=True)
+        self.assertEqual(self.calls, [('budget', ('active',), {})])
+        self.route('/api/admin/markets/treasury', admin=True)
+        self.assertEqual(self.calls, [('budget', ('shadow',), {})])
+        with self.assertRaises(AppError):
+            self.route('/api/admin/markets/treasury?mode=active', admin=False)
         self.assertEqual(self.calls, [])
 
     def test_receipt_lookup_is_read_only_and_bound_to_authenticated_owner(self):

@@ -311,10 +311,15 @@ class PointMarkets:
                       "AND (?='shadow' OR (EXISTS(SELECT 1 FROM official_watch_bindings WHERE forecast_id=?) "
                       'AND NOT EXISTS(SELECT 1 FROM official_watch_bindings b JOIN official_watch_sources s ON (s.id=b.source_id OR (s.parent_id=b.source_id AND s.enabled=1)) '
                       'WHERE b.forecast_id=? AND (s.enabled!=1 OR s.failure_count>0 OR s.checked_at IS NULL '
-                      'OR s.lease_until>? OR s.checked_at<?-s.interval_ms-60000))))',
+                      'OR s.lease_until>? OR s.checked_at<?-s.interval_ms-60000))) '
+                      # A canonical risk question proves source currency differently: the operator
+                      # refresh captured and retained its actual sources within the last two hours.
+                      'OR EXISTS(SELECT 1 FROM risk_feed_bindings_v2 b JOIN risk_prediction_clocks_v2 c ON c.forecast_id=b.forecast_id '
+                      'WHERE b.forecast_id=? AND c.recorded_at>?-7200000 '
+                      'AND NOT EXISTS(SELECT 1 FROM risk_feed_binding_revocations_v2 r WHERE r.binding_id=b.binding_id)))',
                       (row['forecast_id'], row['revision'], row['state_hash'], row['policy_hash'], now, now,
                        row['forecast_id'], row['forecast_id'], row['specification_hash'], row['mode'],
-                       row['forecast_id'], row['forecast_id'], now, now))
+                       row['forecast_id'], row['forecast_id'], now, now, row['forecast_id'], now))
 
     async def _receipt_view(self, row: dict[str, Any], mode: str) -> dict[str, Any]:
         receipt = loads(PricingReceipt, row['body'])

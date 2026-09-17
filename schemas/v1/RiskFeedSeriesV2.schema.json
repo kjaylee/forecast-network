@@ -1,0 +1,118 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "RiskFeedSeriesV2": {
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Z][A-Z0-9]{0,15}$",
+          "type": "string"
+        },
+        "cadence_ms": {
+          "maximum": 31536000000,
+          "minimum": 60000,
+          "type": "integer"
+        },
+        "channel": {
+          "enum": [
+            "depegRisk1d",
+            "depegRisk7d",
+            "depegRisk30d",
+            "reserveLossRisk",
+            "liquidityStressRisk",
+            "stableCollateralRisk",
+            "btcCrashRisk",
+            "ethCrashRisk",
+            "solCrashRisk",
+            "oracleFailureRisk",
+            "bridgeFailureRisk",
+            "counterpartyRisk"
+          ]
+        },
+        "definition_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "feed_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "lead_ms": {
+          "maximum": 86400000,
+          "minimum": 60000,
+          "type": "integer"
+        },
+        "mapping_kind": {
+          "enum": [
+            "exact_dated",
+            "containing_upper_estimate"
+          ]
+        },
+        "mapping_profile_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "policy_horizon_ms": {
+          "maximum": 31536000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "question_template": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "series_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "version": {
+          "const": "canonical-risk-series-v2"
+        },
+        "window_ms": {
+          "maximum": 31536000000,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "series_id",
+        "version",
+        "feed_id",
+        "channel",
+        "asset",
+        "definition_hash",
+        "mapping_profile_hash",
+        "mapping_kind",
+        "policy_horizon_ms",
+        "window_ms",
+        "cadence_ms",
+        "lead_ms",
+        "question_template"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/RiskFeedSeriesV2.schema.json",
+  "$ref": "#/$defs/RiskFeedSeriesV2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RiskFeedSeriesV2"
+}

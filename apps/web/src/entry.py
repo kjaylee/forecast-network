@@ -17,8 +17,29 @@ from typing import Any
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from forecast_application.ai import AiCoordinator, ProviderConfig
+from forecast_application.analytics import product_analytics
 from forecast_application.errors import AppError
 from forecast_application.points import PointsService
+from forecast_application.risk_feed import (
+    approve_binding,
+    latest_feed,
+    publish_feed,
+    revoke_binding,
+)
+from forecast_application.risk_feed_series import configure_series
+from forecast_application.risk_feed_v2 import (
+    admit_definition,
+    admit_profile,
+    approve_binding_v2,
+    configure_operation,
+    latest_feed_v2,
+    operate_feeds_v2,
+    operations_health,
+    publish_feed_v2,
+    revoke_binding_v2,
+    training_export,
+)
+from forecast_application.risk_refresh import refresh_bound_prediction, refresh_bound_prediction_v2
 from forecast_application.service import CHALLENGE_MS, Application
 from forecast_application.solana_registry import RegistryError, SolanaRegistry, reserve_daily_spend
 from forecast_application.solana_rpc import SolanaRpcError, SolanaRpcTransport
@@ -33,7 +54,14 @@ from forecast_application.sources import (
 from forecast_application.wallet_login import WalletLogin
 from forecast_application.wallets import WalletService
 from forecast_domain.models import AIProvenance, Resolution
-from forecast_domain.serialization import from_dict
+from forecast_domain.risk_feed import (
+    CanonicalRiskDefinitionV2,
+    RiskFeedBinding,
+    RiskFeedBindingV2,
+    RiskFeedSeriesV2,
+    RiskMappingProfileV2,
+)
+from forecast_domain.serialization import content_hash, from_dict, to_dict
 from js import Object, Uint8Array
 from js import crypto as web_crypto
 from js import fetch as js_fetch
@@ -48,7 +76,7 @@ BOOKMARK_PATTERN = re.compile(r"[A-Za-z0-9._:-]{1,256}")
 GEMINI_HOST = "generativelanguage.googleapis.com"
 MAX_BODY_BYTES = 16 * 1024
 MAX_PROVIDER_BYTES = 512 * 1024
-VERSION = "0.11.1"
+VERSION = "0.12.22"
 
 
 def python_value(value: Any, _depth: int = 0) -> Any:
@@ -199,10 +227,22 @@ class Default(WorkerEntrypoint):
         url = str(getattr(self.env, "SOLANA_RPC_URL", ""))
         if url != "https://api.devnet.solana.com":
             raise ValueError("Registry RPC must use pinned Devnet endpoint")
+        headers = {"Content-Type": "application/json",
+                   "User-Agent": "Forecast-Registry/0.9 (+https://forecast.eastsea.xyz)"}
+        proxy = str(getattr(self.env, "SOLANA_RPC_PROXY_URL", "") or "")
+        if proxy:
+            # This owned gateway forwards only the fixed Devnet RPC. It holds no
+            # signing keys; SolanaRpcTransport still verifies the chain genesis.
+            if proxy != "https://forecast-rpc.eastsea.xyz/rpc":
+                raise ValueError("Unapproved registry RPC gateway")
+            token = str(getattr(self.env, "SOLANA_RPC_PROXY_TOKEN", "") or "")
+            if len(token) != 64 or any(c not in "0123456789abcdef" for c in token):
+                raise ValueError("Registry RPC gateway credential unavailable")
+            url = proxy
+            headers["X-Forecast-RPC-Token"] = token
         async def request() -> Any:
             response = await js_fetch(url, javascript({"method": "POST", "redirect": "manual",
-                "headers": {"Content-Type": "application/json",
-                            "User-Agent": "Forecast-Registry/0.9 (+https://forecast.eastsea.xyz)"},
+                "headers": headers,
                 "body": json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params})}))
             if response.status != 200:
                 print(json.dumps({"event": "registry_rpc_http_error", "method": method,
@@ -456,6 +496,104 @@ class Default(WorkerEntrypoint):
             return api_response({"code": "service_unavailable", "message": "Please try again shortly."},
                                 status=503, error=True)
 
+    async def route_risk_v2(self, app: Any, path: str, body: Any) -> Any:
+        """Operator-authenticated v2 registry: typed targets, reviewed profiles, separate clocks."""
+        actor = "authenticated-operator"
+        if path == "/api/admin/risk/v2/definitions":
+            if set(body) != {"feedId", "definition"}:
+                raise ValueError("Feed identity and canonical definition are required")
+            digest = await admit_definition(app.db, feed_id=body["feedId"],
+                                            definition=from_dict(CanonicalRiskDefinitionV2, body["definition"]),
+                                            approved_by=actor, now_ms=app.now_ms())
+            return api_response({"status": "admitted", "definitionHash": digest}, status=201)
+        if path == "/api/admin/risk/v2/profiles":
+            if set(body) != {"feedId", "profile"}:
+                raise ValueError("Feed identity and mapping profile are required")
+            digest = await admit_profile(app.db, feed_id=body["feedId"],
+                                         profile=from_dict(RiskMappingProfileV2, body["profile"]),
+                                         approved_by=actor, now_ms=app.now_ms())
+            return api_response({"status": "admitted", "profileHash": digest}, status=201)
+        if path == "/api/admin/risk/v2/bindings":
+            if set(body) != {"feedId", "binding"}:
+                raise ValueError("Feed identity and canonical binding are required")
+            binding = from_dict(RiskFeedBindingV2, body["binding"])
+            await approve_binding_v2(app.db, feed_id=body["feedId"], binding=binding, approved_by=actor,
+                                     now_ms=app.now_ms())
+            return api_response({"status": "approved", "bindingId": binding.binding_id}, status=201)
+        refresh = re.fullmatch(r"/api/admin/risk/v2/bindings/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})/refresh", path)
+        if refresh:
+            if body:
+                raise ValueError("Refresh uses the approved immutable question")
+            return api_response(await refresh_bound_prediction_v2(app, refresh[1]))
+        revoke = re.fullmatch(r"/api/admin/risk/v2/bindings/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})/revoke", path)
+        if revoke:
+            if set(body) != {"reason"} or type(body["reason"]) is not str:
+                raise ValueError("A revocation reason is required")
+            await revoke_binding_v2(app.db, binding_id=revoke[1], revoked_by=actor, now_ms=app.now_ms(),
+                                    reason=body["reason"])
+            return api_response({"status": "revoked", "bindingId": revoke[1]})
+        publish = re.fullmatch(r"/api/admin/risk/v2/feeds/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})/publish", path)
+        if publish:
+            if set(body) != {"weightSetHash", "weightSetVersion", "calibrationCohortId"}:
+                raise ValueError("An admitted weight reference and calibration cohort are required")
+            weight = await app.db.first("SELECT body FROM artifacts WHERE hash=? AND kind='risk-weight-set'",
+                                        (body["weightSetHash"],))
+            if (not weight or content_hash(json.loads(weight["body"])) != body["weightSetHash"]
+                    or json.loads(weight["body"]).get("version") != body["weightSetVersion"]):
+                raise ValueError("Weight reference is not admitted")
+            envelope = await self.publish_risk_v2(app, publish[1], body["weightSetHash"], body["weightSetVersion"],
+                                                  body["calibrationCohortId"])
+            return api_response({"status": "published", "envelope": to_dict(envelope)}, status=201)
+        operate = re.fullmatch(r"/api/admin/risk/v2/feeds/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})/operate", path)
+        if operate:
+            if set(body) != {"weightSetHash", "weightSetVersion", "calibrationCohortId", "enabled"} \
+                    or type(body["enabled"]) is not bool:
+                raise ValueError("Operation needs an admitted weight reference, cohort and enabled flag")
+            await configure_operation(app.db, feed_id=operate[1], weight_set_hash=body["weightSetHash"],
+                                      weight_set_version=body["weightSetVersion"],
+                                      calibration_cohort_id=body["calibrationCohortId"], enabled=body["enabled"],
+                                      configured_by=actor, now_ms=app.now_ms())
+            return api_response({"status": "configured", "feedId": operate[1], "enabled": body["enabled"]})
+        if path == "/api/admin/risk/v2/series":
+            if set(body) != {"series", "enabled"} or type(body["enabled"]) is not bool:
+                raise ValueError("A canonical series template and enabled flag are required")
+            series = from_dict(RiskFeedSeriesV2, body["series"])
+            digest = await configure_series(app.db, series=series, enabled=body["enabled"], configured_by=actor,
+                                            now_ms=app.now_ms())
+            return api_response({"status": "configured", "seriesId": series.series_id, "seriesHash": digest,
+                                 "enabled": body["enabled"]})
+        if path == "/api/admin/risk/v2/operate":
+            if body:
+                raise ValueError("Operation ticks take no parameters")
+            outcomes = await operate_feeds_v2(app.db, now_ms=app.now_ms(),
+                refresh=lambda binding_id: refresh_bound_prediction_v2(app, binding_id),
+                publish=lambda feed_id, digest, version, cohort: self.publish_risk_v2(app, feed_id, digest,
+                                                                                      version, cohort),
+                seed=lambda question: app.seed(question, uncertainty_band=None, canonical_risk=True))
+            return api_response({"status": "ticked", "feeds": outcomes})
+        raise AppError(404, "not_found", "Unknown risk v2 route.")
+
+    async def publish_risk_v2(self, app: Any, feed_id: str, weight_set_hash: str, weight_set_version: str,
+                              calibration_cohort_id: str) -> Any:
+        public_key = self.relayer_public_key()
+        if public_key is None:
+            raise AppError(503, "risk_signer_unavailable", "Risk feed signing is not configured.")
+        try:
+            return await publish_feed_v2(app.db, feed_id=feed_id,
+                genesis_hash="EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+                key_id="forecast-relayer-" + hashlib.sha256(public_key).hexdigest()[:16],
+                public_key_hex=public_key.hex(), signer=self.sign_registry_message, now_ms=app.now_ms(),
+                weight_set_hash=weight_set_hash, weight_set_version=weight_set_version,
+                calibration_cohort_id=calibration_cohort_id)
+        except Exception as error:
+            # D1 reports constraint/statement failures by class and column, never row data;
+            # a bounded prefix is enough to distinguish CAS rejection from a broken statement.
+            detail = str(error)
+            print(json.dumps({"event": "risk_v2_publish_failed", "feedId": feed_id,
+                              "errorType": type(error).__name__,
+                              "detail": detail[:160] if detail.startswith(("D1_", "Error: D1_")) else None}))
+            raise
+
     async def route_api(self, request: Any, parsed: Any, path: str) -> Response:
         method = str(request.method).upper()
         if method not in {"GET", "POST", "PATCH"}:
@@ -484,6 +622,25 @@ class Default(WorkerEntrypoint):
         if path == "/api/health" and method == "GET":
             row = await app.db.first("SELECT 1 AS ok")
             return api_response({"ok": bool(row and row["ok"] == 1), "version": VERSION})
+        if path.startswith("/api/risk/feeds/") and method == "GET":
+            risk_feed = re.fullmatch(r"/api/risk/feeds/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})", path)
+            if risk_feed is None:
+                raise ValueError("Invalid risk feed identity")
+            envelope = await latest_feed(app.db, feed_id=risk_feed[1])
+            now = app.now_ms()
+            status = "unavailable" if envelope is None else "current" if envelope.payload.expires_at_ms > now else "stale"
+            return api_response({"status": status, "serverTime": now,
+                                 "envelope": to_dict(envelope) if envelope else None})
+        if path.startswith("/api/risk/v2/feeds/") and method == "GET":
+            risk_feed = re.fullmatch(r"/api/risk/v2/feeds/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})", path)
+            if risk_feed is None:
+                raise ValueError("Invalid risk feed identity")
+            envelope_v2 = await latest_feed_v2(app.db, feed_id=risk_feed[1])
+            now = app.now_ms()
+            status = ("unavailable" if envelope_v2 is None
+                      else "current" if envelope_v2.payload.expires_at_ms > now else "stale")
+            return api_response({"status": status, "serverTime": now, "protocol": "forecast-risk-feed-v2",
+                                 "envelope": to_dict(envelope_v2) if envelope_v2 else None})
         if path == "/api/status" and method == "GET":
             return api_response({"serverTime": app.now_ms(), "version": VERSION,
                 "providers": list(app.ai.configured_providers), "challengeHours": CHALLENGE_MS // 3600000,
@@ -495,6 +652,90 @@ class Default(WorkerEntrypoint):
                 "features": {"sourceWatch": app.automation.enabled, "liveMarkets": app.markets.live_enabled,
                              "billing": {"billable": False, "mode": "sandbox"}}})
         if is_admin:
+            if path == "/api/admin/risk/v2/health" and method == "GET":
+                return api_response(await operations_health(app.db, now_ms=app.now_ms()))
+            export = re.fullmatch(r"/api/admin/risk/v2/feeds/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})/training", path)
+            if export and method == "GET":
+                return api_response(await training_export(app.db, feed_id=export[1], now_ms=app.now_ms()))
+            if path == "/api/admin/analytics" and method == "GET":
+                query = parse_qs(parsed.query, keep_blank_values=True)
+                if set(query) - {"start", "end", "cohortStart", "cohortEnd"} or any(len(v) != 1 for v in query.values()):
+                    raise ValueError("Analytics accepts one UTC window per parameter")
+                if any(not re.fullmatch(r"[0-9]{1,16}", v[0]) for v in query.values()):
+                    raise ValueError("Analytics windows use integer UTC milliseconds")
+                now = app.now_ms()
+                end = int(query["end"][0]) if "end" in query else now // 86400000 * 86400000
+                start = int(query["start"][0]) if "start" in query else max(0, end - 30 * 86400000)
+                return api_response(await product_analytics(app.db, as_of_ms=now,
+                    window_start_ms=start, window_end_ms=end,
+                    cohort_start_ms=int(query["cohortStart"][0]) if "cohortStart" in query else None,
+                    cohort_end_ms=int(query["cohortEnd"][0]) if "cohortEnd" in query else None))
+            if path.startswith("/api/admin/risk/v2/") and method == "POST":
+                return await self.route_risk_v2(app, path, body)
+            if path == "/api/admin/risk/seed" and method == "POST":
+                if set(body) != {"question"} or type(body["question"]) is not str:
+                    raise ValueError("A canonical risk question is required")
+                # Rare tail events are useful risk questions even below the
+                # ordinary editorial uncertainty band. Compiler, validation,
+                # publication and later explicit binding approval still apply.
+                return api_response(await app.seed(body["question"], uncertainty_band=None, canonical_risk=True), status=201)
+            refresh = re.fullmatch(r"/api/admin/risk/bindings/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})/refresh", path)
+            if refresh and method == "POST":
+                if body:
+                    raise ValueError("Refresh uses the approved immutable question")
+                return api_response(await refresh_bound_prediction(app, refresh[1]))
+            if path == "/api/admin/risk/weights" and method == "POST":
+                if set(body) != {"document"} or not isinstance(body["document"], dict):
+                    raise ValueError("A canonical weight document is required")
+                document = body["document"]
+                if document.get("version") != "source-calibration-v1":
+                    raise ValueError("Unsupported weight document version")
+                digest = content_hash(document)
+                canonical = json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+                if len(canonical.encode("utf-8")) > 65536:
+                    raise ValueError("Weight document exceeds limit")
+                # This is authenticated immutable artifact admission, not a claim
+                # of calibrated performance. The risk consumer validates its record.
+                await app.db.execute("INSERT OR IGNORE INTO artifacts(hash,kind,body,media_type,created_at) "
+                                     "VALUES(?,?,?,?,?)", (digest, "risk-weight-set", canonical,
+                                                          "application/json", app.now_ms()))
+                retained = await app.db.first("SELECT kind,body FROM artifacts WHERE hash=?", (digest,))
+                if not retained or retained["kind"] != "risk-weight-set" or retained["body"] != canonical:
+                    raise ValueError("Weight artifact identity mismatch")
+                return api_response({"status": "stored", "hash": digest, "version": document["version"]}, status=201)
+            if path == "/api/admin/risk/bindings" and method == "POST":
+                if set(body) != {"feedId", "binding"}:
+                    raise ValueError("Feed identity and canonical binding are required")
+                binding = from_dict(RiskFeedBinding, body["binding"])
+                await approve_binding(app.db, feed_id=body["feedId"], binding=binding,
+                                      approved_by="authenticated-operator", now_ms=app.now_ms())
+                return api_response({"status": "approved", "bindingId": binding.binding_id}, status=201)
+            revoke = re.fullmatch(r"/api/admin/risk/bindings/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})/revoke", path)
+            if revoke and method == "POST":
+                if set(body) != {"reason"} or type(body["reason"]) is not str:
+                    raise ValueError("A revocation reason is required")
+                await revoke_binding(app.db, binding_id=revoke[1], revoked_by="authenticated-operator",
+                                     now_ms=app.now_ms(), reason=body["reason"])
+                return api_response({"status": "revoked", "bindingId": revoke[1]})
+            publish = re.fullmatch(r"/api/admin/risk/feeds/([A-Za-z0-9][A-Za-z0-9_.:-]{0,127})/publish", path)
+            if publish and method == "POST":
+                if set(body) != {"weightSetHash", "weightSetVersion"}:
+                    raise ValueError("An admitted weight reference is required")
+                weight = await app.db.first("SELECT body FROM artifacts WHERE hash=? AND kind='risk-weight-set'",
+                                            (body["weightSetHash"],))
+                if (not weight or content_hash(json.loads(weight["body"])) != body["weightSetHash"]
+                        or json.loads(weight["body"]).get("version") != body["weightSetVersion"]):
+                    raise ValueError("Weight reference is not admitted")
+                public_key = self.relayer_public_key()
+                if public_key is None:
+                    raise AppError(503, "risk_signer_unavailable", "Risk feed signing is not configured.")
+                envelope = await publish_feed(app.db, feed_id=publish[1],
+                    genesis_hash="EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+                    key_id="forecast-relayer-" + hashlib.sha256(public_key).hexdigest()[:16],
+                    public_key_hex=public_key.hex(), signer=self.sign_registry_message,
+                    now_ms=app.now_ms(), weight_set_hash=body["weightSetHash"],
+                    weight_set_version=body["weightSetVersion"], window_ms=21600000)
+                return api_response({"status": "published", "envelope": to_dict(envelope)}, status=201)
             participation = re.fullmatch(r"/api/admin/forecasts/([A-Za-z0-9_.:-]{1,128})/participation", path)
             if participation and method == "GET":
                 return api_response(await app.participation_holds.status(participation[1]))
@@ -503,7 +744,9 @@ class Default(WorkerEntrypoint):
             if path == "/api/admin/seed" and method == "POST":
                 return api_response(await app.seed(body.get("question", "")), status=201)
             if path == "/api/admin/sweep" and method == "POST":
-                result = await app.run_automation(limit=1)
+                # Four source polls per five-minute sweep keeps every watched publisher
+                # and article current; one per tick starved the market source gate.
+                result = await app.run_automation(limit=4)
                 if app.registry is not None:
                     if str(getattr(self.env, "SOLANA_REGISTRY_RELAY_ENABLED", "false")).lower() == "true":
                         try:
@@ -552,7 +795,7 @@ class Default(WorkerEntrypoint):
             if path == "/api/admin/automation/run" and method == "POST":
                 return api_response(await app.run_automation(limit=1))
             if path == "/api/admin/markets/treasury" and method == "GET":
-                return api_response(await app.markets.budget())
+                return api_response(await app.markets.budget(parse_qs(parsed.query).get("mode", ["shadow"])[0]))
             if path == "/api/admin/markets/treasury" and method == "POST":
                 return api_response(await app.markets.fund_treasury(body.get("amountPoints"), body.get("idempotencyKey"), body.get("mode", "shadow")))
             market_admin = re.fullmatch(r"/api/admin/forecasts/([A-Za-z0-9_.:-]{1,128})/market", path)
@@ -792,10 +1035,17 @@ class Default(WorkerEntrypoint):
         token = getattr(bindings, "ADMIN_TOKEN", None)
         if not isinstance(token, str) or len(token) < 32:
             raise RuntimeError("Scheduled dispatch requires the configured operator secret")
+        # Each cron pattern owns one job. Only the five-minute sweep is configured:
+        # a per-minute Worker cron collided with in-flight requests in the same
+        # isolate ("Cannot enter a promising task"), so the signed risk publication
+        # tick is driven by the supervised operator host (scripts/operate_risk_v2.py).
+        pattern = str(getattr(controller, "cron", "") or "")
+        path, event = ("/api/admin/risk/v2/operate", "scheduled_risk_v2") if pattern == "* * * * *" \
+            else ("/api/admin/sweep", "scheduled_sweep")
         # The SDK service-binding wrapper uses Python keyword fetch options.
-        response = await bindings.SCHEDULED_JOBS.fetch(str(bindings.APP_ORIGIN) + "/api/admin/sweep",
+        response = await bindings.SCHEDULED_JOBS.fetch(str(bindings.APP_ORIGIN) + path,
             method="POST", headers={"Content-Type": "application/json",
                                     "Authorization": "Bearer " + token}, body="{}")
-        print(json.dumps({"event": "scheduled_sweep", "httpStatus": int(response.status)}))
+        print(json.dumps({"event": event, "httpStatus": int(response.status)}))
         if not 200 <= response.status < 300:
             raise RuntimeError("Scheduled job dispatch did not complete successfully")

@@ -46,7 +46,9 @@ def public_bytes(seed: bytes) -> bytes:
 
 
 class Keychain:
-    def __init__(self) -> None:
+    def __init__(self, *, services: dict[str, str] | None = None, account: bytes = ACCOUNT) -> None:
+        self.services = dict(SERVICES if services is None else services)
+        self.account = account
         self.security = ctypes.CDLL(
             "/System/Library/Frameworks/Security.framework/Security"
         )
@@ -68,11 +70,11 @@ class Keychain:
         self.security.SecKeychainItemFreeContent.restype = ctypes.c_int32
 
     def read(self, role: str) -> bytes | None:
-        service = SERVICES[role].encode()
+        service = self.services[role].encode()
         size = ctypes.c_uint32()
         data = ctypes.c_void_p()
         status = self.security.SecKeychainFindGenericPassword(
-            None, len(service), service, len(ACCOUNT), ACCOUNT,
+            None, len(service), service, len(self.account), self.account,
             ctypes.byref(size), ctypes.byref(data), None,
         )
         if status == -25300:
@@ -91,10 +93,10 @@ class Keychain:
         existing = self.read(role)
         if existing is not None:
             return existing
-        service = SERVICES[role].encode()
+        service = self.services[role].encode()
         value = os.urandom(32)
         status = self.security.SecKeychainAddGenericPassword(
-            None, len(service), service, len(ACCOUNT), ACCOUNT,
+            None, len(service), service, len(self.account), self.account,
             len(value), value, None,
         )
         if status == -25299:  # Another process won creation; never overwrite it.

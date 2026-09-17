@@ -6,15 +6,19 @@ import json
 import sqlite3
 import unittest
 from dataclasses import replace
+from datetime import datetime, timezone
 from pathlib import Path
 
 from forecast_application.database import SQLiteDatabase
 from forecast_application.errors import AppError
 from forecast_application.markets import SCALE, PointMarkets
 from forecast_application.points import PointsService
+from forecast_application.service import CHALLENGE_MS, LEASE_MS, Application
+from forecast_domain.lifecycle import BeginResolution, Lock, ProposeResolution
 from forecast_domain.models import Outcome
 from forecast_domain.pricing import PricingPolicy
 
+from tests import model_fixtures as fixtures
 from tests import test_points
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,6 +71,123 @@ class MarketTests(unittest.IsolatedAsyncioTestCase):
         await self.db.execute("INSERT INTO participation_hold_events(id,forecast_id,revision,action,hold_id,specification_hash,reason,evidence_url,actor,request_key,request_hash,body,created_at) "
                               "VALUES(?,?,1,'hold','hold',?,'known_outcome_review','https://example.com/news','authenticated_admin',?,?,'{}',?)",
                               (self.token(), fid, row['specification_hash'], self.token(), 'a'*64, self.now))
+
+    async def normal_challenge(self, outcome=Outcome.YES):
+        """Exercise the actual application scheduler's unchanged 48-hour policy.
+
+        Evidence and clock are explicit local fixtures. The database/mutations,
+        timing admission, challenge creation and finalization guards are real.
+        """
+        app = Application(self.db, None, now_ms=lambda: self.now, token_hash=lambda token: token,
+                          random_token=lambda: 'local-application-fixture-'+self.token(),
+                          source_watch_enabled=True, live_markets_enabled=True)
+        forecast = await app._forecast('market-one')
+        self.now = forecast.specification.close_at_ms
+        forecast = await app._mutate(forecast, Lock(), key=self.token())
+        self.now += 1
+        forecast = await app._mutate(forecast, BeginResolution(), key=self.token())
+        self.now += 1000
+        publication = datetime.fromtimestamp(self.now//1000, timezone.utc).isoformat()
+        body = ('<html><head><meta property="article:published_time" content="'+publication+
+                '"></head><body>Local fixture: official outcome evidence published after all receipts.</body></html>')
+        evidence = fixtures.evidence(forecast.specification, collected_at_ms=self.now, content=body)
+        await self.db.execute("INSERT INTO artifacts(hash,kind,body,media_type,created_at) VALUES(?,'evidence',?,'text/html',?)",
+                              (evidence.content_sha256, body, self.now))
+        self.now += 10
+        resolution = fixtures.resolution(forecast.specification, forecast_id='market-one',
+                                        evidence=(evidence,), proposed_at_ms=self.now, outcome=outcome)
+        await app._mutate(forecast, ProposeResolution(resolution=resolution), key=self.token())
+        lease = self.token()
+        await self.db.execute('UPDATE forecasts SET job_token=?,job_until=? WHERE id=?',
+                              (lease, self.now+LEASE_MS, 'market-one'))
+        await app._advance_job('market-one', lease)
+        challenged = await app._forecast('market-one')
+        self.assertEqual(challenged.challenge_until_ms, self.now+CHALLENGE_MS)
+        self.assertEqual(CHALLENGE_MS, 48*60*60*1000)
+        return app, lease, challenged
+
+    async def test_active_point_market_full_application_48h_boundary_and_disabled_buy_settlement(self):
+        await self.market(mode='active')
+        await self.markets.fund_treasury(13, 'separate-shadow-budget', 'shadow')
+        initial_active = await self.markets.budget('active')
+        initial_shadow = await self.markets.budget('shadow')
+        initial_points = await PointsService(self.db).summary('user-a')
+        initial_market = await self.markets.get('market-one')
+        quote = await self.markets.quote('user-a', 'market-one', 'YES', 100)
+        stale = await self.markets.quote('user-b', 'market-one', 'NO', 100)
+        accepted = await self.markets.accept('user-a', 'market-one', quote['quoteId'],
+                                             int(quote['claimsAtomic']), 'active-completion-fill')
+        after_buy = await PointsService(self.db).summary('user-a')
+        self.assertEqual((after_buy['available'], after_buy['committed']), (900, 100))
+        self.assertGreater((await self.markets.get('market-one'))['yesProbabilityBps'], initial_market['yesProbabilityBps'])
+        with self.assertRaises(AppError):
+            await self.markets.accept('user-b', 'market-one', stale['quoteId'], int(stale['claimsAtomic']), 'stale-active-fill')
+        self.assertEqual(await self.markets.budget('shadow'), initial_shadow)
+        self.assertEqual((await self.db.first('SELECT COUNT(*) n FROM market_shadow_accounts'))['n'], 0)
+        app, lease, challenged = await self.normal_challenge()
+        deadline = challenged.challenge_until_ms
+        self.now = deadline-1
+        await self.db.execute('UPDATE forecasts SET job_until=? WHERE id=?', (self.now+LEASE_MS, 'market-one'))
+        await app._advance_job('market-one', lease)
+        self.assertEqual((await app._forecast('market-one')).state.value, 'CHALLENGE')
+        with self.assertRaises(AppError):
+            await app.markets.settle('market-one')
+        self.assertEqual(await self.db.all('SELECT * FROM market_settlements'), [])
+        app.markets.live_enabled = False
+        # The stop switch preserves historical reconciliation, without admitting new fills.
+        self.assertEqual(await app.markets.accept('user-a', 'market-one', quote['quoteId'],
+                         int(quote['claimsAtomic']), 'active-completion-fill'), accepted)
+        with self.assertRaises(AppError):
+            await app.markets.accept('user-b', 'market-one', stale['quoteId'], 0, 'disabled-active-fill')
+        self.now = deadline
+        await app._advance_job('market-one', lease)
+        finalized = await app._forecast('market-one')
+        self.assertEqual(finalized.state.value, 'FINALIZED')
+        settlement = await app.markets.settle('market-one')
+        self.assertEqual(settlement['status'], 'settled')
+        final_points = await PointsService(self.db).summary('user-a')
+        final_active = await app.markets.budget('active')
+        self.assertEqual(final_points['committed'], 0)
+        self.assertEqual((final_points['available']-900)*SCALE+int(final_points['fractionAtomic']), int(quote['claimsAtomic']))
+        self.assertEqual(int(final_active['availableAtomic'])+int(quote['claimsAtomic']), 800*SCALE)
+        self.assertEqual((await app.markets.budget('shadow'))['availableAtomic'], initial_shadow['availableAtomic'])
+        await app.markets.settle('market-one')
+        self.assertEqual(await app.markets.budget('active'), final_active)
+        self.assertEqual((await self.db.first('SELECT COUNT(*) n FROM market_settlements'))['n'], 1)
+        self.assertEqual((await self.db.first('SELECT COUNT(*) n FROM market_closures'))['n'], 1)
+        accounts = await self.db.first('SELECT SUM(available) n FROM point_accounts')
+        fractions = await self.db.first("SELECT COALESCE(SUM(remainder_atomic),0) n FROM point_fractions WHERE mode='active'")
+        self.assertEqual(accounts['n']*SCALE+fractions['n']+int(final_active['availableAtomic']), 3700*SCALE)
+        self.assertFalse(any(final_points['policy'][field] for field in ('purchasable', 'transferable', 'redeemable')))
+        self.live_completion_evidence = {'scope': 'local-sqlite-only', 'mode': 'active',
+            'initialPoints': initial_points, 'initialActiveBudget': initial_active, 'initialShadowBudget': initial_shadow,
+            'initialMarket': initial_market, 'quote': quote, 'receipt': accepted, 'afterBuyPoints': after_buy,
+            'challengeDurationMs': CHALLENGE_MS, 'challengeUntil': deadline, 'beforeDeadlineBlocked': True,
+            'finalizedAt': finalized.updated_at_ms, 'disabledBuySettlement': settlement,
+            'finalPoints': final_points, 'finalActiveBudget': final_active, 'conservedAtomic': str(3700*SCALE)}
+
+    async def test_active_invalid_full_48h_refund_remains_idempotent_with_buys_disabled(self):
+        await self.market(mode='active')
+        await self.buy(spend=100)
+        await self.buy(uid='user-b', side='NO', spend=99)
+        app, lease, challenged = await self.normal_challenge(Outcome.INVALID)
+        self.now = challenged.challenge_until_ms-1
+        await self.db.execute('UPDATE forecasts SET job_until=? WHERE id=?', (self.now+LEASE_MS, 'market-one'))
+        with self.assertRaises(AppError):
+            await app.markets.settle('market-one')
+        self.now += 1
+        await app._advance_job('market-one', lease)
+        app.markets.live_enabled = False
+        first = await app.markets.settle('market-one', limit=1)
+        self.assertEqual(first['remaining'], 1)
+        await app.markets.settle('market-one', limit=1)
+        await app.markets.settle('market-one')
+        for user in ('user-a', 'user-b'):
+            account = await PointsService(self.db).summary(user)
+            self.assertEqual((account['available'], account['committed'], account['fractionAtomic']), (1000, 0, '0'))
+        self.assertEqual((await app.markets.budget('active'))['availableAtomic'], str(700*SCALE))
+        self.assertEqual((await app.markets.budget('shadow'))['issuedAtomic'], '0')
+        self.assertEqual((await self.db.first('SELECT COUNT(*) n FROM market_settlements'))['n'], 2)
 
     async def test_preview_neither_funds_nor_opens_accounts(self):
         before = self.connection.total_changes
@@ -202,6 +323,30 @@ class MarketTests(unittest.IsolatedAsyncioTestCase):
         await self.db.execute('UPDATE official_watch_sources SET checked_at=? WHERE id=?', (self.now, 'new-news'))
         await self.markets.accept('user-a', 'market-one', quote['quoteId'], 0, 'safe')
         self.assertEqual((await PointsService(self.db).summary('user-a'))['available'], 900)
+
+    async def test_active_accepts_canonical_risk_question_with_fresh_retained_source_capture(self):
+        self.now = 9_000_000
+        forecast = await self.opened('market-two')
+        await self.markets.fund_treasury(700, 'fund', 'active')
+        await self.markets.create('market-two', mode='active', expected_specification_hash=forecast.specification_hash)
+        with self.assertRaises(AppError):
+            await self.markets.quote('user-a', 'market-two', 'YES', 100)
+        # A v2 binding plus a clock-backed operator refresh within two hours proves the
+        # question's actual sources were captured; no newsroom watch binding is needed.
+        await self.db.execute("INSERT INTO risk_feed_bindings_v2(binding_id,feed_id,forecast_id,binding_json,approved_by,approved_at) "
+                              "VALUES('b1','risk','market-two','{}','a',?)", (self.now,))
+        await self.db.execute("INSERT INTO risk_prediction_clocks_v2(estimate_artifact_hash,forecast_id,clock_artifact_hash,recorded_at) "
+                              "VALUES(?,'market-two',?,?)", ('1'*64, '2'*64, self.now-7200000))
+        with self.assertRaises(AppError):
+            await self.markets.quote('user-a', 'market-two', 'YES', 100)   # capture too old
+        await self.db.execute("INSERT INTO risk_prediction_clocks_v2(estimate_artifact_hash,forecast_id,clock_artifact_hash,recorded_at) "
+                              "VALUES(?,'market-two',?,?)", ('3'*64, '4'*64, self.now-60000))
+        quote = await self.markets.quote('user-a', 'market-two', 'YES', 100)
+        await self.markets.accept('user-a', 'market-two', quote['quoteId'], 0, 'canonical')
+        self.assertEqual((await PointsService(self.db).summary('user-a'))['available'], 900)
+        await self.db.execute("INSERT INTO risk_feed_binding_revocations_v2(binding_id,revoked_by,revoked_at,reason) VALUES('b1','a',?,'x')", (self.now,))
+        with self.assertRaises(AppError):
+            await self.markets.quote('user-a', 'market-two', 'YES', 100)   # revoked binding no longer vouches
 
     async def test_active_rejects_existing_legacy_stake_and_preserves_contract(self):
         await self.reserve('user-a', 'market-one', 100)

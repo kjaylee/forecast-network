@@ -1,0 +1,90 @@
+{
+  "$comment": "Structural contract. Decode through the domain boundary to enforce semantic invariants.",
+  "$defs": {
+    "RiskFeedSignal": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_id": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "type": "string"
+        },
+        "calibration_status": {
+          "enum": [
+            "new",
+            "provisional",
+            "established"
+          ]
+        },
+        "confidence_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "dependence_group": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "evidence_hash": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "observed_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "probability_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sample_count": {
+          "maximum": 1000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source": {
+          "enum": [
+            "ai",
+            "crowd",
+            "top",
+            "market"
+          ]
+        },
+        "units": {
+          "const": "basis-points"
+        }
+      },
+      "required": [
+        "schema_version",
+        "binding_id",
+        "source",
+        "probability_bp",
+        "confidence_bp",
+        "sample_count",
+        "units",
+        "observed_at_ms",
+        "evidence_hash",
+        "dependence_group",
+        "calibration_status"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.forecast.network/v1/RiskFeedSignal.schema.json",
+  "$ref": "#/$defs/RiskFeedSignal",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RiskFeedSignal"
+}

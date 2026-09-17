@@ -90,6 +90,26 @@ class WorkerRpcFixture:
 
 
 class RegistryWorkerTransportTests(unittest.IsolatedAsyncioTestCase):
+    async def test_owned_gateway_requires_exact_endpoint_and_scoped_credential(self):
+        fixture = WorkerRpcFixture()
+        endpoint = "https://forecast-rpc.eastsea.xyz/rpc"
+        fixture.worker.env.SOLANA_RPC_PROXY_URL = endpoint
+        fixture.worker.env.SOLANA_RPC_PROXY_TOKEN = "ab" * 32
+        self.assertEqual(await fixture.call(), GENESIS)
+        self.assertEqual(fixture.fetches[0][0], endpoint)
+        self.assertEqual(fixture.fetches[0][1]["headers"]["X-Forecast-RPC-Token"], "ab" * 32)
+        self.assertEqual(fixture.fetches[0][1]["redirect"], "manual")
+        self.assertEqual(fixture.logs, [])
+        for invalid_url, token in ((endpoint + "/", "ab" * 32), ("https://other.example/rpc", "ab" * 32),
+                                   (endpoint, ""), (endpoint, "x" * 64), (endpoint, "ab" * 31)):
+            with self.subTest(url=invalid_url, token_length=len(token)):
+                rejected = WorkerRpcFixture()
+                rejected.worker.env.SOLANA_RPC_PROXY_URL = invalid_url
+                rejected.worker.env.SOLANA_RPC_PROXY_TOKEN = token
+                with self.assertRaises(ValueError):
+                    await rejected.call()
+                self.assertEqual(rejected.fetches, [])
+
     async def test_genesis_succeeds_with_workerd_supported_manual_redirect_mode(self):
         fixture = WorkerRpcFixture()
         self.assertEqual(await fixture.call(), GENESIS)
