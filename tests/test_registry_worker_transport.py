@@ -47,6 +47,17 @@ class Stream:
         self.released = True
 
 
+class AbortSignalStub:
+    """Workerd's AbortSignal.timeout, recording the deadline each call asked for."""
+
+    def __init__(self, recorded: list[int]) -> None:
+        self.recorded = recorded
+
+    def timeout(self, milliseconds: int) -> SimpleNamespace:
+        self.recorded.append(milliseconds)
+        return SimpleNamespace(milliseconds=milliseconds)
+
+
 class WorkerRpcFixture:
     def __init__(self, *, response=None, raw=None, chunks=None, status=200, headers=None):
         if raw is None:
@@ -57,9 +68,9 @@ class WorkerRpcFixture:
                                         body=SimpleNamespace(getReader=lambda: self.stream))
         self.fetches = []
         self.logs = []
-        self.timeouts = []
+        self.signal_timeouts = []
         self.stall = False
-        self.fetch_canceled = False
+        self.aborted = False
         self.worker = SimpleNamespace(env=SimpleNamespace(SOLANA_RPC_URL=ENDPOINT))
 
     async def fetch(self, url, options):
@@ -69,22 +80,18 @@ class WorkerRpcFixture:
             raise TypeError("Workerd does not support this redirect mode")
         self.fetches.append((url, options))
         if self.stall:
-            try:
+            # A real fetch rejects with the signal's reason. Without a signal there is
+            # nothing to bound it, which is the failure this fixture must expose.
+            if options.get("signal") is None:
                 await asyncio.Future()
-            except asyncio.CancelledError:
-                self.fetch_canceled = True
-                raise
+            self.aborted = True
+            raise TimeoutError("The operation was aborted due to timeout")
         return self.response
-
-    async def wait_for(self, awaitable, *, timeout):
-        self.timeouts.append(timeout)
-        # The production timeout must remain 20 seconds; accelerate only the
-        # injected deadline for the deliberate stalled-I/O cancellation test.
-        return await asyncio.wait_for(awaitable, timeout=0.01 if self.stall else timeout)
 
     async def call(self, method="getGenesisHash", params=None):
         actual = scheduled_method("registry_rpc", js_fetch=self.fetch,
-            bounded_bytes=actual_bounded_bytes(), asyncio=SimpleNamespace(wait_for=self.wait_for),
+            bounded_bytes=actual_bounded_bytes(),
+            js_abort_signal=AbortSignalStub(self.signal_timeouts),
             print=lambda value: self.logs.append(json.loads(value)))
         return await actual(self.worker, method, [] if params is None else params)
 
@@ -121,8 +128,9 @@ class RegistryWorkerTransportTests(unittest.IsolatedAsyncioTestCase):
             "User-Agent": "Forecast-Registry/0.9 (+https://forecast.eastsea.xyz)"})
         self.assertEqual(json.loads(options["body"]), {
             "jsonrpc": "2.0", "id": 1, "method": "getGenesisHash", "params": []})
-        self.assertEqual(fixture.timeouts, [20])
+        self.assertEqual(fixture.signal_timeouts, [20000])
         self.assertTrue(fixture.stream.released)
+        self.assertEqual(fixture.logs, [])
 
     async def test_rpc_parameters_are_forwarded_without_changing_finality(self):
         fixture = WorkerRpcFixture(response={"jsonrpc": "2.0", "id": 1, "result": None})
@@ -153,7 +161,7 @@ class RegistryWorkerTransportTests(unittest.IsolatedAsyncioTestCase):
                 with self.assertRaises(ValueError):
                     await fixture.call()
                 self.assertEqual(fixture.fetches, [])
-                self.assertEqual(fixture.timeouts, [])
+                self.assertEqual(fixture.signal_timeouts, [])
         for method in ("requestAirdrop", "getIdentity", "getGenesisHash ", ""):
             fixture = WorkerRpcFixture()
             with self.assertRaises(ValueError):
@@ -200,11 +208,36 @@ class RegistryWorkerTransportTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(fixture.stream.canceled)
         self.assertTrue(fixture.stream.released)
 
-    async def test_twenty_second_network_deadline_cancels_stalled_request(self):
+    async def test_twenty_second_network_deadline_aborts_a_stalled_request(self):
         fixture = WorkerRpcFixture()
         fixture.stall = True
         with self.assertRaises(TimeoutError):
             await fixture.call()
-        self.assertEqual(fixture.timeouts, [20])
-        self.assertTrue(fixture.fetch_canceled)
+        self.assertEqual(fixture.signal_timeouts, [20000])
+        self.assertTrue(fixture.aborted)
         self.assertEqual(fixture.stream.read_count, 0)
+
+    async def test_the_rpc_call_never_creates_a_second_python_task(self):
+        # asyncio.wait_for created one, and Pyodide refuses to enter a promising task
+        # from inside another running promising task, which killed every call made from
+        # a route. The method must stay free of every task-creating primitive.
+        source = (Path(__file__).resolve().parents[1] / "apps/web/src/entry.py").read_text()
+        rpc = next(node for node in ast.walk(ast.parse(source))
+                   if isinstance(node, ast.AsyncFunctionDef) and node.name == "registry_rpc")
+        called = {node.func.attr for node in ast.walk(rpc)
+                  if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)}
+        self.assertFalse(called & {"wait_for", "gather", "create_task", "ensure_future"})
+
+    async def test_a_runtime_without_abort_signal_timeout_reports_the_weaker_bound(self):
+        class NoTimeout:
+            def timeout(self, milliseconds: int) -> None:
+                raise AttributeError("AbortSignal.timeout is unavailable")
+
+        fixture = WorkerRpcFixture()
+        actual = scheduled_method("registry_rpc", js_fetch=fixture.fetch,
+            bounded_bytes=actual_bounded_bytes(), js_abort_signal=NoTimeout(),
+            print=lambda value: fixture.logs.append(json.loads(value)))
+        self.assertEqual(await actual(fixture.worker, "getGenesisHash", []), GENESIS)
+        self.assertIsNone(fixture.fetches[0][1].get("signal"))
+        self.assertEqual(fixture.logs, [{"event": "registry_rpc_timeout_unavailable",
+                                          "method": "getGenesisHash"}])

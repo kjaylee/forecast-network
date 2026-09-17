@@ -65,6 +65,11 @@ from forecast_domain.serialization import content_hash, from_dict, to_dict
 from js import Object, Uint8Array
 from js import crypto as web_crypto
 from js import fetch as js_fetch
+
+try:
+    from js import AbortSignal as js_abort_signal
+except ImportError:  # pragma: no cover - the Workers runtime is expected to provide it
+    js_abort_signal = None
 from pyodide.ffi import JsException, to_js
 from workers import Response, WorkerEntrypoint
 
@@ -240,10 +245,20 @@ class Default(WorkerEntrypoint):
                 raise ValueError("Registry RPC gateway credential unavailable")
             url = proxy
             headers["X-Forecast-RPC-Token"] = token
+        options: dict[str, Any] = {"method": "POST", "redirect": "manual", "headers": headers,
+            "body": json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params})}
+        # Bound the call on the JS side. asyncio.wait_for would create a second Python
+        # task, and every route already runs inside one, so Pyodide refused the whole
+        # call: "Cannot enter a promising task from inside another running promising task".
+        try:
+            options["signal"] = js_abort_signal.timeout(20_000)
+        except Exception:
+            # No AbortSignal.timeout in this runtime, so the fetch is bounded only by the
+            # Worker's own limits. Logged so the weaker guarantee is visible.
+            print(json.dumps({"event": "registry_rpc_timeout_unavailable", "method": method}))
+
         async def request() -> Any:
-            response = await js_fetch(url, javascript({"method": "POST", "redirect": "manual",
-                "headers": headers,
-                "body": json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params})}))
+            response = await js_fetch(url, javascript(options))
             if response.status != 200:
                 print(json.dumps({"event": "registry_rpc_http_error", "method": method,
                                   "httpStatus": int(response.status)}))
@@ -254,7 +269,7 @@ class Default(WorkerEntrypoint):
                     or "result" not in result or "error" in result):
                 raise RuntimeError("Registry RPC unsuccessful")
             return result["result"]
-        return await asyncio.wait_for(request(), timeout=20)
+        return await request()
 
     async def sign_registry_message(self, message: bytes) -> bytes:
         encoded = str(getattr(self.env, "SOLANA_RELAYER_SEED", ""))
