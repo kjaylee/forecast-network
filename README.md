@@ -140,8 +140,17 @@ schemas. If Ruff and mypy are already installed, run the additional static check
 ```sh
 python3 scripts/check.py --tools
 node --test apps/web/tests/*.mjs
-ruff check apps/web/src
+TMPDIR="$PWD/tmp" CARGO_TARGET_DIR="$PWD/tmp/cargo-target" cargo test --workspace --locked
 ```
+
+Pull requests run the dependency-free Python matrix, Ruff and strict mypy,
+the browser-module regression suite, and the Rust registry guard tests. The root
+Python check also parses the Cloudflare entry point; `--tools` lints it.
+
+The September 14 local review fixes and icon/card polish passed 697 Python tests,
+250 browser-module tests and 23 native registry tests. See the
+[verification record](docs/verification-review-polish.md) for the additive Seeker
+migration, visual evidence and deployment limitations.
 
 Regenerate schemas after an intentional contract change, then review the diff:
 
@@ -245,7 +254,9 @@ The deployed web beta advances M3/M4/M5 without renumbering the handoff mileston
 Production HTTPS authentication/recovery and genuine AI publication were checked;
 participation, comments, contention and PNG export were checked in the local real
 runtime/browser. The full live 48-hour lifecycle, long-term recovery, load testing,
-native wallet flows and full Devnet operational verification remain pending. See the [web API](docs/architecture/web-api.md)
+and autonomous Devnet relay verification remain pending. Native wallet sign-in has
+separate physical Seeker evidence; see [Android](docs/android.md) and
+[wallet-login verification](docs/verification-wallet-login.md). See the [web API](docs/architecture/web-api.md)
 and [roadmap](docs/roadmap.md) for their acceptance criteria.
 
 The original web releases spent no SOL. The Devnet registry now uses test SOL;

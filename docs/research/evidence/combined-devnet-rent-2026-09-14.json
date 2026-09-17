@@ -1,0 +1,42 @@
+{
+  "cluster": "devnet",
+  "observedAt": "2026-09-14T06:59:54.484162+00:00",
+  "method": "integer linear rent model derived from RPC samples, validated against every supplied quote",
+  "observedRentLamportsByBytes": {
+    "36": 833120,
+    "95525": 485917240,
+    "95517": 485876600,
+    "202": 1676400
+  },
+  "lamportsPerByte": 5080,
+  "accountOverheadLamports": 650240,
+  "forecastBinaryBytes": 101008,
+  "reserveBinaryBytes": 95480,
+  "reserveAccounts": 1,
+  "reserveOnlyLockedLamports": 488426760,
+  "scenarios": [
+    {
+      "forecastAccounts": 3,
+      "initialLockedLamports": 1011875040,
+      "withBothUpgradeBuffersLamports": 2011710480
+    },
+    {
+      "forecastAccounts": 300,
+      "initialLockedLamports": 1748149920,
+      "withBothUpgradeBuffersLamports": 2747985360
+    },
+    {
+      "forecastAccounts": 500,
+      "initialLockedLamports": 2243957920,
+      "withBothUpgradeBuffersLamports": 3243793360
+    }
+  ],
+  "assumptions": "One Forecast config, one global synthetic reserve; both executable allocations exact size; simultaneous same-size upgrade buffers. Initial buffer is not counted twice.",
+  "excludes": [
+    "transaction/priority fees",
+    "RPC, AI and storage costs",
+    "economic collateral",
+    "SPL mint or token accounts"
+  ],
+  "mainnetQuote": false
+}

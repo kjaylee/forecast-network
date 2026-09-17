@@ -2,7 +2,7 @@
 
 What ships, and what must be verified before it is complete.
 
-Version 0.11 · Updated September 10, 2026
+Version 0.11 · Updated September 14, 2026
 
 **Web beta deployed:** [forecast.eastsea.xyz](https://forecast.eastsea.xyz) ·
 [Deployment and verification record](https://forecast.eastsea.xyz/docs/verification-web)
@@ -23,7 +23,7 @@ primary public documentation and product default are English.
 | Compression and budget research | Research complete | Eight cost tests; earlier 84-test combined baseline; no program verification |
 | M3: API and persistence | Beta deployed; key paths verified | Production HTTPS, D1, authentication and recovery; local real-HTTP submissions, comments, retries and races |
 | M4: AI routing | Implemented; live compiler verified | Gemini publication, Cloudflare AI REST call and binding; independent-review regression tests; long-running production cycle pending |
-| M5: mobile experience | Mobile web deployed and visually checked | Mobile and desktop browser evidence; native app not implemented |
+| M5: mobile experience | Mobile web and native Android shell implemented | Mobile/desktop browser evidence and physical Seeker wallet sign-in; native sharing, app links and local result-notification adapters are documented in [Android](android.md) |
 | English default and multilingual input | Deployed and verified | Live Korean-to-English preview preserves the exact deadline; historical translations preserve canonical hashes |
 | Optional wallet linking | Deployed and verified | Real Ed25519 ownership proof, replay rejection and disconnect tested over HTTPS; separate from M2 |
 | Profile record sharing | Deployed and verified | Owner-published immutable records, wide/portrait PNGs, truthful samples and public verification links |
@@ -200,7 +200,9 @@ Acceptance gates:
 
 The [localization contract](architecture/localization.md) and
 [verification record](verification-localization.md) document the completed checks.
-The live 48-hour lifecycle and native MWA/Devnet integration remain separate work.
+The live 48-hour lifecycle remains a separate verification gate. Native MWA and
+Devnet attestation are now implemented in the [Android shell](android.md); they
+were not part of the earlier localization release.
 
 ## 3. Evidence-connected AI — M4
 
@@ -342,6 +344,24 @@ operational dependencies. A cheap single update does not establish low total cos
 [SPL Account Compression](https://docs.rs/spl-account-compression/latest/spl_account_compression/).
 
 ## Separate research track — synthetic-asset Safety Kernel
+
+As of September 14, 2026, the synthetic research implementation lives in the
+separate private `forecast-risk` repository. Its phases 1–6 now include the pure
+kernel, normalized signal adapter, Devnet memo audit trail and scenario laboratory.
+These are separate research deliverables; the Forecast service does not consume
+that repository or expose a signed risk-signal feed. Its separate synthetic reserve
+program is now deployed on Devnet, with nine finalized transactions and five guard
+simulations verified. The episode includes synthetic depeg and reserve-loss risk
+signals; live provider integration and successful recovery after the real 24-hour
+dwell remain open. The [combined deployment budget](research/solana-compression-budget.md)
+now includes this program.
+
+The separate token-linked v2 now also executes classic SPL TEST issuance and
+redemption on Devnet: 17 successful and six deliberately rejected transactions
+are finalized. Its observed-market pool used real Kraken/Bitstamp USDC quotes;
+injected stress ran in a different mint/reserve. This is an experimental market
+health indicator and valueless mock collateral, with no Forecast wallet coupling.
+Actual 24-hour recovery and an always-on keeper remain separate work.
 
 The integrated design (private) is limited to
 research and Devnet. It preserves the current web product and the restrictions on

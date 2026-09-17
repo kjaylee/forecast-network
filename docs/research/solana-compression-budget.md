@@ -1,5 +1,44 @@
 # Low-cost Solana deployment and on-chain compression research
 
+**Token-linked v2 follow-up (September 14):** a separate 125,136-byte controller
+now mints/burns actual Devnet SPL TEST tokens and transfers mock collateral. Two
+test pools, three mint accounts and five token accounts are included in the new
+cost model. V2 deployment plus test accounts used **0.65372336 Devnet SOL**, of which
+**0.65172336** is locked account funding and **0.002** is upload/deployment/episode fees.
+
+At 300 forecast accounts, retaining the historical v1 reserve and both token pools
+requires an estimated **2.39987328 Devnet SOL** in deposits; reserving update buffers
+for the active Forecast and token programs raises it to **3.55036120**. A separate
+fresh layout with Forecast, one token pool and no historical v1 allocation is
+**1.90556388**, or **3.05605180** with the active buffers. No existing accounts were
+closed to achieve the hypothetical fresh figure. Fees, metadata, real collateral
+and service/data charges are excluded from those layout estimates.
+[Token-inclusive inputs and scenarios](evidence/token-devnet-costs-2026-09-14.json).
+All figures are Devnet observations/calculations, not new mainnet quotations.
+
+**September 14, 2026 follow-up:** the historical assumptions below are superseded
+for combined deployment planning by measured executable allocations: 101,008 bytes
+for Forecast and 95,480 bytes for the separate synthetic reserve program. The
+[reserve program is deployed on Devnet](https://explorer.solana.com/address/2mrWTuN558NVrs31YdNSc2nyjvNpuexjeLxrTEZhqsP3?cluster=devnet).
+The original research and mainnet observations below retain their dated scope.
+
+The updated **Devnet** rent model includes both programs, a Forecast config, one
+global synthetic reserve ledger, and 360-byte forecast accounts. It separates
+initial deposits from simultaneous upgrade-buffer funding and excludes fees,
+RPC/AI/storage, token-mint accounts and economic collateral.
+
+| Forecast accounts | Initial locked Devnet SOL | Including both upgrade buffers |
+| ---: | ---: | ---: |
+| 3 | 1.01187504 | 2.01171048 |
+| 300 | 1.74814992 | 2.74798536 |
+| 500 | 2.24395792 | 3.24379336 |
+
+The reserve program plus one ledger contributes 0.48842676 Devnet SOL in locked
+rent. These are calculations from the September 14 Devnet RPC rent samples, not
+new mainnet quotations. [Inputs, assumptions and calculations](evidence/combined-devnet-rent-2026-09-14.json).
+A two-SOL combined target does not cover 300 forecast accounts with both update
+buffers reserved.
+
 Research date: 2026-09-09. Basis: the product handoff (private) and completed Milestone 1.
 Status: **Milestone 2 design proposal and cost research**. This research did not implement or deploy a contract or access a wallet.
 

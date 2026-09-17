@@ -45,8 +45,11 @@ Japanese and Traditional Chinese. Browser, production and Seeker Chrome layout/i
   available/committed points, onboarding steps and recent ledger entries.
 - Publish only objectively resolvable, reviewed specifications. Preserve their original rules.
 - Show crowd, top forecasters and AI separately; missing observations remain empty.
-- Registration uses a display name and a server-generated recovery code shown once. No wallet barrier.
-- Optional Solana wallet linking verifies ownership with a signed message. Wallet connection is independent of program deployment and requests no transactions.
+- New profiles sign in with a Solana wallet using a single-use ownership signature.
+  Legacy recovery-code profiles can migrate while retaining their history.
+- Wallet ownership authentication is separate from optional Devnet forecast
+  attestation. The native Android adapter can request an explicitly initiated memo
+  signature; connecting or signing in alone does not submit a transaction.
 - A Solana verification claim requires an actual confirmed chain record. Unconnected states are explicit.
 - Blueprint and roadmap report current implemented status and future work separately.
 - English is the first-visit interface default; an explicit saved language preference
@@ -84,6 +87,7 @@ English remains the default interface and compilation language. The four-languag
 interface update follows `docs/architecture/localization.md` and does not change
 the existing English compilation/preview flow. Published Korean specifications
 remain immutable; attributed, hash-bound English display translations remain
-separate. No Mobile Wallet Adapter integration or Devnet program is delivered by
-localization. The restrained editorial direction remains unchanged; audience
+separate. Mobile Wallet Adapter integration and the Devnet program were delivered
+separately from localization; see `docs/android.md` and the Devnet verification
+record. The restrained editorial direction remains unchanged; audience
 segmentation, brand assets and specialized accessibility accommodations remain open.

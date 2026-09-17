@@ -112,18 +112,18 @@ except the short brand wordmark. Probabilities use tabular numerals.
   Canonical records, outcome identifiers, timestamps and source URLs stay intact.
 - Confidence: 0–100 range control plus a sentence explicitly translating the
   selected outcome into YES probability. No payout or trading vocabulary.
-- Authentication: a native modal with display-name registration or recovery-code
-  login. The server-issued recovery code appears once, with copy/download and a
-  saved-code acknowledgment before continuation. It is never persisted by the
-  client or included in telemetry.
+- Authentication: a native modal guides wallet choice, ownership-message review,
+  signature and server confirmation. Legacy recovery-code login remains available
+  for migration; new profiles receive no recovery code. Wallet signatures and
+  recovery secrets never appear in telemetry or public cards.
 - Error states retain the form. A stale revision offers an explicit refresh;
   timeouts retry with the same operation identity within the session.
-- The optional profile Wallet section separates provider connection, account
-  choice, message review, signing and server verification. Only server-confirmed
-  ownership is labeled “Wallet linked”; Devnet deployment status stays separate.
-  Wallet Standard discovery adds no runtime dependency. Canceled requests,
-  incompatible signatures, account changes and expired challenges do not establish
-  a verified link. No transaction request API is used.
+- The profile Wallet section separates provider connection, account choice,
+  message review, signing and server verification. Only server-confirmed ownership
+  is labeled “Wallet linked”; Devnet deployment status stays separate. Canceled
+  requests, incompatible signatures, account changes and expired challenges do not
+  establish a verified link. Explicit native forecast attestation uses a separate
+  transaction-signing action, described in `docs/android.md`.
 - Internal navigation uses browser history and deep links. Documents use ordinary
   full-page navigation. Share opens a locally rendered PNG preview from a freshly
   fetched forecast snapshot. It includes real crowd/top/AI values, the accepted

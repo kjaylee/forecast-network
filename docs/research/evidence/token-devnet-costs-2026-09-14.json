@@ -1,0 +1,58 @@
+{
+  "cluster": "devnet",
+  "observedAt": "2026-09-14T09:17:21.375814+00:00",
+  "method": "integer linear rent model derived from RPC samples, validated against every supplied quote",
+  "rentLamportsByBytes": {
+    "36": 833120,
+    "125181": 636569720,
+    "125173": 636529080,
+    "234": 1838960,
+    "82": 1066800,
+    "165": 1488440
+  },
+  "tokenProgramBytes": 125136,
+  "legacyReserveProgramBytes": 95480,
+  "forecastProgramBytes": 101008,
+  "tokenTwoPoolsLockedLamports": 651723360,
+  "tokenOnePoolLockedLamports": 645840720,
+  "scenarios": [
+    {
+      "forecastAccounts": 3,
+      "retainedV1AndTwoTokenPoolsLamports": 1663598400,
+      "retainedWithActiveUpgradeBuffersLamports": 2814086320,
+      "freshForecastAndOneTokenPoolLamports": 1169289000,
+      "freshWithActiveUpgradeBuffersLamports": 2319776920
+    },
+    {
+      "forecastAccounts": 300,
+      "retainedV1AndTwoTokenPoolsLamports": 2399873280,
+      "retainedWithActiveUpgradeBuffersLamports": 3550361200,
+      "freshForecastAndOneTokenPoolLamports": 1905563880,
+      "freshWithActiveUpgradeBuffersLamports": 3056051800
+    },
+    {
+      "forecastAccounts": 500,
+      "retainedV1AndTwoTokenPoolsLamports": 2895681280,
+      "retainedWithActiveUpgradeBuffersLamports": 4046169200,
+      "freshForecastAndOneTokenPoolLamports": 2401371880,
+      "freshWithActiveUpgradeBuffersLamports": 3551859800
+    }
+  ],
+  "activeUpgradeBuffers": "Forecast and token v2 only; historical v1 is retained without another upgrade reserve",
+  "freshScenario": "A separate future deployment layout; no existing program or account was closed",
+  "excludes": [
+    "transaction/priority fees",
+    "real collateral",
+    "SPL metadata",
+    "RPC/hosting/API data charges"
+  ],
+  "monitoringExample": {
+    "cadenceSeconds": 60,
+    "publicQuoteRequestsPerDay": 2880,
+    "riskAttestationsPerDay": 1440,
+    "baseFeeLamportsPerAttestation": 5000,
+    "estimatedBaseFeesLamportsPerDay": 7200000,
+    "automaticServiceInstalled": false
+  },
+  "mainnetQuote": false
+}
