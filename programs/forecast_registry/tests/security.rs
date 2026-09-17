@@ -331,9 +331,9 @@ fn processor_rejects_foreign_config_owner_and_address() {
     }
     .encode();
     let a = AccountInfo::new(&relay, true, true, &mut l1, &mut d1, &owner, false, 0);
-    let c = AccountInfo::new(&conf, false, false, &mut l2, &mut d2, &owner, false, 0);
+    let c = AccountInfo::new(&conf, false, true, &mut l2, &mut d2, &owner, false, 0);
     assert_eq!(
-        process_instruction(&program, &[a.clone(), c, a], &[2]),
+        process_instruction(&program, &[a, c], &[vec![3], vec![1; 32]].concat()),
         Err(Error::Owner.into())
     );
 }
@@ -506,6 +506,7 @@ fn native_processor_commits_full_lifecycle_and_rejects_replays_atomically() {
         fn sol_get_clock_sysvar(&self, target: *mut u8) -> u64 {
             let clock = Clock {
                 unix_timestamp: self.0.load(Ordering::SeqCst),
+                slot: 1,
                 ..Clock::default()
             };
             // SAFETY: Solana's host Sysvar::get shim supplies a live, aligned
@@ -534,6 +535,31 @@ fn native_processor_commits_full_lifecycle_and_rejects_replays_atomically() {
     let mut forecast = open();
     let (forecast_key, _) = Pubkey::find_program_address(&[b"forecast", &forecast.id], &program);
     let mut forecast_data = forecast.encode();
+    let (gate_key, _) =
+        Pubkey::find_program_address(&[b"intake-v1", forecast_key.as_ref()], &program);
+    let mut gate_data = forecast_registry::intake::Gate {
+        forecast: forecast_key.to_bytes(),
+        specification: forecast.specification,
+        epoch: 0,
+        revision: 1,
+        proposal_revision: 0,
+        resolution: [0; 32],
+        proposal_event: [0; 32],
+        opened: 0,
+        deadline: 0,
+        pending: 0,
+        material: 0,
+        accepted: 0,
+        head: [9; 32],
+        phase: 0,
+        sealed_revision: 0,
+        sealed_event: [0; 32],
+        sealed_snapshot: [0; 32],
+        sealed_payload: [0; 32],
+        sealed_at: 0,
+        sealed_slot: 0,
+    }
+    .encode();
     let mut config_data = Config {
         admin,
         relayer: relay,
@@ -544,9 +570,10 @@ fn native_processor_commits_full_lifecycle_and_rejects_replays_atomically() {
     let mut relay_lamports = 1;
     let mut config_lamports = 1;
     let mut forecast_lamports = 1;
+    let mut gate_lamports = 1;
     let mut relay_data = [];
     let mut apply = |a: &Advance| {
-        let mut payload = vec![2];
+        let mut payload = vec![];
         payload.extend(a.revision.to_le_bytes());
         payload.extend(a.occurred_at.to_le_bytes());
         payload.extend(a.previous);
@@ -559,7 +586,7 @@ fn native_processor_commits_full_lifecycle_and_rejects_replays_atomically() {
         payload.extend(a.challenge_until.to_le_bytes());
         payload.extend(a.pending.to_le_bytes());
         payload.extend(a.material.to_le_bytes());
-        assert_eq!(payload.len(), 255);
+        assert_eq!(payload.len(), 254);
         let accounts = [
             AccountInfo::new(
                 &relay,
@@ -591,9 +618,39 @@ fn native_processor_commits_full_lifecycle_and_rejects_replays_atomically() {
                 false,
                 0,
             ),
+            AccountInfo::new(
+                &gate_key,
+                false,
+                true,
+                &mut gate_lamports,
+                &mut gate_data,
+                &program,
+                false,
+                0,
+            ),
         ];
         let before = accounts[2].try_borrow_data().unwrap().to_vec();
-        let result = process_instruction(&program, &accounts, &payload);
+        let result = if a.state == 10 {
+            let gate =
+                forecast_registry::intake::Gate::decode(&accounts[3].try_borrow_data().unwrap())
+                    .unwrap();
+            let mut seal = vec![12];
+            seal.extend(&payload);
+            seal.extend(gate.revision.to_le_bytes());
+            seal.extend(gate.commitment());
+            process_instruction(&program, &accounts, &seal).and_then(|()| {
+                let gate = forecast_registry::intake::Gate::decode(
+                    &accounts[3].try_borrow_data().unwrap(),
+                )
+                .unwrap();
+                let mut finish = vec![13];
+                finish.extend(&payload);
+                finish.extend(gate.commitment());
+                process_instruction(&program, &accounts, &finish)
+            })
+        } else {
+            process_instruction(&program, &accounts, &[vec![7, 0], payload].concat())
+        };
         if result.is_err() {
             assert_eq!(accounts[2].try_borrow_data().unwrap().to_vec(), before);
         }
@@ -615,10 +672,13 @@ fn native_processor_commits_full_lifecycle_and_rejects_replays_atomically() {
         assert_eq!(apply(&a).0, Err(Error::Revision.into()));
     }
     let a = next(&forecast, 10, 6000);
-    assert_eq!(apply(&a).0, Err(Error::Time.into()));
+    assert_eq!(apply(&a).0, Err(Error::NotReady.into()));
     seconds.store(6, Ordering::SeqCst);
     assert_eq!(apply(&a).0, Err(Error::NotReady.into()));
-    seconds.store((forecast.chain_not_before + 999) / 1000, Ordering::SeqCst);
+    seconds.store(
+        (forecast.chain_not_before + 999) / 1000 + 1,
+        Ordering::SeqCst,
+    );
     let mut a = next(&forecast, 10, forecast.chain_not_before);
     a.reputation = [20; 32];
     let (result, stored) = apply(&a);
