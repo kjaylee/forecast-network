@@ -4,7 +4,12 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts import solana_keychain
+try:
+    from scripts import solana_keychain
+except ImportError as error:  # pragma: no cover
+    # The dependency-free CI job exercises the domain without installing anything,
+    # and the signer reads its keys through cryptography.
+    raise unittest.SkipTest(f"cryptography is required: {error}") from error
 
 
 class KeychainNamespaceTests(unittest.TestCase):

@@ -25,6 +25,27 @@ jobs:
           PYTHONDONTWRITEBYTECODE: '1'
         run: python scripts/check.py
 
+  full:
+    # The domain job deliberately installs nothing, so the suites that verify
+    # signature and key-handling vectors skip there. This job runs them, which is
+    # the only place a regression in the canonical signing bytes would be caught.
+    runs-on: ubuntu-latest
+    env:
+      TMPDIR: ${{ github.workspace }}/tmp
+      PYTHONDONTWRITEBYTECODE: '1'
+      PIP_CACHE_DIR: ${{ github.workspace }}/tmp/pip-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install the verification-only dependency
+        run: |
+          mkdir -p "$TMPDIR"
+          python -m pip install cryptography
+      - name: Verify every suite, including the ones that need cryptography
+        run: python scripts/check.py
+
   static:
     runs-on: ubuntu-latest
     env:

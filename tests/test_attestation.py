@@ -6,8 +6,12 @@ import base64
 import hashlib
 import unittest
 
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+try:
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+except ImportError as error:  # pragma: no cover
+    # The dependency-free CI job exercises the domain without installing anything.
+    raise unittest.SkipTest(f"cryptography is required: {error}") from error
 from forecast_application.attestation import MEMO_PROGRAM, memo_text, partially_signed_transaction
 from forecast_application.errors import AppError
 from forecast_application.solana_wire import base58_encode, shortvec

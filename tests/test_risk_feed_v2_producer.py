@@ -9,8 +9,12 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+try:
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+except ImportError as error:  # pragma: no cover
+    # The dependency-free CI job exercises the domain without installing anything.
+    raise unittest.SkipTest(f"cryptography is required: {error}") from error
 from forecast_application.risk_feed_v2 import (
     admit_definition,
     admit_profile,

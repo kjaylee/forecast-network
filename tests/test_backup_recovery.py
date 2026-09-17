@@ -9,8 +9,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from cryptography.exceptions import InvalidSignature, InvalidTag
-from cryptography.hazmat.primitives.asymmetric import rsa
+try:
+    from cryptography.exceptions import InvalidSignature, InvalidTag
+    from cryptography.hazmat.primitives.asymmetric import rsa
+except ImportError as error:  # pragma: no cover
+    # The dependency-free CI job exercises the domain without installing anything.
+    raise unittest.SkipTest(f"cryptography is required: {error}") from error
 
 from scripts import backup_recovery as backup
 

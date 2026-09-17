@@ -9,8 +9,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import backup_recovery as backup
-from scripts import backup_schedule as schedule
+try:
+    from scripts import backup_recovery as backup
+    from scripts import backup_schedule as schedule
+except ImportError as error:  # pragma: no cover
+    # The dependency-free CI job exercises the domain without installing anything,
+    # and the backup tool is built on cryptography.
+    raise unittest.SkipTest(f"cryptography is required: {error}") from error
 
 ROOT = Path(__file__).resolve().parents[1]
 
