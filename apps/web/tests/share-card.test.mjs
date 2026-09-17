@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {wrapCardText,shareCardData,shareProbabilityLabel,shareWithPlatform} from '../public/share-card.mjs';
+import {wrapCardText,shareCardData,shareProbabilityLabel,shareWithPlatform,renderShareCard} from '../public/share-card.mjs';
 
 test('Korean questions wrap without losing text or exceeding the measured width',()=>{
   const question='한국은2027년말까지달궤도선을새로발사할까요?'.repeat(12);
@@ -56,4 +56,23 @@ test('native share is recorded only after success, never after cancellation or f
   assert.equal(records,1);
   await assert.rejects(shareWithPlatform(async()=>{throw new Error('Platform error');},payload,record),/Platform error/);
   assert.equal(records,1);
+});
+
+
+test('forecast comparison tracks represent only valid supplied probabilities',()=>{
+  const rectangles=[];
+  const ctx={font:'',textAlign:'left',fillStyle:'',
+    measureText(value){return {width:Array.from(String(value)).length*10};},
+    fillText(){},fillRect(x,y,width,height){rectangles.push({x,y,width,height,color:this.fillStyle});},
+    createLinearGradient:()=>({addColorStop(){}}),save(){},restore(){},clip(){},closePath(){},beginPath(){},moveTo(){},lineTo(){},fill(){},stroke(){},
+  };
+  const canvas={getContext:()=>ctx};
+  const data=shareCardData({forecast:{id:'a',question:'Actual forecast?',crowd:{probability:0},top:{probability:null},ai:{probability:100}}},'https://forecast.example',0);
+  renderShareCard(canvas,data);
+  const tracks=rectangles.filter(item=>item.height===4);
+  assert.equal(tracks.length,3,'zero and 100 have base tracks, only 100 has an accent fill');
+  const fills=tracks.filter(item=>item.color==='#344cf1');
+  assert.equal(fills.length,1);
+  assert.equal(fills[0].width,(952-56)/3,'100% fills the entire comparison track');
+  assert.equal(fills[0].x,64+2*((952-56)/3+28));
 });

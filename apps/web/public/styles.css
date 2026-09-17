@@ -2568,3 +2568,42 @@ dialog>.language-control {margin-bottom:8px}
   font-weight:600;
   vertical-align:middle;
 }
+
+/* Quality extends the editorial rows; native disclosures keep explanations nearby. */
+.comparison-four {grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:12px}
+.comparison-four .comparison-item {min-width:0}
+.comparison-four .comparison-caption {font-size:12px;line-height:1.5}
+.comparison-four .comparison-value {letter-spacing:-.035em}
+.comparison-four .comparison-item:nth-child(4) .probability-track span {background:#adb7cb}
+.probability-secondary {flex-wrap:wrap;row-gap:7px}
+.quality-explanation {margin:12px 0;color:var(--muted);font-size:12px;line-height:1.6}
+.quality-explanation summary {cursor:pointer;width:fit-content;max-width:100%;padding:8px 0;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.quality-explanation summary:hover {color:var(--ink)}
+.quality-explanation summary:focus-visible {outline:2px solid var(--accent);outline-offset:4px}
+.quality-explanation p {max-width:68ch;margin:8px 0}
+.quality-breakdown {display:grid;gap:7px;margin:12px 0}
+.quality-breakdown div {display:flex;justify-content:space-between;gap:16px}
+.quality-breakdown dd {margin:0;text-align:right;color:var(--ink)}
+.quality-record h3 {margin:26px 0 12px;font-size:16px}
+.quality-metrics {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 32px;margin:20px 0}
+.quality-metrics div {min-width:0}
+.quality-metrics dt {color:var(--muted);font-size:12px;line-height:1.5}
+.quality-metrics dd {margin:5px 0 0;font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}
+.quality-sample-status {font-size:13px;font-weight:600;margin:18px 0 8px}
+.expertise-records {list-style:none;margin:0;padding:0}
+.expertise-records li {padding:14px 0;border-bottom:1px solid var(--line)}
+.expertise-heading {display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.expertise-heading strong {font-size:14px}
+.quality-status {font-size:12px;color:var(--muted);text-align:right}
+.quality-status.is-qualified {color:var(--accent);font-weight:650}
+.expertise-records p {margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.6}
+.quality-asof {font-size:11px;color:var(--muted);margin:16px 0 0}
+@media(max-width:760px) {
+  .comparison-four {grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 20px}
+  .comparison-four .comparison-label {font-size:12px}
+  .comparison-four .comparison-value {font-size:29px}
+  .probability-row {flex-wrap:wrap;gap:12px}
+  .probability-secondary {font-size:11px;column-gap:12px}
+  .quality-explanation summary {min-height:44px;display:list-item;padding:12px 0}
+  .quality-metrics {gap:18px 20px}
+}

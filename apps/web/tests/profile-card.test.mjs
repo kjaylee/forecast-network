@@ -152,3 +152,18 @@ test('empty cards have a clear beginning without fake scores, history or achieve
   }
   assert.throws(()=>renderProfileCard(canvasRecorder().canvas,data,{format:'square'}),RangeError);
 });
+
+
+test('empty profile status and no-results copy stay grouped with the empty explanation',()=>{
+  const data=profileCardData(newSnapshot(),'https://forecast.example');
+  for(const format of ['landscape','portrait']){
+    const {canvas,calls}=canvasRecorder();renderProfileCard(canvas,data,{format});
+    const status=calls.find(call=>call.value==='Awaiting scored results');
+    const noResults=calls.find(call=>call.value==='No finalized calls shown yet');
+    const explanation=calls.find(call=>call.value==='No performance score yet');
+    assert.equal(status.x,explanation.x,'empty status belongs to the main explanation column');
+    assert.equal(noResults.x,status.x);
+    assert.ok(Math.abs(noResults.y-status.y)<=60,'empty status and results must remain one readable group');
+    assert.ok(Math.abs(explanation.y-status.y)<=120,'status must remain near the explanation');
+  }
+});

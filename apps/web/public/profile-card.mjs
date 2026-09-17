@@ -200,11 +200,12 @@ export function renderProfileCard(canvas,data,{format='landscape',theme='paper',
   evidence(ctx,data,x,portrait?491:340,{width:portrait?width:692,theme:colors,locale,portrait});
   if(portrait){
     if(data.sampleStatus!=='new'){
+      cardRule(ctx,x,763,width,colors.line);
       scoreReceipt(ctx,data,x,805,{width,theme:colors,locale,portrait});
       label(ctx,denominator(data,locale),x,917,25,colors.ink,{width,weight:650});
     }
     label(ctx,sampleLabel(data,locale),x,data.sampleStatus==='new'?795:963,23,colors.accent,{width,minSize:20});
-    resultMarks(ctx,data,x,1061,{width,theme:colors,locale,portrait});
+    resultMarks(ctx,data,x,data.sampleStatus==='new'?845:1061,{width,theme:colors,locale,portrait});
     label(ctx,exclusion(data,locale),x,1187,19,colors.muted,{width,minSize:16});
     cardRule(ctx,x,1217,width,colors.line);
     label(ctx,data.domain,x,1260,24,colors.ink,{width,weight:650});
@@ -212,10 +213,11 @@ export function renderProfileCard(canvas,data,{format='landscape',theme='paper',
     label(ctx,t('card.recordHash',{hash:data.snapshotHash.slice(0,12)},locale),canvas.width-x,1298,16,colors.muted,{align:'right',width:290,minSize:14});
   }else{
     if(data.sampleStatus!=='new'){
+      ctx.fillStyle=colors.line;ctx.fillRect(794,310,1,248);
       scoreReceipt(ctx,data,830,340,{width:314,theme:colors,locale,portrait});
       label(ctx,denominator(data,locale),830,512,18,colors.ink,{width:314,minSize:15,weight:650});
     }
-    label(ctx,sampleLabel(data,locale),830,551,16,colors.accent,{width:314,minSize:13});
+    label(ctx,sampleLabel(data,locale),data.sampleStatus==='new'?x:830,551,data.sampleStatus==='new'?19:16,colors.accent,{width:data.sampleStatus==='new'?692:314,minSize:13});
     resultMarks(ctx,data,x,514,{width:692,theme:colors,locale,portrait});
     label(ctx,exclusion(data,locale),x,609,15,colors.muted,{width,minSize:13});
     cardRule(ctx,x,628,width,colors.line);

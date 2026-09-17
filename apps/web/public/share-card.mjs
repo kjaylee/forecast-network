@@ -102,7 +102,7 @@ export function renderShareCard(canvas,data,categoryName='',{locale=data.locale?
   ctx.fillStyle=COLORS.accent;fittedText(ctx,categoryName||tr('card.forecast'),inset,decisionY-38,contentWidth,{size:23,minSize:18,weight:650});
   cardRule(ctx,inset,decisionY-14,contentWidth,COLORS.line);
   if(data.personal){
-    ctx.fillStyle=COLORS.ink;fittedText(ctx,tr('card.personal',{outcome:tr(`card.outcome.${data.personal.outcome}`),confidence:formatNumber(data.personal.confidence,{},locale)}),inset,decisionY+74,contentWidth,{size:49,minSize:32,weight:650});
+    ctx.fillStyle=COLORS.accent;fittedText(ctx,tr('card.personal',{outcome:tr(`card.outcome.${data.personal.outcome}`),confidence:formatNumber(data.personal.confidence,{},locale)}),inset,decisionY+74,contentWidth,{size:49,minSize:32,weight:650});
     ctx.fillStyle=COLORS.muted;fittedText(ctx,tr('card.myForecast'),inset,decisionY+120,contentWidth,{size:24,weight:500});
   }else{
     ctx.fillStyle=COLORS.ink;fittedText(ctx,tr('card.prompt'),inset,decisionY+68,contentWidth,{size:44,minSize:32,weight:650});
@@ -113,7 +113,13 @@ export function renderShareCard(canvas,data,categoryName='',{locale=data.locale?
     const x=inset+index*(columnWidth+28);
     ctx.fillStyle=COLORS.ink;fittedText(ctx,shareProbabilityLabel(group.value,locale),x,groupsY+75,columnWidth,{size:group.value===null?27:54,minSize:22,weight:650});
     ctx.fillStyle=COLORS.muted;fittedText(ctx,GROUP_LABELS[index]?tr(GROUP_LABELS[index]):group.label,x,groupsY+116,columnWidth,{size:22,minSize:18});
-    cardRule(ctx,x,groupsY+143,columnWidth,COLORS.line);
+    const value=probability(group.value);
+    if(value===null){
+      cardRule(ctx,x,groupsY+143,columnWidth,COLORS.line);
+    }else{
+      ctx.fillStyle=COLORS.line;ctx.fillRect(x,groupsY+143,columnWidth,4);
+      if(value>0){ctx.fillStyle=COLORS.accent;ctx.fillRect(x,groupsY+143,columnWidth*value/100,4);}
+    }
   });
   const footerY=height-146-urlLines.length*30;
   ctx.fillStyle=COLORS.muted;fittedText(ctx,tr('card.principles'),inset,footerY,contentWidth,{size:19,minSize:15,weight:500});

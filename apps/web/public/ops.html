@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./ops.css">
+  <title>운영 지표 · Forecast Network</title>
+</head>
+<body>
+  <a class="skip" href="#main">본문으로 이동</a>
+  <header class="topbar"><span class="brand">forecast<span>network</span></span><div class="access"><span id="access-status">잠김</span><button id="disconnect" type="button" class="quiet" disabled>연결 해제</button></div></header>
+  <main id="main" class="page">
+    <div class="page-title"><h1>운영 지표</h1><p>완료된 UTC 기간의 활동과 유지율, 확인된 운영비를 살펴봅니다.</p></div>
+    <section id="auth-panel" class="auth-panel" aria-labelledby="auth-title">
+      <h2 id="auth-title">관리자 인증</h2><p>토큰은 이 페이지의 메모리에서만 사용합니다. 연결 해제나 페이지 이동 시 토큰과 조회 결과를 지웁니다.</p>
+      <form id="auth-form" autocomplete="off"><label for="admin-token">관리자 토큰</label><div class="credential-row"><input id="admin-token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="32" maxlength="2048" required aria-describedby="token-help"><button type="submit" id="connect">인증하고 조회</button></div><small id="token-help">ADMIN_TOKEN을 입력하세요. 브라우저 저장소나 주소에는 남기지 않습니다.</small></form>
+    </section>
+    <form id="range-form" class="range-form" aria-label="UTC 집계 기간">
+      <div class="range-title"><h2>집계 기간</h2><span>UTC · 종료일 미포함</span></div>
+      <div class="range-fields"><label>시작일<input type="date" id="start-date" required></label><label>종료일<input type="date" id="end-date" required></label><button id="refresh" type="submit" disabled>기간 적용</button></div>
+      <details class="cohort-range"><summary>유지율 코호트 기간 따로 설정</summary><div class="range-fields"><label>코호트 시작일<input type="date" id="cohort-start" required></label><label>코호트 종료일<input type="date" id="cohort-end" required></label></div><p>이 기간에 처음 적격 예측을 제출한 사용자를 추적합니다. 전체 목표일이 끝난 코호트만 유지율 분모에 들어갑니다.</p></details>
+      <p class="range-help">종료일은 오늘 UTC 자정까지, 각 기간은 최대 366일입니다. 진행 중인 오늘은 포함하지 않습니다.</p>
+    </form>
+    <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+    <div id="loading" class="loading" hidden aria-hidden="true"><div></div><div></div><div></div></div>
+    <div id="report-shell" hidden>
+      <div id="report-meta" class="report-meta"></div>
+      <nav class="section-nav" aria-label="지표 구역"><a href="#activity">활동·전환</a><a href="#retention">유지율</a><a href="#quality">품질·분쟁</a><a href="#costs">운영비</a><a href="#method">집계 근거</a></nav>
+      <div id="report"></div>
+    </div>
+    <p id="locked-help" class="locked-help">인증 전에는 API 요청을 보내거나 운영 데이터를 표시하지 않습니다.</p>
+  </main>
+  <script type="module" src="./ops.mjs"></script>
+</body>
+</html>

@@ -1,3 +1,10 @@
+---
+version: 1
+slug: "share-cards"
+primary_target: "apps/web/public/share-card.mjs"
+related_targets: ["apps/web/public/profile-card.mjs", "apps/web/public/card-art.mjs", ".impeccable/surfaces/share-cards.md"]
+---
+
 # Share cards
 
 Mode: Experience (artifact); Operate (export controls).
