@@ -1,0 +1,15 @@
+{
+  "version": "0.12.2",
+  "cloudflareVersionId": "473c6f8a-bed7-4864-9461-60de40fd17e0",
+  "pythonTests": 823,
+  "nodeTests": 263,
+  "schemaCount": 56,
+  "ruffPassed": true,
+  "mypyFilesPassed": 40,
+  "healthProof": "health.json",
+  "analyticsProof": "analytics-with-receipts.json",
+  "chainCostAdmission": "actual-chain-cost-admission.json",
+  "knownChainFeeLamports": 10000,
+  "completeExpenseLedger": false,
+  "riskSeed": "compiler rejected a65-character candidatehash; deterministicguardheld; enumguardfixin0.12.3pending"
+}

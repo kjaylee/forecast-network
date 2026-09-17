@@ -1,0 +1,445 @@
+{
+  "schema_version": 1,
+  "version": "source-calibration-v1",
+  "dataset_hash": "31dce5351bf142de4493531fe24a3a36ab367055758aeb9c6edd8af7a8b10bff",
+  "train_from_ms": 1786839939502,
+  "train_until_ms": 1789345539502,
+  "evaluation_until_ms": 1789431939502,
+  "weights": [
+    {
+      "schema_version": 1,
+      "channel": "depegRisk1d",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk1d",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk1d",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk1d",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk7d",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk7d",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk7d",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk7d",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk30d",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk30d",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk30d",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "depegRisk30d",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "reserveLossRisk",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "reserveLossRisk",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "reserveLossRisk",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "reserveLossRisk",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "liquidityStressRisk",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "liquidityStressRisk",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "liquidityStressRisk",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "liquidityStressRisk",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "stableCollateralRisk",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "stableCollateralRisk",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "stableCollateralRisk",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "stableCollateralRisk",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "btcCrashRisk",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "btcCrashRisk",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "btcCrashRisk",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "btcCrashRisk",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "ethCrashRisk",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "ethCrashRisk",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "ethCrashRisk",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "ethCrashRisk",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "solCrashRisk",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "solCrashRisk",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "solCrashRisk",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "solCrashRisk",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "oracleFailureRisk",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "oracleFailureRisk",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "oracleFailureRisk",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "oracleFailureRisk",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "bridgeFailureRisk",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "bridgeFailureRisk",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "bridgeFailureRisk",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "bridgeFailureRisk",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "counterpartyRisk",
+      "source": "ai",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "counterpartyRisk",
+      "source": "crowd",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "counterpartyRisk",
+      "source": "top",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    },
+    {
+      "schema_version": 1,
+      "channel": "counterpartyRisk",
+      "source": "market",
+      "weight_bp": 2500,
+      "samples": 0,
+      "shrunk_brier_bp": 2500,
+      "status": "new"
+    }
+  ],
+  "evaluation_samples": 0,
+  "learned_brier_bp": null,
+  "equal_brier_bp": null
+}

@@ -1,0 +1,98 @@
+{
+  "checkedAt": "2026-09-14T23:50:23.076094+00:00",
+  "eligibility": [
+    {
+      "id": "f_IklrwuvCXkq8PVKWnH1oaXjC",
+      "state": "FINALIZED",
+      "hold_id": "wFTuDC82qlIj_nUMN2L5TACqXktQnH-g6Q3iF4IHrLU",
+      "decision_id": null,
+      "eligibility_completed_at": null
+    }
+  ],
+  "delivery": [
+    {
+      "id": "f_2OLC-vN2qZSzSUfGhyaYUyO8",
+      "revision": 2,
+      "state": "OPEN",
+      "confirmed_revision": null,
+      "chain_deadline": null,
+      "chain_time": null,
+      "status": "pending",
+      "signature": null,
+      "confirmed_slot": null,
+      "error_code": null
+    },
+    {
+      "id": "f_Ctsi6HW_e8b443IrxRXe5gsf",
+      "revision": 3,
+      "state": "OPEN",
+      "confirmed_revision": null,
+      "chain_deadline": null,
+      "chain_time": null,
+      "status": "pending",
+      "signature": null,
+      "confirmed_slot": null,
+      "error_code": null
+    },
+    {
+      "id": "f_IklrwuvCXkq8PVKWnH1oaXjC",
+      "revision": 7,
+      "state": "FINALIZED",
+      "confirmed_revision": 6,
+      "chain_deadline": 1789192767000,
+      "chain_time": 1789428674000,
+      "status": "pending",
+      "signature": null,
+      "confirmed_slot": null,
+      "error_code": null
+    },
+    {
+      "id": "f_NB_bVj_Y7gFrFB7vy61RZFU2",
+      "revision": 7,
+      "state": "OPEN",
+      "confirmed_revision": null,
+      "chain_deadline": null,
+      "chain_time": null,
+      "status": "pending",
+      "signature": null,
+      "confirmed_slot": null,
+      "error_code": null
+    },
+    {
+      "id": "f_kgEbr59Up2vdZXkshS3_HPsa",
+      "revision": 3,
+      "state": "OPEN",
+      "confirmed_revision": null,
+      "chain_deadline": null,
+      "chain_time": null,
+      "status": "pending",
+      "signature": null,
+      "confirmed_slot": null,
+      "error_code": null
+    },
+    {
+      "id": "f_uZX0iFRUQspTLFrqf2CnOJcV",
+      "revision": 6,
+      "state": "CHALLENGE",
+      "confirmed_revision": null,
+      "chain_deadline": null,
+      "chain_time": null,
+      "status": "pending",
+      "signature": null,
+      "confirmed_slot": null,
+      "error_code": null
+    },
+    {
+      "id": "f_xCcaozMqE4aTI1_HQQwgu5GP",
+      "revision": 2,
+      "state": "OPEN",
+      "confirmed_revision": null,
+      "chain_deadline": null,
+      "chain_time": null,
+      "status": "pending",
+      "signature": null,
+      "confirmed_slot": null,
+      "error_code": null
+    }
+  ]
+}

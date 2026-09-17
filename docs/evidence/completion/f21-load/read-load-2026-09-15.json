@@ -1,0 +1,47 @@
+{
+  "note": "Live Worker + D1 read paths (list, detail, v2 feed, status) from one Mac over the public internet; production adapter, no fixtures.",
+  "version": "0.12.20",
+  "at": 1789484402289,
+  "report": {
+    "concurrency_25": {
+      "requests": 400,
+      "ok": 400,
+      "codes": {
+        "200": 400
+      },
+      "wall_s": 15.43,
+      "rps": 25.9,
+      "p50_ms": 395,
+      "p95_ms": 1442,
+      "max_ms": 2418
+    },
+    "concurrency_100": {
+      "requests": 400,
+      "ok": 290,
+      "codes": {
+        "200": 290,
+        "503": 6,
+        "500": 104
+      },
+      "wall_s": 9.95,
+      "rps": 40.2,
+      "p50_ms": 297,
+      "p95_ms": 774,
+      "max_ms": 1661
+    }
+  },
+  "finding": {
+    "errorCode": "Cloudflare 1101",
+    "runtimeError": "SystemError: Cannot enter a promising task from inside another running promising task (Pyodide stack switching)",
+    "where": "raised at Python handler entry for the next request on a busy isolate; application code never runs",
+    "appCodeCause": null,
+    "priorRecord": "docs/verification-web.md (same error when concurrent Python tasks await binding promises)",
+    "safeConcurrency": "25 concurrent readers from one client: 400/400 OK, p50 395 ms, p95 1.4 s",
+    "degradedConcurrency": "100 concurrent readers: 290/400 OK, 104\u00d7500 + 6\u00d7503",
+    "mitigations": [
+      "keep one awaited JS promise per task (already enforced)",
+      "move hot public read paths to a JS Worker in front of D1 if concurrency beyond ~25/isolate is needed",
+      "platform fix in Python Workers runtime"
+    ]
+  }
+}

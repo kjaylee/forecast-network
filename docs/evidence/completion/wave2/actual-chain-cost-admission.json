@@ -1,0 +1,21 @@
+{
+  "receipts": [
+    {
+      "operation_id": "5LYGziHV7kq76MbF4fME5XwVRKL1ke8Y3iYU3gAJWBrmwDtRb9KWSk9xMxY38UKT6Xm7ijXKXJZKWx1oRcT6NBA2",
+      "revision": 1,
+      "status": "known",
+      "amount_atomic": 5000,
+      "unit": "DEVNET_LAMPORT",
+      "evidence_hash": "924262498b475066146f9eea299592cdc72846187a1510043579c56f2a90e3f4"
+    },
+    {
+      "operation_id": "4C5skyqTrv31vWdPdDfQfsFtNL6ou3F2i2tYiPF6rS4Pcrom365bC7EVQsEjYpcamGeq65DTs8QbY1KzWCWfVjqW",
+      "revision": 1,
+      "status": "known",
+      "amount_atomic": 5000,
+      "unit": "DEVNET_LAMPORT",
+      "evidence_hash": "bb0241e4a874e82d1df28077a1955af460a82d8c78a0a56276540b56e9995bbd"
+    }
+  ],
+  "completeExpenseLedger": false
+}

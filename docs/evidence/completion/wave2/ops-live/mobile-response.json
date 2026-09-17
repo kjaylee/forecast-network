@@ -1,0 +1,1727 @@
+{
+  "data": {
+    "formulaVersion": "product-analytics-v1",
+    "asOfMs": 1789436135513,
+    "window": {
+      "startMs": 1786838400000,
+      "endMs": 1789430400000,
+      "timezone": "UTC",
+      "complete": true
+    },
+    "population": {
+      "kind": "application",
+      "evidenceClass": "application_database_observations",
+      "excludedIdentities": 1,
+      "deduplicatedIdentities": 12,
+      "exclusionPolicy": "explicit-permanent-rules-and-reserved-id-namespaces",
+      "unclassifiedAccounts": 12,
+      "humanIdentityVerified": false
+    },
+    "inputHash": "28fbcaffb667298614739be4bc4caf4b4dd8b82307ff40b47d498bbd8c4016fa",
+    "activity": {
+      "activePredictors": 3,
+      "activeQuestions": 3,
+      "distinctPredictorQuestionDays": 4,
+      "daily": [
+        {
+          "dayStartMs": 1786838400000,
+          "dayEndMs": 1786924800000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1786924800000,
+          "dayEndMs": 1787011200000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787011200000,
+          "dayEndMs": 1787097600000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787097600000,
+          "dayEndMs": 1787184000000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787184000000,
+          "dayEndMs": 1787270400000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787270400000,
+          "dayEndMs": 1787356800000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787356800000,
+          "dayEndMs": 1787443200000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787443200000,
+          "dayEndMs": 1787529600000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787529600000,
+          "dayEndMs": 1787616000000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787616000000,
+          "dayEndMs": 1787702400000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787702400000,
+          "dayEndMs": 1787788800000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787788800000,
+          "dayEndMs": 1787875200000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787875200000,
+          "dayEndMs": 1787961600000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1787961600000,
+          "dayEndMs": 1788048000000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788048000000,
+          "dayEndMs": 1788134400000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788134400000,
+          "dayEndMs": 1788220800000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788220800000,
+          "dayEndMs": 1788307200000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788307200000,
+          "dayEndMs": 1788393600000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788393600000,
+          "dayEndMs": 1788480000000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788480000000,
+          "dayEndMs": 1788566400000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788566400000,
+          "dayEndMs": 1788652800000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788652800000,
+          "dayEndMs": 1788739200000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788739200000,
+          "dayEndMs": 1788825600000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788825600000,
+          "dayEndMs": 1788912000000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788912000000,
+          "dayEndMs": 1788998400000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1788998400000,
+          "dayEndMs": 1789084800000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1789084800000,
+          "dayEndMs": 1789171200000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        },
+        {
+          "dayStartMs": 1789171200000,
+          "dayEndMs": 1789257600000,
+          "activePredictors": 1,
+          "activeQuestions": 1,
+          "distinctPredictorQuestionDays": 1
+        },
+        {
+          "dayStartMs": 1789257600000,
+          "dayEndMs": 1789344000000,
+          "activePredictors": 2,
+          "activeQuestions": 3,
+          "distinctPredictorQuestionDays": 3
+        },
+        {
+          "dayStartMs": 1789344000000,
+          "dayEndMs": 1789430400000,
+          "activePredictors": 0,
+          "activeQuestions": 0,
+          "distinctPredictorQuestionDays": 0
+        }
+      ],
+      "openQuestionsAtAsOf": 7
+    },
+    "activationWithin7Days": {
+      "numerator": 0,
+      "denominator": 0,
+      "unit": "share",
+      "valueBp": null,
+      "valueScaled": null,
+      "scale": 10000,
+      "status": "no_denominator",
+      "newAccounts": 12,
+      "immatureAccounts": 12
+    },
+    "creationToExternalParticipationWithin7Days": {
+      "numerator": 0,
+      "denominator": 0,
+      "unit": "share",
+      "valueBp": null,
+      "valueScaled": null,
+      "scale": 10000,
+      "status": "no_denominator",
+      "publishedQuestions": 7,
+      "immatureQuestions": 7
+    },
+    "cohortWindow": {
+      "startMs": 1786838400000,
+      "endMs": 1789430400000,
+      "anchor": "first_eligible_prediction_UTC_day"
+    },
+    "cohorts": [
+      {
+        "cohortStartMs": 1786838400000,
+        "cohortEndMs": 1786924800000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1786924800000,
+            "targetEndMs": 1787011200000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787443200000,
+            "targetEndMs": 1787529600000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789430400000,
+            "targetEndMs": 1789516800000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1786924800000,
+        "cohortEndMs": 1787011200000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787011200000,
+            "targetEndMs": 1787097600000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787529600000,
+            "targetEndMs": 1787616000000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789516800000,
+            "targetEndMs": 1789603200000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787011200000,
+        "cohortEndMs": 1787097600000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787097600000,
+            "targetEndMs": 1787184000000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787616000000,
+            "targetEndMs": 1787702400000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789603200000,
+            "targetEndMs": 1789689600000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787097600000,
+        "cohortEndMs": 1787184000000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787184000000,
+            "targetEndMs": 1787270400000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787702400000,
+            "targetEndMs": 1787788800000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789689600000,
+            "targetEndMs": 1789776000000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787184000000,
+        "cohortEndMs": 1787270400000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787270400000,
+            "targetEndMs": 1787356800000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787788800000,
+            "targetEndMs": 1787875200000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789776000000,
+            "targetEndMs": 1789862400000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787270400000,
+        "cohortEndMs": 1787356800000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787356800000,
+            "targetEndMs": 1787443200000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787875200000,
+            "targetEndMs": 1787961600000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789862400000,
+            "targetEndMs": 1789948800000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787356800000,
+        "cohortEndMs": 1787443200000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787443200000,
+            "targetEndMs": 1787529600000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787961600000,
+            "targetEndMs": 1788048000000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789948800000,
+            "targetEndMs": 1790035200000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787443200000,
+        "cohortEndMs": 1787529600000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787529600000,
+            "targetEndMs": 1787616000000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788048000000,
+            "targetEndMs": 1788134400000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790035200000,
+            "targetEndMs": 1790121600000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787529600000,
+        "cohortEndMs": 1787616000000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787616000000,
+            "targetEndMs": 1787702400000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788134400000,
+            "targetEndMs": 1788220800000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790121600000,
+            "targetEndMs": 1790208000000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787616000000,
+        "cohortEndMs": 1787702400000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787702400000,
+            "targetEndMs": 1787788800000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788220800000,
+            "targetEndMs": 1788307200000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790208000000,
+            "targetEndMs": 1790294400000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787702400000,
+        "cohortEndMs": 1787788800000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787788800000,
+            "targetEndMs": 1787875200000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788307200000,
+            "targetEndMs": 1788393600000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790294400000,
+            "targetEndMs": 1790380800000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787788800000,
+        "cohortEndMs": 1787875200000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787875200000,
+            "targetEndMs": 1787961600000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788393600000,
+            "targetEndMs": 1788480000000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790380800000,
+            "targetEndMs": 1790467200000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787875200000,
+        "cohortEndMs": 1787961600000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1787961600000,
+            "targetEndMs": 1788048000000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788480000000,
+            "targetEndMs": 1788566400000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790467200000,
+            "targetEndMs": 1790553600000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1787961600000,
+        "cohortEndMs": 1788048000000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788048000000,
+            "targetEndMs": 1788134400000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788566400000,
+            "targetEndMs": 1788652800000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790553600000,
+            "targetEndMs": 1790640000000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788048000000,
+        "cohortEndMs": 1788134400000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788134400000,
+            "targetEndMs": 1788220800000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788652800000,
+            "targetEndMs": 1788739200000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790640000000,
+            "targetEndMs": 1790726400000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788134400000,
+        "cohortEndMs": 1788220800000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788220800000,
+            "targetEndMs": 1788307200000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788739200000,
+            "targetEndMs": 1788825600000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790726400000,
+            "targetEndMs": 1790812800000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788220800000,
+        "cohortEndMs": 1788307200000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788307200000,
+            "targetEndMs": 1788393600000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788825600000,
+            "targetEndMs": 1788912000000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790812800000,
+            "targetEndMs": 1790899200000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788307200000,
+        "cohortEndMs": 1788393600000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788393600000,
+            "targetEndMs": 1788480000000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788912000000,
+            "targetEndMs": 1788998400000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790899200000,
+            "targetEndMs": 1790985600000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788393600000,
+        "cohortEndMs": 1788480000000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788480000000,
+            "targetEndMs": 1788566400000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788998400000,
+            "targetEndMs": 1789084800000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1790985600000,
+            "targetEndMs": 1791072000000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788480000000,
+        "cohortEndMs": 1788566400000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788566400000,
+            "targetEndMs": 1788652800000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1789084800000,
+            "targetEndMs": 1789171200000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791072000000,
+            "targetEndMs": 1791158400000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788566400000,
+        "cohortEndMs": 1788652800000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788652800000,
+            "targetEndMs": 1788739200000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1789171200000,
+            "targetEndMs": 1789257600000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791158400000,
+            "targetEndMs": 1791244800000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788652800000,
+        "cohortEndMs": 1788739200000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788739200000,
+            "targetEndMs": 1788825600000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1789257600000,
+            "targetEndMs": 1789344000000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791244800000,
+            "targetEndMs": 1791331200000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788739200000,
+        "cohortEndMs": 1788825600000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788825600000,
+            "targetEndMs": 1788912000000
+          },
+          "D7": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1789344000000,
+            "targetEndMs": 1789430400000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791331200000,
+            "targetEndMs": 1791417600000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788825600000,
+        "cohortEndMs": 1788912000000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788912000000,
+            "targetEndMs": 1788998400000
+          },
+          "D7": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789430400000,
+            "targetEndMs": 1789516800000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791417600000,
+            "targetEndMs": 1791504000000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788912000000,
+        "cohortEndMs": 1788998400000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1788998400000,
+            "targetEndMs": 1789084800000
+          },
+          "D7": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789516800000,
+            "targetEndMs": 1789603200000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791504000000,
+            "targetEndMs": 1791590400000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1788998400000,
+        "cohortEndMs": 1789084800000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1789084800000,
+            "targetEndMs": 1789171200000
+          },
+          "D7": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789603200000,
+            "targetEndMs": 1789689600000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791590400000,
+            "targetEndMs": 1791676800000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1789084800000,
+        "cohortEndMs": 1789171200000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "no_denominator",
+            "mature": true,
+            "targetStartMs": 1789171200000,
+            "targetEndMs": 1789257600000
+          },
+          "D7": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789689600000,
+            "targetEndMs": 1789776000000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791676800000,
+            "targetEndMs": 1791763200000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1789171200000,
+        "cohortEndMs": 1789257600000,
+        "activatedUsers": 1,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 1,
+            "unit": "share",
+            "valueBp": 0,
+            "valueScaled": 0,
+            "scale": 10000,
+            "status": "available",
+            "mature": true,
+            "targetStartMs": 1789257600000,
+            "targetEndMs": 1789344000000
+          },
+          "D7": {
+            "numerator": null,
+            "denominator": 1,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789776000000,
+            "targetEndMs": 1789862400000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 1,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791763200000,
+            "targetEndMs": 1791849600000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1789257600000,
+        "cohortEndMs": 1789344000000,
+        "activatedUsers": 2,
+        "retention": {
+          "D1": {
+            "numerator": 0,
+            "denominator": 2,
+            "unit": "share",
+            "valueBp": 0,
+            "valueScaled": 0,
+            "scale": 10000,
+            "status": "available",
+            "mature": true,
+            "targetStartMs": 1789344000000,
+            "targetEndMs": 1789430400000
+          },
+          "D7": {
+            "numerator": null,
+            "denominator": 2,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789862400000,
+            "targetEndMs": 1789948800000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 2,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791849600000,
+            "targetEndMs": 1791936000000
+          }
+        }
+      },
+      {
+        "cohortStartMs": 1789344000000,
+        "cohortEndMs": 1789430400000,
+        "activatedUsers": 0,
+        "retention": {
+          "D1": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789430400000,
+            "targetEndMs": 1789516800000
+          },
+          "D7": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1789948800000,
+            "targetEndMs": 1790035200000
+          },
+          "D30": {
+            "numerator": null,
+            "denominator": 0,
+            "unit": "share",
+            "valueBp": null,
+            "valueScaled": null,
+            "scale": 10000,
+            "status": "immature",
+            "mature": false,
+            "targetStartMs": 1791936000000,
+            "targetEndMs": 1792022400000
+          }
+        }
+      }
+    ],
+    "retention": {
+      "D1": {
+        "numerator": 0,
+        "denominator": 3,
+        "unit": "share",
+        "valueBp": 0,
+        "valueScaled": 0,
+        "scale": 10000,
+        "status": "available",
+        "immatureUsers": 0
+      },
+      "D7": {
+        "numerator": 0,
+        "denominator": 0,
+        "unit": "share",
+        "valueBp": null,
+        "valueScaled": null,
+        "scale": 10000,
+        "status": "immature",
+        "immatureUsers": 3
+      },
+      "D30": {
+        "numerator": 0,
+        "denominator": 0,
+        "unit": "share",
+        "valueBp": null,
+        "valueScaled": null,
+        "scale": 10000,
+        "status": "immature",
+        "immatureUsers": 3
+      }
+    },
+    "weeklyActiveDaysPerActiveUserWeek": {
+      "numerator": 3,
+      "denominator": 3,
+      "unit": "days_per_active_user_week",
+      "valueBp": null,
+      "valueScaled": 10000,
+      "scale": 10000,
+      "status": "available"
+    },
+    "quality": {
+      "finalizedQuestions": 1,
+      "unavailableFinalizedOutcomes": 0,
+      "invalidity": {
+        "numerator": 0,
+        "denominator": 1,
+        "unit": "share",
+        "valueBp": 0,
+        "valueScaled": 0,
+        "scale": 10000,
+        "status": "available"
+      },
+      "questionValidity": {
+        "numerator": 1,
+        "denominator": 1,
+        "unit": "share",
+        "valueBp": 10000,
+        "valueScaled": 10000,
+        "scale": 10000,
+        "status": "available"
+      },
+      "publishedQuestionClarity": {
+        "numerator": 70000,
+        "denominator": 70000,
+        "unit": "share",
+        "valueBp": 10000,
+        "valueScaled": 10000,
+        "scale": 10000,
+        "status": "available",
+        "measuredQuestions": 7,
+        "unavailableQuestions": 0
+      },
+      "creatorsWithFinalizedResults": 0,
+      "creatorValidityRatios": []
+    },
+    "disputes": {
+      "submitted": 0,
+      "reviewed": 0,
+      "materialConflictAmongReviewed": {
+        "numerator": 0,
+        "denominator": 0,
+        "unit": "share",
+        "valueBp": null,
+        "valueScaled": null,
+        "scale": 10000,
+        "status": "no_denominator"
+      },
+      "disputedAmongFinalizedQuestions": {
+        "numerator": 0,
+        "denominator": 1,
+        "unit": "share",
+        "valueBp": 0,
+        "valueScaled": 0,
+        "scale": 10000,
+        "status": "available"
+      },
+      "questionsWithDisputes": 0
+    },
+    "costs": {
+      "provider": {
+        "unit": "USD_MICRO",
+        "knownRecordedSubtotalAtomic": 0,
+        "knownOperations": 0,
+        "unknownRecordedOperations": 0,
+        "estimatedRecordedSubtotalAtomic": 0,
+        "estimatedOperations": 0,
+        "coverage": "partial",
+        "completeActualTotalAtomic": null,
+        "knownSubtotalPerActivePredictor": {
+          "numerator": 0,
+          "denominator": 3,
+          "unit": "USD_MICRO_per_predictor",
+          "valueBp": null,
+          "valueScaled": 0,
+          "scale": 10000,
+          "status": "available"
+        },
+        "knownSubtotalPerActiveQuestion": {
+          "numerator": 0,
+          "denominator": 3,
+          "unit": "USD_MICRO_per_question",
+          "valueBp": null,
+          "valueScaled": 0,
+          "scale": 10000,
+          "status": "available"
+        },
+        "retainedAiForecastRecordsInWindow": 7,
+        "historicalProviderOperationCount": null
+      },
+      "chain": {
+        "unit": "DEVNET_LAMPORT",
+        "knownRecordedSubtotalAtomic": 10000,
+        "knownOperations": 2,
+        "unknownRecordedOperations": 0,
+        "estimatedRecordedSubtotalAtomic": 0,
+        "estimatedOperations": 0,
+        "coverage": "partial",
+        "completeActualTotalAtomic": null,
+        "knownSubtotalPerActivePredictor": {
+          "numerator": 10000,
+          "denominator": 3,
+          "unit": "DEVNET_LAMPORT_per_predictor",
+          "valueBp": null,
+          "valueScaled": 33333333,
+          "scale": 10000,
+          "status": "available"
+        },
+        "knownSubtotalPerActiveQuestion": {
+          "numerator": 10000,
+          "denominator": 3,
+          "unit": "DEVNET_LAMPORT_per_question",
+          "valueBp": null,
+          "valueScaled": 33333333,
+          "scale": 10000,
+          "status": "available"
+        },
+        "deliverySignaturesWithoutActualFee": 10,
+        "observedDeliverySignatures": 12,
+        "reservedLamportsAllPopulations": 9976160
+      }
+    },
+    "limitations": [
+      "Later eligibility decisions, admitted identity links or deletion overlays may restate historical windows.",
+      "Identity merges require admitted account evidence; shared IPs are never merged.",
+      "No complete provider/chain expense ledger exists; known subtotals are not total cost.",
+      "Fixture retention tests do not prove real-user D30 retention."
+    ]
+  }
+}

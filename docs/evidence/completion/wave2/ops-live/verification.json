@@ -1,0 +1,35 @@
+{
+  "version": "0.12.4",
+  "fixtureInjection": false,
+  "actualAuthorizedReadOnlyApi": true,
+  "results": [
+    {
+      "viewport": "desktop",
+      "width": 1440,
+      "documentWidth": 1440,
+      "apiRequests": 1,
+      "actualHttpStatus": 200,
+      "providerNoReceipts": true,
+      "d30Immature": true,
+      "knownChainFeeLamports": 10000,
+      "completeExpenseLedger": false,
+      "tokenCleared": true,
+      "keyboardDisconnect": true,
+      "failures": []
+    },
+    {
+      "viewport": "mobile",
+      "width": 390,
+      "documentWidth": 390,
+      "apiRequests": 1,
+      "actualHttpStatus": 200,
+      "providerNoReceipts": true,
+      "d30Immature": true,
+      "knownChainFeeLamports": 10000,
+      "completeExpenseLedger": false,
+      "tokenCleared": true,
+      "keyboardDisconnect": true,
+      "failures": []
+    }
+  ]
+}

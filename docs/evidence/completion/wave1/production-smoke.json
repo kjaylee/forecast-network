@@ -1,0 +1,94 @@
+{
+  "checkedAt": "2026-09-14T23:29:05.474548+00:00",
+  "checks": [
+    {
+      "path": "/api/health",
+      "http": 200,
+      "data": {
+        "ok": true,
+        "version": "0.12.0"
+      }
+    },
+    {
+      "path": "/api/status",
+      "http": 200,
+      "data": {
+        "serverTime": 1789428541708,
+        "version": "0.12.0",
+        "providers": [
+          "gemini",
+          "cloudflare"
+        ],
+        "challengeHours": 48,
+        "chain": {
+          "status": "configured",
+          "network": "devnet",
+          "programId": "BvZLYrSmzDGTP5jYb14cjreRfHqfMo2sRBfUPpAi5Sgp",
+          "relayEnabled": true,
+          "transaction": null
+        },
+        "features": {
+          "sourceWatch": true,
+          "liveMarkets": false,
+          "billing": {
+            "billable": false,
+            "mode": "sandbox"
+          }
+        }
+      }
+    },
+    {
+      "path": "/api/forecasts",
+      "http": 200,
+      "counts": {
+        "total": 7,
+        "active": 5,
+        "participants": 3
+      },
+      "items": 7,
+      "discoveryVersion": "forecast-discovery-v2",
+      "firstCardKeys": [
+        "ai",
+        "category",
+        "chain",
+        "closeAt",
+        "cohortMethodology",
+        "commentCount",
+        "createdAt",
+        "creator",
+        "crowd",
+        "expert",
+        "id",
+        "openAt",
+        "participationHold",
+        "quality",
+        "question",
+        "revision",
+        "shareCount",
+        "sourceLanguage",
+        "specificationHash",
+        "state",
+        "title",
+        "top",
+        "translationLanguage"
+      ]
+    },
+    {
+      "path": "/api/risk/feeds/stable-risk",
+      "http": 200,
+      "data": {
+        "status": "unavailable",
+        "serverTime": 1789428544102,
+        "envelope": null
+      }
+    },
+    {
+      "path": "/api/admin/registry/health",
+      "http": 200,
+      "data": {
+        "signerVerified": true,
+        "rpcAvailable": true
+      }
+    }
+  ]
+}

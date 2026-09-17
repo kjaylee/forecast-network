@@ -1,0 +1,143 @@
+{
+  "note": "Real wallet-signed pilot account; active participation-point market on the canonical 48h USDC question; points are non-monetary. Source currency for the active gate is the operator refresh capture (risk_prediction_clocks_v2) within 2h.",
+  "user": "u_vIVq8Kd9mx8tn0DbSauKta02",
+  "address": "3A5JW5ejHsX74SSVNv7ewQgMWGogG32L3f1MEHAErsQf",
+  "forecastId": "f_tkqvmogdeeITz0c_XMNJTB68",
+  "before": {
+    "data": {
+      "positions": [
+        {
+          "forecastId": "f_tkqvmogdeeITz0c_XMNJTB68",
+          "mode": "active",
+          "availablePoints": 1500,
+          "committedPoints": 0,
+          "fractionAtomic": "0",
+          "grossPoints": 0,
+          "yesClaimsAtomic": "0",
+          "noClaimsAtomic": "0",
+          "voidedFillCount": 0,
+          "refundedPoints": 0,
+          "settled": false
+        }
+      ]
+    }
+  },
+  "quote": {
+    "data": {
+      "quoteId": "zOv6YIAXx56SGvUQyD9kKV3nbqWECFZyGA4AoCvLhsk",
+      "forecastId": "f_tkqvmogdeeITz0c_XMNJTB68",
+      "userId": "u_vIVq8Kd9mx8tn0DbSauKta02",
+      "mode": "active",
+      "side": "NO",
+      "spendPoints": 50,
+      "claimsAtomic": "97618597",
+      "priceBeforeBps": 5000,
+      "priceAfterBps": 5244,
+      "expiresAt": 1789483629360,
+      "revision": 0,
+      "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+      "specificationHash": "e7d2f4afc77794fd72b3aff48e08a08b12ea54fc8bac519b9eb8a5d19ed0b56a"
+    }
+  },
+  "fill": {
+    "data": {
+      "quoteId": "zOv6YIAXx56SGvUQyD9kKV3nbqWECFZyGA4AoCvLhsk",
+      "forecastId": "f_tkqvmogdeeITz0c_XMNJTB68",
+      "userId": "u_vIVq8Kd9mx8tn0DbSauKta02",
+      "mode": "active",
+      "side": "NO",
+      "spendPoints": 50,
+      "claimsAtomic": "97618597",
+      "priceBeforeBps": 5000,
+      "priceAfterBps": 5244,
+      "expiresAt": 1789483629360,
+      "revision": 0,
+      "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+      "specificationHash": "e7d2f4afc77794fd72b3aff48e08a08b12ea54fc8bac519b9eb8a5d19ed0b56a",
+      "id": "fill:7f271ec06dac3a1171c1fcc9f70cecb92dc22ae816a9bd01a6107177ce0acd01",
+      "status": "accepted",
+      "acceptedAt": 1789483600273,
+      "refundedPoints": 0,
+      "voidedAt": null,
+      "eligibilityDecisionId": null
+    }
+  },
+  "receipt": {
+    "data": {
+      "forecastId": "f_tkqvmogdeeITz0c_XMNJTB68",
+      "userId": "u_vIVq8Kd9mx8tn0DbSauKta02",
+      "quoteId": "zOv6YIAXx56SGvUQyD9kKV3nbqWECFZyGA4AoCvLhsk",
+      "status": "accepted",
+      "receipt": {
+        "quoteId": "zOv6YIAXx56SGvUQyD9kKV3nbqWECFZyGA4AoCvLhsk",
+        "forecastId": "f_tkqvmogdeeITz0c_XMNJTB68",
+        "userId": "u_vIVq8Kd9mx8tn0DbSauKta02",
+        "mode": "active",
+        "side": "NO",
+        "spendPoints": 50,
+        "claimsAtomic": "97618597",
+        "priceBeforeBps": 5000,
+        "priceAfterBps": 5244,
+        "expiresAt": 1789483629360,
+        "revision": 0,
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "specificationHash": "e7d2f4afc77794fd72b3aff48e08a08b12ea54fc8bac519b9eb8a5d19ed0b56a",
+        "id": "fill:7f271ec06dac3a1171c1fcc9f70cecb92dc22ae816a9bd01a6107177ce0acd01",
+        "status": "accepted",
+        "acceptedAt": 1789483600273,
+        "refundedPoints": 0,
+        "voidedAt": null,
+        "eligibilityDecisionId": null
+      }
+    }
+  },
+  "after": {
+    "data": {
+      "positions": [
+        {
+          "forecastId": "f_tkqvmogdeeITz0c_XMNJTB68",
+          "mode": "active",
+          "availablePoints": 1450,
+          "committedPoints": 50,
+          "fractionAtomic": "0",
+          "grossPoints": 50,
+          "yesClaimsAtomic": "0",
+          "noClaimsAtomic": "97618597",
+          "voidedFillCount": 0,
+          "refundedPoints": 0,
+          "settled": false
+        }
+      ]
+    }
+  },
+  "market": {
+    "data": {
+      "forecastId": "f_tkqvmogdeeITz0c_XMNJTB68",
+      "mode": "active",
+      "status": "open",
+      "yesProbabilityBps": 4756,
+      "probabilityStatus": "current",
+      "probabilityRevision": 1,
+      "revision": 1,
+      "voidedFillCount": 0,
+      "refundedPoints": 0,
+      "atomicScale": 1000000,
+      "maxSpendPoints": 100,
+      "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+      "specificationHash": "e7d2f4afc77794fd72b3aff48e08a08b12ea54fc8bac519b9eb8a5d19ed0b56a",
+      "liveEnabled": true,
+      "reserveAtomic": "750000000"
+    }
+  },
+  "treasury": {
+    "data": {
+      "mode": "active",
+      "issuedAtomic": "700000000",
+      "availableAtomic": "0",
+      "reservedAtomic": "750000000",
+      "issuanceCapAtomic": "20000000000",
+      "liveEnabled": true
+    }
+  },
+  "at": 1789483604081
+}
