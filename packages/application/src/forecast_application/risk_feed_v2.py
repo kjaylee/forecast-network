@@ -494,7 +494,13 @@ async def operations_health(db: Database, *, now_ms: int) -> dict[str, Any]:
         "SUM(failure_count=0 AND (checked_at IS NULL OR checked_at<?-interval_ms-300000)) AS stale "
         "FROM official_watch_sources WHERE enabled=1",
         (now_ms,))
+    # A forecast carrying a job_error has failed an attempt and not been cleared since. These
+    # accumulate silently: nothing counts them, and three have been retrying for days because
+    # the state they are in cannot reach the path that would resolve them. Reported, not
+    # alerted on, because it needs a decision rather than a wake-up call.
+    stuck = await db.first("SELECT COUNT(*) AS n FROM forecasts WHERE job_error IS NOT NULL")
     return {"serverTime": now_ms, "feeds": feeds, "series": series,
+            "stuckForecasts": stuck["n"] if stuck else 0,
             "sourceWatch": {k: (sources[k] or 0) for k in ("total", "failing", "stale")} if sources else None}
 
 

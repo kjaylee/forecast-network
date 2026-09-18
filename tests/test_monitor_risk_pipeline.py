@@ -118,3 +118,20 @@ class DriftReportingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StuckForecastReportingTests(unittest.TestCase):
+    """Forecasts that cannot clear themselves are reported, and are not alarms."""
+
+    def test_they_appear_as_a_warning(self):
+        warned = monitor.warnings(dict(health(), stuckForecasts=3))
+        self.assertTrue(any("3 forecasts carry a job_error" in w for w in warned), warned)
+
+    def test_they_do_not_degrade_the_pipeline(self):
+        # Three forecasts have been retrying for days and nothing will clear them, so an
+        # alert would repeat forever and stop meaning anything. It needs a decision, not a
+        # wake-up call.
+        self.assertEqual(monitor.evaluate(dict(health(), stuckForecasts=3), KEEPER_OK, NOW), [])
+
+    def test_an_absent_count_is_not_reported(self):
+        self.assertEqual([w for w in monitor.warnings(health()) if "job_error" in w], [])

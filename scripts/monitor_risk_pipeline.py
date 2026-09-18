@@ -104,11 +104,18 @@ def evaluate(health: dict[str, object] | None, keeper: dict[str, object], now_ms
 
 
 def warnings(health: dict[str, object] | None) -> list[str]:
-    """Conditions outside this host's control (blocked upstream publishers); logged, not alerted."""
+    """Conditions worth recording that are not this pipeline failing: blocked upstream
+    publishers, and forecasts that need a decision rather than a restart."""
+    warned: list[str] = []
     watch = (health or {}).get("sourceWatch") or {}
     if isinstance(watch, dict) and watch.get("failing", 0) > 0:
-        return [f"{watch['failing']} enabled watch sources failing upstream (external)"]
-    return []
+        warned.append(f"{watch['failing']} enabled watch sources failing upstream (external)")
+    stuck = (health or {}).get("stuckForecasts")
+    if isinstance(stuck, int) and stuck > 0:
+        # Reported, never alerted: these cannot clear themselves, so an alert would repeat
+        # every five minutes forever and stop meaning anything.
+        warned.append(f"{stuck} forecasts carry a job_error and nothing clears it automatically")
+    return warned
 
 
 def notify(title: str, text: str) -> None:

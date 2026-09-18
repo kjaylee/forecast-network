@@ -393,6 +393,17 @@ class RiskFeedV2ProducerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(feed["coveredChannels"], ["depegRisk1d"])   # the tick refreshed and published
         self.assertEqual(health["sourceWatch"], {"total": 0, "failing": 0, "stale": 0})
         self.assertEqual(health["series"], [])
+        self.assertEqual(health["stuckForecasts"], 0)
+
+    async def test_stuck_forecasts_are_counted_because_nothing_else_counts_them(self):
+        # Three have been retrying for days in production. Nothing reported the count, so it
+        # grew unremarked while the monitor called the pipeline healthy.
+        await self.configure()
+        self.now = self.start + 1000
+        await self.tick()
+        await self.db.execute("UPDATE forecasts SET job_error='held for review'")
+        health = await operations_health(self.db, now_ms=self.now + 5000)
+        self.assertEqual(health["stuckForecasts"], 1)
 
     async def test_training_export_uses_finalized_labels_and_first_retained_signals(self):
         await self.configure()
