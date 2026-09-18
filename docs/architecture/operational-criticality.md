@@ -41,8 +41,8 @@ Measured on 2026-09-17 from `launchctl list` and the Worker configuration.
 | Job | Cadence | Stop means | Class |
 | --- | --- | --- | --- |
 | `com.forecast-network.risk-v2-operator` | 60 s | Feed `expires_at_ms − issued_at_ms` is 120 s, so publication stops being current within two minutes | **liveness** |
-| `com.forecast-network.devnet-rpc` | keep-alive | The Worker's `SOLANA_RPC_PROXY_URL` has nothing behind it | **liveness** |
-| `com.forecast-network.rpc-tunnel` | keep-alive | Same, from the public side | **liveness** |
+| `com.forecast-network.devnet-rpc` | ~~keep-alive~~ | **Retired 2026-09-18.** The Worker reaches Devnet through a keyed provider now, so nothing depends on this host reaching Solana | ~~liveness~~ |
+| `com.forecast-network.rpc-tunnel` | ~~keep-alive~~ | **Retired 2026-09-18.** Stopped and unloaded; `forecast-rpc.eastsea.xyz` answers 530 | ~~liveness~~ |
 | `com.forecast-risk.keeper.stress-devnet` | keep-alive | On-chain policy transactions stop being submitted | **liveness** |
 | Worker cron `/api/admin/sweep` | 5 min | Official sources go stale, registry delivery stops | **liveness** |
 | `com.forecast-network.risk-pipeline-monitor` | 300 s | Nobody is told | **observer** |
@@ -138,37 +138,46 @@ Worker*. A cron on the edge that calls `POST /api/admin/risk/v2/operate` needs
 
 None of these should be taken without the custodian of that boundary saying so.
 
-**2. Take the RPC path off this Mac.** This is the deeper item: it is dependency
-2 above, it is on the production registry delivery path, and it is the reason
-the host cannot be allowed to sleep.
+**2. Take the RPC path off this Mac — DONE, 2026-09-18.** This was dependency 2
+above, on the production registry delivery path, and the reason the host could
+not be allowed to sleep.
 
-Measured on 2026-09-18 by deploying a throwaway Worker (`forecast-rpc-reach-probe`,
-since deleted) that called `getGenesisHash` on each candidate from inside
-Cloudflare:
+The block is real and was measured by deploying a throwaway Worker
+(`forecast-rpc-reach-probe`, since deleted) that called `getGenesisHash` from
+inside Cloudflare:
 
 | Endpoint reached from a Worker | Result |
 | --- | --- |
 | `api.devnet.solana.com` | 403, `"Your IP or provider is blocked from this endpoint"` |
 | `api.mainnet-beta.solana.com` | 403, same |
+| `solana-devnet.drpc.org` | 400, the chain is not on its free plan |
+| `devnet.helius-rpc.com` (keyless) | 401, missing API key |
+| `rpc.ankr.com/solana_devnet` (keyless) | 200, but "you must authenticate" |
+| `1rpc.io/solana-devnet` | 400, unknown network |
+| `solana-devnet.public.blastapi.io` / `devnet.solana.rpcpool.com` | 530 / 526 |
 | `solana-devnet-rpc.publicnode.com` | 404, no such host |
-| `solana-devnet.api.onfinality.io/public` | 429, rate limited |
-| `endpoints.omniatech.io/v1/sol/devnet/public` | 429, rate limited |
-| `rpc.ankr.com/solana_devnet` | requires an API key |
-| `solana.leorpc.com` | 200, but it answers with **mainnet** genesis `5eykt4Us…` |
+| `solana.leorpc.com` | 200, but it answers with **mainnet** genesis |
 
-So no keyless Devnet endpoint answers Workers, and the one endpoint that does
-answer is the wrong network. The proxy is load-bearing, and the pinning is not
-the obstacle to be worked around: `apps/web/src/entry.py` requires
-`SOLANA_RPC_URL == "https://api.devnet.solana.com"` and admits only the exact
-approved gateway, which is what stops a third-party endpoint — leorpc among
-them — from silently serving the wrong chain. That check is why the wrong
-network was caught here at all.
+No keyless Devnet endpoint answers Workers, and the one endpoint that does
+answer is the wrong network — which the `SOLANA_RPC_URL` pinning caught, and
+that is what the pinning is for.
 
-Removing this host therefore needs a **keyed** Devnet endpoint (Helius,
-QuickNode and similar offer Devnet on free tiers) plus a deliberate widening of
-the pinned-endpoint rule to admit it, with the genesis check retained as the
-thing that proves the network. That is an account and a custody decision, not a
-code change to make unilaterally.
+**A keyed endpoint does answer.** `rpc.ankr.com/solana_devnet/<key>` returned
+HTTP 200 with the Devnet genesis hash from the same Worker that got a 403 from
+the public endpoint. Ankr's free tier is Devnet-only, which is the inverse of
+what most providers offer and exactly what this needs.
+
+`registry_rpc` now prefers `SOLANA_DEVNET_RPC_KEYED` over the owned gateway, and
+only accepts a URL under `https://rpc.ankr.com/` — a host prefix ending in a
+slash, which is what stops `rpc.ankr.com.evil.test` from passing. The genesis
+check is untouched and still proves the network.
+
+**Verified by taking the gateway down.** With the operator's tunnel stopped so
+that `forecast-rpc.eastsea.xyz` answers 530, `GET /api/admin/registry/health`
+returned `rpcAvailable: true`, `POST /api/admin/registry/run` returned
+`considered: 3, confirmed: 2`, and the feed published sequence 3229. The Mac is
+no longer on the path. The gateway configuration is left in place as a rollback:
+restart the tunnel and unset the keyed secret.
 
 **3. Move the keeper's key, deliberately.** The keeper signs with a Keychain
 identity on this host. Moving it is a key-custody decision, not an ops tidy-up,
