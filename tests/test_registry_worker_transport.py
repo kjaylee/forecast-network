@@ -132,6 +132,44 @@ class RegistryWorkerTransportTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(fixture.stream.released)
         self.assertEqual(fixture.logs, [])
 
+    async def test_an_approved_keyed_provider_replaces_the_public_endpoint(self):
+        keyed = "https://rpc.ankr.com/solana_devnet/" + "k" * 32
+        fixture = WorkerRpcFixture()
+        fixture.worker.env.SOLANA_DEVNET_RPC_KEYED = keyed
+        self.assertEqual(await fixture.call(), GENESIS)
+        self.assertEqual(fixture.fetches[0][0], keyed)
+        self.assertEqual(fixture.logs, [], "a keyed endpoint is not an error worth logging")
+
+    async def test_a_keyed_provider_wins_over_the_owned_gateway(self):
+        keyed = "https://rpc.ankr.com/solana_devnet/" + "k" * 32
+        fixture = WorkerRpcFixture()
+        fixture.worker.env.SOLANA_RPC_PROXY_URL = "https://forecast-rpc.eastsea.xyz/rpc"
+        fixture.worker.env.SOLANA_RPC_PROXY_TOKEN = "ab" * 32
+        fixture.worker.env.SOLANA_DEVNET_RPC_KEYED = keyed
+        self.assertEqual(await fixture.call(), GENESIS)
+        self.assertEqual(fixture.fetches[0][0], keyed)
+
+    async def test_an_unapproved_keyed_provider_is_refused_before_any_fetch(self):
+        # The trailing slash is the whole defence: without it "rpc.ankr.com.evil.test"
+        # and a bare host both satisfy a naive prefix test.
+        for candidate in ("https://rpc.ankr.com.evil.test/solana_devnet/k",
+                          "http://rpc.ankr.com/solana_devnet/k",
+                          "https://evil.test/rpc.ankr.com/solana_devnet/k",
+                          "https://rpc.ankr.com",
+                          "https://rpc.ankr.com.evil.test"):
+            with self.subTest(candidate=candidate):
+                fixture = WorkerRpcFixture()
+                fixture.worker.env.SOLANA_DEVNET_RPC_KEYED = candidate
+                with self.assertRaises(ValueError):
+                    await fixture.call()
+                self.assertEqual(fixture.fetches, [])
+
+    async def test_an_absent_keyed_provider_leaves_the_public_endpoint_in_place(self):
+        fixture = WorkerRpcFixture()
+        fixture.worker.env.SOLANA_DEVNET_RPC_KEYED = ""
+        self.assertEqual(await fixture.call(), GENESIS)
+        self.assertEqual(fixture.fetches[0][0], ENDPOINT)
+
     async def test_rpc_parameters_are_forwarded_without_changing_finality(self):
         fixture = WorkerRpcFixture(response={"jsonrpc": "2.0", "id": 1, "result": None})
         params = ["test-public-address", {"encoding": "base64", "commitment": "finalized"}]

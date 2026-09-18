@@ -245,6 +245,16 @@ class Default(WorkerEntrypoint):
                 raise ValueError("Registry RPC gateway credential unavailable")
             url = proxy
             headers["X-Forecast-RPC-Token"] = token
+        keyed = str(getattr(self.env, "SOLANA_DEVNET_RPC_KEYED", "") or "")
+        if keyed:
+            # The public Devnet endpoint answers Cloudflare's egress with HTTP 403
+            # ("your IP or provider is blocked"), which is why an owned gateway exists
+            # at all. An authenticated provider is not refused that way. The trailing
+            # slash is what makes this a host check rather than a prefix that
+            # "rpc.ankr.com.somewhere-else" would also satisfy.
+            if not keyed.startswith("https://rpc.ankr.com/"):
+                raise ValueError("Unapproved keyed Devnet provider")
+            url = keyed
         options: dict[str, Any] = {"method": "POST", "redirect": "manual", "headers": headers,
             "body": json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params})}
         # Bound the call on the JS side. asyncio.wait_for would create a second Python
