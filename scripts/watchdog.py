@@ -28,9 +28,12 @@ ORIGIN = "https://forecast.eastsea.xyz"
 FEED_ID = "devnet-stable-risk-v2"
 USER_AGENT = "forecast-watchdog/1 (+https://github.com/kjaylee/forecast-network)"
 
-# The operator publishes every minute and the feed expires after two. Ten
-# minutes is not a slow publication, it is an outage worth waking someone for.
-FEED_STALE_MS = 600_000
+# The operator publishes every minute and the feed expires after two. Five
+# minutes is five missed publications in a row, which is not a slow tick, it is
+# an outage. It is deliberately tighter than the ten minutes this started at:
+# the check only runs every five minutes, so the threshold plus the cadence is
+# what a dead operator host actually costs in detection time.
+FEED_STALE_MS = 300_000
 HTTP_TIMEOUT_SECONDS = 30
 
 
