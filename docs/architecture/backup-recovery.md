@@ -59,6 +59,28 @@ the intermediate.
 that no single location holds enough shares to reconstruct, so distribution is
 the part that matters and it cannot be done by a script.
 
+### What the current arrangement does and does not survive
+
+Distributed 2026-09-18 across NAS (2), a second Mac (1) and the operator's Mac
+(2), threshold 3 of 5. Working through the arithmetic, because it is less
+reassuring than it looks:
+
+| Loss | Shares left | Reconstruct? |
+| --- | --- | --- |
+| Any one machine | 3 or 4 | **yes** |
+| Two machines | 1 to 3 | yes if the three survivors include enough — NAS plus either Mac |
+| **The house** | **0** | **no** |
+
+Every share is in one house, so a fire, a flood or a burglary takes all five and
+the archives become permanently unopenable. The split as performed protects
+against a machine dying, which is worth having and is not what it sounds like.
+
+Fixing it needs **three shares off-site, in three separate places**, and that is
+arithmetic rather than caution: with a threshold of three, two off-site shares
+reconstruct nothing, and three in one place are equivalent to storing the key
+there with extra steps. A single off-site custodian cannot both survive the
+house and keep the key split. Location count is the requirement, not diligence.
+
 ## Recovery proof
 
 On NAS, the tool verifies ciphertext hash, public-key pin, authenticated manifest, member paths, byte counts and hashes. It decrypts the Devnet seeds in memory and derives each public key. Relayer, upgrade and program keys must match `infra/solana/devnet.json`. That deployment manifest has no buffer field, so the buffer pin is explicitly the public key obtained from the existing `forecast-network-devnet-buffer-seed-v1` Keychain item, not a claimed on-chain manifest binding.
