@@ -32,7 +32,8 @@ from tests.test_web_transport import scheduled_method
 
 
 class RiskFeedV2HttpTests(unittest.IsolatedAsyncioTestCase):
-    async def call(self, path, *, method="GET", body=None, admin=True, latest=None, retained=None):
+    async def call(self, path, *, method="GET", body=None, admin=True, latest=None, retained=None,
+                   scheduler=None, credential=None):
         self.body_reads = 0
         mocks = dict(
             admit_definition=AsyncMock(return_value="1" * 64), admit_profile=AsyncMock(return_value="2" * 64),
@@ -48,8 +49,12 @@ class RiskFeedV2HttpTests(unittest.IsolatedAsyncioTestCase):
         self.db = SimpleNamespace(first=AsyncMock(return_value=retained), execute=AsyncMock())
         self.sign = AsyncMock()
         self.app_seed = AsyncMock(return_value={"forecast": {"id": "f"}})
-        app = SimpleNamespace(db=self.db, now_ms=lambda: 1_800_000_000_000, seed=self.app_seed)
-        worker = SimpleNamespace(env=SimpleNamespace(ADMIN_TOKEN="a" * 64), application=lambda: app,
+        app = SimpleNamespace(db=self.db, now_ms=lambda: 1_800_000_000_000, seed=self.app_seed,
+                              run_automation=AsyncMock(return_value={"sources": {"polled": 0}}), registry=None)
+        env = SimpleNamespace(ADMIN_TOKEN="a" * 64)
+        if scheduler is not None:
+            env.SCHEDULER_TOKEN = scheduler
+        worker = SimpleNamespace(env=env, application=lambda: app,
                                  relayer_public_key=lambda: bytes(range(32)), sign_registry_message=self.sign)
 
         async def read(_request, _limit):
@@ -68,7 +73,7 @@ class RiskFeedV2HttpTests(unittest.IsolatedAsyncioTestCase):
         actual = scheduled_method("route_api", **scope)
         headers = {"Content-Type": "application/json", "content-type": "application/json"}
         if admin:
-            headers["authorization"] = "Bearer " + "a" * 64
+            headers["authorization"] = "Bearer " + (credential if credential is not None else "a" * 64)
         request = SimpleNamespace(method=method, headers=headers)
         return await actual(worker, request, urlsplit("https://forecast.eastsea.xyz" + path), path)
 
@@ -93,6 +98,41 @@ class RiskFeedV2HttpTests(unittest.IsolatedAsyncioTestCase):
         self.sign.assert_not_called()
         for mock in self.mocks.values():
             mock.assert_not_called()
+
+    async def test_a_scheduler_credential_reaches_the_two_triggers(self):
+        scheduler = "s" * 64
+        ticked = await self.call("/api/admin/risk/v2/operate", method="POST",
+                                 scheduler=scheduler, credential=scheduler)
+        self.assertEqual((ticked["status"], ticked["data"]["status"]), (200, "ticked"))
+        swept = await self.call("/api/admin/sweep", method="POST", scheduler=scheduler, credential=scheduler)
+        self.assertEqual(swept["status"], 200)
+        self.assertEqual(swept["data"]["sources"], {"polled": 0})
+
+    async def test_a_scheduler_credential_cannot_administer(self):
+        scheduler = "s" * 64
+        for path in ("/api/admin/risk/v2/definitions", "/api/admin/risk/v2/profiles",
+                     "/api/admin/risk/v2/bindings", "/api/admin/risk/v2/feeds/f1/publish",
+                     "/api/admin/risk/v2/series", "/api/admin/risk/v2/health"):
+            with self.subTest(path):
+                with self.assertRaises(AppError) as error:
+                    await self.call(path, method="POST", scheduler=scheduler, credential=scheduler)
+                self.assertEqual(error.exception.status, 403)
+                self.assertEqual(self.body_reads, 0)
+
+    async def test_an_unset_or_short_scheduler_credential_authorizes_nobody(self):
+        for scheduler in (None, "s" * 31, ""):
+            with self.subTest(scheduler=scheduler):
+                with self.assertRaises(AppError) as error:
+                    await self.call("/api/admin/risk/v2/operate", method="POST",
+                                    scheduler=scheduler, credential="s" * 64)
+                self.assertEqual(error.exception.status, 403)
+
+    async def test_the_scheduler_credential_never_substitutes_for_the_operator_secret(self):
+        scheduler = "s" * 64
+        with self.assertRaises(AppError) as error:
+            await self.call("/api/admin/risk/v2/operate", method="POST",
+                            scheduler=scheduler, credential="a" * 63 + "b")
+        self.assertEqual(error.exception.status, 403)
 
     async def test_definition_profile_and_binding_carry_server_side_actor(self):
         definition, profile = golden_definition(), golden_profile()

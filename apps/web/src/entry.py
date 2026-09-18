@@ -618,8 +618,16 @@ class Default(WorkerEntrypoint):
         if is_admin:
             admin_token = getattr(self.env, "ADMIN_TOKEN", None)
             supplied = str(request.headers.get("authorization") or "")
-            if (not isinstance(admin_token, str) or len(admin_token) < 32
-                    or not hmac.compare_digest(supplied, "Bearer " + admin_token)):
+            authorized = (isinstance(admin_token, str) and len(admin_token) >= 32
+                          and hmac.compare_digest(supplied, "Bearer " + admin_token))
+            if not authorized and path in ("/api/admin/risk/v2/operate", "/api/admin/sweep"):
+                # A scheduler credential may trigger work and nothing else, so a borrowed
+                # cron service never has to hold the operator secret. Unset means this
+                # branch cannot authorize anyone.
+                scheduler_token = getattr(self.env, "SCHEDULER_TOKEN", None)
+                authorized = (isinstance(scheduler_token, str) and len(scheduler_token) >= 32
+                              and hmac.compare_digest(supplied, "Bearer " + scheduler_token))
+            if not authorized:
                 raise AppError(403, "forbidden", "You do not have access to this action.")
         if method != "GET" and not is_admin:
             supplied = request.headers.get("origin")

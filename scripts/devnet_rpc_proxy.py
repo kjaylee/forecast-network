@@ -309,6 +309,14 @@ class ProxyServer(ThreadingMixIn, HTTPServer):
                 request.settimeout(0.1)
                 request.sendall(b"HTTP/1.0 503 Service Unavailable\r\nContent-Length: 0\r\n"
                                 b"Connection: close\r\nRetry-After: 1\r\n\r\n")
+                # Finish the write side, then read what the caller had already sent.
+                # Closing a socket that still holds unread data sends a reset rather
+                # than a finish, and a reset discards a response the caller has not
+                # read yet — so an overloaded proxy looked like a broken connection
+                # instead of a rate limit. The read is bounded by the same limit the
+                # request body is.
+                request.shutdown(socket.SHUT_WR)
+                request.recv(MAX_BODY)
             except OSError:
                 pass
             self.shutdown_request(request)
