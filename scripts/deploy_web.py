@@ -56,7 +56,8 @@ def main() -> None:
     # The bound database is the migration target; the name lives only in wrangler.jsonc.
     run([str(wrangler), "d1", "migrations", "apply", config["d1_databases"][0]["database_name"], "--remote"],
         cwd=STAGE, env=env)
-    payload = {name: secret(name) for name in ("SESSION_SECRET", "ADMIN_TOKEN", "AI_PROXY_TOKEN")}
+    payload = {name: secret(name)
+               for name in ("SESSION_SECRET", "ADMIN_TOKEN", "AI_PROXY_TOKEN", "SCHEDULER_TOKEN")}
     # The Gemini relay is a separate region-placed Worker; it alone holds the Gemini key.
     proxy = ROOT / "apps/ai-proxy"
     run([str(wrangler), "deploy"], cwd=proxy, env=env)

@@ -9,9 +9,12 @@ name: Watchdog
 # load, and the schedule is disabled after 60 days without repository activity.
 # That makes this a backstop, not a pager. It is here to make an outage last
 # minutes instead of the days one just lasted.
+#
+# Five minutes is GitHub's floor and is free on a public repository. Offset off
+# the round minutes so this does not queue behind every other scheduled job.
 on:
   schedule:
-    - cron: '7,22,37,52 * * * *'
+    - cron: '3-58/5 * * * *'
   workflow_dispatch:
 
 permissions:
