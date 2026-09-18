@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -412,19 +413,34 @@ async def operate_feeds_v2(
     """One scheduled tick: due episodes, at most one budgeted refresh per feed, then a signed publication."""
     from .risk_feed_series import create_due_episodes
 
+    # Each phase is timed and retained with the tick. A tick was measured taking 130 seconds
+    # with no refresh and no episode due, so the time was not being spent where the work was,
+    # and there was no way to tell where it was. These phases say where, and they say it from
+    # inside the Worker, which is the only place that can see a cold start.
+    started = time.monotonic()
     episodes = await create_due_episodes(db, now_ms=now_ms, seed=seed) if seed is not None else []
+    episodes_ms = int((time.monotonic() - started) * 1000)
+    listed = time.monotonic()
     feeds = await db.all("SELECT * FROM risk_feed_operations_v2 WHERE enabled=1 ORDER BY feed_id LIMIT 8")
     outcomes = []
     for feed in feeds:
+        mark = time.monotonic()
         outcome: dict[str, Any] = {"feedId": feed["feed_id"], "refreshed": None, "published": None,
-                                   "episodes": [e for e in episodes if e.get("created") or e.get("failure")]}
+                                   "episodes": [e for e in episodes if e.get("created") or e.get("failure")],
+                                   "phaseMs": {"episodes": episodes_ms,
+                                               "list": int((time.monotonic() - listed) * 1000)}}
+        mark = time.monotonic()
         stale = await stale_bindings_v2(db, feed_id=feed["feed_id"], now_ms=now_ms)
+        outcome["phaseMs"]["stale"] = int((time.monotonic() - mark) * 1000)
         if stale:
+            mark = time.monotonic()
             try:
                 await refresh(stale[0])
                 outcome["refreshed"] = stale[0]
             except Exception as exc:  # budget, lease or provider failure; publication still reports honestly
                 outcome["refreshFailure"] = type(exc).__name__
+            outcome["phaseMs"]["refresh"] = int((time.monotonic() - mark) * 1000)
+        mark = time.monotonic()
         try:
             envelope = await publish(feed["feed_id"], feed["weight_set_hash"], feed["weight_set_version"],
                                      feed["calibration_cohort_id"])
@@ -432,6 +448,7 @@ async def operate_feeds_v2(
             outcome["covered"] = [c.channel for c in envelope.payload.channel_coverage if c.status == "covered"]
         except Exception as exc:
             outcome["publishFailure"] = type(exc).__name__
+        outcome["phaseMs"]["publish"] = int((time.monotonic() - mark) * 1000)
         await db.execute("INSERT OR IGNORE INTO risk_feed_operation_log_v2(feed_id,tick_at,outcome,detail) VALUES(?,?,?,?)",
                          (feed["feed_id"], now_ms, "published" if outcome["published"] else "withheld",
                           json.dumps(outcome, sort_keys=True)))

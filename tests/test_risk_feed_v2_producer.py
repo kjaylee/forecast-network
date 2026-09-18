@@ -360,6 +360,27 @@ class RiskFeedV2ProducerTests(unittest.IsolatedAsyncioTestCase):
         log = await self.db.all("SELECT outcome FROM risk_feed_operation_log_v2 ORDER BY tick_at")
         self.assertEqual([row["outcome"] for row in log], ["published", "published", "published"])
 
+    async def test_every_tick_records_where_its_time_went(self):
+        # A tick was measured taking 130 seconds with no refresh and no episode due, so the
+        # time was not being spent where the work was. These phases say where it was.
+        await self.configure()
+        self.now = self.start + 1
+        outcomes, _ = await self.tick()
+        phase = outcomes[0]["phaseMs"]
+        self.assertEqual(sorted(phase), ["episodes", "list", "publish", "refresh", "stale"])
+        for name, milliseconds in phase.items():
+            with self.subTest(phase=name):
+                self.assertIs(type(milliseconds), int)
+                self.assertGreaterEqual(milliseconds, 0)
+
+    async def test_a_tick_with_nothing_due_still_records_the_phases_it_skipped(self):
+        await self.configure()
+        self.now = self.start + 500
+        outcomes, _ = await self.tick()
+        phase = outcomes[0]["phaseMs"]
+        self.assertEqual(phase["episodes"], 0, "no episode was due, so that phase cost nothing")
+        self.assertIn("publish", phase)
+
     async def test_operations_health_reports_feed_age_failures_and_source_staleness(self):
         await self.configure()
         self.now = self.start + 1000
