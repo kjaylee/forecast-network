@@ -6,9 +6,13 @@ retrying will change that.
 
 | Forecast | State | Failure count | Recorded reason |
 | --- | --- | --- | --- |
-| `f_tkqvmogdeeITz0c_XMNJTB68` | RESOLVING | 8 | evidence publication time and receipt eligibility under review |
-| `f_kFOj9FjHp6oP2C-h3B4mNNZy` | RESOLVING | 6 | same |
-| `f_FvhBuS1YUvmFzbMJRuIi76z7` | PAUSED | 5 | evidence or independent review insufficient |
+| `f_tkqvmogdeeITz0c_XMNJTB68` | RESOLVING | 9 | evidence publication time and receipt eligibility under review |
+| `f_kFOj9FjHp6oP2C-h3B4mNNZy` | RESOLVING | 7 | same |
+| ~~`f_FvhBuS1YUvmFzbMJRuIi76z7`~~ | ~~PAUSED~~ | — | **cleared itself on 2026-09-19.** It was held for insufficient evidence, a different path that a later review could satisfy; the two above cannot. |
+
+The difference between the three is worth keeping: the PAUSED one was waiting for
+something that can arrive, and it did. The two RESOLVING ones are waiting for a
+transition that does not exist.
 
 The failure count is a retry counter, not an error rate: each sweep that finds
 one due increments it, backs off up to six hours, and tries again. The counts
