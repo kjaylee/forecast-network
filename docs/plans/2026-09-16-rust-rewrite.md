@@ -71,6 +71,38 @@ Strangler by route on the same hostname (Cloudflare routes or a router Worker):
    concurrency failure for public traffic.
 2. Auth + submissions + markets (wallet login, sessions, points, LMSR quote/fill/receipt).
 3. Risk producer/operations (`risk_feed_v2`, series, refresh, publish with WebCrypto Ed25519).
+
+   **Priority raised 2026-09-18, and this is why.** The per-minute operation tick was
+   measured: the application's own phases total **~1.3 s** (publish ~800 ms, episode
+   check ~310 ms, stale check ~150 ms, listing ~30 ms), while the client measures
+   2.9–4.3 s for the same ticks. On the first slow tick to land with phase
+   instrumentation deployed, the client saw **157.92 s**, the phases totalled
+   **6.29 s**, and **151.63 s — 96% — sat outside every phase**. That is Pyodide
+   startup, the same cost the `initPyInstance` errors point at, and it is why the
+   feed's 120-second expiry is exceeded by 16% of publications. No amount of
+   application optimisation moves it, because the time is not spent in the
+   application.
+
+   Decomposition, in the order the pieces are worth taking:
+
+   1. **`publish_feed_v2`** — the largest single phase (~800 ms, and 4166 ms on a
+      slow tick). Assembling the payload needs `SNAPSHOT_SQL`, `CLOCK_SQL`,
+      `operational_bindings_v2`, `_approved`, `signals_v2`, `_coverage`,
+      `profile_set_hash` and `_selection_rank`. `forecast-domain` already reproduces
+      the v2 content hash and signing bytes, so the cryptography is done; what is
+      left is the SQL and the assembly.
+   2. **The stale check and the operations read** — queries, no AI.
+   3. **The hybrid, which is where the value is.** Refresh and episode creation call
+      the AI relay and stay in Python. Measured across 3,336 ticks, **only 7% had a
+      refresh or an episode due**. An edge that handles the tick whenever nothing is
+      due and forwards to Python when something is removes Pyodide from ~93% of ticks
+      — and the ticks it forwards are the ones already slow, so nothing gets worse.
+
+   Acceptance is unchanged and non-negotiable: the Rust producer must emit
+   byte-identical envelopes to the Python one for the same D1 state. `tests/golden/`
+   already holds the v1/v2 hashes and signatures and 1,686 mutation verdicts, and the
+   keeper-frames golden replays 16 finalized Devnet frames byte-for-byte; the
+   producer needs the same treatment before any route flips.
 4. AI pipeline (compiler/judges via the Gemini relay), lifecycle scheduler, source watch.
 5. Retire the Python Worker; keep it deployable until one full 48-hour cycle ran on Rust.
 - **Status 2026-09-16:** step 1 partially live. `apps/web-rs` (`forecast-network-edge`) owns
