@@ -69,12 +69,16 @@ class OperateRiskV2Tests(unittest.TestCase):
 
     def test_main_exit_code_follows_http_status(self):
         with patch.object(operate_risk_v2, "tick", return_value={"httpStatus": 200}), \
+                patch.object(operate_risk_v2, "heartbeat_ping") as beat, \
                 patch.object(sys, "argv", ["operate_risk_v2.py"]), patch("sys.stdout", new_callable=io.StringIO) as out:
             self.assertEqual(operate_risk_v2.main(), 0)
+            beat.assert_called_once_with("operator", failed=False, note="httpStatus=200")
         self.assertEqual(json.loads(out.getvalue())["event"], "risk_v2_operate")
         with patch.object(operate_risk_v2, "tick", return_value={"httpStatus": 500}), \
+                patch.object(operate_risk_v2, "heartbeat_ping") as beat, \
                 patch.object(sys, "argv", ["operate_risk_v2.py"]), patch("sys.stdout", new_callable=io.StringIO):
             self.assertEqual(operate_risk_v2.main(), 1)
+            beat.assert_called_once_with("operator", failed=True, note="httpStatus=500")
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from cloudflare_keychain import secret  # noqa: E402
+from heartbeat import ping as heartbeat_ping  # noqa: E402
 
 ORIGIN = "https://forecast.eastsea.xyz"
 KEEPER_JOURNAL = Path.home() / ".local/share/forecast-network/keeper-runtime/forecast-risk/tmp/keeper-stress/journal.sqlite3"
@@ -137,6 +138,10 @@ def main() -> int:
     args.state.write_text(json.dumps({"degraded": degraded, "at": now_ms, "problems": problems, "warnings": warned}))
     print(json.dumps({"event": "risk_pipeline_monitor", "at": now_ms, "degraded": degraded, "problems": problems,
                       "warnings": warned, "keeper": keeper, "feeds": (health or {}).get("feeds")}, sort_keys=True))
+    # Report this monitor's own liveness. Without it, this process stopping and the
+    # pipeline being quiet look exactly the same from anywhere else — which is how
+    # a two-day outage went unnoticed. No-op until a check URL is configured.
+    heartbeat_ping("monitor", failed=degraded, note="; ".join(problems)[:200])
     return 1 if degraded else 0
 
 

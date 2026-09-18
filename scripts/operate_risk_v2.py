@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from cloudflare_keychain import secret  # noqa: E402
+from heartbeat import ping as heartbeat_ping  # noqa: E402
 
 ORIGIN = "https://forecast.eastsea.xyz"
 
@@ -48,7 +49,11 @@ def main() -> int:
     args = parser.parse_args()
     result = tick(args.origin, args.timeout)
     print(json.dumps({"event": "risk_v2_operate", "at": int(time.time() * 1000), **result}, sort_keys=True))
-    return 0 if result["httpStatus"] == 200 else 1
+    ok = result["httpStatus"] == 200
+    # Report to the dead-man's switch, so that this job stopping is louder than it
+    # failing. A no-op until a check URL is configured; see scripts/heartbeat.py.
+    heartbeat_ping("operator", failed=not ok, note=f"httpStatus={result['httpStatus']}")
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

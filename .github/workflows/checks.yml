@@ -39,11 +39,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install the verification-only dependency
+      - name: Install the verification-only dependencies
         run: |
           mkdir -p "$TMPDIR"
-          python -m pip install cryptography
-      - name: Verify every suite, including the ones that need cryptography
+          python -m pip install cryptography torf
+      - name: Verify every suite, including the ones the bare job has to skip
         run: python scripts/check.py
 
   static:
