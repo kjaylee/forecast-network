@@ -321,7 +321,12 @@ mod tests {
             ("f_kFOj9FjHp6oP2C-h3B4mNNZy", 1_700_000_000_000, Some("user-a"), 337_443),
             ("", 1_800_000_000_000, None, 0),
             ("short", 1_800_000_000_000, None, 75_374),
-            ("f_abcdefghijklmnopqrstuvwxyz0123456789extra", 1_800_000_000_000, None, 417_510),
+            (
+                "f_abcdefghijklmnopqrstuvwxyz0123456789extra",
+                1_800_000_000_000,
+                None,
+                417_510,
+            ),
             ("질문-식별자-테스트", 1_800_000_000_000, Some("사용자"), 49_845_078),
             ("boundary", 1_800_086_399_999, None, 110_263),
         ];
@@ -337,14 +342,30 @@ mod tests {
     #[test]
     fn the_coefficients_come_from_the_version_the_day_and_the_user() {
         let day = 1_800_000_000_000_i64.div_euclid(DAY_MS) * DAY_MS;
-        assert_eq!(tie_coefficients(day, None), tie_coefficients(day + DAY_MS - 1, None),
-                   "every moment inside one UTC day must tie the same way");
-        assert_ne!(tie_coefficients(day, None), tie_coefficients(day + DAY_MS, None),
-                   "the next day must tie differently, or older questions never resurface");
-        assert_ne!(tie_coefficients(day, None), tie_coefficients(day, Some("user-a")),
-                   "two readers must not share a tie order");
-        assert_ne!(tie_coefficients(day, Some("user-a")), tie_coefficients(day, Some("user-b")));
-        assert_eq!(tie_coefficients(day, None).len(), 32, "one weight per identifier character");
+        assert_eq!(
+            tie_coefficients(day, None),
+            tie_coefficients(day + DAY_MS - 1, None),
+            "every moment inside one UTC day must tie the same way"
+        );
+        assert_ne!(
+            tie_coefficients(day, None),
+            tie_coefficients(day + DAY_MS, None),
+            "the next day must tie differently, or older questions never resurface"
+        );
+        assert_ne!(
+            tie_coefficients(day, None),
+            tie_coefficients(day, Some("user-a")),
+            "two readers must not share a tie order"
+        );
+        assert_ne!(
+            tie_coefficients(day, Some("user-a")),
+            tie_coefficients(day, Some("user-b"))
+        );
+        assert_eq!(
+            tie_coefficients(day, None).len(),
+            32,
+            "one weight per identifier character"
+        );
     }
 
     #[test]
@@ -370,7 +391,11 @@ mod tests {
         assert_eq!(integer(&json!("7")), None, "a string is not a number, however numeric");
         assert_eq!(integer(&json!(null)), None);
         assert_eq!(integer(&json!([7])), None);
-        assert_eq!(integer(&json!(9.0e15)), None, "beyond the safe integer range it is not trustworthy");
+        assert_eq!(
+            integer(&json!(9.0e15)),
+            None,
+            "beyond the safe integer range it is not trustworthy"
+        );
     }
 
     #[test]
