@@ -262,6 +262,44 @@ Worker call still pushes the interval past the expiry. A 120-second expiry
 against a 60-second cadence has almost no margin for a tick that takes most of
 a minute, and that is the unresolved half.
 
+## The sweep runs at exactly its own demand, measured 2026-09-19
+
+The five-minute sweep is the only thing that polls official sources. Measured by
+calling it six times in a row:
+
+| | |
+| --- | --- |
+| Succeeded | **4 of 6** (67%) |
+| Failures | 500 in 5.4 s, and 500 in 0.2 s — the second is the cold-start signature |
+| Successes | 8.3 s to 43.5 s, polling 0 to 4 sources |
+
+Against that, the demand:
+
+| | |
+| --- | --- |
+| Two index sources at a 5-minute interval | 24 polls/hour |
+| Nine article sources at a one-hour interval | 9 polls/hour |
+| **Needed** | **33 polls/hour** |
+| **Supplied** | 12 runs/hour × 67% × 4 polls = **~32 polls/hour** |
+
+The supply is below the demand, so every failed sweep is a poll that never
+happens and the shortfall accumulates. That is why nine of eleven sources
+report stale rather than one or two: it is not that the poller broke, it is that
+it was never provisioned for the interval its own sources declare. The same
+shape as the feed expiry — a 120-second promise kept by a 60-second cadence.
+
+**The earlier fix was real and is not sufficient.** Removing `asyncio.wait_for`
+from the registry RPC took the sweep from failing every time to failing a third
+of the time, and that is what the measurements above show. Reporting it as
+"fixed" was too strong, twice: first because the remaining failures are the same
+Pyodide class, and second because a sweep that succeeds two times in three still
+cannot meet 33 polls an hour.
+
+Fixing it means either reducing the demand — the two index sources at a
+five-minute interval are 24 of the 33 — or taking the polling off Pyodide. The
+interval is a product choice about how quickly a new article is noticed, so it is
+not a change to make silently.
+
 ## Rules
 
 - An observer must not run on the host it observes, or on the platform it

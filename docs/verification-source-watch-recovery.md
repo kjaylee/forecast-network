@@ -80,6 +80,21 @@ Two tests cover the new contract, including one that fails if any task-creating
 primitive (`wait_for`, `gather`, `create_task`, `ensure_future`) reappears inside
 `registry_rpc`.
 
+## Correction, 2026-09-19
+
+The table above is accurate for the moment it was taken and does not describe
+the steady state. The sweep does not fail every time any more, which was the
+point of the change, but it does not always succeed either: six consecutive
+calls on 2026-09-19 gave four 200s and two 500s, the latter including one that
+failed in 0.2 seconds — the cold-start signature — and nine of eleven sources
+were reporting stale again.
+
+Two separate things were wrong with calling this fixed. The remaining failures
+are the same Pyodide class the rest of this session keeps measuring, and the
+sweep's capacity was never enough for the intervals its own sources declare:
+about 32 polls an hour supplied against 33 needed. The measurement is in
+[operational criticality](architecture/operational-criticality.md).
+
 ## Not resolved
 
 - **The series failure counters are a 24-hour rolling window.** They still read
