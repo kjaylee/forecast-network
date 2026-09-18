@@ -295,10 +295,25 @@ of the time, and that is what the measurements above show. Reporting it as
 Pyodide class, and second because a sweep that succeeds two times in three still
 cannot meet 33 polls an hour.
 
-Fixing it means either reducing the demand — the two index sources at a
-five-minute interval are 24 of the 33 — or taking the polling off Pyodide. The
-interval is a product choice about how quickly a new article is noticed, so it is
-not a change to make silently.
+**Acted on 2026-09-19: the demand was reduced.** The two index sources were
+polling every five minutes and accounted for 24 of the 33 polls an hour, for a
+purpose — noticing a newly published article — that does not need five-minute
+resolution on a product whose shortest challenge window is 48 hours. They now
+poll every fifteen minutes, in D1:
+
+```sql
+UPDATE official_watch_sources SET interval_ms=900000 WHERE kind='index' AND enabled=1;
+```
+
+Demand fell from 33 polls an hour to 17, against a supply of about 32, which is
+the first time this pipeline has had margin rather than a coincidence. Stale
+sources fell from 9 to 3 within minutes.
+
+The sweep's own success rate is unchanged by this and remains the larger
+problem: five consecutive calls gave one success, having given four of six an
+hour earlier. That is the Pyodide cold start again, and it is why the interval
+change reduces the consequence of a failed sweep rather than its frequency.
+Neither makes the sweep reliable; only leaving Pyodide does.
 
 ## Rules
 

@@ -18,6 +18,7 @@ mod projections;
 mod reads;
 mod registry;
 mod reputation;
+pub mod risk_ops;
 mod routes;
 mod writes;
 
