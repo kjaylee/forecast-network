@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import subprocess
 import sys
@@ -22,11 +23,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from cloudflare_keychain import secret  # noqa: E402
+from deployed_drift import compare as deployment_drift  # noqa: E402
 from heartbeat import ping as heartbeat_ping  # noqa: E402
 
 ORIGIN = "https://forecast.eastsea.xyz"
 KEEPER_JOURNAL = Path.home() / ".local/share/forecast-network/keeper-runtime/forecast-risk/tmp/keeper-stress/journal.sqlite3"
 STATE = Path.home() / ".local/share/forecast-network/risk-v2-operator/tmp/monitor-state.json"
+# Where this monitor runs from, and the repository it should match. Without
+# FORECAST_REPO the comparison is skipped rather than resolved against the current
+# directory, which under launchd is somewhere else entirely.
+DEPLOYED = Path(__file__).resolve().parent
+_REPOSITORY = os.environ.get("FORECAST_REPO", "")
+REPO_SCRIPTS = Path(_REPOSITORY) / "scripts" if _REPOSITORY else None
 
 
 def fetch_health(origin: str, timeout: float) -> dict[str, object]:
@@ -125,6 +133,10 @@ def main() -> int:
     except sqlite3.Error:
         keeper = {"available": False}
     problems = evaluate(health, keeper, now_ms)
+    # A deployed copy that no longer matches the repository behaves like a change
+    # nobody checked, which is exactly how the operator died on 2026-09-18.
+    if REPO_SCRIPTS is not None and REPO_SCRIPTS.is_dir():
+        problems += [f"deployment drift: {problem}" for problem in deployment_drift(DEPLOYED, REPO_SCRIPTS)]
     warned = warnings(health)
     previous = {}
     try:

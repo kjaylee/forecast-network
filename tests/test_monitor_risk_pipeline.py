@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import io
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
@@ -60,6 +64,56 @@ class MonitorTests(unittest.TestCase):
             with self.subTest(expected):
                 problems = monitor.evaluate(h, k, NOW)
                 self.assertTrue(any(expected in p for p in problems), problems)
+
+
+
+class DriftReportingTests(unittest.TestCase):
+    """A deployed copy that stopped matching the repository is a problem, not a detail."""
+
+    def run_monitor(self, deployed, repo):
+        with patch.object(monitor, "DEPLOYED", deployed), \
+                patch.object(monitor, "REPO_SCRIPTS", repo), \
+                patch.object(monitor, "fetch_health", return_value=None), \
+                patch.object(monitor, "keeper_status", return_value={"available": False}), \
+                patch.object(monitor, "heartbeat_ping"), \
+                patch.object(sys, "argv", ["monitor_risk_pipeline.py", "--no-notify",
+                                           "--state", str(deployed.parent / "state.json")]), \
+                patch("sys.stdout", new_callable=io.StringIO) as out:
+            monitor.main()
+        return json.loads(out.getvalue())
+
+    def test_a_module_the_deployed_copy_imports_but_never_got_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            deployed, repo = root / "deployed", root / "repo" / "scripts"
+            deployed.mkdir(parents=True)
+            repo.mkdir(parents=True)
+            for directory in (deployed, repo):
+                (directory / "operator.py").write_text("from heartbeat import ping\n")
+            (repo / "heartbeat.py").write_text("def ping(): ...\n")
+            record = self.run_monitor(deployed, repo)
+            self.assertTrue(any("deployment drift" in problem and "heartbeat" in problem
+                                for problem in record["problems"]), record["problems"])
+
+    def test_a_matching_deployment_reports_no_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            deployed, repo = root / "deployed", root / "repo" / "scripts"
+            deployed.mkdir(parents=True)
+            repo.mkdir(parents=True)
+            for directory in (deployed, repo):
+                (directory / "operator.py").write_text("from heartbeat import ping\n")
+                (directory / "heartbeat.py").write_text("def ping(): ...\n")
+            record = self.run_monitor(deployed, repo)
+            self.assertFalse(any("deployment drift" in problem for problem in record["problems"]))
+
+    def test_the_comparison_is_skipped_rather_than_guessed_when_unconfigured(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            deployed = Path(tmp) / "deployed"
+            deployed.mkdir()
+            (deployed / "operator.py").write_text("x = 1\n")
+            record = self.run_monitor(deployed, None)
+            self.assertFalse(any("deployment drift" in problem for problem in record["problems"]))
 
 
 if __name__ == "__main__":

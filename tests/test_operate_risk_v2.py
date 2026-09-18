@@ -8,6 +8,7 @@ import sys
 import unittest
 import urllib.error
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -79,6 +80,90 @@ class OperateRiskV2Tests(unittest.TestCase):
                 patch.object(sys, "argv", ["operate_risk_v2.py"]), patch("sys.stdout", new_callable=io.StringIO):
             self.assertEqual(operate_risk_v2.main(), 1)
             beat.assert_called_once_with("operator", failed=True, note="httpStatus=500")
+
+
+class LoopTests(unittest.TestCase):
+    """The loop paces itself, and gives up rather than hanging."""
+
+    def run_loop(self, durations, *, cadence=60.0, sleeps=3):
+        class Done(Exception):
+            pass
+
+        clock = {"t": 0.0, "i": 0}
+        recorded = []
+
+        def monotonic():
+            return clock["t"]
+
+        def sleep(seconds):
+            recorded.append(seconds)
+            clock["t"] += seconds
+            if len(recorded) >= sleeps:
+                raise Done
+
+        def tick(origin, timeout):
+            clock["t"] += durations[min(clock["i"], len(durations) - 1)]
+            clock["i"] += 1
+            return {"httpStatus": 200, "seconds": 0.0}
+
+        fake = SimpleNamespace(monotonic=monotonic, sleep=sleep, time=lambda: clock["t"])
+        with patch.object(operate_risk_v2, "time", fake), \
+                patch.object(operate_risk_v2, "tick", tick), \
+                patch.object(operate_risk_v2, "heartbeat_ping") as beat, \
+                patch("sys.stdout", new_callable=io.StringIO):
+            with self.assertRaises(Done):
+                operate_risk_v2.loop("https://example.test", 50.0, cadence)
+        return recorded, beat
+
+    def test_each_sleep_is_what_is_left_of_the_cadence(self):
+        sleeps, _ = self.run_loop([3.0], cadence=60.0)
+        self.assertEqual(sleeps, [57.0, 57.0, 57.0])
+
+    def test_a_cycle_that_overruns_the_cadence_still_waits_a_second(self):
+        sleeps, _ = self.run_loop([80.0], cadence=60.0)
+        self.assertEqual(sleeps, [1.0, 1.0, 1.0])
+
+    def test_every_tick_is_reported_to_the_dead_mans_switch(self):
+        # Three sleeps means three completed ticks before the test stops the loop.
+        _, beat = self.run_loop([1.0])
+        self.assertEqual(beat.call_count, 3, "one ping per tick, including the ones that end normally")
+
+    def test_a_stuck_cycle_exits_instead_of_hanging_forever(self):
+        # Three cadences of no progress means something is stuck, and the supervisor
+        # restarting a clean process is better than a loop that never finishes a tick.
+        with patch.object(operate_risk_v2, "tick", lambda origin, timeout: {"httpStatus": 200}), \
+                patch.object(operate_risk_v2, "heartbeat_ping"), \
+                patch("sys.stdout", new_callable=io.StringIO):
+            clock = {"t": 0.0}
+
+            def monotonic():
+                clock["t"] += 200.0
+                return clock["t"]
+
+            with patch.object(operate_risk_v2, "time", SimpleNamespace(
+                    monotonic=monotonic, sleep=lambda s: None, time=lambda: 0)):
+                self.assertEqual(operate_risk_v2.loop("https://example.test", 50.0, 60.0), 1)
+
+    def test_a_failed_tick_is_reported_as_failure_and_does_not_stop_the_loop(self):
+        class Done(Exception):
+            pass
+
+        clock = {"t": 0.0}
+
+        def sleep(seconds):
+            raise Done
+
+        def tick(origin, timeout):
+            return {"httpStatus": 500, "seconds": 0.0}
+
+        fake = SimpleNamespace(monotonic=lambda: clock["t"], sleep=sleep, time=lambda: 0)
+        with patch.object(operate_risk_v2, "time", fake), \
+                patch.object(operate_risk_v2, "tick", tick), \
+                patch.object(operate_risk_v2, "heartbeat_ping") as beat, \
+                patch("sys.stdout", new_callable=io.StringIO):
+            with self.assertRaises(Done):
+                operate_risk_v2.loop("https://example.test", 50.0, 60.0)
+        beat.assert_called_once_with("operator", failed=True, note="httpStatus=500")
 
 
 if __name__ == "__main__":
