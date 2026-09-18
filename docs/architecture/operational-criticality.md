@@ -207,6 +207,31 @@ Earlier reports that "the feed is current" were true at the moment they were
 taken and were not representative; that is worth stating plainly, because the
 sampling method was the mistake, not the data.
 
+**Where the slow tick's time is not.** Each phase of a tick — episodes, listing
+the feeds, the stale check, the refresh, the publish — is now timed and kept in
+`risk_feed_operation_log_v2.detail`. Measured on 2026-09-18:
+
+| Phase | Typical |
+| --- | --- |
+| episodes | ~310 ms |
+| list | ~30 ms |
+| stale check | ~150 ms |
+| publish (signature + D1 write) | **~800 ms** |
+| **total** | **~1.3 s** |
+
+The client measures 2.9–4.3 s for the same ticks, so roughly 2.1 s sits outside
+every phase, in the transport and in entering the Worker. Across 3,336 ticks the
+eight slowest were almost all ticks with no refresh due and no episode to
+create, and the phase totals above are unaffected by which tick is slow — so the
+30 to 130 seconds a slow tick costs is **not spent in this application's code**.
+It is framework overhead, consistent with the Pyodide cold start that
+`initPyInstance` errors already point at.
+
+The confirmation is one slow tick away: the instrumentation is deployed, the
+phases are recorded, and the first tick over 30 seconds will show whether its
+phase total stayed at 1.3 s. At the measured rate of 2.7% that is about forty
+minutes of running.
+
 **The tail had two layers, and only one is fixed.** The long gaps did not
 follow long ticks (correlation 0.23 over 3,228 ticks), which pointed at launchd
 skipping starts rather than work overrunning — the operator now keeps its own
