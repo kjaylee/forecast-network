@@ -227,10 +227,31 @@ create, and the phase totals above are unaffected by which tick is slow — so t
 It is framework overhead, consistent with the Pyodide cold start that
 `initPyInstance` errors already point at.
 
-The confirmation is one slow tick away: the instrumentation is deployed, the
-phases are recorded, and the first tick over 30 seconds will show whether its
-phase total stayed at 1.3 s. At the measured rate of 2.7% that is about forty
-minutes of running.
+**Confirmed on 2026-09-18 08:26:52Z.** The first slow tick to land with the
+instrumentation deployed:
+
+| | |
+| --- | --- |
+| Client measured | **157.92 s** |
+| Phase total | **6.29 s** (episodes 710 ms, stale 1182 ms, publish 4166 ms) |
+| **Outside every phase** | **151.63 s** |
+| Nineteen other ticks in the same window | median client 3.01 s, median phase total 1.30 s |
+
+So 96% of a slow tick is spent outside this application's code. The phases did
+rise with it — publish went from ~800 ms to 4166 ms — so the Worker was slow
+throughout, but the bulk of the delay is before and around the work rather than
+in it. That is the Pyodide cold start the `initPyInstance` errors already point
+at, now measured rather than inferred.
+
+Two slow ticks were also observed fifty seconds apart and then none for four
+minutes, so the slowness is bursty rather than spread — which fits a recycled
+isolate taking the hit on the first request that reaches it.
+
+**The fix is the one already planned, and this is its justification.** Phase 2
+step 3 of the strangler is to move the risk producer and its operations to the
+Rust edge; that removes Pyodide from this path entirely. Nothing in this
+application can be made faster to compensate, because the time is not spent in
+it. Widening the feed's expiry would hide the symptom without changing that.
 
 **The tail had two layers, and only one is fixed.** The long gaps did not
 follow long ticks (correlation 0.23 over 3,228 ticks), which pointed at launchd
