@@ -7,6 +7,27 @@ The product and architecture handoff (maintained privately) is the source of tru
 [Whitepaper](https://forecast.eastsea.xyz/blueprint) ·
 [Roadmap](https://forecast.eastsea.xyz/roadmap)
 
+## How it is deployed (0.13.0)
+
+`forecast.eastsea.xyz` is served by [`apps/web-rs`](apps/web-rs), a Rust Worker
+compiled to `wasm32` with workers-rs. It answers every public read natively —
+health, status, risk feeds, forecast list and detail, profile cards, integrity,
+market, translation, me, creators, points, activity, wallet and the billing
+estimate — and serves the static assets. Everything else is forwarded untouched
+through a service binding to the Python Worker, which keeps cron, secrets, the AI
+pipeline, D1 writes and every POST and PATCH.
+
+The Python Worker moved behind the Rust edge because Pyodide cannot run
+concurrent promising tasks: it returned an empty 500 at roughly 25 concurrent
+requests and could not hold a per-minute cron. Python remains the reference
+implementation and its test suite remains the acceptance suite.
+
+Reads were ported behind measured route parity before the cutover — 18/18
+forecast query combinations, 17/17 detail ids and 39/43 read paths byte-equal.
+The [cutover record](docs/evidence/completion/rust-edge/cutover-2026-09-16.json)
+holds the measurements and the rollback. The
+[strangler plan](docs/plans/2026-09-16-rust-rewrite.md) holds what remains.
+
 The web service supports wallet-authenticated profiles, multilingual
 input compiled into English for preview/publication, discovery, probability forecasts and history,
 comments, disputes, profiles, activity, PNG sharing and canonical specification
@@ -179,6 +200,10 @@ the web adapter uses the pinned Cloudflare platform and build tools in `apps/web
 
 The `0.9.0` verification baseline passed **555 Python tests, 131 frontend tests,
 23 Rust guard tests, 52 schemas**, Ruff and strict mypy across 28 source files.
+The current tree passes **923 Python tests, 275 browser-module tests and 64
+generated schemas**, plus Ruff and strict mypy. The branch checks additionally
+build and lint the Rust edge that serves production and build the `domain-rs`
+crate for `wasm32`.
 Local-validator and Devnet transaction evidence are recorded separately in
 [Devnet verification](docs/verification-devnet.md); these test counts do not
 prove elapsed live finalization or resistance to every coordinated attack.

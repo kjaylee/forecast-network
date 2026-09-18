@@ -32,10 +32,19 @@ pub fn random_token() -> String {
     base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, bytes)
 }
 
-pub fn record_artifact<T: serde::Serialize>(record: &T, kind: &str, digest: Option<&str>, now_ms: i64) -> std::result::Result<Statement, RouteError> {
+pub fn record_artifact<T: serde::Serialize>(
+    record: &T,
+    kind: &str,
+    digest: Option<&str>,
+    now_ms: i64,
+) -> std::result::Result<Statement, RouteError> {
     let body = canonical_text(record)?;
     if body.len() > MAX_ARTIFACT_BYTES {
-        return Err(RouteError::Failed(413, "artifact_too_large", "The evidence exceeds the storage limit."));
+        return Err(RouteError::Failed(
+            413,
+            "artifact_too_large",
+            "The evidence exceeds the storage limit.",
+        ));
     }
     let hash = match digest {
         Some(d) => d.to_string(),
@@ -43,7 +52,13 @@ pub fn record_artifact<T: serde::Serialize>(record: &T, kind: &str, digest: Opti
     };
     Ok((
         "INSERT OR IGNORE INTO artifacts(hash,kind,body,media_type,created_at) VALUES(?,?,?,?,?)".to_string(),
-        vec![json!(hash), json!(kind), json!(body), json!("application/json"), json!(now_ms)],
+        vec![
+            json!(hash),
+            json!(kind),
+            json!(body),
+            json!("application/json"),
+            json!(now_ms),
+        ],
     ))
 }
 
@@ -53,31 +68,56 @@ fn event_statements(result: &TransitionResult) -> Result<Vec<Statement>> {
         let digest = hash_of(event)?;
         statements.push((
             "INSERT INTO events(forecast_id,revision,hash,event,created_at) VALUES(?,?,?,?,?)".to_string(),
-            vec![json!(event.forecast_id), json!(event.revision), json!(digest), json!(canonical_text(event)?), json!(event.occurred_at_ms)],
+            vec![
+                json!(event.forecast_id),
+                json!(event.revision),
+                json!(digest),
+                json!(canonical_text(event)?),
+                json!(event.occurred_at_ms),
+            ],
         ));
         for effect in &event.effects {
             statements.push((
                 "INSERT OR IGNORE INTO outbox(id,forecast_id,kind,created_at) VALUES(?,?,?,?)".to_string(),
-                vec![json!(format!("{digest}:{effect}")), json!(event.forecast_id), json!(effect), json!(event.occurred_at_ms)],
+                vec![
+                    json!(format!("{digest}:{effect}")),
+                    json!(event.forecast_id),
+                    json!(effect),
+                    json!(event.occurred_at_ms),
+                ],
             ));
         }
     }
     let receipt = &result.receipt;
     statements.push((
         "INSERT INTO command_receipts(forecast_id,command_id,receipt) VALUES(?,?,?)".to_string(),
-        vec![json!(receipt.forecast_id), json!(receipt.idempotency_key), json!(canonical_text(receipt)?)],
+        vec![
+            json!(receipt.forecast_id),
+            json!(receipt.idempotency_key),
+            json!(canonical_text(receipt)?),
+        ],
     ));
     if !result.events.is_empty() {
         let forecast = result.forecast.base();
         if forecast.published_at_ms.is_some() {
-            let event = forecast.latest_event.as_ref().ok_or_else(|| worker::Error::from("invalid_local_event"))?;
+            let event = forecast
+                .latest_event
+                .as_ref()
+                .ok_or_else(|| worker::Error::from("invalid_local_event"))?;
             let event_hash = hash_of(event)?;
             if forecast.audit_head_hash.as_deref() != Some(event_hash.as_str()) {
                 return Err("invalid_local_event".into());
             }
             statements.push((
-                "INSERT INTO registry_intents(forecast_id,revision,event_hash,snapshot,created_at) VALUES(?,?,?,?,?)".to_string(),
-                vec![json!(forecast.forecast_id), json!(forecast.revision), json!(event_hash), json!(canonical_text(&result.forecast)?), json!(event.occurred_at_ms)],
+                "INSERT INTO registry_intents(forecast_id,revision,event_hash,snapshot,created_at) VALUES(?,?,?,?,?)"
+                    .to_string(),
+                vec![
+                    json!(forecast.forecast_id),
+                    json!(forecast.revision),
+                    json!(event_hash),
+                    json!(canonical_text(&result.forecast)?),
+                    json!(event.occurred_at_ms),
+                ],
             ));
         }
     }
@@ -94,24 +134,56 @@ pub struct Mutation<'a> {
 }
 
 fn transition_error() -> RouteError {
-    RouteError::Failed(409, "transition_rejected", "This request is not allowed in the current state or time window.")
+    RouteError::Failed(
+        409,
+        "transition_rejected",
+        "This request is not allowed in the current state or time window.",
+    )
 }
 
 pub fn conflict() -> RouteError {
-    RouteError::Failed(409, "revision_conflict", "The forecast has changed. Refresh the page and try again.")
+    RouteError::Failed(
+        409,
+        "revision_conflict",
+        "The forecast has changed. Refresh the page and try again.",
+    )
 }
 
-pub async fn load_snapshot(session: &D1DatabaseSession, forecast_id: &str) -> std::result::Result<Snapshot, RouteError> {
-    let row = first(session, "SELECT snapshot FROM forecasts WHERE id=?", &[json!(forecast_id)]).await?;
+pub async fn load_snapshot(
+    session: &D1DatabaseSession,
+    forecast_id: &str,
+) -> std::result::Result<Snapshot, RouteError> {
+    let row = first(
+        session,
+        "SELECT snapshot FROM forecasts WHERE id=?",
+        &[json!(forecast_id)],
+    )
+    .await?;
     let row = row.ok_or(RouteError::NotFound("forecast_not_found", "Forecast not found."))?;
     Snapshot::from_json(text(&row, "snapshot").unwrap_or("")).map_err(|e| RouteError::Worker(e.to_string().into()))
 }
 
 /// Apply and persist; returns the new snapshot. Constraint failures are classified like Python.
-pub async fn mutate(session: &D1DatabaseSession, mutation: Mutation<'_>, clock_now_ms: i64) -> std::result::Result<Snapshot, RouteError> {
+pub async fn mutate(
+    session: &D1DatabaseSession,
+    mutation: Mutation<'_>,
+    clock_now_ms: i64,
+) -> std::result::Result<Snapshot, RouteError> {
     let forecast = mutation.snapshot.base();
-    let v2 = matches!(&mutation.payload, Payload::Lock { trigger: Some(_), .. } | Payload::ProposeResolution { resolution: forecast_domain::lifecycle::AnyResolution::Early(_), .. });
-    let command = Command { schema_version: if v2 { 2 } else { 1 }, idempotency_key: mutation.key.clone(), expected_revision: forecast.revision, payload: mutation.payload.clone() };
+    let v2 = matches!(
+        &mutation.payload,
+        Payload::Lock { trigger: Some(_), .. }
+            | Payload::ProposeResolution {
+                resolution: forecast_domain::lifecycle::AnyResolution::Early(_),
+                ..
+            }
+    );
+    let command = Command {
+        schema_version: if v2 { 2 } else { 1 },
+        idempotency_key: mutation.key.clone(),
+        expected_revision: forecast.revision,
+        payload: mutation.payload.clone(),
+    };
     let result = match apply_command(mutation.snapshot, &command, mutation.now_ms, None) {
         Ok(result) => result,
         Err(LifecycleError::Concurrency(_)) | Err(LifecycleError::Idempotency(_)) => return Err(conflict()),
@@ -120,7 +192,11 @@ pub async fn mutate(session: &D1DatabaseSession, mutation: Mutation<'_>, clock_n
     let changed = &result.forecast;
     let snapshot = canonical_text(changed)?;
     if snapshot.len() > MAX_SNAPSHOT_BYTES {
-        return Err(RouteError::Failed(413, "forecast_too_large", "The forecast record exceeds the safe storage limit."));
+        return Err(RouteError::Failed(
+            413,
+            "forecast_too_large",
+            "The forecast record exceeds the safe storage limit.",
+        ));
     }
     let guard = random_token();
     let mut guard_sql = "SELECT ?,CASE WHEN EXISTS(SELECT 1 FROM forecasts WHERE id=? AND revision=?".to_string();
@@ -144,8 +220,16 @@ pub async fn mutate(session: &D1DatabaseSession, mutation: Mutation<'_>, clock_n
     statements.extend(event_statements(&result)?);
     if let Some(artifact_hash) = result.events.first().and_then(|e| e.artifact_hash.clone()) {
         let (record, kind): (Option<Value>, &str) = match &mutation.payload {
-            Payload::PauseForProviderOutage { .. } => (base.pause.as_ref().map(|p| serde_json::to_value(p).unwrap_or(Value::Null)), "pause_for_provider_outage"),
-            payload => (Some(serde_json::to_value(payload).map_err(|e| RouteError::Worker(e.into()))?), payload.kind()),
+            Payload::PauseForProviderOutage { .. } => (
+                base.pause
+                    .as_ref()
+                    .map(|p| serde_json::to_value(p).unwrap_or(Value::Null)),
+                "pause_for_provider_outage",
+            ),
+            payload => (
+                Some(serde_json::to_value(payload).map_err(|e| RouteError::Worker(e.into()))?),
+                payload.kind(),
+            ),
         };
         if let Some(record) = record {
             if hash_of(&record)? == artifact_hash {
@@ -154,33 +238,64 @@ pub async fn mutate(session: &D1DatabaseSession, mutation: Mutation<'_>, clock_n
         }
     }
     statements.extend(mutation.extra);
-    statements.push(("DELETE FROM mutation_guards WHERE token=?".to_string(), vec![json!(guard)]));
+    statements.push((
+        "DELETE FROM mutation_guards WHERE token=?".to_string(),
+        vec![json!(guard)],
+    ));
     if let Err(error) = batch(session, statements).await {
         let message = error.to_string();
         if message.contains("resolution_timing_review") {
-            return Err(RouteError::Failed(409, "resolution_timing_review", "Evidence publication time must be reviewed before rewards or reputation can be credited."));
+            return Err(RouteError::Failed(
+                409,
+                "resolution_timing_review",
+                "Evidence publication time must be reviewed before rewards or reputation can be credited.",
+            ));
         }
         if message.contains("forecast_eligibility_review") {
-            return Err(RouteError::Failed(409, "early_eligibility_review", "Receipt timing and known-result evidence must be reviewed before resolution or rewards."));
+            return Err(RouteError::Failed(
+                409,
+                "early_eligibility_review",
+                "Receipt timing and known-result evidence must be reviewed before resolution or rewards.",
+            ));
         }
         let current = load_snapshot(session, &forecast.forecast_id).await?;
         if current.base().revision != forecast.revision || mutation.job_token.is_some() {
             return Err(conflict());
         }
         if message.contains("participation_on_hold") {
-            return Err(RouteError::Failed(409, "participation_on_hold", "Participation is on hold while newly available evidence is reviewed."));
+            return Err(RouteError::Failed(
+                409,
+                "participation_on_hold",
+                "Participation is on hold while newly available evidence is reviewed.",
+            ));
         }
         if message.contains("eligibility_account_hold") {
-            return Err(RouteError::Failed(409, "point_correction_pending", "A previous stake correction must finish before you can commit more points."));
+            return Err(RouteError::Failed(
+                409,
+                "point_correction_pending",
+                "A previous stake correction must finish before you can commit more points.",
+            ));
         }
         if message.contains("points_insufficient_balance") {
-            return Err(RouteError::Failed(409, "insufficient_points", "You do not have enough available points for this stake."));
+            return Err(RouteError::Failed(
+                409,
+                "insufficient_points",
+                "You do not have enough available points for this stake.",
+            ));
         }
         if message.contains("points_position_conflict") {
-            return Err(RouteError::Failed(409, "stake_conflict", "The stake changed or is already settled. Refresh and try again."));
+            return Err(RouteError::Failed(
+                409,
+                "stake_conflict",
+                "The stake changed or is already settled. Refresh and try again.",
+            ));
         }
         if message.contains("points_operation_conflict") {
-            return Err(RouteError::Failed(409, "idempotency_conflict", "This stake request identifier was already used."));
+            return Err(RouteError::Failed(
+                409,
+                "idempotency_conflict",
+                "This stake request identifier was already used.",
+            ));
         }
         return Err(RouteError::Worker(error));
     }

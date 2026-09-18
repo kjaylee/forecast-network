@@ -10,7 +10,9 @@ use forecast_domain::models::UserForecast;
 
 use crate::api_response;
 use crate::db::{all, batch, first, get, int, text, Row};
-use crate::mutate::{canonical_text, hash_of, load_snapshot, mutate, random_token, record_artifact, Mutation, Statement};
+use crate::mutate::{
+    canonical_text, hash_of, load_snapshot, mutate, random_token, record_artifact, Mutation, Statement,
+};
 use crate::projections::{card, quality_card_sql};
 use crate::reads::public_user;
 use crate::routes::{Context, RouteError};
@@ -43,16 +45,27 @@ pub fn checked_text(value: &Value, limit: usize) -> std::result::Result<String, 
 /// `_key`: `[A-Za-z0-9_.:-]{8,120}`.
 pub fn idempotency_key(value: &Value) -> std::result::Result<String, RouteError> {
     let key = value.as_str().unwrap_or("");
-    let valid = (8..=120).contains(&key.len()) && key.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | ':' | '-'));
+    let valid = (8..=120).contains(&key.len())
+        && key
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | ':' | '-'));
     if valid {
         Ok(key.to_string())
     } else {
-        Err(invalid_message("A request identifier is required. Refresh the page and try again."))
+        Err(invalid_message(
+            "A request identifier is required. Refresh the page and try again.",
+        ))
     }
 }
 
 /// Atomic fixed-window counter; the Worker also calls this for IP limits.
-pub async fn rate_limit(session: &D1DatabaseSession, now_ms: i64, scope: &str, limit: i64, window_ms: i64) -> std::result::Result<(), RouteError> {
+pub async fn rate_limit(
+    session: &D1DatabaseSession,
+    now_ms: i64,
+    scope: &str,
+    limit: i64,
+    window_ms: i64,
+) -> std::result::Result<(), RouteError> {
     let bucket = now_ms.div_euclid(window_ms);
     let rows = all(
         session,
@@ -60,8 +73,16 @@ pub async fn rate_limit(session: &D1DatabaseSession, now_ms: i64, scope: &str, l
         &[json!(scope), json!(bucket), json!((bucket + 1) * window_ms)],
     )
     .await?;
-    if rows.first().and_then(|r| int(r, "count")).is_some_and(|count| count > limit) {
-        return Err(RouteError::Failed(429, "rate_limited", "Too many requests. Please try again later."));
+    if rows
+        .first()
+        .and_then(|r| int(r, "count"))
+        .is_some_and(|count| count > limit)
+    {
+        return Err(RouteError::Failed(
+            429,
+            "rate_limited",
+            "Too many requests. Please try again later.",
+        ));
     }
     Ok(())
 }
@@ -69,23 +90,55 @@ pub async fn rate_limit(session: &D1DatabaseSession, now_ms: i64, scope: &str, l
 pub async fn user_row(session: &D1DatabaseSession, user_id: &str) -> std::result::Result<Row, RouteError> {
     first(session, "SELECT * FROM users WHERE id=?", &[json!(user_id)])
         .await?
-        .ok_or(RouteError::Unauthorized("authentication_required", "Please sign in to continue."))
+        .ok_or(RouteError::Unauthorized(
+            "authentication_required",
+            "Please sign in to continue.",
+        ))
 }
 
-async fn prior(session: &D1DatabaseSession, user_id: &str, key: &str, request: &Value) -> std::result::Result<Option<Row>, RouteError> {
-    let row = first(session, "SELECT * FROM operations WHERE user_id=? AND operation_key=?", &[json!(user_id), json!(key)]).await?;
+async fn prior(
+    session: &D1DatabaseSession,
+    user_id: &str,
+    key: &str,
+    request: &Value,
+) -> std::result::Result<Option<Row>, RouteError> {
+    let row = first(
+        session,
+        "SELECT * FROM operations WHERE user_id=? AND operation_key=?",
+        &[json!(user_id), json!(key)],
+    )
+    .await?;
     if let Some(row) = &row {
         if text(row, "request_hash") != Some(hash_of(request)?.as_str()) {
-            return Err(RouteError::Failed(409, "idempotency_conflict", "This request identifier has already been used for different content."));
+            return Err(RouteError::Failed(
+                409,
+                "idempotency_conflict",
+                "This request identifier has already been used for different content.",
+            ));
         }
     }
     Ok(row)
 }
 
-fn operation(user_id: &str, key: &str, request: &Value, forecast_id: &str, result: &Value, now_ms: i64) -> Result<Statement> {
+fn operation(
+    user_id: &str,
+    key: &str,
+    request: &Value,
+    forecast_id: &str,
+    result: &Value,
+    now_ms: i64,
+) -> Result<Statement> {
     Ok((
-        "INSERT INTO operations(user_id,operation_key,request_hash,forecast_id,result,created_at) VALUES(?,?,?,?,?,?)".to_string(),
-        vec![json!(user_id), json!(key), json!(hash_of(request)?), json!(forecast_id), json!(canonical_text(result)?), json!(now_ms)],
+        "INSERT INTO operations(user_id,operation_key,request_hash,forecast_id,result,created_at) VALUES(?,?,?,?,?,?)"
+            .to_string(),
+        vec![
+            json!(user_id),
+            json!(key),
+            json!(hash_of(request)?),
+            json!(forecast_id),
+            json!(canonical_text(result)?),
+            json!(now_ms),
+        ],
     ))
 }
 
@@ -94,14 +147,24 @@ fn prior_result(row: &Row) -> std::result::Result<Value, RouteError> {
 }
 
 async fn card_of(context: &Context<'_>, forecast_id: &str) -> std::result::Result<Value, RouteError> {
-    let sql = format!("{} WHERE f.id=?", quality_card_sql(context.now_ms, &[forecast_id.to_string()]).ok_or_else(invalid)?);
-    let row = first(context.session, &sql, &[json!(forecast_id)]).await?.ok_or(RouteError::NotFound("forecast_not_found", "Forecast not found."))?;
+    let sql = format!(
+        "{} WHERE f.id=?",
+        quality_card_sql(context.now_ms, &[forecast_id.to_string()]).ok_or_else(invalid)?
+    );
+    let row = first(context.session, &sql, &[json!(forecast_id)])
+        .await?
+        .ok_or(RouteError::NotFound("forecast_not_found", "Forecast not found."))?;
     Ok(card(&row))
 }
 
 // ---------------------------------------------------------------- comments, shares, follows, activity, profile
 
-pub async fn add_comment(context: &Context<'_>, user_id: &str, forecast_id: &str, body: &Map<String, Value>) -> Handler {
+pub async fn add_comment(
+    context: &Context<'_>,
+    user_id: &str,
+    forecast_id: &str,
+    body: &Map<String, Value>,
+) -> Handler {
     let session = context.session;
     let user = user_row(session, user_id).await?;
     let text_value = checked_text(body.get("text").unwrap_or(&Value::Null), 2000)?;
@@ -116,7 +179,16 @@ pub async fn add_comment(context: &Context<'_>, user_id: &str, forecast_id: &str
     let cid = format!("c_{}", &random_token()[..24]);
     let result = json!({"comment": {"id": cid, "text": text_value, "createdAt": now, "user": public_user(&user)}});
     let statements = vec![
-        ("INSERT INTO comments(id,forecast_id,user_id,body,created_at) VALUES(?,?,?,?,?)".to_string(), vec![json!(cid), json!(forecast_id), json!(user_id), json!(text_value), json!(now)]),
+        (
+            "INSERT INTO comments(id,forecast_id,user_id,body,created_at) VALUES(?,?,?,?,?)".to_string(),
+            vec![
+                json!(cid),
+                json!(forecast_id),
+                json!(user_id),
+                json!(text_value),
+                json!(now),
+            ],
+        ),
         operation(user_id, &key, &request, forecast_id, &result, now)?,
     ];
     if batch(session, statements).await.is_err() {
@@ -152,16 +224,24 @@ pub async fn record_share(context: &Context<'_>, forecast_id: &str, user_id: Opt
 pub async fn follow(context: &Context<'_>, user_id: &str, creator_id: &str, following: &Value) -> Handler {
     let session = context.session;
     user_row(session, user_id).await?;
-    let Some(following) = following.as_bool() else { return Err(invalid()) };
+    let Some(following) = following.as_bool() else {
+        return Err(invalid());
+    };
     if user_id == creator_id {
         return Err(invalid());
     }
     user_row(session, creator_id).await?;
     rate_limit(session, context.now_ms, &format!("follow:{user_id}"), 100, HOUR_MS).await?;
     let statement = if following {
-        ("INSERT OR IGNORE INTO follows(follower_id,creator_id,created_at) VALUES(?,?,?)".to_string(), vec![json!(user_id), json!(creator_id), json!(context.now_ms)])
+        (
+            "INSERT OR IGNORE INTO follows(follower_id,creator_id,created_at) VALUES(?,?,?)".to_string(),
+            vec![json!(user_id), json!(creator_id), json!(context.now_ms)],
+        )
     } else {
-        ("DELETE FROM follows WHERE follower_id=? AND creator_id=?".to_string(), vec![json!(user_id), json!(creator_id)])
+        (
+            "DELETE FROM follows WHERE follower_id=? AND creator_id=?".to_string(),
+            vec![json!(user_id), json!(creator_id)],
+        )
     };
     batch(session, vec![statement]).await?;
     Ok(api_response(json!({"following": following}), 200, false)?)
@@ -169,7 +249,14 @@ pub async fn follow(context: &Context<'_>, user_id: &str, creator_id: &str, foll
 
 pub async fn read_activity(context: &Context<'_>, user_id: &str) -> Handler {
     user_row(context.session, user_id).await?;
-    batch(context.session, vec![("UPDATE activity SET read_at=? WHERE user_id=? AND read_at IS NULL".to_string(), vec![json!(context.now_ms), json!(user_id)])]).await?;
+    batch(
+        context.session,
+        vec![(
+            "UPDATE activity SET read_at=? WHERE user_id=? AND read_at IS NULL".to_string(),
+            vec![json!(context.now_ms), json!(user_id)],
+        )],
+    )
+    .await?;
     Ok(api_response(json!({"ok": true}), 200, false)?)
 }
 
@@ -178,10 +265,26 @@ pub async fn update_profile(context: &Context<'_>, user_id: &str, display_name: 
     user_row(session, user_id).await?;
     rate_limit(session, context.now_ms, &format!("profile:{user_id}"), 20, HOUR_MS).await?;
     let name = checked_text(display_name, 40)?;
-    batch(session, vec![("UPDATE users SET display_name=? WHERE id=?".to_string(), vec![json!(name), json!(user_id)])]).await?;
+    batch(
+        session,
+        vec![(
+            "UPDATE users SET display_name=? WHERE id=?".to_string(),
+            vec![json!(name), json!(user_id)],
+        )],
+    )
+    .await?;
     let user = user_row(session, user_id).await?;
-    let points = crate::points::summary(session, user_id).await?.ok_or(RouteError::Unauthorized("points_account_missing", "Sign in to view your participation points."))?;
-    Ok(api_response(json!({"user": public_user(&user), "points": points}), 200, false)?)
+    let points = crate::points::summary(session, user_id)
+        .await?
+        .ok_or(RouteError::Unauthorized(
+            "points_account_missing",
+            "Sign in to view your participation points.",
+        ))?;
+    Ok(api_response(
+        json!({"user": public_user(&user), "points": points}),
+        200,
+        false,
+    )?)
 }
 
 // ---------------------------------------------------------------- forecast submissions
@@ -193,24 +296,49 @@ fn submission_view(choice: &UserForecast, revision: i64) -> Value {
 }
 
 fn sha_json(values: &Value) -> String {
-    hex::encode(Sha256::digest(serde_json::to_string(values).unwrap_or_default().as_bytes()))
+    hex::encode(Sha256::digest(
+        serde_json::to_string(values).unwrap_or_default().as_bytes(),
+    ))
 }
 
 /// `points.reservation_sql`: reserve/release an explicit total stake inside the accepted CAS.
-pub fn reservation_sql(user_id: &str, forecast_id: &str, amount: i64, outcome: &str, forecast_revision: i64, operation_id: &str, now: i64) -> std::result::Result<Vec<Statement>, RouteError> {
+pub fn reservation_sql(
+    user_id: &str,
+    forecast_id: &str,
+    amount: i64,
+    outcome: &str,
+    forecast_revision: i64,
+    operation_id: &str,
+    now: i64,
+) -> std::result::Result<Vec<Statement>, RouteError> {
     if !(0..=MAX_STAKE).contains(&amount) {
-        return Err(RouteError::Failed(400, "invalid_stake", "Use zero practice points or a whole-number stake from 1 to 1,000."));
+        return Err(RouteError::Failed(
+            400,
+            "invalid_stake",
+            "Use zero practice points or a whole-number stake from 1 to 1,000.",
+        ));
     }
     if outcome != "YES" && outcome != "NO" {
-        return Err(RouteError::Failed(400, "invalid_stake", "A points stake must have a YES or NO forecast choice."));
+        return Err(RouteError::Failed(
+            400,
+            "invalid_stake",
+            "A points stake must have a YES or NO forecast choice.",
+        ));
     }
     if forecast_revision < 1 || now < 0 {
-        return Err(RouteError::Failed(400, "invalid_points_request", "Invalid participation points revision or timestamp."));
+        return Err(RouteError::Failed(
+            400,
+            "invalid_points_request",
+            "Invalid participation points revision or timestamp.",
+        ));
     }
     let identity = sha_json(&json!([user_id, operation_id]));
     let ledger_id = format!("reservation:{identity}");
     let request_hash = sha_json(&json!([user_id, forecast_id, amount, outcome, forecast_revision]));
-    let guards: Vec<String> = ["operation", "position", "balance"].iter().map(|k| format!("{ledger_id}:{k}")).collect();
+    let guards: Vec<String> = ["operation", "position", "balance"]
+        .iter()
+        .map(|k| format!("{ledger_id}:{k}"))
+        .collect();
     Ok(vec![
         (
             "INSERT INTO point_write_guards(id,kind,passed) SELECT ?,'operation',CASE WHEN NOT EXISTS(SELECT 1 FROM point_ledger WHERE id=?) OR EXISTS(SELECT 1 FROM point_ledger WHERE id=? AND user_id=? AND kind='reservation' AND request_hash=?) THEN 1 ELSE 0 END".to_string(),
@@ -239,12 +367,18 @@ async fn submission_response(context: &Context<'_>, user_id: &str, forecast_id: 
     let session = context.session;
     let eligibility = crate::eligibility::combined(session, forecast_id, Some(user_id)).await?;
     if eligibility["status"] != "none" {
-        let effective = first(session, "SELECT body,revision FROM eligible_user_forecasts WHERE forecast_id=? AND user_id=?", &[json!(forecast_id), json!(user_id)]).await?;
+        let effective = first(
+            session,
+            "SELECT body,revision FROM eligible_user_forecasts WHERE forecast_id=? AND user_id=?",
+            &[json!(forecast_id), json!(user_id)],
+        )
+        .await?;
         let original = receipt.get("myForecast").cloned().unwrap_or(Value::Null);
         receipt["originalReceipt"] = original;
         receipt["myForecast"] = match effective {
             Some(row) => {
-                let choice: UserForecast = serde_json::from_str(text(&row, "body").unwrap_or("")).map_err(|e| RouteError::Worker(e.into()))?;
+                let choice: UserForecast =
+                    serde_json::from_str(text(&row, "body").unwrap_or("")).map_err(|e| RouteError::Worker(e.into()))?;
                 submission_view(&choice, int(&row, "revision").unwrap_or(0))
             }
             None => Value::Null,
@@ -256,24 +390,51 @@ async fn submission_response(context: &Context<'_>, user_id: &str, forecast_id: 
             target.insert(key, value);
         }
     }
-    data["points"] = crate::points::summary(session, user_id).await?.ok_or(RouteError::Unauthorized("points_account_missing", "Sign in to view your participation points."))?;
+    data["points"] = crate::points::summary(session, user_id)
+        .await?
+        .ok_or(RouteError::Unauthorized(
+            "points_account_missing",
+            "Sign in to view your participation points.",
+        ))?;
     data["eligibility"] = eligibility;
     data["stake"] = crate::points::position_for(session, user_id, forecast_id).await?;
     Ok(api_response(data, 200, false)?)
 }
 
-pub async fn submit_forecast(context: &Context<'_>, user_id: &str, forecast_id: &str, body: &Map<String, Value>) -> Handler {
+pub async fn submit_forecast(
+    context: &Context<'_>,
+    user_id: &str,
+    forecast_id: &str,
+    body: &Map<String, Value>,
+) -> Handler {
     let session = context.session;
     user_row(session, user_id).await?;
-    let outcome = body.get("outcome").and_then(Value::as_str).filter(|o| matches!(*o, "YES" | "NO")).ok_or_else(invalid)?.to_string();
-    let confidence = body.get("confidence").and_then(crate::discovery::integer).filter(|c| (0..=100).contains(c)).ok_or_else(invalid)?;
-    let revision = body.get("revision").and_then(crate::discovery::integer).filter(|r| *r >= 0).ok_or_else(invalid)?;
+    let outcome = body
+        .get("outcome")
+        .and_then(Value::as_str)
+        .filter(|o| matches!(*o, "YES" | "NO"))
+        .ok_or_else(invalid)?
+        .to_string();
+    let confidence = body
+        .get("confidence")
+        .and_then(crate::discovery::integer)
+        .filter(|c| (0..=100).contains(c))
+        .ok_or_else(invalid)?;
+    let revision = body
+        .get("revision")
+        .and_then(crate::discovery::integer)
+        .filter(|r| *r >= 0)
+        .ok_or_else(invalid)?;
     let stake_points = match body.get("stakePoints") {
         None | Some(Value::Null) => None,
         Some(value) => Some(
             crate::discovery::integer(value)
                 .filter(|s| (0..=1000).contains(s))
-                .ok_or(RouteError::Failed(400, "invalid_stake", "Choose practice with 0 points or a stake from 1 to 1,000 points."))?,
+                .ok_or(RouteError::Failed(
+                    400,
+                    "invalid_stake",
+                    "Choose practice with 0 points or a stake from 1 to 1,000 points.",
+                ))?,
         ),
     };
     let mut request = json!({"kind": "forecast", "forecastId": forecast_id, "outcome": outcome, "confidence": confidence, "revision": revision});
@@ -284,8 +445,19 @@ pub async fn submit_forecast(context: &Context<'_>, user_id: &str, forecast_id: 
     if let Some(row) = prior(session, user_id, &key, &request).await? {
         return submission_response(context, user_id, forecast_id, prior_result(&row)?).await;
     }
-    if first(session, "SELECT body FROM active_participation_holds WHERE forecast_id=?", &[json!(forecast_id)]).await?.is_some() {
-        return Err(RouteError::Failed(409, "participation_on_hold", "Participation is on hold while newly available evidence is reviewed."));
+    if first(
+        session,
+        "SELECT body FROM active_participation_holds WHERE forecast_id=?",
+        &[json!(forecast_id)],
+    )
+    .await?
+    .is_some()
+    {
+        return Err(RouteError::Failed(
+            409,
+            "participation_on_hold",
+            "Participation is on hold while newly available evidence is reviewed.",
+        ));
     }
     let snapshot = load_snapshot(session, forecast_id).await?;
     let forecast = snapshot.base();
@@ -295,7 +467,11 @@ pub async fn submit_forecast(context: &Context<'_>, user_id: &str, forecast_id: 
     if stake_points.is_none() {
         let position = crate::points::position_for(session, user_id, forecast_id).await?;
         if position["status"] == "committed" && position["amount"].as_i64().unwrap_or(0) > 0 {
-            return Err(RouteError::Failed(409, "stake_required", "This forecast already has a stake. Refresh and explicitly confirm the stake amount."));
+            return Err(RouteError::Failed(
+                409,
+                "stake_required",
+                "This forecast already has a stake. Refresh and explicitly confirm the stake amount.",
+            ));
         }
     }
     let amount = stake_points.unwrap_or(0);
@@ -325,17 +501,44 @@ pub async fn submit_forecast(context: &Context<'_>, user_id: &str, forecast_id: 
         ),
     ];
     let operation_id = hash_of(&json!({"user": user_id, "key": key}))?;
-    extra.extend(reservation_sql(user_id, forecast_id, amount, &outcome, revision + 1, &operation_id, now)?);
+    extra.extend(reservation_sql(
+        user_id,
+        forecast_id,
+        amount,
+        &outcome,
+        revision + 1,
+        &operation_id,
+        now,
+    )?);
     extra.push(operation(user_id, &key, &request, forecast_id, &response, now)?);
-    let mutation = Mutation { snapshot: &snapshot, payload: Payload::SubmitForecast { schema_version: 1, user_forecast: choice }, key: format!("user:{operation_id}"), now_ms: now, extra, job_token: None };
+    let mutation = Mutation {
+        snapshot: &snapshot,
+        payload: Payload::SubmitForecast {
+            schema_version: 1,
+            user_forecast: choice,
+        },
+        key: format!("user:{operation_id}"),
+        now_ms: now,
+        extra,
+        job_token: None,
+    };
     match mutate(session, mutation, now).await {
         Ok(_) => submission_response(context, user_id, forecast_id, response).await,
         Err(error) => {
             // A transport error can arrive after the D1 batch committed; the durable receipt wins.
             let prior_row = match prior(session, user_id, &key, &request).await {
                 Ok(row) => row,
-                Err(RouteError::Failed(..)) | Err(RouteError::Input) | Err(RouteError::NotFound(..)) | Err(RouteError::Unauthorized(..)) => return Err(error),
-                Err(_) => return Err(RouteError::Failed(503, "forecast_storage_unavailable", "The forecast could not be confirmed. Retry with the same request identifier.")),
+                Err(RouteError::Failed(..))
+                | Err(RouteError::Input)
+                | Err(RouteError::NotFound(..))
+                | Err(RouteError::Unauthorized(..)) => return Err(error),
+                Err(_) => {
+                    return Err(RouteError::Failed(
+                        503,
+                        "forecast_storage_unavailable",
+                        "The forecast could not be confirmed. Retry with the same request identifier.",
+                    ))
+                }
             };
             if let Some(row) = prior_row {
                 return submission_response(context, user_id, forecast_id, prior_result(&row)?).await;
@@ -346,13 +549,29 @@ pub async fn submit_forecast(context: &Context<'_>, user_id: &str, forecast_id: 
             let points = crate::points::summary(session, user_id).await.ok().flatten();
             let position = crate::points::position_for(session, user_id, forecast_id).await.ok();
             let (Some(points), Some(position)) = (points, position) else {
-                return Err(RouteError::Failed(503, "forecast_storage_unavailable", "The forecast could not be saved. Please try again later."));
+                return Err(RouteError::Failed(
+                    503,
+                    "forecast_storage_unavailable",
+                    "The forecast could not be saved. Please try again later.",
+                ));
             };
-            let hold = if position["status"] == "committed" { position["amount"].as_i64().unwrap_or(0) } else { 0 };
+            let hold = if position["status"] == "committed" {
+                position["amount"].as_i64().unwrap_or(0)
+            } else {
+                0
+            };
             if amount > points["available"].as_i64().unwrap_or(0) + hold {
-                return Err(RouteError::Failed(409, "insufficient_points", "You do not have enough available points for this stake."));
+                return Err(RouteError::Failed(
+                    409,
+                    "insufficient_points",
+                    "You do not have enough available points for this stake.",
+                ));
             }
-            Err(RouteError::Failed(503, "forecast_storage_unavailable", "The forecast could not be saved. Please try again later."))
+            Err(RouteError::Failed(
+                503,
+                "forecast_storage_unavailable",
+                "The forecast could not be saved. Please try again later.",
+            ))
         }
     }
 }

@@ -12,12 +12,12 @@ mod discovery;
 mod eligibility;
 mod forecasts;
 mod markets;
+mod mutate;
 mod points;
 mod projections;
 mod reads;
 mod registry;
 mod reputation;
-mod mutate;
 mod routes;
 mod writes;
 
@@ -87,10 +87,22 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
             Some(port) => format!("{origin}:{port}"),
             None => origin,
         };
-        if req.headers().get("origin")?.as_deref() != Some(origin.as_str()) || req.headers().get("X-Forecast-Client")?.as_deref() != Some("web") {
-            return api_error(403, "origin_denied", "Please submit this request from the Forecast website.");
+        if req.headers().get("origin")?.as_deref() != Some(origin.as_str())
+            || req.headers().get("X-Forecast-Client")?.as_deref() != Some("web")
+        {
+            return api_error(
+                403,
+                "origin_denied",
+                "Please submit this request from the Forecast website.",
+            );
         }
-        if !req.headers().get("content-type")?.unwrap_or_default().to_lowercase().contains("application/json") {
+        if !req
+            .headers()
+            .get("content-type")?
+            .unwrap_or_default()
+            .to_lowercase()
+            .contains("application/json")
+        {
             return api_error(415, "json_required", "A JSON request is required.");
         }
         let bytes = req.bytes().await?;
@@ -104,7 +116,11 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     }
     let previous = bookmark(&req);
     let db = env.d1("DB")?;
-    let constraint = if native_write { "first-primary".to_string() } else { previous.clone().unwrap_or_else(|| "first-unconstrained".to_string()) };
+    let constraint = if native_write {
+        "first-primary".to_string()
+    } else {
+        previous.clone().unwrap_or_else(|| "first-unconstrained".to_string())
+    };
     let session = db.with_session(Some(&constraint))?;
     let url = req.url()?;
     let context = routes::Context {

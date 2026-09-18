@@ -62,6 +62,9 @@ pub async fn user_id(env: &Env, session: &D1DatabaseSession, req: &Request, now_
 /// HMAC(SESSION_SECRET, client IP) as the anonymous rate-limit identity.
 pub fn fingerprint(env: &Env, req: &Request) -> Result<String> {
     let secret = env.secret("SESSION_SECRET")?.to_string();
-    let ip = req.headers().get("CF-Connecting-IP")?.unwrap_or_else(|| "local".to_string());
+    let ip = req
+        .headers()
+        .get("CF-Connecting-IP")?
+        .unwrap_or_else(|| "local".to_string());
     Ok(token_hash(&secret, &ip))
 }

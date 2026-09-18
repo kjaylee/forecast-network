@@ -54,7 +54,11 @@ earlier release counts do not certify it.
 
 The `0.9.0` baseline passed **555 Python tests, 131 frontend tests, 23 Rust guard
 tests and 52 schemas**, plus Ruff and strict mypy across 28 source files. The
-Devnet program is real, and all three current public revisions were confirmed
+tree has since moved to **923 Python tests, 275 browser-module tests and 64
+schemas**, and the public reads are now served by a Rust edge Worker while the
+Python Worker stays behind it for writes, cron and the AI pipeline.
+
+The Devnet program is real, and all three current public revisions were confirmed
 through a one-time Mac operator run of the durable adapter, and a later
 authenticated RPC proxy allowed automatic delivery to resume. See
 [Devnet evidence and remaining gates](verification-devnet.md)

@@ -76,16 +76,27 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
         Method::Post => {
             path == "/api/activity/read"
                 || identifier(path, "/api/creators/", "/follow").is_some()
-                || ["/forecast", "/comments", "/share"].iter().any(|suffix| identifier(path, "/api/forecasts/", suffix).is_some())
+                || ["/forecast", "/comments", "/share"]
+                    .iter()
+                    .any(|suffix| identifier(path, "/api/forecasts/", suffix).is_some())
         }
         _ => false,
     }
 }
 
 /// Dispatch a guarded write with its parsed JSON object body.
-pub async fn dispatch_write(context: &Context<'_>, method: &Method, path: &str, user_id: Option<&str>, body: &serde_json::Map<String, Value>) -> std::result::Result<Response, RouteError> {
+pub async fn dispatch_write(
+    context: &Context<'_>,
+    method: &Method,
+    path: &str,
+    user_id: Option<&str>,
+    body: &serde_json::Map<String, Value>,
+) -> std::result::Result<Response, RouteError> {
     let Some(user_id) = user_id else {
-        return Err(RouteError::Unauthorized("authentication_required", "Create a profile or sign in to continue."));
+        return Err(RouteError::Unauthorized(
+            "authentication_required",
+            "Create a profile or sign in to continue.",
+        ));
     };
     let null = Value::Null;
     if *method == Method::Patch && path == "/api/me" {
@@ -101,11 +112,26 @@ pub async fn dispatch_write(context: &Context<'_>, method: &Method, path: &str, 
         if body.contains_key("stakePoints") {
             let expected = body.get("expectedUserId").and_then(Value::as_str);
             match expected {
-                None => return Err(RouteError::Failed(400, "account_precondition_required", "Reload your profile before changing points or wallet settings.")),
-                Some(expected) if expected != user_id => return Err(RouteError::Failed(409, "account_changed", "Your signed-in account changed. Reload your profile before continuing.")),
+                None => {
+                    return Err(RouteError::Failed(
+                        400,
+                        "account_precondition_required",
+                        "Reload your profile before changing points or wallet settings.",
+                    ))
+                }
+                Some(expected) if expected != user_id => {
+                    return Err(RouteError::Failed(
+                        409,
+                        "account_changed",
+                        "Your signed-in account changed. Reload your profile before continuing.",
+                    ))
+                }
                 _ => {}
             }
-            if !body.get("stakePoints").is_some_and(|v| v.as_i64().is_some() && !v.is_boolean()) {
+            if !body
+                .get("stakePoints")
+                .is_some_and(|v| v.as_i64().is_some() && !v.is_boolean())
+            {
                 return Err(RouteError::Invalid);
             }
         }

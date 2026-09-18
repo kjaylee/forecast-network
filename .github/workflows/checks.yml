@@ -108,3 +108,21 @@ jobs:
           cargo clippy --all-targets -- -D warnings
           cargo test
           cargo build --release --target wasm32-unknown-unknown
+
+  edge:
+    # This crate serves forecast.eastsea.xyz and had no CI gate at all until now,
+    # so nothing caught it drifting out of rustfmt. It still has no tests, which is
+    # the larger gap: this checks that it builds and lints, not that it is correct.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy, rustfmt
+      - name: Verify the Worker that serves production builds and lints
+        working-directory: apps/web-rs
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo build --release --target wasm32-unknown-unknown
