@@ -28,6 +28,37 @@ The Mac first attempts only `/usr/bin/rsync`, with pinned SSH host checking. The
 
 Private seeds are never serialized to a local or remote plaintext keypair file or command argument. The dedicated NAS wrapping-key file is the explicit exception: it is the off-device private recovery key, under 0700/0600 protection. No operational Devnet keys are newly generated or rotated.
 
+## The wrapping key is a single point, and splitting fixes it
+
+Everything above protects the archive. None of it protects the key that opens
+it: the RSA-3072 private half lives on the NAS and nowhere else, so if the NAS
+dies, its disks are lost or it is stolen, the archives survive and nobody can
+open them. A second copy in the same house does not help — one fire takes both.
+
+`scripts/recovery_key_shares.py` splits that key with a Shamir threshold over
+GF(256): any K of N shares reconstruct it, any K-1 reveal nothing, and the
+shares can be kept in different places, with different people, on different
+media. The arithmetic is implemented in about fifty lines with no dependencies,
+because it is worth being able to read the whole of something guarding the only
+key.
+
+```sh
+# On the host that holds the key, so it never moves.
+python3 scripts/recovery_key_shares.py split --key wrapping-key.pem \
+    --shares 5 --threshold 3 --out ~/recovery-shares
+python3 scripts/recovery_key_shares.py combine --share share-1-of-5.json \
+    --share share-3-of-5.json --share share-5-of-5.json --out rebuilt.pem
+```
+
+Every share carries the fingerprint of the key it came from, so `combine`
+refuses a set that is mixed, short or tampered rather than silently producing a
+wrong key. Verify a reconstruction against the original with `cmp`, then destroy
+the intermediate.
+
+**A share set that all sits in one directory has not been split.** The point is
+that no single location holds enough shares to reconstruct, so distribution is
+the part that matters and it cannot be done by a script.
+
 ## Recovery proof
 
 On NAS, the tool verifies ciphertext hash, public-key pin, authenticated manifest, member paths, byte counts and hashes. It decrypts the Devnet seeds in memory and derives each public key. Relayer, upgrade and program keys must match `infra/solana/devnet.json`. That deployment manifest has no buffer field, so the buffer pin is explicitly the public key obtained from the existing `forecast-network-devnet-buffer-seed-v1` Keychain item, not a claimed on-chain manifest binding.
