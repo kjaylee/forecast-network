@@ -125,7 +125,14 @@ def recommendations(rows: Iterable[Mapping[str, Any]], *, as_of_ms: int,
 
 
 def _tie_coefficients(as_of_ms: int, user_id: str | None) -> list[int]:
-    seed = json.dumps([DISCOVERY_VERSION, as_of_ms // DAY_MS, user_id or ""], separators=(",", ":"))
+    # ensure_ascii=False is load-bearing, not cosmetic. The default escapes non-ASCII as
+    # \uXXXX, and the Rust edge serializes the same seed as raw UTF-8, so a non-ASCII user
+    # id produced different coefficients on each side — and a different SQL expression, since
+    # the coefficients are interpolated into it. Account ids are `u_` plus base64url and so
+    # always ASCII, which is why this was never seen; it is a landmine, not a live fault.
+    # Raw UTF-8 on both sides removes the question rather than answering it twice.
+    seed = json.dumps([DISCOVERY_VERSION, as_of_ms // DAY_MS, user_id or ""],
+                      separators=(",", ":"), ensure_ascii=False)
     digest = hashlib.sha256(seed.encode()).digest()
     return [byte + 1 for byte in digest]
 

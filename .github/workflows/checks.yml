@@ -120,9 +120,10 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
           components: clippy, rustfmt
-      - name: Verify the Worker that serves production builds and lints
+      - name: Verify the Worker that serves production builds, lints and ties like Python
         working-directory: apps/web-rs
         run: |
           cargo fmt --check
           cargo clippy --all-targets -- -D warnings
+          cargo test
           cargo build --release --target wasm32-unknown-unknown

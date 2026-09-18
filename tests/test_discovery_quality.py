@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import unittest
 
-from forecast_application.discovery import DAY_MS, rank_forecasts, recommendations, score_forecast
+from forecast_application.discovery import (
+    DAY_MS,
+    _tie_coefficients,
+    rank_forecasts,
+    recommendations,
+    score_forecast,
+    tie_break,
+)
 
 NOW = 100 * DAY_MS + 1234
 
@@ -86,3 +93,44 @@ class DiscoveryQualityTests(unittest.TestCase):
             rank_forecasts([candidate(), candidate()], as_of_ms=NOW)
         with self.assertRaises(ValueError):
             recommendations([], as_of_ms=NOW, limit=-1)
+
+
+class TieBreakParityTests(unittest.TestCase):
+    """The same vectors are asserted in apps/web-rs/src/discovery.rs.
+
+    Discovery order is decided by this key, and three implementations compute it: this one,
+    the Rust edge that serves /api/forecasts, and the SQL expression. They have to agree, or
+    the same database answers differently depending on which one asked. Nothing was checking
+    that until the Rust side got tests, and the first version of those tests disagreed with
+    this implementation for a non-ASCII user id.
+    """
+
+    VECTORS = (
+        ("f_BHbIOkOLWiMNIEGD3sjxrOSf", 1_800_000_000_000, None, 275240),
+        ("f_BHbIOkOLWiMNIEGD3sjxrOSf", 1_800_000_000_000, "user-a", 314780),
+        ("f_tkqvmogdeeITz0c_XMNJTB68", 1_800_086_400_000, None, 274888),
+        ("f_tkqvmogdeeITz0c_XMNJTB68", 1_800_086_400_000, "user-b", 386187),
+        ("f_kFOj9FjHp6oP2C-h3B4mNNZy", 1_700_000_000_000, "user-a", 337443),
+        ("", 1_800_000_000_000, None, 0),
+        ("short", 1_800_000_000_000, None, 75374),
+        ("f_abcdefghijklmnopqrstuvwxyz0123456789extra", 1_800_000_000_000, None, 417510),
+        ("질문-식별자-테스트", 1_800_000_000_000, "사용자", 49845078),
+        ("boundary", 1_800_086_399_999, None, 110263),
+    )
+
+    def test_the_tie_key_matches_the_vectors_the_rust_edge_asserts(self):
+        for identifier, as_of_ms, user_id, expected in self.VECTORS:
+            with self.subTest(identifier=identifier, user_id=user_id):
+                self.assertEqual(tie_break(identifier, as_of_ms, user_id), expected)
+
+    def test_an_escaped_seed_ties_differently_which_is_why_both_sides_serialize_raw(self):
+        # The seed is serialized raw on both sides. This is what escaping would cost: the
+        # literal text of an escaped id is a different string, so it ties differently, and
+        # the Rust edge serializes raw and cannot reproduce the escaped form.
+        raw_id = "사용자"
+        escaped_id = "\\uc0ac\\uc6a9\\uc790"
+        self.assertNotEqual(raw_id, escaped_id)
+        self.assertNotEqual(tie_break("x", 1_800_000_000_000, raw_id),
+                            tie_break("x", 1_800_000_000_000, escaped_id))
+        self.assertNotEqual(_tie_coefficients(1_800_000_000_000, raw_id),
+                            _tie_coefficients(1_800_000_000_000, escaped_id))
