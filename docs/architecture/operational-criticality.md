@@ -188,6 +188,34 @@ decision before it needs code.
 evidence running on the production host every five minutes. It should not
 compete with the risk feed for this machine.
 
+## The publication cadence, measured 2026-09-18
+
+The risk feed expires 120 seconds after issuance and is reissued by a
+60-second cron on this host. Measured across 400 publications in D1 — the
+feed's own record, not the operator's log:
+
+| | Before | After `--loop` |
+| --- | --- | --- |
+| Median gap | 68.9 s | 54.4 s |
+| Worst gap | 416.5 s | 108.7 s |
+| Gaps over the 120 s expiry | **16.0%** | not yet established |
+
+16% of publications arrived more than 120 seconds after the previous one, so
+for that fraction of the time a consumer fetching the feed saw `status: stale`.
+A three-minute direct sample of the public endpoint found 20 of 36 reads stale.
+Earlier reports that "the feed is current" were true at the moment they were
+taken and were not representative; that is worth stating plainly, because the
+sampling method was the mistake, not the data.
+
+**The tail had two layers, and only one is fixed.** The long gaps did not
+follow long ticks (correlation 0.23 over 3,228 ticks), which pointed at launchd
+skipping starts rather than work overrunning — the operator now keeps its own
+cadence under `KeepAlive` and the median and worst case both improved. But the
+worst remaining gap followed a tick that itself took 50.8 seconds, so a slow
+Worker call still pushes the interval past the expiry. A 120-second expiry
+against a 60-second cadence has almost no margin for a tick that takes most of
+a minute, and that is the unresolved half.
+
 ## Rules
 
 - An observer must not run on the host it observes, or on the platform it
