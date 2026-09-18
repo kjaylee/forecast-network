@@ -14,6 +14,11 @@ on:
   schedule:
     - cron: '1-56/5 * * * *'
   workflow_dispatch:
+    inputs:
+      stale_after:
+        description: 'Seconds before the feed counts as stale. Lower it to rehearse a rescue.'
+        required: false
+        default: '180'
 
 permissions:
   contents: read
@@ -26,4 +31,5 @@ jobs:
       - name: Trigger only if the feed has already gone stale
         env:
           SCHEDULER_TOKEN: ${{ secrets.SCHEDULER_TOKEN }}
-        run: python3 scripts/feed_fallback.py
+          STALE_AFTER: ${{ inputs.stale_after || '180' }}
+        run: python3 scripts/feed_fallback.py --stale-after "$STALE_AFTER"
