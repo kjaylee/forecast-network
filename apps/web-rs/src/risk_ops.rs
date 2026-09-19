@@ -143,6 +143,34 @@ pub fn coverage_status<'a>(
     ("unsupported", None, Some("no admitted definition"))
 }
 
+/// Whether a computed signal belongs in the published payload.
+///
+/// Three ways it does not. It may predate the binding's authorization, so it was measured
+/// before the feed was allowed to carry it. It may have completed evaluation after now,
+/// which is a clock ordering the payload cannot represent. Or the binding may be
+/// exact-dated and the estimate is newer than the target start, which means it estimates
+/// something other than the window the question asked about.
+///
+/// These signals are signed, so a filter that admits one the Python side rejects produces
+/// an envelope no consumer can verify against the same database.
+pub fn signal_is_admissible(
+    binding: &RiskFeedBindingV2,
+    forecast_as_of_ms: i64,
+    evaluation_completed_at_ms: i64,
+    now_ms: i64,
+) -> bool {
+    if binding.authorization_valid_from_ms > forecast_as_of_ms {
+        return false;
+    }
+    if evaluation_completed_at_ms > now_ms {
+        return false;
+    }
+    if binding.mapping_kind == "exact_dated" && forecast_as_of_ms > binding.target_start_ms {
+        return false;
+    }
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -383,6 +411,63 @@ mod tests {
         let (status, binding, reason) = coverage_status("ethCrashRisk", &none, &none, &admitted);
         assert_eq!((status, binding), ("unsupported", None));
         assert_eq!(reason, Some("no admitted definition"));
+    }
+
+    #[test]
+    fn a_signal_admitted_by_one_side_must_be_admitted_by_the_other() {
+        let now = 2_000_000_i64;
+        let mut binding = binding_id("b", "depegRisk1d", 1_000_000);
+        binding.authorization_valid_from_ms = 1_500_000;
+
+        assert!(
+            signal_is_admissible(&binding, 1_500_000, now, now),
+            "authorized and completed"
+        );
+        assert!(signal_is_admissible(&binding, 1_900_000, now, now));
+    }
+
+    #[test]
+    fn a_signal_measured_before_the_binding_was_authorized_is_not_admissible() {
+        let mut binding = binding_id("b", "depegRisk1d", 1_000_000);
+        binding.authorization_valid_from_ms = 1_500_000;
+        assert!(
+            !signal_is_admissible(&binding, 1_499_999, 2_000_000, 2_000_000),
+            "the feed was not allowed to carry this estimate yet"
+        );
+        assert!(
+            signal_is_admissible(&binding, 1_500_000, 2_000_000, 2_000_000),
+            "the boundary is inclusive in Python and must be here"
+        );
+    }
+
+    #[test]
+    fn a_signal_that_completes_after_now_is_not_admissible() {
+        let binding = binding_id("b", "depegRisk1d", 1_000_000);
+        assert!(
+            !signal_is_admissible(&binding, 1_000_000, 2_000_001, 2_000_000),
+            "evaluation cannot have completed in the future"
+        );
+        assert!(signal_is_admissible(&binding, 1_000_000, 2_000_000, 2_000_000));
+    }
+
+    #[test]
+    fn an_exact_dated_binding_refuses_an_estimate_past_its_target_start() {
+        let mut binding = binding_id("b", "depegRisk1d", 1_000_000);
+        binding.mapping_kind = "exact_dated".to_string();
+        assert!(
+            signal_is_admissible(&binding, 1_000_000, 2_000_000, 2_000_000),
+            "an estimate as of the target start is what the question asked for"
+        );
+        assert!(
+            !signal_is_admissible(&binding, 1_000_001, 2_000_000, 2_000_000),
+            "later than the start estimates a different thing"
+        );
+
+        binding.mapping_kind = "containing_upper_estimate".to_string();
+        assert!(
+            signal_is_admissible(&binding, 1_000_001, 2_000_000, 2_000_000),
+            "a containing window can carry an estimate from inside it"
+        );
     }
 
     #[test]

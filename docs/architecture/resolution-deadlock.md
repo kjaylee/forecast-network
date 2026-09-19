@@ -36,6 +36,55 @@ So the review blocks resolution, clearing the review needs a completion, a
 completion needs the early-resolution path, and that path needs a state these
 forecasts have already left. Nothing in the system can move them.
 
+## The decision: INVALID
+
+Decided 2026-09-19. Both forecasts are to be finalized **INVALID**, which refunds
+the original stake.
+
+The review's recorded reason is `publication_time_unknown`, and its proof shows
+`hashVerified: true` with `publication: null` and `publishedAt: null` on every
+evidence item. The evidence is authentic and its publication time cannot be
+determined — so it cannot be established that it post-dates the last receipt,
+and it cannot be established that it does not.
+
+That rules out the other two outcomes rather than being a preference between
+them. Finalizing YES or NO would require a timing judgment the system explicitly
+could not make, and would reward forecasts that may have been made in
+possession of the outcome. INVALID is the only result the evidence supports: it
+takes nothing from anyone and gives nothing to anyone. One of the two forecasts
+has two real participants and the other has none, out of seven submissions in
+the whole system, so this is small — and it is the same answer either way.
+
+## What implementing it requires, traced
+
+It is not a configuration change or a data fix, and the path is worth writing
+down because each step closes an easier option:
+
+1. **The review row cannot be edited or deleted.** `resolution_timing_reviews`
+   carries `BEFORE UPDATE` and `BEFORE DELETE` triggers that abort.
+2. **`ResolutionTiming.check()` blocks any resolution while a review row exists**,
+   and does not read the row — its presence is the whole condition.
+3. **The only way past it is `_completed()`**, which needs a
+   `forecast_eligibility_decisions` row joined to a
+   `forecast_eligibility_completions` row.
+4. **A decision row's body must be a validated `EarlyResolutionTrigger`.** Its
+   `proposed_outcome` is `Literal["YES"]`, its `irreversible` and
+   `conditions_fully_satisfied` are `Literal[True]`: the record exists to say
+   "an official announcement was observed and the outcome is YES". It cannot
+   express "indeterminate".
+5. **`Finalize` copies `resolution.proposed_outcome`**, so the outcome has to be
+   INVALID in the resolution before finalization, not chosen at finalization.
+
+So a new record type is needed — a resolution for a timing review that cannot be
+determined — together with the transition that writes it, the completion
+`_completed()` looks for, and settlement that refunds. That is roughly a day of
+domain work with tests on the reward and reputation path.
+
+**It is specified here rather than implemented.** The gate protects rewards and
+reputation, the two forecasts are the first real exercise of it, and a rushed
+change to the settlement path is worse than a precise handover. The decision is
+made and unambiguous; what remains is code.
+
 ## Why this is not a bug to patch quietly
 
 The gate exists to stop a result being finalized while the publication time of
