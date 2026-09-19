@@ -18,6 +18,7 @@ from forecast_application.risk_feed_v2 import (
     admit_definition,
     admit_profile,
     operational_bindings_v2,
+    operations_health,
 )
 from forecast_domain.errors import ValidationError
 from forecast_domain.models import Category
@@ -131,6 +132,46 @@ class RiskFeedSeriesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.seeded, [])
         outcomes = await create_due_episodes(self.db, now_ms=self.now + 600_000, seed=self.seed)
         self.assertIsNotNone(outcomes[0]["created"])
+
+    async def test_a_refusal_is_logged_by_its_code_rather_than_its_class(self):
+        # Six failed attempts for one series read as "ValidationError" with nothing to act on.
+        await configure_series(self.db, series=self.series, enabled=True, configured_by="a", now_ms=self.now)
+        first = next_episode_start(self.series, latest_start_ms=None, now_ms=self.now)
+        self.now = first - self.series.lead_ms + 1000
+
+        class Refused(Exception):
+            code = "risk_prediction_clock_missing"
+
+        async def refusing(question):
+            raise Refused("the prediction clock is absent for this episode")
+
+        outcomes = await create_due_episodes(self.db, now_ms=self.now, seed=refusing)
+        self.assertEqual(outcomes[0]["failure"], "risk_prediction_clock_missing")
+        self.assertEqual(outcomes[0]["failureType"], "Refused")
+        self.assertEqual(outcomes[0]["failureDetail"], "the prediction clock is absent for this episode")
+        log = await self.db.first("SELECT outcome, detail FROM risk_feed_series_log_v2")
+        self.assertEqual(log["outcome"], "failed:risk_prediction_clock_missing")
+        self.assertIn("the prediction clock is absent", log["detail"])
+
+    async def test_only_attempts_whose_episode_never_published_are_reported(self):
+        # The retry is the feature. A series that failed and then published is working, and
+        # counting those failures held the pipeline at degraded while it produced episodes.
+        await configure_series(self.db, series=self.series, enabled=True, configured_by="a", now_ms=self.now)
+        first = next_episode_start(self.series, latest_start_ms=None, now_ms=self.now)
+        self.now = first - self.series.lead_ms + 1000
+
+        async def failing(question):
+            raise ValidationError("the compiler refused this episode")
+
+        await create_due_episodes(self.db, now_ms=self.now, seed=failing)
+        unresolved = await operations_health(self.db, now_ms=self.now)
+        self.assertEqual(unresolved["series"][0]["failedUnpublishedAttemptsLast24h"], 1)
+
+        self.now += 600_000
+        self.assertIsNotNone((await create_due_episodes(self.db, now_ms=self.now, seed=self.seed))[0]["created"])
+        resolved = await operations_health(self.db, now_ms=self.now)
+        self.assertEqual(resolved["series"][0]["failedUnpublishedAttemptsLast24h"], 0)
+        self.assertTrue(resolved["series"][0]["enabled"])
 
 
 if __name__ == "__main__":

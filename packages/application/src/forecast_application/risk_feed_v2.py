@@ -482,13 +482,21 @@ async def operations_health(db: Database, *, now_ms: int) -> dict[str, Any]:
             "SELECT MAX(json_extract(binding_json,'$.target_start_ms')) AS start FROM risk_feed_bindings_v2 b "
             "WHERE json_extract(binding_json,'$.series_id')=? AND NOT EXISTS(SELECT 1 FROM risk_feed_binding_revocations_v2 r "
             "WHERE r.binding_id=b.binding_id)", (row["series_id"],))
-        failures = await db.first("SELECT COUNT(*) AS n FROM risk_feed_series_log_v2 WHERE series_id=? AND attempted_at>? "
-                                  "AND outcome LIKE 'failed:%'", (row["series_id"], now_ms - 86_400_000))
+        # Attempts that failed for an episode which then published are the retry working, not
+        # a problem: the series logs `published` for the same target start and the count drops
+        # to zero. Counting them for a further 24 hours held the pipeline at degraded while
+        # both series were producing episodes.
+        failures = await db.first(
+            "SELECT COUNT(*) AS n FROM risk_feed_series_log_v2 l WHERE l.series_id=? AND l.attempted_at>? "
+            "AND l.outcome LIKE 'failed:%' AND NOT EXISTS(SELECT 1 FROM risk_feed_bindings_v2 b "
+            "WHERE json_extract(b.binding_json,'$.series_id')=l.series_id "
+            "AND json_extract(b.binding_json,'$.target_start_ms')=l.target_start_ms)",
+            (row["series_id"], now_ms - 86_400_000))
         cadence = json.loads(row["series_json"])["cadence_ms"]
         series.append({"seriesId": row["series_id"], "enabled": bool(row["enabled"]),
                        "latestEpisodeStartMs": latest_start["start"] if latest_start else None,
                        "nextEpisodeStartMs": (latest_start["start"] + cadence) if latest_start and latest_start["start"] else None,
-                       "failedAttemptsLast24h": failures["n"] if failures else 0})
+                       "failedUnpublishedAttemptsLast24h": failures["n"] if failures else 0})
     sources = await db.first(
         "SELECT COUNT(*) AS total, SUM(failure_count>0) AS failing, "
         "SUM(failure_count=0 AND (checked_at IS NULL OR checked_at<?-interval_ms-300000)) AS stale "

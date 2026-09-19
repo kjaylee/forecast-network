@@ -138,8 +138,15 @@ async def create_due_episodes(
             outcome.update(created=binding.binding_id, forecastId=card["id"])
             detail = "published"
         except Exception as exc:  # compiler review, budget or approval failure: retry next tick
-            outcome["failure"] = type(exc).__name__
-            detail = "failed:" + type(exc).__name__
+            # The class name alone made this log undiagnosable: six failed attempts for one
+            # series read as "ValidationError" with nothing to act on. The stable code names
+            # the cause, the type separates a refusal from a crash, and the message is kept
+            # for the operator rather than the user.
+            reason = str(getattr(exc, "code", "") or type(exc).__name__).splitlines()[0][:120]
+            outcome["failure"] = reason
+            outcome["failureType"] = type(exc).__name__
+            outcome["failureDetail"] = " ".join(str(exc).split())[:400]
+            detail = "failed:" + reason
         await db.execute("INSERT OR IGNORE INTO risk_feed_series_log_v2(series_id,target_start_ms,attempted_at,outcome,detail)"
                          " VALUES(?,?,?,?,?)", (series.series_id, start, now_ms, detail, json.dumps(outcome, sort_keys=True)))
         outcomes.append(outcome)

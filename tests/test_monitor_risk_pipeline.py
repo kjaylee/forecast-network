@@ -28,7 +28,7 @@ def health(**changes):
             "ticksLast30m": 29, "failedTicksLast30m": 0}
     feed.update({k: v for k, v in changes.items() if k in feed})
     series = {"seriesId": "s", "enabled": True, "latestEpisodeStartMs": NOW - 3_600_000,
-              "nextEpisodeStartMs": NOW + 3_600_000, "failedAttemptsLast24h": 0}
+              "nextEpisodeStartMs": NOW + 3_600_000, "failedUnpublishedAttemptsLast24h": 0}
     series.update({k: v for k, v in changes.items() if k in series})
     return {"serverTime": NOW, "feeds": [feed], "series": [series],
             "sourceWatch": changes.get("sourceWatch", {"total": 9, "failing": 0, "stale": 0})}
@@ -52,7 +52,7 @@ class MonitorTests(unittest.TestCase):
             (health(latestAgeMs=200_000), KEEPER_OK, "stale"),
             (health(ticksLast30m=5), KEEPER_OK, "ticks in 30 min"),
             (health(failedTicksLast30m=3), KEEPER_OK, "failed ticks"),
-            (health(failedAttemptsLast24h=3), KEEPER_OK, "episode attempts"),
+            (health(failedUnpublishedAttemptsLast24h=3), KEEPER_OK, "no published episode"),
             (health(nextEpisodeStartMs=NOW - 1), KEEPER_OK, "missed episode"),
             (health(sourceWatch={"total": 9, "failing": 1, "stale": 2}), KEEPER_OK, "watch sources stale"),
             (None, KEEPER_OK, "unreachable"),

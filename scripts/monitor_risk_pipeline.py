@@ -86,8 +86,12 @@ def evaluate(health: dict[str, object] | None, keeper: dict[str, object], now_ms
             if feed["failedTicksLast30m"] >= 3:
                 problems.append(f"feed {feed['feedId']} {feed['failedTicksLast30m']} failed ticks in 30 min")
         for series in health.get("series", []):  # type: ignore[union-attr]
-            if series["enabled"] and series["failedAttemptsLast24h"] >= 3:
-                problems.append(f"series {series['seriesId']} failed {series['failedAttemptsLast24h']} episode attempts")
+            # Only attempts whose episode never published. A series that failed four times and
+            # then published is the retry doing its job, and reporting it as degraded is how a
+            # real outage would go unread.
+            if series["enabled"] and series["failedUnpublishedAttemptsLast24h"] >= 3:
+                problems.append(f"series {series['seriesId']} has {series['failedUnpublishedAttemptsLast24h']} failed attempts "
+                                "and no published episode for those targets")
             nxt = series.get("nextEpisodeStartMs")
             if series["enabled"] and nxt is not None and nxt < now_ms:
                 problems.append(f"series {series['seriesId']} missed episode start {nxt}")
