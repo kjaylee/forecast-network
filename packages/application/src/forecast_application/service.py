@@ -1503,8 +1503,14 @@ class Application:
             elif forecast.state == LifecycleState.RESOLVING:
                 owner = "resolution:" + forecast_id
                 lease = await self._ai_lease(owner)
+                # Whether the evidence can be placed relative to participation is something this
+                # layer knows and the judge cannot see. Without telling it, the judge keeps
+                # answering YES or NO, the timing gate keeps refusing, and the forecast retries
+                # forever — which is what happened to two of them.
+                timing = await self.resolution_timing.status(forecast_id)
+                indeterminate = timing.get("reason") == "publication_time_unknown"
                 try:
-                    result = await self._bounded_ai((self.ai.propose_early_resolution(forecast, self.now_ms()) if isinstance(forecast, ForecastV2) else self.ai.propose_resolution(forecast, self.now_ms())))
+                    result = await self._bounded_ai((self.ai.propose_early_resolution(forecast, self.now_ms()) if isinstance(forecast, ForecastV2) else self.ai.propose_resolution(forecast, self.now_ms(), publication_time_unknown=indeterminate)))
                 finally:
                     await self._release_ai(owner, lease)
                 payload, at = (ProposeEarlyResolution(resolution=result.resolution) if isinstance(forecast, ForecastV2) else ProposeResolution(resolution=result.resolution)), result.resolution.proposed_at_ms

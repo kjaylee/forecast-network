@@ -1091,7 +1091,8 @@ class AiCoordinator:
                                 unavailable_providers=exc.unavailable_providers) from exc
         return PredictionResult((*collection.artifacts, provenance, *estimate.artifacts), estimate.ai_forecast)
 
-    async def propose_resolution(self, forecast: Forecast, now_ms: int) -> ResolutionResult:
+    async def propose_resolution(self, forecast: Forecast, now_ms: int, *,
+                                publication_time_unknown: bool = False) -> ResolutionResult:
         spec = forecast.specification
         if now_ms < spec.close_at_ms:
             raise AIRejected("Evidence collection cannot resolve a forecast before its deadline")
@@ -1152,6 +1153,16 @@ class AiCoordinator:
                    "commitment, so it is the correct answer for a question the evidence cannot "
                    "answer, and it is not a guess. "
                    "CLEAR requires no conflicts and null conflict_explanation."}
+        if publication_time_unknown:
+            # The resolver knows this and the judge cannot see it: the retained evidence is
+            # authentic but cannot be placed relative to participation, so no outcome can be
+            # credited from it. Stated as a fact for the judge to apply, not as an outcome for
+            # it to adopt — the decision stays the judge's, which is why the provenance chain
+            # below still has to hold.
+            payload = {**payload, "publication_time_relative_to_participation": "unknown",
+                       "publication_time_note": "The retained evidence is authentic but its "
+                       "publication time cannot be placed before or after participation, so this "
+                       "evidence cannot establish an outcome. Weigh that in the outcome you choose."}
         judge = await self._call(AITask.RESOLUTION_JUDGE, payload, _RESOLUTION)
         artifacts.append(judge.artifact)
         output = judge.output

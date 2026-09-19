@@ -89,7 +89,11 @@ class TestAI:
         assessment = fixtures.validation(spec, validated_at_ms=now_ms)
         return CompileResult(spec, assessment, (), self.ai_forecast)
 
-    async def propose_resolution(self, forecast, now_ms):
+    async def propose_resolution(self, forecast, now_ms, *, publication_time_unknown=False):
+        # The service tells the judge when the evidence cannot be placed relative to
+        # participation. This stub answers the same either way; what matters here is
+        # that the call is accepted.
+        self.publication_time_unknown = publication_time_unknown
         self.calls += 1
         if self.fail:
             raise AIUnavailable("providers failed", unavailable_providers=self.unavailable_providers)
