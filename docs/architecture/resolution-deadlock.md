@@ -1,8 +1,8 @@
 # Three forecasts cannot resolve, and nothing can clear them
 
-Observed 2026-09-18, still true on 2026-09-19. Three forecasts sit with a
-`job_error` and retry forever, and the analysis below is why no amount of
-retrying will change that.
+Observed 2026-09-18, diagnosed and fixed 2026-09-19. Three forecasts sat with a
+`job_error` and retried forever; the analysis below is why no amount of retrying
+could change that, and what was built to end it.
 
 | Forecast | State | Failure count | Recorded reason |
 | --- | --- | --- | --- |
@@ -88,10 +88,11 @@ takes nothing from anyone and gives nothing to anyone. One of the two forecasts
 has two real participants and the other has none, out of seven submissions in
 the whole system, so this is small — and it is the same answer either way.
 
-## What implementing it requires, traced
+## What implementing it required, traced
 
-It is not a configuration change or a data fix, and the path is worth writing
-down because each step closes an easier option:
+Correcting the first draft of this section, which guessed at a new *resolution*
+record. The three gates were real, but the shape of the fix was wrong, and the
+traced path is kept because each step closed an easier option:
 
 1. **The review row cannot be edited or deleted.** `resolution_timing_reviews`
    carries `BEFORE UPDATE` and `BEFORE DELETE` triggers that abort.
@@ -100,37 +101,76 @@ down because each step closes an easier option:
 3. **The only way past it is `_completed()`**, which needs a
    `forecast_eligibility_decisions` row joined to a
    `forecast_eligibility_completions` row.
-4. **A decision row's body must be a validated `EarlyResolutionTrigger`.** Its
-   `proposed_outcome` is `Literal["YES"]`, its `irreversible` and
-   `conditions_fully_satisfied` are `Literal[True]`: the record exists to say
-   "an official announcement was observed and the outcome is YES". It cannot
-   express "indeterminate".
+4. **A decision row is not a general-purpose escape.** Its validation trigger
+   binds it to `command_receipts` and the receipt-classification machinery, so
+   writing one to close a timing review drags the whole eligibility settlement
+   path in behind it.
 5. **`Finalize` copies `resolution.proposed_outcome`**, so the outcome has to be
    INVALID in the resolution before finalization, not chosen at finalization.
 
-So a new record type is needed — a resolution for a timing review that cannot be
-determined — together with the transition that writes it, the completion
-`_completed()` looks for, and settlement that refunds. That is roughly a day of
-domain work with tests on the reward and reputation path.
+### The gate is a boolean, and that was the actual problem
 
-**It is specified here rather than implemented.** The gate protects rewards and
-reputation, the two forecasts are the first real exercise of it, and a rushed
-change to the settlement path is worse than a precise handover. The decision is
-made and unambiguous; what remains is code.
+The first attempt at a fix — exempt an INVALID outcome inside
+`ResolutionTiming.check()` — did not work, and the reason is the design rather
+than the edit. The guard is not one gate. It is a view, `forecast_resolution_blockers`,
+derived from `unresolved_resolution_timing_reviews`, and **five separate
+consumers** read it:
 
-## Why this is not a bug to patch quietly
+| Consumer | Reads it to decide |
+| --- | --- |
+| `ResolutionTiming.check()` | whether a resolution may be committed |
+| `resolution_timing_state_guard` trigger | whether the state may advance to PROPOSED/CHALLENGE/FINALIZED/ARCHIVED |
+| `_advance_job` entry guard | whether the scheduler may touch the forecast at all |
+| `_process_outbox` | whether effects may be published |
+| `solana_registry._deliver` | whether the result may go on chain |
+
+Carving an exception into one of them is four chances to leak a reward, and each
+one found later is a wider hole than the one before. The commit that tried it
+(`b21d68d`..`c7286b5`) changed nothing in production, because the forecast never
+reached the changed line.
+
+### What was built instead
+
+**Close the review, so the boolean turns false everywhere at once.** Migration
+`0029_resolution_timing_closure.sql` adds `resolution_timing_closures` and
+redefines the one view — `unresolved_resolution_timing_reviews` now also excludes
+a review that has a closure. `forecast_resolution_blockers` and
+`resolution_timing_state_guard` both name that view and SQLite resolves views at
+query time, so redefining it opened all five consumers together. No gate was
+loosened.
+
+A closure is narrow by construction. It is refused unless the review it names
+exists, its reason is exactly `publication_time_unknown`, the closure quotes that
+review's `proof_hash`, and it names an evidence item the review itself recorded as
+unplaceable. It cannot be edited, deleted, or written after the forecast has a
+finalized result.
+
+It also **does not licence a reward.** `ResolutionTiming.check()` admits only the
+outcome the closure determined, so a closure releases the forecast without making
+YES or NO supportable — the two properties the first attempt conflated.
+
+### The ordering that actually caused the deadlock
+
+Writing the closure turned out not to be enough on its own. The scheduler's entry
+guard reads the blocker view *before* the RESOLVING branch runs, and the closure
+could only be written from inside that branch — so the guard refused entry to the
+state the closure had to be written from. The call moved above the guard. That
+chicken-and-egg is the whole deadlock in one sentence, and it is why the failure
+was stable rather than intermittent: every attempt hit the same wall in the same
+order.
+
+## Why this was not a bug to patch quietly
 
 The gate exists to stop a result being finalized while the publication time of
 its evidence is in question — that is, to stop rewards and reputation being
 credited on evidence that may have arrived after participation closed. Loosening
-it is a product decision about money and standing, not an engineering tidy-up,
-and it should not be made by whoever happens to be editing the file.
+it is a product decision about money and standing, not an engineering tidy-up.
 
-What can be said without deciding anything: a state machine whose terminal
-conditions cannot be reached from some of its own states is incomplete, and the
-missing piece is a path that resolves a timing review for a forecast that has
-already left `OPEN`. Whether that path completes the review, voids the forecast,
-or refunds and closes it is the decision.
+That decision was made: **INVALID**, because the review's own proof already
+settles that no rewarded outcome is supportable. What the implementation adds is
+only the path from that decision to the record — the decision itself was never
+delegated to the code, and the closure asserts it rather than deriving it from a
+model's opinion.
 
 ## Detecting it
 

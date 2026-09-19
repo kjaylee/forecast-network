@@ -27,6 +27,12 @@ def _review() -> AppError:
                     "The publication time of resolution evidence needs review before results or points can be finalized.")
 
 
+def _determined(determination: str) -> AppError:
+    return AppError(409, "resolution_timing_determined",
+                    "The publication-time review for this forecast is closed and determines "
+                    f"{determination}. No other result can be finalized from this evidence.")
+
+
 class ResolutionTiming:
     def __init__(self, db: Database, now_ms: Callable[[], int]):
         self.db, self.now_ms = db, now_ms
@@ -44,6 +50,18 @@ class ResolutionTiming:
         if isinstance(resolution, EarlyResolution):
             return
         if await self._completed(forecast.forecast_id, forecast.specification_hash):
+            return
+        closure = await self.db.first(
+            "SELECT determination FROM resolution_timing_closures WHERE forecast_id=? AND specification_hash=?",
+            (forecast.forecast_id, forecast.specification_hash))
+        if closure is not None:
+            # The review is closed, so the guard has stopped applying everywhere at once --
+            # including in the outbox and registry, which read the blocker view rather than
+            # asking this method. That is only safe because of the line below: the closure
+            # admits its own determination and nothing else, so a reward still cannot be
+            # credited from evidence whose publication time could not be placed.
+            if resolution.proposed_outcome.value != closure["determination"]:
+                raise _determined(closure["determination"])
             return
         if await self.db.first("SELECT 1 FROM resolution_timing_reviews WHERE forecast_id=? AND specification_hash=?",
                                (forecast.forecast_id, forecast.specification_hash)):
@@ -115,11 +133,69 @@ class ResolutionTiming:
         await self.db.batch(retained)
         raise _review()
 
+    async def close_indeterminate(self, forecast: Forecast) -> bool:
+        """Close a review whose own reason settles the only result the evidence supports.
+
+        Only publication_time_unknown qualifies. The review recorded the evidence as
+        authentic and its publication time as absent, and nothing that arrives later
+        changes that, so no outcome can be credited from it. This writes down the
+        conclusion the review already reached rather than overriding it; the closure is
+        bound to that review's proof and to the exact evidence item the review itself
+        marked unplaceable, so it cannot be manufactured from an unrelated review.
+
+        Returns whether a closure is in force afterwards, including one written by a
+        concurrent sweep.
+        """
+        specification_hash = forecast.specification_hash
+        if await self.db.first("SELECT 1 FROM resolution_timing_closures WHERE forecast_id=? AND specification_hash=?",
+                               (forecast.forecast_id, specification_hash)):
+            return True
+        if await self._completed(forecast.forecast_id, specification_hash):
+            return True
+        row = await self.db.first(
+            "SELECT proof_hash, body FROM resolution_timing_reviews WHERE forecast_id=? AND specification_hash=?"
+            " AND reason='publication_time_unknown' ORDER BY created_at,resolution_hash LIMIT 1",
+            (forecast.forecast_id, specification_hash))
+        if row is None:
+            return False
+        try:
+            evidence = next(item["contentHash"] for item in json.loads(row["body"])["evidence"]
+                            if item["reason"] == "publication_time_unknown")
+        except (KeyError, TypeError, ValueError, StopIteration):
+            # A review whose proof does not carry the reason it is filed under is not
+            # something this can close; leave it for a human rather than guess.
+            return False
+        body = json.dumps({"schemaVersion": 1, "forecastId": forecast.forecast_id,
+                           "specificationHash": specification_hash, "reviewProofHash": row["proof_hash"],
+                           "determination": "INVALID", "reason": "publication_time_unknown",
+                           "evidenceHash": evidence}, sort_keys=True, separators=(",", ":"))
+        try:
+            await self.db.batch([
+                ("INSERT INTO resolution_timing_closures(forecast_id,specification_hash,review_proof_hash,"
+                 "determination,reason,evidence_hash,proof_hash,body,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                 (forecast.forecast_id, specification_hash, row["proof_hash"], "INVALID",
+                  "publication_time_unknown", evidence, hashlib.sha256(body.encode()).hexdigest(), body,
+                  self.now_ms()))])
+        except Exception:
+            # The row is keyed and immutable, so what matters is that it exists, not who
+            # wrote it. Anything else -- including a validation trigger refusing the write
+            # because the forecast already moved -- has to surface.
+            if not await self.db.first("SELECT 1 FROM resolution_timing_closures WHERE forecast_id=? AND specification_hash=?",
+                                       (forecast.forecast_id, specification_hash)):
+                raise
+        return True
+
     async def status(self, forecast_id: str, user_id: str | None = None) -> dict[str, Any]:
         row = await self.db.first("SELECT * FROM resolution_timing_reviews WHERE forecast_id=? ORDER BY created_at,resolution_hash LIMIT 1",
                                   (forecast_id,))
         if row is None:
             return {"status": "none"}
         complete = await self._completed(forecast_id, row["specification_hash"])
-        return {"status": "complete" if complete else "review", "reason": row["reason"],
-                "candidateCutoffAt": row["candidate_cutoff_at"], "proofHash": row["proof_hash"]}
+        result = {"status": "complete" if complete else "review", "reason": row["reason"],
+                  "candidateCutoffAt": row["candidate_cutoff_at"], "proofHash": row["proof_hash"]}
+        closure = await self.db.first(
+            "SELECT determination FROM resolution_timing_closures WHERE forecast_id=? AND specification_hash=?",
+            (forecast_id, row["specification_hash"]))
+        # Additive: callers that only understand "review" keep working, and the closure is
+        # reported rather than hidden inside the same word.
+        return {**result, "determination": closure["determination"]} if closure is not None else result

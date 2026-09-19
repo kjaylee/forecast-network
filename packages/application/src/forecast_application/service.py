@@ -63,7 +63,6 @@ from forecast_domain.models import (
     Dispute,
     DisputeReview,
     ForecastChoice,
-    Outcome,
     Resolution,
     ValidationAssessment,
 )
@@ -711,13 +710,11 @@ class Application:
             raise AppError(409, "transition_rejected", "This request is not allowed in the current state or time window.") from exc
         if isinstance(payload, (ProposeResolution, AdjudicateResolution, Finalize)):
             resolution = result.forecast.resolution
-            # An INVALID outcome is not subject to the timing review, and the reason is the
-            # review's own reason: it exists to stop a forecast being rewarded on evidence
-            # whose publication time cannot be established, which is a question about
-            # advantage. INVALID returns each stake to its owner and credits no reputation —
-            # settlement reads finalized_outcome and nulls the score — so it confers none.
-            # Blocking it protects nothing and leaves the forecast unresolvable forever.
-            if resolution is not None and resolution.proposed_outcome is not Outcome.INVALID:
+            # The gate decides for itself whether this resolution may be committed: an open
+            # review admits nothing, and a closed one admits only the outcome it determined.
+            # Keeping that decision in one place is what stops each caller inventing its own
+            # reading of when a reward is allowed.
+            if resolution is not None:
                 await self.resolution_timing.check(forecast, resolution, timing_artifacts)
         changed, guard = result.forecast, self.random_token()
         snapshot = dumps(changed)
@@ -1471,6 +1468,8 @@ class Application:
                     reason = "Resolution is on hold because the AI review timed out. Another review will follow the retry schedule and daily limit."
                 elif isinstance(exc, AppError) and exc.code in {"resolution_timing_review", "early_eligibility_review"}:
                     reason = "Evidence publication time and receipt eligibility are being reviewed. No result rewards or reputation will be credited until that review is complete."
+                elif isinstance(exc, AppError) and exc.code == "resolution_timing_determined":
+                    reason = "The publication-time review is closed and determines INVALID. Only that result can be finalized, so the next attempt proposes it."
                 await self.db.execute("UPDATE forecasts SET failure_count=failure_count+1,job_error=?,"
                     "retry_at=?+MIN(21600000,60000*(1<<MIN(failure_count,8))) WHERE id=? AND job_token=?",
                     (reason, self.now_ms(), row["id"], token))
@@ -1488,6 +1487,13 @@ class Application:
         # race: the CAS then rejects this job, preserving the submitted dispute.
         for _ in range(6):
             forecast = await self._forecast(forecast_id)
+            if forecast.state == LifecycleState.RESOLVING:
+                # Before the guard below, because the guard reads the blocker view and a
+                # review that has already settled the only answer its evidence supports
+                # would otherwise refuse this job before anything could conclude it. That
+                # ordering is what left two forecasts unresolvable: the review could only
+                # be closed from inside the state the review was blocking entry to.
+                await self.resolution_timing.close_indeterminate(forecast)
             if await self.db.first("SELECT 1 FROM forecast_resolution_blockers WHERE forecast_id=?", (forecast_id,)):
                 raise AppError(409, "early_eligibility_review",
                                "Receipt timing and known-result evidence must be reviewed before resolution or rewards.")
@@ -1510,7 +1516,7 @@ class Application:
                 timing = await self.resolution_timing.status(forecast_id)
                 indeterminate = timing.get("reason") == "publication_time_unknown"
                 try:
-                    result = await self._bounded_ai((self.ai.propose_early_resolution(forecast, self.now_ms()) if isinstance(forecast, ForecastV2) else self.ai.propose_resolution(forecast, self.now_ms(), publication_time_unknown=indeterminate)))
+                    result = await self._bounded_ai((self.ai.propose_early_resolution(forecast, self.now_ms()) if isinstance(forecast, ForecastV2) else self.ai.propose_resolution(forecast, self.now_ms(), publication_time_unknown=indeterminate, determined_outcome=timing.get("determination"))))
                 finally:
                     await self._release_ai(owner, lease)
                 payload, at = (ProposeEarlyResolution(resolution=result.resolution) if isinstance(forecast, ForecastV2) else ProposeResolution(resolution=result.resolution)), result.resolution.proposed_at_ms

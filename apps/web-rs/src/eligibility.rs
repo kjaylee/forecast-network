@@ -25,10 +25,22 @@ pub async fn timing_status(session: &D1DatabaseSession, forecast_id: &str) -> Re
     )
     .await?
     .is_some();
-    Ok(json!({
+    let closure = first(
+        session,
+        "SELECT determination FROM resolution_timing_closures WHERE forecast_id=? AND specification_hash=?",
+        &[json!(forecast_id), get(&row, "specification_hash").clone()],
+    )
+    .await?;
+    let mut value = json!({
         "status": if complete { "complete" } else { "review" }, "reason": get(&row, "reason"),
         "candidateCutoffAt": get(&row, "candidate_cutoff_at"), "proofHash": get(&row, "proof_hash"),
-    }))
+    });
+    // Additive, matching the Python projection: callers that only understand "review" keep
+    // working, and a closed review reports what it determined rather than hiding it.
+    if let Some(closure) = closure {
+        value["determination"] = get(&closure, "determination").clone();
+    }
+    Ok(value)
 }
 
 pub async fn status(session: &D1DatabaseSession, forecast_id: &str, user_id: Option<&str>) -> Result<Value> {

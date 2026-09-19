@@ -175,6 +175,124 @@ class ResolutionTimingTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(await self.db.first("SELECT * FROM resolution_timing_reviews"))
 
 
+class ResolutionTimingClosureTests(unittest.IsolatedAsyncioTestCase):
+    """A review whose own reason settles the question stops being a blocker.
+
+    The blocker is a boolean that five separate consumers read -- the mutation gate, the
+    state trigger, the scheduler entry, the outbox and the registry -- so an exception
+    carved into one of them is four chances to leak a reward. Closing the review turns the
+    boolean false everywhere at once, and the closure admits only its own determination.
+    """
+    asyncSetUp = application_tests.ApplicationTests.asyncSetUp
+    asyncTearDown = application_tests.ApplicationTests.asyncTearDown
+    random_token = application_tests.ApplicationTests.random_token
+    token_hash = staticmethod(application_tests.ApplicationTests.token_hash)
+    publish = application_tests.ApplicationTests.publish
+
+    def resolved(self, forecast, bodies, outcome=Outcome.YES):
+        evidence = tuple(fixtures.evidence(forecast.specification, evidence_id="closure-"+str(index),
+            content=body, collected_at_ms=self.now-10) for index, body in enumerate(bodies))
+        return fixtures.resolution(forecast.specification, forecast_id=forecast.forecast_id,
+                                   proposed_at_ms=self.now, outcome=outcome, evidence=evidence)
+
+    async def retained(self, body):
+        """Publish a forecast, retain a review against it, and hand back the record.
+
+        `body` may be a callable, which receives the moment the last receipt was accepted
+        so a test can place publication relative to it.
+        """
+        forecast = await self.publish()
+        submitted_at = self.now
+        if callable(body):
+            body = body(submitted_at)
+        await self.app.submit_forecast(self.other, forecast["id"], "YES", 80, forecast["revision"], "closure-vote", 300)
+        self.now = forecast["closeAt"]+1000
+        record = await self.app._forecast(forecast["id"])
+        gate = ResolutionTiming(self.db, lambda: self.now)
+        artifacts = (Artifact(hashlib.sha256(body.encode()).hexdigest(), "source", body, "text/html"),)
+        with self.assertRaises(AppError) as error:
+            await gate.check(record, self.resolved(record, [body]), artifacts)
+        self.assertEqual(error.exception.code, "resolution_timing_review")
+        return record, gate, artifacts, submitted_at
+
+    async def test_an_unknown_publication_time_closes_and_releases_every_consumer(self):
+        record, gate, _, _ = await self.retained(article(None))
+        self.assertEqual((await gate.status(record.forecast_id))["reason"], "publication_time_unknown")
+        self.assertIsNotNone(await self.db.first("SELECT 1 FROM forecast_resolution_blockers WHERE forecast_id=?", (record.forecast_id,)))
+
+        self.assertTrue(await gate.close_indeterminate(record))
+
+        self.assertIsNone(await self.db.first("SELECT 1 FROM forecast_resolution_blockers WHERE forecast_id=?", (record.forecast_id,)),
+                          "the outbox and registry read this view, so it has to empty for them too")
+        self.assertIsNone(await self.db.first("SELECT 1 FROM unresolved_resolution_timing_reviews WHERE forecast_id=?", (record.forecast_id,)))
+        self.assertEqual((await gate.status(record.forecast_id))["determination"], "INVALID")
+        # The review itself is untouched: the closure is a conclusion drawn from it, not an
+        # edit of it, and the original proof stays exactly as retained.
+        row = await self.db.first("SELECT body, proof_hash FROM resolution_timing_reviews WHERE forecast_id=?", (record.forecast_id,))
+        self.assertEqual(hashlib.sha256(row["body"].encode()).hexdigest(), row["proof_hash"])
+        closure = await self.db.first("SELECT * FROM resolution_timing_closures WHERE forecast_id=?", (record.forecast_id,))
+        self.assertEqual(closure["review_proof_hash"], row["proof_hash"])
+
+    async def test_a_closed_review_admits_its_determination_and_nothing_else(self):
+        record, gate, artifacts, _ = await self.retained(article(None))
+        await gate.close_indeterminate(record)
+
+        # The evidence still cannot place itself, so a rewarded outcome stays refused. The
+        # closure released the blocker; it did not make YES supportable.
+        with self.assertRaises(AppError) as error:
+            await gate.check(record, self.resolved(record, [article(None)]), artifacts)
+        self.assertEqual(error.exception.code, "resolution_timing_determined")
+        with self.assertRaises(AppError) as error:
+            await gate.check(record, self.resolved(record, [article(None)], outcome=Outcome.NO), artifacts)
+        self.assertEqual(error.exception.code, "resolution_timing_determined")
+
+        await gate.check(record, self.resolved(record, [article(None)], outcome=Outcome.INVALID), artifacts)
+
+    async def test_only_an_indeterminable_reason_may_be_closed(self):
+        # Every other review reason is a determinate failure with its own handling: evidence
+        # that may predate participation is a real timing judgement for the eligibility path,
+        # and evidence that is missing or unverified may yet be supplied.
+        record, gate, _, submitted_at = await self.retained(lambda at: article(at))
+        self.assertEqual((await gate.status(record.forecast_id))["reason"], "evidence_may_predate_participation")
+        self.assertFalse(await gate.close_indeterminate(record))
+        self.assertIsNone(await self.db.first("SELECT 1 FROM resolution_timing_closures WHERE forecast_id=?", (record.forecast_id,)))
+        self.assertIsNotNone(await self.db.first("SELECT 1 FROM forecast_resolution_blockers WHERE forecast_id=?", (record.forecast_id,)))
+
+    async def test_a_closure_is_not_a_free_pass_on_a_forecast_with_no_review(self):
+        forecast = await self.publish()
+        self.now = forecast["closeAt"]+1000
+        record = await self.app._forecast(forecast["id"])
+        gate = ResolutionTiming(self.db, lambda: self.now)
+        self.assertFalse(await gate.close_indeterminate(record))
+        self.assertIsNone(await self.db.first("SELECT 1 FROM resolution_timing_closures WHERE forecast_id=?", (record.forecast_id,)))
+
+    async def test_a_closure_cannot_be_edited_or_manufactured(self):
+        record, gate, _, _ = await self.retained(article(None))
+        await gate.close_indeterminate(record)
+        original = await self.db.all("SELECT * FROM resolution_timing_closures")
+        for sql in ("DELETE FROM resolution_timing_closures", "UPDATE resolution_timing_closures SET determination='YES'"):
+            with self.assertRaises(sqlite3.IntegrityError):
+                await self.db.execute(sql)
+        self.assertEqual(await self.db.all("SELECT * FROM resolution_timing_closures"), original)
+
+        # A closure has to be the conclusion of the review it names: a different review's
+        # proof, or an evidence item that review did not mark unplaceable, is refused.
+        row = original[0]
+        body = json.loads(row["body"])
+        for column, value in (("review_proof_hash", "0"*64), ("evidence_hash", "1"*64)):
+            with self.subTest(column=column):
+                forged = json.dumps({**body, "reviewProofHash": value if column == "review_proof_hash" else body["reviewProofHash"],
+                                     "evidenceHash": value if column == "evidence_hash" else body["evidenceHash"]},
+                                    sort_keys=True, separators=(",", ":"))
+                with self.assertRaises(sqlite3.IntegrityError):
+                    await self.db.execute("INSERT INTO resolution_timing_closures(forecast_id,specification_hash,"
+                        "review_proof_hash,determination,reason,evidence_hash,proof_hash,body,created_at) "
+                        "VALUES(?,?,?,?,?,?,?,?,?)",
+                        (row["forecast_id"]+"-other", row["specification_hash"], value if column == "review_proof_hash" else row["review_proof_hash"],
+                         "INVALID", "publication_time_unknown", value if column == "evidence_hash" else row["evidence_hash"],
+                         hashlib.sha256(forged.encode()).hexdigest(), forged, self.now))
+
+
 class MarketResolutionTimingTests(unittest.IsolatedAsyncioTestCase):
     asyncSetUp = market_tests.MarketTests.asyncSetUp
     asyncTearDown = market_tests.MarketTests.asyncTearDown

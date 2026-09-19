@@ -68,6 +68,10 @@ class TestAI:
         self.reject = False
         self.material = False
         self.outcome = Outcome.YES
+        # "instant" publishes at the deadline, which is what ordinary resolutions look
+        # like. Any other value omits the metadata, so the evidence is authentic but its
+        # publication time cannot be placed relative to participation.
+        self.publication = "instant"
         self.read_artifact = None
         self.gate = None
         self.on_resolution = None
@@ -89,11 +93,14 @@ class TestAI:
         assessment = fixtures.validation(spec, validated_at_ms=now_ms)
         return CompileResult(spec, assessment, (), self.ai_forecast)
 
-    async def propose_resolution(self, forecast, now_ms, *, publication_time_unknown=False):
+    async def propose_resolution(self, forecast, now_ms, *, publication_time_unknown=False,
+                                 determined_outcome=None):
         # The service tells the judge when the evidence cannot be placed relative to
-        # participation. This stub answers the same either way; what matters here is
-        # that the call is accepted.
+        # participation, and when a closed review has already determined the outcome.
+        # This stub answers the same either way; what matters here is that the call is
+        # accepted and that both facts reach it.
         self.publication_time_unknown = publication_time_unknown
+        self.determined_outcome = determined_outcome
         self.calls += 1
         if self.fail:
             raise AIUnavailable("providers failed", unavailable_providers=self.unavailable_providers)
@@ -102,7 +109,8 @@ class TestAI:
         # Successful ordinary-resolution fixtures explicitly publish at the
         # deadline. Missing/earlier publication is tested as a timing-review hold.
         instant = datetime.fromtimestamp(forecast.specification.close_at_ms/1000, timezone.utc).isoformat(timespec="seconds")
-        body = f'<meta property="article:published_time" content="{instant}"><article>Immutable official announcement.</article>'
+        meta = f'<meta property="article:published_time" content="{instant}">' if self.publication == "instant" else ""
+        body = meta + '<article>Immutable official announcement.</article>'
         evidence = fixtures.evidence(forecast.specification, content=body)
         value = fixtures.resolution(forecast.specification, forecast_id=forecast.forecast_id,
                                     proposed_at_ms=now_ms, outcome=self.outcome, evidence=(evidence,))
@@ -1294,6 +1302,58 @@ class ApplicationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len((await self.app.activity(self.other))["items"]), 1)
         chain = await self.db.first("SELECT status FROM outbox WHERE kind='RESOLUTION_COMMITMENT_REQUIRED'")
         self.assertEqual(chain["status"], "awaiting_adapter")
+
+    async def held_by_an_indeterminable_review(self, outcome):
+        """Drive a forecast into the state two forecasts were stuck in for a day.
+
+        The evidence is authentic and its publication time cannot be placed, which is the
+        review reason no retry can clear. Time advances well past the retry backoff so the
+        scheduler, not the test, decides how many attempts it takes.
+        """
+        forecast = await self.publish()
+        await self.app.submit_forecast(self.other, forecast["id"], "YES", 80, forecast["revision"], "held-vote", 300)
+        self.now = forecast["closeAt"]+1000
+        self.ai.publication = "none"
+        self.ai.outcome = outcome
+        accounts = await self.db.first("SELECT available, committed FROM point_accounts WHERE user_id=?", (self.other,))
+        for _ in range(5):
+            await self.app.run_due_jobs()
+            record = await self.app._forecast(forecast["id"])
+            if record.state == LifecycleState.FINALIZED:
+                break
+            # Long enough to clear both the six-hour retry cap and the 48-hour challenge
+            # window, so the number of attempts is the scheduler's decision, not the test's.
+            self.now = max(self.now, record.challenge_until_ms or 0) + 3*24*60*60*1000
+        return record, accounts
+
+    async def test_a_forecast_deadlocked_by_an_indeterminable_review_finalizes_invalid(self):
+        record, accounts = await self.held_by_an_indeterminable_review(Outcome.INVALID)
+
+        self.assertEqual(record.state, LifecycleState.FINALIZED)
+        self.assertEqual(record.finalized_outcome, Outcome.INVALID)
+        closure = await self.db.first("SELECT determination, reason FROM resolution_timing_closures WHERE forecast_id=?",
+                                      (record.forecast_id,))
+        self.assertEqual((closure["determination"], closure["reason"]), ("INVALID", "publication_time_unknown"))
+        self.assertIsNone(await self.db.first("SELECT 1 FROM forecast_resolution_blockers WHERE forecast_id=?", (record.forecast_id,)))
+        # Nothing was credited from evidence that could not be placed relative to participation.
+        score = await self.db.first("SELECT correct, brier_score FROM reputation_scores WHERE forecast_id=?", (record.forecast_id,))
+        self.assertIsNone(score["correct"])
+        self.assertIsNone(score["brier_score"])
+        # The stake came back, because INVALID takes nothing from anyone.
+        after = await self.db.first("SELECT available, committed FROM point_accounts WHERE user_id=?", (self.other,))
+        self.assertEqual(after["committed"], 0)
+        self.assertGreater(after["available"], accounts["available"])
+
+    async def test_the_same_review_does_not_licence_a_reward(self):
+        # The closure released the blocker, not the evidence. A rewarded outcome stays
+        # refused, so the forecast retries rather than paying out on an unplaceable source.
+        record, _ = await self.held_by_an_indeterminable_review(Outcome.YES)
+        self.assertEqual(record.state, LifecycleState.RESOLVING)
+        self.assertIsNone(record.finalized_outcome)
+        row = await self.db.first("SELECT job_error FROM forecasts WHERE id=?", (record.forecast_id,))
+        self.assertIn("determines INVALID", row["job_error"])
+        score = await self.db.first("SELECT 1 FROM reputation_scores WHERE forecast_id=?", (record.forecast_id,))
+        self.assertIsNone(score)
 
     async def test_finalization_race_emits_one_set_of_effects(self):
         forecast = await self.challenge()

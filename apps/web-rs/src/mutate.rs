@@ -244,6 +244,15 @@ pub async fn mutate(
     ));
     if let Err(error) = batch(session, statements).await {
         let message = error.to_string();
+        if message.contains("resolution_timing_closure_mismatch") {
+            // A closure has to be the conclusion of the review it names; the schema refuses
+            // anything else, and the caller needs to be told why rather than see a 500.
+            return Err(RouteError::Failed(
+                409,
+                "resolution_timing_closure_mismatch",
+                "The timing review closure does not match the review it claims to conclude.",
+            ));
+        }
         if message.contains("resolution_timing_review") {
             return Err(RouteError::Failed(
                 409,

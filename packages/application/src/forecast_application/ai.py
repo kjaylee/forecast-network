@@ -1092,7 +1092,8 @@ class AiCoordinator:
         return PredictionResult((*collection.artifacts, provenance, *estimate.artifacts), estimate.ai_forecast)
 
     async def propose_resolution(self, forecast: Forecast, now_ms: int, *,
-                                publication_time_unknown: bool = False) -> ResolutionResult:
+                                publication_time_unknown: bool = False,
+                                determined_outcome: str | None = None) -> ResolutionResult:
         spec = forecast.specification
         if now_ms < spec.close_at_ms:
             raise AIRejected("Evidence collection cannot resolve a forecast before its deadline")
@@ -1163,6 +1164,18 @@ class AiCoordinator:
                        "publication_time_note": "The retained evidence is authentic but its "
                        "publication time cannot be placed before or after participation, so this "
                        "evidence cannot establish an outcome. Weigh that in the outcome you choose."}
+        if determined_outcome:
+            # The review has been closed and its determination binds: the gate refuses every
+            # other outcome, so offering a free choice would only produce another retry. The
+            # judge still decides whether it can support this result from the evidence, and
+            # the counter-judge can still refuse. What is withdrawn is the option of proposing
+            # a result this evidence cannot licence.
+            payload = {**payload, "determined_outcome": determined_outcome,
+                       "determined_outcome_note": "A publication-time review of this forecast has "
+                       "closed and determined this outcome. Propose it only if the retained evidence "
+                       "supports it. If it does not, record that in conflict_status and the reason "
+                       "summary instead of proposing a different outcome, because no other outcome "
+                       "can be finalized."}
         judge = await self._call(AITask.RESOLUTION_JUDGE, payload, _RESOLUTION)
         artifacts.append(judge.artifact)
         output = judge.output
