@@ -40,7 +40,10 @@ def main() -> int:
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if not result.wasSuccessful():
         return 1
-    commands = [[sys.executable, "scripts/generate_schemas.py", "--check"]]
+    commands = [[sys.executable, "scripts/generate_schemas.py", "--check"],
+                # The edge Worker mirrors the Python queries by hand, so the two have to be
+                # compared by something other than a person remembering to.
+                [sys.executable, "scripts/sql_parity.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

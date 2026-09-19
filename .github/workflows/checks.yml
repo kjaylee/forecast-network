@@ -110,9 +110,9 @@ jobs:
           cargo build --release --target wasm32-unknown-unknown
 
   edge:
-    # This crate serves forecast.eastsea.xyz and had no CI gate at all until now,
-    # so nothing caught it drifting out of rustfmt. It still has no tests, which is
-    # the larger gap: this checks that it builds and lints, not that it is correct.
+    # This crate serves forecast.eastsea.xyz. It builds, lints and runs its own unit
+    # tests here; its SQL is compared statement-by-statement against the Python Worker
+    # by scripts/sql_parity.py, which the domain and full jobs run.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
