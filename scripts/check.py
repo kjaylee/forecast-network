@@ -43,7 +43,10 @@ def main() -> int:
     commands = [[sys.executable, "scripts/generate_schemas.py", "--check"],
                 # The edge Worker mirrors the Python queries by hand, so the two have to be
                 # compared by something other than a person remembering to.
-                [sys.executable, "scripts/sql_parity.py", "--check"]]
+                [sys.executable, "scripts/sql_parity.py", "--check"],
+                # The article parser decides whether evidence can be placed relative to
+                # participation, which decides whether a reward may be credited.
+                [sys.executable, "scripts/generate_article_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:
