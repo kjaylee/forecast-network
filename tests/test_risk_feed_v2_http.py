@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import re
+import time
 import unittest
 from types import MethodType, SimpleNamespace
 from typing import Any
@@ -61,7 +62,7 @@ class RiskFeedV2HttpTests(unittest.IsolatedAsyncioTestCase):
             self.body_reads += 1
             return json.dumps(body or {}).encode()
 
-        scope = dict(Response=Any, AppError=AppError, hmac=hmac, re=re, hashlib=hashlib, MAX_PROVIDER_BYTES=524288,
+        scope = dict(Response=Any, AppError=AppError, hmac=hmac, re=re, hashlib=hashlib, time=time, MAX_PROVIDER_BYTES=524288,
                      MAX_BODY_BYTES=16384, bounded_bytes=read, RiskFeedBinding=RiskFeedBinding,
                      RiskFeedBindingV2=RiskFeedBindingV2, CanonicalRiskDefinitionV2=CanonicalRiskDefinitionV2,
                      RiskMappingProfileV2=RiskMappingProfileV2, RiskFeedSeriesV2=RiskFeedSeriesV2,
@@ -107,6 +108,12 @@ class RiskFeedV2HttpTests(unittest.IsolatedAsyncioTestCase):
         swept = await self.call("/api/admin/sweep", method="POST", scheduler=scheduler, credential=scheduler)
         self.assertEqual(swept["status"], 200)
         self.assertEqual(swept["data"]["sources"], {"polled": 0})
+        # The sweep fails with 1101 on most live calls and nothing recorded where the time
+        # went, so the failure was attributed to whatever seemed likeliest.
+        phases = swept["data"]["phaseMs"]
+        self.assertIs(type(phases["automation"]), int)
+        self.assertIs(type(phases["total"]), int)
+        self.assertGreaterEqual(phases["total"], phases["automation"])
 
     async def test_a_scheduler_credential_cannot_administer(self):
         scheduler = "s" * 64

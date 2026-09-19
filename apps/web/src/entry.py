@@ -779,15 +779,25 @@ class Default(WorkerEntrypoint):
             if path == "/api/admin/sweep" and method == "POST":
                 # Four source polls per five-minute sweep keeps every watched publisher
                 # and article current; one per tick starved the market source gate.
+                # Each phase is timed and returned: the sweep fails with 1101 on most calls
+                # and nothing recorded where the time went, so the failure was being
+                # attributed to whatever seemed likeliest. Same treatment the operation
+                # tick got, for the same reason.
+                sweep_started = time.monotonic()
                 result = await app.run_automation(limit=4)
+                automation_ms = int((time.monotonic() - sweep_started) * 1000)
+                result["phaseMs"] = {"automation": automation_ms}
                 if app.registry is not None:
                     if str(getattr(self.env, "SOLANA_REGISTRY_RELAY_ENABLED", "false")).lower() == "true":
+                        registry_started = time.monotonic()
                         try:
                             result["registry"] = await app.registry.sync(limit=3)
                         except Exception:
                             result["registry"] = {"status": "retry_pending"}
+                        result["phaseMs"]["registry"] = int((time.monotonic() - registry_started) * 1000)
                     else:
                         result["registry"] = {"status": "relay_paused"}
+                result["phaseMs"]["total"] = int((time.monotonic() - sweep_started) * 1000)
                 return api_response(result)
             if path == "/api/admin/registry/health" and method == "GET":
                 if app.registry is None:
