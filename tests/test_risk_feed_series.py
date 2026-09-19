@@ -173,6 +173,21 @@ class RiskFeedSeriesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resolved["series"][0]["failedUnpublishedAttemptsLast24h"], 0)
         self.assertTrue(resolved["series"][0]["enabled"])
 
+    async def test_a_slow_source_is_judged_against_its_own_period(self):
+        # A flat five-minute grace on a sixty-minute article turns sweep jitter into
+        # degradation, and the monitor alerts on every flip. The grace scales with the
+        # source's own interval so "late" means late for that source.
+        minute = 60_000
+        for source_id, interval, age in (("fast", 15*minute, 25*minute),
+                                         ("slow-within-grace", 60*minute, 67*minute),
+                                         ("slow-late", 60*minute, 90*minute)):
+            await self.db.execute(
+                "INSERT INTO official_watch_sources(id,url,kind,interval_ms,checked_at,next_poll) VALUES(?,?,'article',?,?,?)",
+                (source_id, "https://example.test/"+source_id, interval, self.now-age, self.now-age+interval))
+        watch = (await operations_health(self.db, now_ms=self.now))["sourceWatch"]
+        self.assertEqual((watch["total"], watch["stale"]), (3, 2))
+        self.assertEqual(watch["failing"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -497,9 +497,15 @@ async def operations_health(db: Database, *, now_ms: int) -> dict[str, Any]:
                        "latestEpisodeStartMs": latest_start["start"] if latest_start else None,
                        "nextEpisodeStartMs": (latest_start["start"] + cadence) if latest_start and latest_start["start"] else None,
                        "failedUnpublishedAttemptsLast24h": failures["n"] if failures else 0})
+    # The grace is a quarter of each source's own interval, never less than five minutes. A
+    # flat five minutes on a sixty-minute article is a jitter detector rather than a health
+    # signal: it flips on the sweep landing a couple of minutes late, and the monitor alerts
+    # on every flip. Scaling it keeps the tight case tight -- a fifteen-minute publisher is
+    # still stale after twenty -- while a slow source is judged against its own period, which
+    # is what the forty-seven-hour outage looked like.
     sources = await db.first(
         "SELECT COUNT(*) AS total, SUM(failure_count>0) AS failing, "
-        "SUM(failure_count=0 AND (checked_at IS NULL OR checked_at<?-interval_ms-300000)) AS stale "
+        "SUM(failure_count=0 AND (checked_at IS NULL OR checked_at<?-interval_ms-MAX(300000,interval_ms/4))) AS stale "
         "FROM official_watch_sources WHERE enabled=1",
         (now_ms,))
     # A forecast carrying a job_error has failed an attempt and not been cleared since. These
