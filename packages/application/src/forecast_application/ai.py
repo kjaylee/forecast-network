@@ -1136,6 +1136,21 @@ class AiCoordinator:
                    "The successfully fetched subset must satisfy every required evidentiary clause; "
                    "fallback collection must not silently waive a primary-source-only condition. "
                    "Choose UNRESOLVED for insufficient or conflicting evidence, never guess. "
+                   # UNRESOLVED means more evidence could still settle the question, and the
+                   # resolver retries. INVALID means the evidence cannot settle it however long
+                   # it is kept, and it is terminal: every commitment is returned and no
+                   # reputation is credited. Without this distinction a forecast whose evidence
+                   # is authentic but cannot establish an outcome — because its publication time
+                   # relative to participation cannot be determined, for instance — is rejected
+                   # as UNRESOLVED forever, because the check below refuses UNRESOLVED. That is
+                   # what left two forecasts unresolvable. INVALID is the honest terminal answer
+                   # when the question cannot be answered from the evidence; UNRESOLVED is for
+                   # waiting, and waiting is not free.
+                   "Choose INVALID when the retained evidence is authentic but cannot establish "
+                   "the outcome, in particular when its publication time cannot be placed "
+                   "relative to participation. INVALID credits nothing and returns every "
+                   "commitment, so it is the correct answer for a question the evidence cannot "
+                   "answer, and it is not a guess. "
                    "CLEAR requires no conflicts and null conflict_explanation."}
         judge = await self._call(AITask.RESOLUTION_JUDGE, payload, _RESOLUTION)
         artifacts.append(judge.artifact)
@@ -1152,7 +1167,12 @@ class AiCoordinator:
             "policy": "Independently challenge the preceding judge using only the immutable specification "
             "and retained evidence. agrees=true only if its exact outcome, matching clauses, confidence "
             "and explanation are all supportable. Incomplete evidence, ambiguity, failure to prove "
-            "a negative or material alternative interpretation must set agrees=false.",
+            "a negative or material alternative interpretation must set agrees=false. An INVALID "
+            "outcome is supportable when the evidence is authentic but cannot establish the outcome, "
+            "in particular when its publication time cannot be placed relative to participation; do "
+            "not set agrees=false merely because the evidence is incomplete, since that is the case "
+            "INVALID exists for. Challenge it if the evidence does in fact establish YES or NO, or if "
+            "it cites the wrong clause.",
         }, _COUNTER, provider=judge.provider)
         artifacts.append(counter.artifact)
         if not counter.output["agrees"]:
