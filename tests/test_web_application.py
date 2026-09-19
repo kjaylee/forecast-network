@@ -1355,6 +1355,16 @@ class ApplicationTests(unittest.IsolatedAsyncioTestCase):
         score = await self.db.first("SELECT 1 FROM reputation_scores WHERE forecast_id=?", (record.forecast_id,))
         self.assertIsNone(score)
 
+    async def test_a_resolution_refused_by_domain_checks_is_not_reported_as_thin_evidence(self):
+        # A judge can pick the right outcome and cite no clause, which the immutable domain
+        # checks refuse. Reporting that as insufficient evidence sent a diagnosis after the
+        # wrong cause, so it carries its own code and says what actually happened.
+        from forecast_application.ai import AIRejected
+        error = self.app._ai_error(AIRejected("AI resolution failed immutable domain checks",
+                                              (), code="resolution_domain_rejected"))
+        self.assertEqual(error.code, "resolution_domain_rejected")
+        self.assertNotIn("evidence", error.message.lower())
+
     async def test_finalization_race_emits_one_set_of_effects(self):
         forecast = await self.challenge()
         self.now = forecast.challenge_until_ms

@@ -1173,9 +1173,11 @@ class AiCoordinator:
             payload = {**payload, "determined_outcome": determined_outcome,
                        "determined_outcome_note": "A publication-time review of this forecast has "
                        "closed and determined this outcome. Propose it only if the retained evidence "
-                       "supports it. If it does not, record that in conflict_status and the reason "
-                       "summary instead of proposing a different outcome, because no other outcome "
-                       "can be finalized."}
+                       "supports it. Cite in rule_matches exactly the clause whose outcome is that "
+                       "one: a resolution matching no clause, or a clause of another outcome, is "
+                       "refused even when the outcome itself is right. If the evidence does not "
+                       "support it, record that in conflict_status and the reason summary instead of "
+                       "proposing a different outcome, because no other outcome can be finalized."}
         judge = await self._call(AITask.RESOLUTION_JUDGE, payload, _RESOLUTION)
         artifacts.append(judge.artifact)
         output = judge.output
@@ -1212,7 +1214,11 @@ class AiCoordinator:
                 conflict_explanation=output["conflict_explanation"])
             resolution.require_proposable(spec)
         except ValidationError as exc:
-            raise AIRejected("AI resolution failed immutable domain checks", tuple(artifacts)) from exc
+            # Carries its own code because the generic one told the operator the evidence was
+            # insufficient, which sent a diagnosis after the wrong cause for half an hour. The
+            # usual reason is a judge that chose the right outcome and cited no clause.
+            raise AIRejected("AI resolution failed immutable domain checks", tuple(artifacts),
+                             code="resolution_domain_rejected") from exc
         artifacts.append(_artifact("resolution", resolution))
         return ResolutionResult(resolution, tuple(artifacts))
 

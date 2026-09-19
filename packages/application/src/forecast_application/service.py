@@ -586,6 +586,9 @@ class Application:
                         "ai_output_incomplete", "compiler_domain_validation"}:
                 return AppError(502, "ai_response_invalid",
                     "The AI response was incomplete or did not match the required format. Please try again later.")
+            if code == "resolution_domain_rejected":
+                return AppError(502, "resolution_domain_rejected",
+                    "The AI resolution was refused by the immutable domain checks. The retained judge output records what it proposed.")
             if code == "compiler_not_publishable":
                 return AppError(422, "specification_needs_review",
                     "The AI review could not approve the resolution criteria. Clarify the subject, the fact to verify, and the deadline before requesting another review.")
@@ -1470,6 +1473,8 @@ class Application:
                     reason = "Evidence publication time and receipt eligibility are being reviewed. No result rewards or reputation will be credited until that review is complete."
                 elif isinstance(exc, AppError) and exc.code == "resolution_timing_determined":
                     reason = "The publication-time review is closed and determines INVALID. Only that result can be finalized, so the next attempt proposes it."
+                elif isinstance(exc, AppError) and exc.code == "resolution_domain_rejected":
+                    reason = "The AI resolution was refused by the immutable domain checks, most often because it did not cite the clause matching its own outcome. The retained judge output names what it proposed."
                 await self.db.execute("UPDATE forecasts SET failure_count=failure_count+1,job_error=?,"
                     "retry_at=?+MIN(21600000,60000*(1<<MIN(failure_count,8))) WHERE id=? AND job_token=?",
                     (reason, self.now_ms(), row["id"], token))
