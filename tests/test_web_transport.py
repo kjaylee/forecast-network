@@ -10,6 +10,7 @@ import hmac
 import io
 import json
 import re
+import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -24,7 +25,10 @@ def scheduled_method(name: str = "scheduled", **extra: Any) -> Any:
     entry = next(node for node in source.body if isinstance(node, ast.ClassDef) and node.name == "Default")
     method = next(node for node in entry.body if isinstance(node, ast.AsyncFunctionDef) and node.name == name)
     module = ast.Module(body=[method], type_ignores=[])
-    scope: dict[str, Any] = {"Any": Any, "json": json, "javascript": lambda value: value, **extra}
+    scope: dict[str, Any] = {"Any": Any, "json": json, "javascript": lambda value: value,
+                             # Injected for every extracted method: route_api times its phases, and
+                             # each caller having to remember is how six test files broke at once.
+                             "time": time, **extra}
     exec(compile(module, "actual_worker_scheduled", "exec"), scope)
     return scope[name]
 
