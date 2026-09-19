@@ -135,3 +135,66 @@ class StuckForecastReportingTests(unittest.TestCase):
 
     def test_an_absent_count_is_not_reported(self):
         self.assertEqual([w for w in monitor.warnings(health()) if "job_error" in w], [])
+
+
+class HealthRetryTests(unittest.TestCase):
+    """A Worker that has been idle says 1101 to its first request and answers the second.
+
+    Reproduced against production: two 500s, then 200 in 0.7 seconds. Reading that as an
+    outage raised an alert that cleared itself on the next run, which is the flapping this
+    monitor was corrected for on the series count.
+    """
+
+    def fetch(self, respond):
+        import urllib.error  # noqa: F401  (only needed to raise it from the stub)
+
+        calls = []
+
+        class Response(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+        def urlopen(request, timeout=None):
+            calls.append(request.full_url)
+            return respond(request, len(calls), Response)
+
+        with patch.object(monitor.urllib.request, "urlopen", urlopen), \
+                patch.object(monitor.time, "sleep"), \
+                patch.object(monitor, "secret", return_value="x" * 40):
+            return monitor.fetch_health("https://example.test", 40.0), calls
+
+    def test_a_cold_start_is_not_reported_as_unreachable(self):
+        import urllib.error
+
+        def cold(request, attempt, Response):
+            if attempt < 3:
+                raise urllib.error.HTTPError(request.full_url, 500, "no", {}, io.BytesIO(b"error code: 1101"))
+            return Response(json.dumps({"data": {"feeds": []}}).encode())
+
+        data, calls = self.fetch(cold)
+        self.assertEqual(data, {"feeds": []})
+        self.assertEqual(len(calls), 3)
+
+    def test_a_worker_that_is_really_down_still_fails(self):
+        import urllib.error
+
+        def dead(request, attempt, Response):
+            raise urllib.error.URLError("connection refused")
+
+        with self.assertRaises(urllib.error.URLError):
+            self.fetch(dead)
+
+    def test_the_first_attempt_is_not_delayed(self):
+        # The pause is between attempts, so a healthy Worker is polled at the same cadence
+        # as before the retry existed.
+        with patch.object(monitor.time, "sleep") as slept:
+            with patch.object(monitor.urllib.request, "urlopen",
+                              return_value=type("R", (io.BytesIO,), {
+                                  "__enter__": lambda self: self, "__exit__": lambda self, *a: False,
+                                  "read": lambda self: json.dumps({"data": {}}).encode()})()):
+                with patch.object(monitor, "secret", return_value="x" * 40):
+                    monitor.fetch_health("https://example.test", 40.0)
+        slept.assert_not_called()

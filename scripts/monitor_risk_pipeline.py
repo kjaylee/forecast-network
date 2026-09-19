@@ -37,13 +37,34 @@ _REPOSITORY = os.environ.get("FORECAST_REPO", "")
 REPO_SCRIPTS = Path(_REPOSITORY) / "scripts" if _REPOSITORY else None
 
 
-def fetch_health(origin: str, timeout: float) -> dict[str, object]:
-    request = urllib.request.Request(origin + "/api/admin/risk/v2/health", headers={
-        "User-Agent": "forecast-risk-monitor/1", "Authorization": "Bearer " + secret("ADMIN_TOKEN")})
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        data = json.load(response)["data"]
-    assert isinstance(data, dict)
-    return data
+RETRY_PAUSE_SECONDS = 5.0
+HEALTH_ATTEMPTS = 3
+
+
+def fetch_health(origin: str, timeout: float, attempts: int = HEALTH_ATTEMPTS) -> dict[str, object]:
+    """Read the operator health view, giving a cold Worker more than one chance to answer.
+
+    This endpoint runs the heaviest read in the system and returns 1101 on the first request
+    after the Worker has been idle — reproduced directly: two 500s, then 200 in 0.7 seconds.
+    Treating that as unreachable produces an alert that clears itself on the next run, which
+    is the flapping this monitor was just corrected for on the series count. A retry is not
+    leniency: a Worker that is genuinely down fails all of them, and the timeout still bounds
+    the whole thing.
+    """
+    last: Exception = RuntimeError("no attempt was made")
+    for attempt in range(max(1, attempts)):
+        if attempt:
+            time.sleep(RETRY_PAUSE_SECONDS)
+        try:
+            request = urllib.request.Request(origin + "/api/admin/risk/v2/health", headers={
+                "User-Agent": "forecast-risk-monitor/1", "Authorization": "Bearer " + secret("ADMIN_TOKEN")})
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                data = json.load(response)["data"]
+            assert isinstance(data, dict)
+            return data
+        except (urllib.error.URLError, TimeoutError, ValueError, AssertionError, KeyError) as error:
+            last = error
+    raise last
 
 
 def keeper_status(journal: Path, now_ms: int) -> dict[str, object]:
