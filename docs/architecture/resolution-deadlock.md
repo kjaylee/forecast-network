@@ -36,6 +36,39 @@ So the review blocks resolution, clearing the review needs a completion, a
 completion needs the early-resolution path, and that path needs a state these
 forecasts have already left. Nothing in the system can move them.
 
+## Root cause, found 2026-09-19: the judge was told to return what the resolver refuses
+
+The earlier reading — that a new record type is needed — was wrong. The
+capability was already there. Two lines apart, the system contradicted itself:
+
+```python
+"policy": "... Choose UNRESOLVED for insufficient or conflicting evidence, never guess. ..."
+```
+
+```python
+outcome, status = Outcome(output["proposed_outcome"]), ConflictStatus(output["conflict_status"])
+if status != ConflictStatus.CLEAR or output["rule_conflicts"] or output["confidence_bp"] < 8000:
+    raise AIRejected("Evidence does not support a clear, sufficiently confident resolution")
+```
+
+The judge is asked for UNRESOLVED when the evidence is insufficient, and the
+resolver then refuses UNRESOLVED outright. There is no terminal outcome for
+"the evidence is authentic but cannot establish the result", so the job raises,
+retries on the next sweep, and does so forever. Both stuck forecasts have
+exactly that shape: `hashVerified: true`, `publication: null`,
+`reason: publication_time_unknown`.
+
+The judge's own schema already permits INVALID — `proposed_outcome` is an enum
+built from `Outcome`, which has three members. Nothing was missing except the
+instruction, and the counter-judge made it worse by requiring `agrees=false` for
+incomplete evidence, which is precisely the case INVALID exists for.
+
+Both prompts now draw the line: UNRESOLVED means more evidence could still
+settle the question; INVALID means the evidence cannot settle it however long it
+is kept, and is terminal — every commitment returned, no reputation credited.
+The result stays a judgement. The prompts give the judge the answer it was
+missing rather than making it for them.
+
 ## The decision: INVALID
 
 Decided 2026-09-19. Both forecasts are to be finalized **INVALID**, which refunds
