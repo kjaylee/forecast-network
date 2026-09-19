@@ -10,6 +10,7 @@ from dataclasses import replace
 from forecast_application import solana_wire as wire
 from forecast_application.solana_registry import (
     DEVNET_GENESIS,
+    ChainDeadlineNotReached,
     RegistryAccount,
     RegistryError,
     SolanaRegistry,
@@ -173,7 +174,12 @@ class RegistryTests(unittest.IsolatedAsyncioTestCase):
         chain_deadline = self.now+86_400_000
         await self.chain_account(registry, transport, forecast, deadline=chain_deadline)
         transport.chain_time = self.now
-        self.assertFalse(await registry.prepare_finalization(forecast.forecast_id))
+        # The chain agrees about the record and refuses only on its own clock, which is a
+        # schedule rather than a fault. Saying so precisely is what lets the scheduler wait
+        # for the deadline instead of recording an error against a wall time alone moves.
+        with self.assertRaises(ChainDeadlineNotReached) as deferred:
+            await registry.prepare_finalization(forecast.forecast_id)
+        self.assertEqual(deferred.exception.not_before_ms, chain_deadline)
         with self.assertRaisesRegex(sqlite3.IntegrityError, "registry_finalization_pending"):
             await self.app._mutate(forecast, Finalize(), key="registry-finalize-test")
         self.assertEqual((await self.app._forecast(forecast.forecast_id)).revision, forecast.revision)

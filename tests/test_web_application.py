@@ -1344,6 +1344,28 @@ class ApplicationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(after["committed"], 0)
         self.assertGreater(after["available"], accounts["available"])
 
+    async def test_a_chain_deferred_finalization_is_a_schedule_not_a_failure(self):
+        # The chain agrees with the record and refuses only until its own deadline. Recording
+        # that as an error counted the forecast as one nothing can clear, and grew a retry
+        # backoff against a wall that time alone moves.
+        forecast = await self.challenge()
+        self.now = forecast.challenge_until_ms + 1
+        deadline = self.now + 3_600_000
+        await self.db.execute("INSERT INTO registry_forecasts(forecast_id,enabled,confirmed_revision,"
+                              "confirmed_event_hash,confirmed_state,chain_deadline,chain_time,observed_at) "
+                              "VALUES(?,1,?,?,?,?,?,?)",
+                              (forecast.forecast_id, forecast.revision, "0"*64, 6, deadline, self.now, self.now))
+        with patch.object(self.app, "_advance_job",
+                          side_effect=AppError(409, "chain_finalization_deferred", "not yet")):
+            result = await self.app.run_due_jobs()
+
+        self.assertEqual(result["failed"], 0, "waiting for the chain is not a failure")
+        row = await self.db.first("SELECT job_error,failure_count,retry_at FROM forecasts WHERE id=?",
+                                  (forecast.forecast_id,))
+        self.assertIsNone(row["job_error"])
+        self.assertEqual(row["failure_count"], 0)
+        self.assertEqual(row["retry_at"], deadline, "wake at the deadline, not on the failure backoff")
+
     async def test_the_same_review_does_not_licence_a_reward(self):
         # The closure released the blocker, not the evidence. A rewarded outcome stays
         # refused, so the forecast retries rather than paying out on an unplaceable source.

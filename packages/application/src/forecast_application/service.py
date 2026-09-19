@@ -696,7 +696,16 @@ class Application:
                       now: int | None = None, extra: Sequence[Statement] = (),
                       job_token: str | None = None, timing_artifacts: Sequence[Artifact] = ()) -> Forecast:
         if isinstance(payload, Finalize) and self.registry is not None:
-            if not await self.registry.prepare_finalization(forecast.forecast_id):
+            from .solana_registry import ChainDeadlineNotReached
+            try:
+                ready = await self.registry.prepare_finalization(forecast.forecast_id)
+            except ChainDeadlineNotReached as exc:
+                # A schedule, not a fault: the chain agrees about the record and refuses only
+                # on its own clock. Reported apart from the mismatch below so the scheduler
+                # can wait for the deadline instead of recording an error against it.
+                raise AppError(409, "chain_finalization_deferred",
+                               "The verified Devnet record will not finalize before its own deadline.") from exc
+            if not ready:
                 raise AppError(503, "chain_finalization_pending",
                                "The verified Devnet challenge window must finish before finalization.")
             # The scheduler's captured time precedes the awaited chain read.
@@ -1450,6 +1459,13 @@ class Application:
                 await self.db.execute("UPDATE forecasts SET retry_at=0,failure_count=0,job_error=NULL WHERE id=? AND job_token=?",
                                       (row["id"], token))
             except Exception as exc:
+                if isinstance(exc, AppError) and exc.code == "chain_finalization_deferred":
+                    # Not a failure. The chain agrees with us and refuses only on its own
+                    # clock, so the local side is ahead of it rather than broken. Recording
+                    # that as an error counted the forecast as one nothing can clear, and
+                    # grew a retry backoff against a wall that time alone moves.
+                    await self._wait_for_chain(row["id"], token)
+                    continue
                 failures += 1
                 await self._retain_rejected(exc)
                 from .ai import AIUnavailable
@@ -1486,6 +1502,21 @@ class Application:
         await self.db.execute("DELETE FROM ai_leases WHERE expires_at<=?", (now,))
         await self.db.execute("DELETE FROM rate_limits WHERE expires_at<=?", (now-DAY_MS,))
         return {"processed": completed, "failed": failures, "effects": processed}
+
+    async def _wait_for_chain(self, forecast_id: str, token: str) -> None:
+        """Re-arm a deferred forecast for the moment the chain says it may finalize.
+
+        Scheduled at the recorded deadline rather than on the failure backoff, because the
+        deadline is when the answer changes and every poll before it earns the same refusal.
+        `prepare_finalization` has just written it, so this reads what the chain said rather
+        than deciding it here. A missing or past deadline falls back to a short retry, which
+        keeps a forecast moving if the recorded state is not what this expects.
+        """
+        row = await self.db.first("SELECT chain_deadline FROM registry_forecasts WHERE forecast_id=?", (forecast_id,))
+        deadline = row["chain_deadline"] if row else None
+        ready_at = deadline if type(deadline) is int and deadline > self.now_ms() else self.now_ms() + 300_000
+        await self.db.execute("UPDATE forecasts SET retry_at=? WHERE id=? AND job_token=?",
+                              (ready_at, forecast_id, token))
 
     async def _advance_job(self, forecast_id: str, token: str) -> None:
         # At most six transitions in one lease. User disputes remain free to

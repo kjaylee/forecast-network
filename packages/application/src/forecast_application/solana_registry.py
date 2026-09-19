@@ -36,6 +36,20 @@ class RegistryError(ValueError):
     """Fixed operational code, never provider responses or credentials."""
 
 
+class ChainDeadlineNotReached(RegistryError):
+    """The chain agrees with us and simply will not finalize before its own clock says so.
+
+    Distinct from every other reason finalization is refused, because those are faults and
+    this is a schedule. A caller that cannot tell them apart either records a real fault as
+    a wait and never looks at it again, or retries a wait as a fault and escalates against a
+    wall that time alone moves.
+    """
+
+    def __init__(self, not_before_ms: int) -> None:
+        super().__init__("chain_finalize_not_before")
+        self.not_before_ms = not_before_ms
+
+
 @dataclass(frozen=True)
 class RegistryAccount:
     address: bytes
@@ -135,7 +149,10 @@ class SolanaRegistry:
             "confirmed_state=?,chain_deadline=?,chain_time=?,observed_at=? WHERE forecast_id=? AND enabled=1",
             (state.revision, state.event_hash.hex(), state.state, state.chain_finalize_not_before_ms,
              chain_time, self.now_ms(), forecast_id))
-        return chain_time >= max(state.chain_finalize_not_before_ms, state.challenge_until_ms)
+        not_before = max(state.chain_finalize_not_before_ms, state.challenge_until_ms)
+        if chain_time < not_before:
+            raise ChainDeadlineNotReached(not_before)
+        return True
 
     async def _artifact(self, digest: str | None, kind: Any, current: Forecast) -> Any:
         if digest is None:
