@@ -63,6 +63,7 @@ from forecast_domain.models import (
     Dispute,
     DisputeReview,
     ForecastChoice,
+    Outcome,
     Resolution,
     ValidationAssessment,
 )
@@ -710,7 +711,13 @@ class Application:
             raise AppError(409, "transition_rejected", "This request is not allowed in the current state or time window.") from exc
         if isinstance(payload, (ProposeResolution, AdjudicateResolution, Finalize)):
             resolution = result.forecast.resolution
-            if resolution is not None:
+            # An INVALID outcome is not subject to the timing review, and the reason is the
+            # review's own reason: it exists to stop a forecast being rewarded on evidence
+            # whose publication time cannot be established, which is a question about
+            # advantage. INVALID returns each stake to its owner and credits no reputation —
+            # settlement reads finalized_outcome and nulls the score — so it confers none.
+            # Blocking it protects nothing and leaves the forecast unresolvable forever.
+            if resolution is not None and resolution.proposed_outcome is not Outcome.INVALID:
                 await self.resolution_timing.check(forecast, resolution, timing_artifacts)
         changed, guard = result.forecast, self.random_token()
         snapshot = dumps(changed)

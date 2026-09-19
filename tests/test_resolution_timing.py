@@ -5,11 +5,13 @@ import hashlib
 import json
 import sqlite3
 import unittest
+from dataclasses import replace
 from datetime import datetime, timezone
 
 from forecast_application.errors import AppError
 from forecast_application.resolution_timing import ResolutionTiming
 from forecast_application.sources import Artifact
+from forecast_domain.models import Outcome
 
 from tests import model_fixtures as fixtures
 from tests import test_markets as market_tests
@@ -195,6 +197,43 @@ class MarketResolutionTimingTests(unittest.IsolatedAsyncioTestCase):
             await gate.check(self.forecast, resolution, artifacts)
         self.assertEqual(error.exception.code, "resolution_timing_review")
         self.assertEqual((await gate.status(self.forecast.forecast_id))["status"], "review")
+
+    async def test_an_outcome_cannot_be_chosen_for_a_resolution_by_hand(self):
+        # This is the constraint that shapes the fix for the two forecasts that cannot
+        # resolve. An INVALID outcome would release them — the review exists to stop a
+        # forecast being rewarded on evidence whose publication time is unknown, and INVALID
+        # rewards nothing — but the outcome cannot be attached to a resolution by anyone
+        # other than the judge that produced it. Editing one fails validation, so the gate
+        # has to let the resolution path through rather than decide on its behalf.
+        resolution, _ = proposal(self.forecast, self.now, [article(self.now)])
+        self.assertEqual(resolution.proposed_outcome, Outcome.YES)
+        with self.assertRaises(Exception) as error:
+            replace(resolution, proposed_outcome=Outcome.INVALID)
+        self.assertIn("commitment", str(error.exception).lower())
+
+        # A resolution the fixture builds for INVALID from the start is a different record,
+        # with a matching judge commitment, and validates.
+        bodies = [article(self.now)]
+        evidence = tuple(fixtures.evidence(self.forecast.specification, evidence_id="timing-" + str(index),
+                                           content=body, collected_at_ms=self.now - 10)
+                         for index, body in enumerate(bodies))
+        fabricated = fixtures.resolution(self.forecast.specification, forecast_id=self.forecast.forecast_id,
+                                         proposed_at_ms=self.now, outcome=Outcome.INVALID, evidence=evidence)
+        self.assertEqual(fabricated.proposed_outcome, Outcome.INVALID)
+        self.assertNotEqual(fabricated.judge.output_hash, resolution.judge.output_hash,
+                            "the judge commitment is bound to the decision, not to the question")
+
+    async def test_a_yes_outcome_is_still_held_when_the_publication_time_is_unknown(self):
+        await self.market(mode="active")
+        await self.buy()
+        at = self.now
+        self.now = self.forecast.specification.close_at_ms + 1000
+        resolution, artifacts = proposal(self.forecast, self.now, [article(at)])
+        gate = ResolutionTiming(self.db, lambda: self.now)
+        with self.assertRaises(AppError) as error:
+            await gate.check(self.forecast, resolution, artifacts)
+        self.assertEqual(error.exception.code, "resolution_timing_review",
+                         "the review must keep holding outcomes that would reward someone")
 
     async def test_shadow_fills_alone_do_not_freeze_real_resolution(self):
         await self.market()
