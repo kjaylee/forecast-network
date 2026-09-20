@@ -1,0 +1,702 @@
+{
+  "calls": [
+    {
+      "call": "budget",
+      "result": {
+        "availableAtomic": "0",
+        "issuanceCapAtomic": "20000000000",
+        "issuedAtomic": "0",
+        "liveEnabled": true,
+        "mode": "shadow",
+        "reservedAtomic": "0"
+      }
+    },
+    {
+      "call": "fund_treasury",
+      "result": {
+        "availableAtomic": "700000000",
+        "issuanceCapAtomic": "20000000000",
+        "issuedAtomic": "700000000",
+        "liveEnabled": true,
+        "mode": "shadow",
+        "reservedAtomic": "0"
+      }
+    },
+    {
+      "call": "fund_treasury_again",
+      "result": {
+        "availableAtomic": "1400000000",
+        "issuanceCapAtomic": "20000000000",
+        "issuedAtomic": "1400000000",
+        "liveEnabled": true,
+        "mode": "shadow",
+        "reservedAtomic": "0"
+      }
+    },
+    {
+      "call": "create",
+      "result": {
+        "atomicScale": 1000000,
+        "forecastId": "market-one",
+        "liveEnabled": true,
+        "maxSpendPoints": 100,
+        "mode": "shadow",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "probabilityRevision": 0,
+        "probabilityStatus": "current",
+        "refundedPoints": 0,
+        "reserveAtomic": "700000000",
+        "revision": 0,
+        "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "status": "open",
+        "voidedFillCount": 0,
+        "yesProbabilityBps": 5000
+      }
+    },
+    {
+      "call": "get",
+      "result": {
+        "atomicScale": 1000000,
+        "forecastId": "market-one",
+        "liveEnabled": true,
+        "maxSpendPoints": 100,
+        "mode": "shadow",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "probabilityRevision": 0,
+        "probabilityStatus": "current",
+        "refundedPoints": 0,
+        "reserveAtomic": "700000000",
+        "revision": 0,
+        "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "status": "open",
+        "voidedFillCount": 0,
+        "yesProbabilityBps": 5000
+      }
+    },
+    {
+      "call": "preview",
+      "result": {
+        "atomicScale": 1000000,
+        "claimsAtomic": "190902828",
+        "expiresAt": 1030000,
+        "forecastId": "market-one",
+        "mode": "preview",
+        "nonbinding": true,
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "priceAfterBps": 5476,
+        "priceBeforeBps": 5000,
+        "quoteId": null,
+        "revision": 0,
+        "side": "YES",
+        "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "spendPoints": 100,
+        "userId": "preview"
+      }
+    },
+    {
+      "call": "quote",
+      "result": {
+        "claimsAtomic": "190902828",
+        "expiresAt": 1030000,
+        "forecastId": "market-one",
+        "mode": "shadow",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "priceAfterBps": 5476,
+        "priceBeforeBps": 5000,
+        "quoteId": "test-market-token-6",
+        "revision": 0,
+        "side": "YES",
+        "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "spendPoints": 100,
+        "userId": "user-a"
+      }
+    },
+    {
+      "call": "accept",
+      "result": {
+        "acceptedAt": 1000000,
+        "claimsAtomic": "190902828",
+        "eligibilityDecisionId": null,
+        "expiresAt": 1030000,
+        "forecastId": "market-one",
+        "id": "fill:22c5bd5b0147f0fea01b6f746d7d873371c25bffdd0ff3ae5725bc71f4336bc6",
+        "mode": "shadow",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "priceAfterBps": 5476,
+        "priceBeforeBps": 5000,
+        "quoteId": "test-market-token-6",
+        "refundedPoints": 0,
+        "revision": 0,
+        "side": "YES",
+        "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "spendPoints": 100,
+        "status": "accepted",
+        "userId": "user-a",
+        "voidedAt": null
+      }
+    },
+    {
+      "call": "accept_replay",
+      "error": {
+        "code": "market_conflict",
+        "message": "The market or your balance changed. Request a fresh quote.",
+        "status": 409
+      }
+    },
+    {
+      "call": "quote_other_side",
+      "result": {
+        "claimsAtomic": "128111649",
+        "expiresAt": 1030000,
+        "forecastId": "market-one",
+        "mode": "shadow",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "priceAfterBps": 4843,
+        "priceBeforeBps": 4524,
+        "quoteId": "test-market-token-12",
+        "revision": 1,
+        "side": "NO",
+        "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "spendPoints": 60,
+        "userId": "user-b"
+      }
+    },
+    {
+      "call": "accept_other_side",
+      "result": {
+        "acceptedAt": 1000000,
+        "claimsAtomic": "128111649",
+        "eligibilityDecisionId": null,
+        "expiresAt": 1030000,
+        "forecastId": "market-one",
+        "id": "fill:4cc43ee28d453b74f0f64be16a8fdddde5e2f57eee3ff0e0d002edc2643df8af",
+        "mode": "shadow",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "priceAfterBps": 4843,
+        "priceBeforeBps": 4524,
+        "quoteId": "test-market-token-12",
+        "refundedPoints": 0,
+        "revision": 1,
+        "side": "NO",
+        "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "spendPoints": 60,
+        "status": "accepted",
+        "userId": "user-b",
+        "voidedAt": null
+      }
+    },
+    {
+      "call": "positions",
+      "result": {
+        "availablePoints": 900,
+        "committedPoints": 100,
+        "forecastId": "market-one",
+        "fractionAtomic": "0",
+        "grossPoints": 100,
+        "mode": "shadow",
+        "noClaimsAtomic": "0",
+        "refundedPoints": 0,
+        "settled": false,
+        "voidedFillCount": 0,
+        "yesClaimsAtomic": "190902828"
+      }
+    },
+    {
+      "call": "receipt_status",
+      "result": {
+        "forecastId": "market-one",
+        "quoteId": "test-market-token-6",
+        "receipt": {
+          "acceptedAt": 1000000,
+          "claimsAtomic": "190902828",
+          "eligibilityDecisionId": null,
+          "expiresAt": 1030000,
+          "forecastId": "market-one",
+          "id": "fill:22c5bd5b0147f0fea01b6f746d7d873371c25bffdd0ff3ae5725bc71f4336bc6",
+          "mode": "shadow",
+          "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+          "priceAfterBps": 5476,
+          "priceBeforeBps": 5000,
+          "quoteId": "test-market-token-6",
+          "refundedPoints": 0,
+          "revision": 0,
+          "side": "YES",
+          "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+          "spendPoints": 100,
+          "status": "accepted",
+          "userId": "user-a",
+          "voidedAt": null
+        },
+        "status": "accepted",
+        "userId": "user-a"
+      }
+    },
+    {
+      "call": "fund_treasury_settle",
+      "result": {
+        "availableAtomic": "700000000",
+        "issuanceCapAtomic": "20000000000",
+        "issuedAtomic": "700000000",
+        "liveEnabled": true,
+        "mode": "active",
+        "reservedAtomic": "0"
+      }
+    },
+    {
+      "call": "create_settle",
+      "result": {
+        "atomicScale": 1000000,
+        "forecastId": "market-three",
+        "liveEnabled": true,
+        "maxSpendPoints": 100,
+        "mode": "active",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "probabilityRevision": 0,
+        "probabilityStatus": "current",
+        "refundedPoints": 0,
+        "reserveAtomic": "700000000",
+        "revision": 0,
+        "specificationHash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b",
+        "status": "open",
+        "voidedFillCount": 0,
+        "yesProbabilityBps": 5000
+      }
+    },
+    {
+      "call": "quote_settle",
+      "result": {
+        "claimsAtomic": "172564584",
+        "expiresAt": 1030000,
+        "forecastId": "market-three",
+        "mode": "active",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "priceAfterBps": 5430,
+        "priceBeforeBps": 5000,
+        "quoteId": "test-market-token-20",
+        "revision": 0,
+        "side": "YES",
+        "specificationHash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b",
+        "spendPoints": 90,
+        "userId": "user-c"
+      }
+    },
+    {
+      "call": "accept_settle",
+      "result": {
+        "acceptedAt": 1000000,
+        "claimsAtomic": "172564584",
+        "eligibilityDecisionId": null,
+        "expiresAt": 1030000,
+        "forecastId": "market-three",
+        "id": "fill:9d6353cda99164524505b577507523876c234956204b82a23720fc87ba3a2fbb",
+        "mode": "active",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "priceAfterBps": 5430,
+        "priceBeforeBps": 5000,
+        "quoteId": "test-market-token-20",
+        "refundedPoints": 0,
+        "revision": 0,
+        "side": "YES",
+        "specificationHash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b",
+        "spendPoints": 90,
+        "status": "accepted",
+        "userId": "user-c",
+        "voidedAt": null
+      }
+    },
+    {
+      "call": "settle",
+      "result": {
+        "atomicScale": 1000000,
+        "forecastId": "market-three",
+        "liveEnabled": true,
+        "maxSpendPoints": 100,
+        "mode": "active",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "probabilityRevision": 1,
+        "probabilityStatus": "current",
+        "processed": 1,
+        "refundedPoints": 0,
+        "remaining": 0,
+        "reserveAtomic": "0",
+        "revision": 1,
+        "specificationHash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b",
+        "status": "settled",
+        "voidedFillCount": 0,
+        "yesProbabilityBps": 5430
+      }
+    },
+    {
+      "call": "settle_replay",
+      "result": {
+        "atomicScale": 1000000,
+        "forecastId": "market-three",
+        "liveEnabled": true,
+        "maxSpendPoints": 100,
+        "mode": "active",
+        "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "probabilityRevision": 1,
+        "probabilityStatus": "current",
+        "processed": 0,
+        "refundedPoints": 0,
+        "remaining": 0,
+        "reserveAtomic": "0",
+        "revision": 1,
+        "specificationHash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b",
+        "status": "settled",
+        "voidedFillCount": 0,
+        "yesProbabilityBps": 5430
+      }
+    }
+  ],
+  "description": "A point market's ordinary path: treasury, create, quote, fill, look, settle.",
+  "lifecycle": {
+    "other": {
+      "claimsAtomic": "128111649",
+      "expiresAt": 1030000,
+      "forecastId": "market-one",
+      "mode": "shadow",
+      "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+      "priceAfterBps": 4843,
+      "priceBeforeBps": 4524,
+      "quoteId": "test-market-token-12",
+      "revision": 1,
+      "side": "NO",
+      "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+      "spendPoints": 60,
+      "userId": "user-b"
+    },
+    "quote": {
+      "claimsAtomic": "190902828",
+      "expiresAt": 1030000,
+      "forecastId": "market-one",
+      "mode": "shadow",
+      "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+      "priceAfterBps": 5476,
+      "priceBeforeBps": 5000,
+      "quoteId": "test-market-token-6",
+      "revision": 0,
+      "side": "YES",
+      "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+      "spendPoints": 100,
+      "userId": "user-a"
+    },
+    "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2"
+  },
+  "rows": {
+    "market_account_ledger": [
+      {
+        "available_after": 900,
+        "available_delta": -100,
+        "committed_after": 100,
+        "committed_delta": 100,
+        "created_at": 1000000,
+        "forecast_id": "market-one",
+        "fraction_after": 0,
+        "fraction_before": 0,
+        "id": "fill:22c5bd5b0147f0fea01b6f746d7d873371c25bffdd0ff3ae5725bc71f4336bc6",
+        "kind": "market_buy",
+        "mode": "shadow",
+        "user_id": "user-a"
+      },
+      {
+        "available_after": 940,
+        "available_delta": -60,
+        "committed_after": 60,
+        "committed_delta": 60,
+        "created_at": 1000000,
+        "forecast_id": "market-one",
+        "fraction_after": 0,
+        "fraction_before": 0,
+        "id": "fill:4cc43ee28d453b74f0f64be16a8fdddde5e2f57eee3ff0e0d002edc2643df8af",
+        "kind": "market_buy",
+        "mode": "shadow",
+        "user_id": "user-b"
+      },
+      {
+        "available_after": 910,
+        "available_delta": -90,
+        "committed_after": 90,
+        "committed_delta": 90,
+        "created_at": 1000000,
+        "forecast_id": "market-three",
+        "fraction_after": 0,
+        "fraction_before": 0,
+        "id": "fill:9d6353cda99164524505b577507523876c234956204b82a23720fc87ba3a2fbb",
+        "kind": "market_buy",
+        "mode": "active",
+        "user_id": "user-c"
+      },
+      {
+        "available_after": 1082,
+        "available_delta": 172,
+        "committed_after": 0,
+        "committed_delta": -90,
+        "created_at": 1003100,
+        "forecast_id": "market-three",
+        "fraction_after": 564584,
+        "fraction_before": 0,
+        "id": "market-settlement:715d48f195bb13508337d6b8e4e7c64c858ac7a1f0d262043b69eeb28f476592",
+        "kind": "market_settlement",
+        "mode": "active",
+        "user_id": "user-c"
+      }
+    ],
+    "market_closures": [
+      {
+        "created_at": 1003100,
+        "forecast_id": "market-three",
+        "returned_atomic": 617435416
+      }
+    ],
+    "market_fills": [
+      {
+        "body": "{\"fill\":{\"accepted_at_ms\":1000000,\"quote\":{\"after_probability_bp\":5476,\"before_probability_bp\":5000,\"claims_atomic\":190902828,\"expires_at_ms\":1030000,\"market_id\":\"market-one\",\"net_gain_atomic\":90902828,\"owner_id\":\"user-a\",\"policy_hash\":\"04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78\",\"price_impact_bp\":476,\"quoted_at_ms\":1000000,\"schema_version\":1,\"side\":\"YES\",\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"spend_atomic\":100000000,\"state_hash\":\"1263de7b4a0a11ae620f76ce1e56340b6596663fdbced3ca88d62154b091975e\",\"state_revision\":0,\"winning_total_atomic\":190902828},\"schema_version\":1,\"state_after_hash\":\"9842b628e5a9de33af79878319738fce82d287778a2f72572cf42dd32207ab9d\"},\"schema_version\":1,\"state\":{\"closed_outcome\":null,\"deposits_atomic\":100000000,\"market_id\":\"market-one\",\"no_claims_atomic\":0,\"policy\":{\"atomic_units_per_point\":1000000,\"liquidity_atomic\":1000000000,\"maximum_fill_atomic\":100000000,\"maximum_owner_gross_atomic\":300000000,\"maximum_owner_unsettled_atomic\":1000000000,\"minimum_fill_atomic\":1000000,\"policy_id\":\"binary-lmsr-shadow-v1\",\"quote_lifetime_ms\":30000,\"schema_version\":1,\"subsidy_atomic\":700000000},\"reserve_atomic\":800000000,\"revision\":1,\"schema_version\":1,\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"yes_claims_atomic\":190902828}}",
+        "claims_atomic": 190902828,
+        "created_at": 1000000,
+        "forecast_id": "market-one",
+        "id": "fill:22c5bd5b0147f0fea01b6f746d7d873371c25bffdd0ff3ae5725bc71f4336bc6",
+        "idempotency_key": "test-market-token-8",
+        "quote_id": "test-market-token-6",
+        "request_hash": "6ec1ea57d40941883754d51ab25056974f157cc38aebfab2556abcd94063ab09",
+        "revision": 1,
+        "side": "YES",
+        "spend": 100,
+        "user_id": "user-a"
+      },
+      {
+        "body": "{\"fill\":{\"accepted_at_ms\":1000000,\"quote\":{\"after_probability_bp\":4843,\"before_probability_bp\":4524,\"claims_atomic\":128111649,\"expires_at_ms\":1030000,\"market_id\":\"market-one\",\"net_gain_atomic\":68111649,\"owner_id\":\"user-b\",\"policy_hash\":\"04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78\",\"price_impact_bp\":319,\"quoted_at_ms\":1000000,\"schema_version\":1,\"side\":\"NO\",\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"spend_atomic\":60000000,\"state_hash\":\"9842b628e5a9de33af79878319738fce82d287778a2f72572cf42dd32207ab9d\",\"state_revision\":1,\"winning_total_atomic\":128111649},\"schema_version\":1,\"state_after_hash\":\"0ff1bf1392233f178301c1fab808e31053dbd17525575622f5422926a182d725\"},\"schema_version\":1,\"state\":{\"closed_outcome\":null,\"deposits_atomic\":160000000,\"market_id\":\"market-one\",\"no_claims_atomic\":128111649,\"policy\":{\"atomic_units_per_point\":1000000,\"liquidity_atomic\":1000000000,\"maximum_fill_atomic\":100000000,\"maximum_owner_gross_atomic\":300000000,\"maximum_owner_unsettled_atomic\":1000000000,\"minimum_fill_atomic\":1000000,\"policy_id\":\"binary-lmsr-shadow-v1\",\"quote_lifetime_ms\":30000,\"schema_version\":1,\"subsidy_atomic\":700000000},\"reserve_atomic\":860000000,\"revision\":2,\"schema_version\":1,\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"yes_claims_atomic\":190902828}}",
+        "claims_atomic": 128111649,
+        "created_at": 1000000,
+        "forecast_id": "market-one",
+        "id": "fill:4cc43ee28d453b74f0f64be16a8fdddde5e2f57eee3ff0e0d002edc2643df8af",
+        "idempotency_key": "test-market-token-14",
+        "quote_id": "test-market-token-12",
+        "request_hash": "1ab9fd6105aa685a26da71e59dcc73445bdb39564c122b944ff1f8a2c1e82e7f",
+        "revision": 2,
+        "side": "NO",
+        "spend": 60,
+        "user_id": "user-b"
+      },
+      {
+        "body": "{\"fill\":{\"accepted_at_ms\":1000000,\"quote\":{\"after_probability_bp\":5430,\"before_probability_bp\":5000,\"claims_atomic\":172564584,\"expires_at_ms\":1030000,\"market_id\":\"market-three\",\"net_gain_atomic\":82564584,\"owner_id\":\"user-c\",\"policy_hash\":\"04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78\",\"price_impact_bp\":430,\"quoted_at_ms\":1000000,\"schema_version\":1,\"side\":\"YES\",\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"spend_atomic\":90000000,\"state_hash\":\"628358ecbe610bfa994976717739a968e09610991be9e4f71cc4227696ccea34\",\"state_revision\":0,\"winning_total_atomic\":172564584},\"schema_version\":1,\"state_after_hash\":\"6ed470b2d1a7c4a9e24b11e470c5c41e4e38a7d60c6758054b282e8920d20303\"},\"schema_version\":1,\"state\":{\"closed_outcome\":null,\"deposits_atomic\":90000000,\"market_id\":\"market-three\",\"no_claims_atomic\":0,\"policy\":{\"atomic_units_per_point\":1000000,\"liquidity_atomic\":1000000000,\"maximum_fill_atomic\":100000000,\"maximum_owner_gross_atomic\":300000000,\"maximum_owner_unsettled_atomic\":1000000000,\"minimum_fill_atomic\":1000000,\"policy_id\":\"binary-lmsr-shadow-v1\",\"quote_lifetime_ms\":30000,\"schema_version\":1,\"subsidy_atomic\":700000000},\"reserve_atomic\":790000000,\"revision\":1,\"schema_version\":1,\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"yes_claims_atomic\":172564584}}",
+        "claims_atomic": 172564584,
+        "created_at": 1000000,
+        "forecast_id": "market-three",
+        "id": "fill:9d6353cda99164524505b577507523876c234956204b82a23720fc87ba3a2fbb",
+        "idempotency_key": "test-market-token-22",
+        "quote_id": "test-market-token-20",
+        "request_hash": "d0457dccf20c29648975426da898f2f5a25176d79aefae16f796e902ec312abb",
+        "revision": 1,
+        "side": "YES",
+        "spend": 90,
+        "user_id": "user-c"
+      }
+    ],
+    "market_funding": [
+      {
+        "amount_atomic": 700000000,
+        "created_at": 1000000,
+        "id": "fund:af9820633198188807fb3daa7455af6bd2fa5b9a8681c491d148d8b89d6bf009",
+        "mode": "shadow"
+      },
+      {
+        "amount_atomic": 700000000,
+        "created_at": 1000000,
+        "id": "fund:b8e86f187bf2d276fcfc4349edc2d8db3c4e59795732d16f1988b63f3c625937",
+        "mode": "shadow"
+      },
+      {
+        "amount_atomic": 700000000,
+        "created_at": 1000000,
+        "id": "fund:0809aae3cec9dbc29654a3539f122b662f2051d7bed0036eca6e36dad5f22a5e",
+        "mode": "active"
+      }
+    ],
+    "market_positions": [
+      {
+        "forecast_id": "market-one",
+        "gross": 100,
+        "no_claims_atomic": 0,
+        "settled": 0,
+        "user_id": "user-a",
+        "yes_claims_atomic": 190902828
+      },
+      {
+        "forecast_id": "market-one",
+        "gross": 60,
+        "no_claims_atomic": 128111649,
+        "settled": 0,
+        "user_id": "user-b",
+        "yes_claims_atomic": 0
+      },
+      {
+        "forecast_id": "market-three",
+        "gross": 90,
+        "no_claims_atomic": 0,
+        "settled": 1,
+        "user_id": "user-c",
+        "yes_claims_atomic": 172564584
+      }
+    ],
+    "market_quotes": [
+      {
+        "body": "{\"after_probability_bp\":5476,\"before_probability_bp\":5000,\"claims_atomic\":190902828,\"expires_at_ms\":1030000,\"market_id\":\"market-one\",\"net_gain_atomic\":90902828,\"owner_id\":\"user-a\",\"policy_hash\":\"04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78\",\"price_impact_bp\":476,\"quoted_at_ms\":1000000,\"schema_version\":1,\"side\":\"YES\",\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"spend_atomic\":100000000,\"state_hash\":\"1263de7b4a0a11ae620f76ce1e56340b6596663fdbced3ca88d62154b091975e\",\"state_revision\":0,\"winning_total_atomic\":190902828}",
+        "created_at": 1000000,
+        "expires_at": 1030000,
+        "forecast_id": "market-one",
+        "id": "test-market-token-6",
+        "quote_hash": "3e622fd8041e91fc978b42874afdf6e70ac7b59c393a47f884027b509f8f66f8",
+        "user_id": "user-a"
+      },
+      {
+        "body": "{\"after_probability_bp\":4843,\"before_probability_bp\":4524,\"claims_atomic\":128111649,\"expires_at_ms\":1030000,\"market_id\":\"market-one\",\"net_gain_atomic\":68111649,\"owner_id\":\"user-b\",\"policy_hash\":\"04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78\",\"price_impact_bp\":319,\"quoted_at_ms\":1000000,\"schema_version\":1,\"side\":\"NO\",\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"spend_atomic\":60000000,\"state_hash\":\"9842b628e5a9de33af79878319738fce82d287778a2f72572cf42dd32207ab9d\",\"state_revision\":1,\"winning_total_atomic\":128111649}",
+        "created_at": 1000000,
+        "expires_at": 1030000,
+        "forecast_id": "market-one",
+        "id": "test-market-token-12",
+        "quote_hash": "75797110799fc61ed9f5cc03f98dc821aa9d7a7a21c25186263d75a0d6e563e9",
+        "user_id": "user-b"
+      },
+      {
+        "body": "{\"after_probability_bp\":5430,\"before_probability_bp\":5000,\"claims_atomic\":172564584,\"expires_at_ms\":1030000,\"market_id\":\"market-three\",\"net_gain_atomic\":82564584,\"owner_id\":\"user-c\",\"policy_hash\":\"04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78\",\"price_impact_bp\":430,\"quoted_at_ms\":1000000,\"schema_version\":1,\"side\":\"YES\",\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"spend_atomic\":90000000,\"state_hash\":\"628358ecbe610bfa994976717739a968e09610991be9e4f71cc4227696ccea34\",\"state_revision\":0,\"winning_total_atomic\":172564584}",
+        "created_at": 1000000,
+        "expires_at": 1030000,
+        "forecast_id": "market-three",
+        "id": "test-market-token-20",
+        "quote_hash": "5256269e0e4a7e000abd34c4977b3b5c5f8448e07c2354c4b2ea8f8cb6fde242",
+        "user_id": "user-c"
+      }
+    ],
+    "market_settlements": [
+      {
+        "created_at": 1003100,
+        "forecast_id": "market-three",
+        "gross": 90,
+        "id": "market-settlement:715d48f195bb13508337d6b8e4e7c64c858ac7a1f0d262043b69eeb28f476592",
+        "outcome": "YES",
+        "payout_atomic": 172564584,
+        "user_id": "user-c"
+      }
+    ],
+    "market_shadow_accounts": [
+      {
+        "available": 900,
+        "committed": 100,
+        "updated_at": 1000000,
+        "user_id": "user-a"
+      },
+      {
+        "available": 940,
+        "committed": 60,
+        "updated_at": 1000000,
+        "user_id": "user-b"
+      }
+    ],
+    "market_treasuries": [
+      {
+        "available_atomic": 700000000,
+        "issued_atomic": 1400000000,
+        "mode": "shadow",
+        "revision": 3
+      },
+      {
+        "available_atomic": 617435416,
+        "issued_atomic": 700000000,
+        "mode": "active",
+        "revision": 3
+      }
+    ],
+    "point_accounts": [
+      {
+        "available": 1000,
+        "committed": 0,
+        "updated_at": 999800,
+        "user_id": "user-a"
+      },
+      {
+        "available": 1000,
+        "committed": 0,
+        "updated_at": 999800,
+        "user_id": "user-b"
+      },
+      {
+        "available": 1082,
+        "committed": 0,
+        "updated_at": 1003100,
+        "user_id": "user-c"
+      }
+    ],
+    "point_fractions": [
+      {
+        "mode": "shadow",
+        "remainder_atomic": 0,
+        "user_id": "user-a"
+      },
+      {
+        "mode": "shadow",
+        "remainder_atomic": 0,
+        "user_id": "user-b"
+      },
+      {
+        "mode": "active",
+        "remainder_atomic": 564584,
+        "user_id": "user-c"
+      }
+    ],
+    "point_markets": [
+      {
+        "closed_at": null,
+        "created_at": 1000000,
+        "final_outcome": null,
+        "forecast_id": "market-one",
+        "gross_atomic": 160000000,
+        "mode": "shadow",
+        "policy": "{\"atomic_units_per_point\":1000000,\"liquidity_atomic\":1000000000,\"maximum_fill_atomic\":100000000,\"maximum_owner_gross_atomic\":300000000,\"maximum_owner_unsettled_atomic\":1000000000,\"minimum_fill_atomic\":1000000,\"policy_id\":\"binary-lmsr-shadow-v1\",\"quote_lifetime_ms\":30000,\"schema_version\":1,\"subsidy_atomic\":700000000}",
+        "policy_hash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "reserve_atomic": 860000000,
+        "revision": 2,
+        "specification_hash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "state": "{\"closed_outcome\":null,\"deposits_atomic\":160000000,\"market_id\":\"market-one\",\"no_claims_atomic\":128111649,\"policy\":{\"atomic_units_per_point\":1000000,\"liquidity_atomic\":1000000000,\"maximum_fill_atomic\":100000000,\"maximum_owner_gross_atomic\":300000000,\"maximum_owner_unsettled_atomic\":1000000000,\"minimum_fill_atomic\":1000000,\"policy_id\":\"binary-lmsr-shadow-v1\",\"quote_lifetime_ms\":30000,\"schema_version\":1,\"subsidy_atomic\":700000000},\"reserve_atomic\":860000000,\"revision\":2,\"schema_version\":1,\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"yes_claims_atomic\":190902828}",
+        "state_hash": "0ff1bf1392233f178301c1fab808e31053dbd17525575622f5422926a182d725",
+        "status": "open"
+      },
+      {
+        "closed_at": 1003100,
+        "created_at": 1000000,
+        "final_outcome": "YES",
+        "forecast_id": "market-three",
+        "gross_atomic": 90000000,
+        "mode": "active",
+        "policy": "{\"atomic_units_per_point\":1000000,\"liquidity_atomic\":1000000000,\"maximum_fill_atomic\":100000000,\"maximum_owner_gross_atomic\":300000000,\"maximum_owner_unsettled_atomic\":1000000000,\"minimum_fill_atomic\":1000000,\"policy_id\":\"binary-lmsr-shadow-v1\",\"quote_lifetime_ms\":30000,\"schema_version\":1,\"subsidy_atomic\":700000000}",
+        "policy_hash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+        "reserve_atomic": 0,
+        "revision": 1,
+        "specification_hash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b",
+        "state": "{\"closed_outcome\":\"YES\",\"deposits_atomic\":90000000,\"market_id\":\"market-three\",\"no_claims_atomic\":0,\"policy\":{\"atomic_units_per_point\":1000000,\"liquidity_atomic\":1000000000,\"maximum_fill_atomic\":100000000,\"maximum_owner_gross_atomic\":300000000,\"maximum_owner_unsettled_atomic\":1000000000,\"minimum_fill_atomic\":1000000,\"policy_id\":\"binary-lmsr-shadow-v1\",\"quote_lifetime_ms\":30000,\"schema_version\":1,\"subsidy_atomic\":700000000},\"reserve_atomic\":790000000,\"revision\":1,\"schema_version\":1,\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"yes_claims_atomic\":172564584}",
+        "state_hash": "e250632ea7bc520627cc6d7e5cc182f11f02e4736da225172064d6967363e4eb",
+        "status": "settled"
+      }
+    ],
+    "point_positions": []
+  },
+  "scale": "1000000",
+  "settlement": {
+    "quote": {
+      "claimsAtomic": "172564584",
+      "expiresAt": 1030000,
+      "forecastId": "market-three",
+      "mode": "active",
+      "policyHash": "04c8bf0c8303c178d028de15519cd66097f857196039b4ff7d85b039d569ec78",
+      "priceAfterBps": 5430,
+      "priceBeforeBps": 5000,
+      "quoteId": "test-market-token-20",
+      "revision": 0,
+      "side": "YES",
+      "specificationHash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b",
+      "spendPoints": 90,
+      "userId": "user-c"
+    },
+    "specificationHash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b"
+  }
+}
