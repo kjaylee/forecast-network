@@ -5,6 +5,7 @@
 use serde_json::{json, Value};
 use worker::*;
 
+pub mod ai;
 pub mod article;
 mod auth;
 mod db;
