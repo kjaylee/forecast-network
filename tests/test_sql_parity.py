@@ -58,6 +58,24 @@ class RustExtractionTests(unittest.TestCase):
         self.assertEqual(sql_parity.rust_statements(source)[0][0], 3)
 
 
+class TestCodeTests(unittest.TestCase):
+    def test_a_fixture_insert_is_not_a_statement_the_worker_runs(self):
+        # The first version of this harness compared them, and reported fifteen fixtures as
+        # drift, which is how a reader learns to ignore the check.
+        source = ('pub fn run() {}\n'
+                  '#[cfg(test)]\n'
+                  'mod tests {\n'
+                  '    fn fixture() { let sql = "INSERT INTO users(id) VALUES(\'u\')"; }\n'
+                  '}\n')
+        self.assertEqual(sql_parity.rust_statements(source), [])
+
+    def test_production_code_before_the_marker_is_still_read(self):
+        source = ('let sql = "SELECT a FROM t WHERE b=?";\n'
+                  '#[cfg(test)]\n'
+                  'mod tests {}\n')
+        self.assertEqual(len(sql_parity.rust_statements(source)), 1)
+
+
 class PythonExtractionTests(unittest.TestCase):
     def test_implicit_concatenation_is_read_as_one_statement(self):
         source = 'sql = ("SELECT a "\n       "FROM t "\n       "WHERE b=?")\n'

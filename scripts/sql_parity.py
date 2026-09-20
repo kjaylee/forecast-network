@@ -88,7 +88,15 @@ def drop_continuations(raw: str) -> str:
 
 
 def rust_statements(source: str) -> list[tuple[int, str]]:
-    """(line, statement) for every SQL string literal in one Rust file."""
+    """(line, statement) for every SQL string literal in one Rust file.
+
+    Test code is excluded. A fixture that inserts a row to exercise a guard is not a statement
+    the Worker runs, and reporting it as drift trains the reader to ignore the check.
+    """
+    marker = source.find("#[cfg(test)]")
+    if marker >= 0:
+        source = source[:marker]
+
     # `'"'` is the one Rust char literal whose contents can close a string and splice
     # unrelated code into a run of adjacent literals. Blanking it is the whole fix.
     source = source.replace("'\"'", "   ")

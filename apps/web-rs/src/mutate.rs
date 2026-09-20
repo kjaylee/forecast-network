@@ -189,6 +189,19 @@ pub async fn mutate(
         Err(LifecycleError::Concurrency(_)) | Err(LifecycleError::Idempotency(_)) => return Err(conflict()),
         Err(_) => return Err(transition_error()),
     };
+    // The timing guard runs before anything is written, exactly where the reference runs it:
+    // an open review admits no outcome, and a closed one admits only the outcome it determined.
+    // Its presence is also what turns the blocker view false for the outbox and the registry,
+    // so a resolution that could not be committed here would not reach them either.
+    if matches!(
+        &mutation.payload,
+        Payload::ProposeResolution { .. } | Payload::AdjudicateResolution { .. } | Payload::Finalize { .. }
+    ) {
+        if let Some(resolution) = result.forecast.base().resolution.as_ref() {
+            let database = crate::db::D1(session);
+            crate::resolution_timing::check(&database, forecast, resolution, mutation.now_ms, &[]).await?;
+        }
+    }
     let changed = &result.forecast;
     let snapshot = canonical_text(changed)?;
     if snapshot.len() > MAX_SNAPSHOT_BYTES {

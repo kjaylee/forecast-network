@@ -21,7 +21,7 @@ use forecast_domain::lifecycle::{AnyResolution, Forecast};
 use forecast_domain::models::EvidenceSnapshot;
 
 use crate::article::article_content;
-use crate::db::{batch, first, text};
+use crate::db::{text, Database};
 use crate::routes::RouteError;
 
 /// Set by `close_indeterminate`; the only determination a review can reach.
@@ -71,14 +71,8 @@ fn instant_ms(publication: &str) -> i64 {
     (days * 86400 + hour * 3600 + minute * 60 + second - offset) * 1000
 }
 
-async fn completed(
-    session: &D1DatabaseSession,
-    forecast_id: &str,
-    specification_hash: &str,
-) -> Result<bool, RouteError> {
-    Ok(first(
-        session,
-        "SELECT 1 FROM forecast_eligibility_decisions d JOIN forecast_eligibility_completions c ON c.decision_id=d.id \
+async fn completed(db: &dyn Database, forecast_id: &str, specification_hash: &str) -> Result<bool, RouteError> {
+    Ok(db.first("SELECT 1 FROM forecast_eligibility_decisions d JOIN forecast_eligibility_completions c ON c.decision_id=d.id \
          WHERE d.forecast_id=? AND d.specification_hash=?",
         &[json!(forecast_id), json!(specification_hash)],
     )
@@ -88,22 +82,22 @@ async fn completed(
 
 /// The determination a closed review carries, if one is in force.
 pub async fn closure_determination(
-    session: &D1DatabaseSession,
+    db: &dyn Database,
     forecast_id: &str,
     specification_hash: &str,
 ) -> Result<Option<String>, RouteError> {
-    Ok(first(
-        session,
-        "SELECT determination FROM resolution_timing_closures WHERE forecast_id=? AND specification_hash=?",
-        &[json!(forecast_id), json!(specification_hash)],
-    )
-    .await?
-    .and_then(|row| text(&row, "determination").map(str::to_string)))
+    Ok(db
+        .first(
+            "SELECT determination FROM resolution_timing_closures WHERE forecast_id=? AND specification_hash=?",
+            &[json!(forecast_id), json!(specification_hash)],
+        )
+        .await?
+        .and_then(|row| text(&row, "determination").map(str::to_string)))
 }
 
 /// Whether this resolution may be committed, in the reference's order of checks.
 pub async fn check(
-    session: &D1DatabaseSession,
+    db: &dyn Database,
     forecast: &Forecast,
     resolution: &AnyResolution,
     now_ms: i64,
@@ -117,12 +111,10 @@ pub async fn check(
     if matches!(resolution, AnyResolution::Early(_)) {
         return Ok(());
     }
-    if completed(session, &forecast.forecast_id, &forecast.specification_hash).await? {
+    if completed(db, &forecast.forecast_id, &forecast.specification_hash).await? {
         return Ok(());
     }
-    if let Some(determination) =
-        closure_determination(session, &forecast.forecast_id, &forecast.specification_hash).await?
-    {
+    if let Some(determination) = closure_determination(db, &forecast.forecast_id, &forecast.specification_hash).await? {
         // The review is closed, so the guard has stopped applying everywhere at once -- including
         // in the outbox and the registry, which read the blocker view rather than asking this
         // function. That is only safe because of the line below: the closure admits its own
@@ -133,32 +125,30 @@ pub async fn check(
         }
         return Ok(());
     }
-    if first(
-        session,
-        "SELECT 1 FROM resolution_timing_reviews WHERE forecast_id=? AND specification_hash=?",
-        &[json!(forecast.forecast_id), json!(forecast.specification_hash)],
-    )
-    .await?
-    .is_some()
+    if db
+        .first(
+            "SELECT 1 FROM resolution_timing_reviews WHERE forecast_id=? AND specification_hash=?",
+            &[json!(forecast.forecast_id), json!(forecast.specification_hash)],
+        )
+        .await?
+        .is_some()
     {
         return Err(review_error());
     }
-    analyze(session, forecast, resolution, now_ms, artifacts).await
+    analyze(db, forecast, resolution, now_ms, artifacts).await
 }
 
 /// The part that reads the retained bytes, in the reference's order, returning the error it
 /// would have raised once a review is written.
 async fn analyze(
-    session: &D1DatabaseSession,
+    db: &dyn Database,
     forecast: &Forecast,
     resolution: &AnyResolution,
     now_ms: i64,
     artifacts: &[(String, String, String)],
 ) -> Result<(), RouteError> {
     let base = resolution.base();
-    let latest = first(
-        session,
-        "SELECT MAX(at) AS at FROM ( \
+    let latest = db.first("SELECT MAX(at) AS at FROM ( \
          SELECT submitted_at AS at FROM user_forecasts WHERE forecast_id=? UNION ALL \
          SELECT created_at AS at FROM events WHERE forecast_id=? AND json_extract(event,'$.command_name')='submit_forecast' UNION ALL \
          SELECT json_extract(receipt,'$.accepted_at_ms') AS at FROM command_receipts WHERE forecast_id=? \
@@ -181,7 +171,7 @@ async fn analyze(
         // The reference reads the verification by the snapshot's own hash, which is derived,
         // not stored.
         let evidence_hash = evidence.evidence_hash().map_err(|_| review_error())?;
-        let (valid, bodies) = inspect(session, evidence, artifacts).await?;
+        let (valid, bodies) = inspect(db, evidence, artifacts).await?;
         let mut publication: Option<String> = None;
         let mut precision = "unknown".to_string();
         let mut at: Option<i64> = None;
@@ -271,7 +261,7 @@ async fn analyze(
             json!(now_ms),
         ],
     ));
-    batch(session, retained).await?;
+    db.batch(&retained).await?;
     Err(review_error())
 }
 
@@ -303,16 +293,16 @@ fn sort_keys(value: &Value, _inside: bool) -> Value {
 
 /// Whether the retained bytes are the evidence the resolution claims, and the first of them.
 async fn inspect(
-    session: &D1DatabaseSession,
+    db: &dyn Database,
     evidence: &EvidenceSnapshot,
     supplied: &[(String, String, String)],
 ) -> Result<(bool, Vec<String>), RouteError> {
-    let stored = first(
-        session,
-        "SELECT body FROM artifacts WHERE hash=?",
-        &[json!(evidence.content_sha256)],
-    )
-    .await?;
+    let stored = db
+        .first(
+            "SELECT body FROM artifacts WHERE hash=?",
+            &[json!(evidence.content_sha256)],
+        )
+        .await?;
     let mut bodies: Vec<String> = supplied
         .iter()
         .filter(|(hash, _, _)| *hash == evidence.content_sha256)
@@ -337,28 +327,24 @@ async fn inspect(
 /// can be credited from it. This writes down the conclusion the review already reached rather
 /// than overriding it: the closure is bound to that review's proof and to the exact evidence
 /// item the review marked unplaceable, so it cannot be manufactured from an unrelated review.
-pub async fn close_indeterminate(
-    session: &D1DatabaseSession,
-    forecast: &Forecast,
-    now_ms: i64,
-) -> Result<bool, RouteError> {
+pub async fn close_indeterminate(db: &dyn Database, forecast: &Forecast, now_ms: i64) -> Result<bool, RouteError> {
     let specification_hash = forecast.specification_hash.as_str();
-    if closure_determination(session, &forecast.forecast_id, specification_hash)
+    if closure_determination(db, &forecast.forecast_id, specification_hash)
         .await?
         .is_some()
     {
         return Ok(true);
     }
-    if completed(session, &forecast.forecast_id, specification_hash).await? {
+    if completed(db, &forecast.forecast_id, specification_hash).await? {
         return Ok(true);
     }
-    let Some(row) = first(
-        session,
-        "SELECT proof_hash, body FROM resolution_timing_reviews WHERE forecast_id=? AND specification_hash=? \
+    let Some(row) = db
+        .first(
+            "SELECT proof_hash, body FROM resolution_timing_reviews WHERE forecast_id=? AND specification_hash=? \
          AND reason='publication_time_unknown' ORDER BY created_at,resolution_hash LIMIT 1",
-        &[json!(forecast.forecast_id), json!(specification_hash)],
-    )
-    .await?
+            &[json!(forecast.forecast_id), json!(specification_hash)],
+        )
+        .await?
     else {
         return Ok(false);
     };
@@ -404,11 +390,11 @@ pub async fn close_indeterminate(
             json!(now_ms),
         ],
     );
-    if let Err(error) = batch(session, vec![statement]).await {
+    if let Err(error) = db.batch(&[statement]).await {
         // The row is keyed and immutable, so what matters is that it exists, not who wrote it.
         // Anything else -- including a validation trigger refusing the write because the forecast
         // already moved -- has to surface.
-        if closure_determination(session, &forecast.forecast_id, specification_hash)
+        if closure_determination(db, &forecast.forecast_id, specification_hash)
             .await?
             .is_none()
         {
@@ -419,18 +405,18 @@ pub async fn close_indeterminate(
 }
 
 /// `status`: what the review says, plus the determination when one is in force.
-pub async fn status(session: &D1DatabaseSession, forecast_id: &str) -> Result<Value, RouteError> {
-    let Some(row) = first(
-        session,
-        "SELECT * FROM resolution_timing_reviews WHERE forecast_id=? ORDER BY created_at,resolution_hash LIMIT 1",
-        &[json!(forecast_id)],
-    )
-    .await?
+pub async fn status(db: &dyn Database, forecast_id: &str) -> Result<Value, RouteError> {
+    let Some(row) = db
+        .first(
+            "SELECT * FROM resolution_timing_reviews WHERE forecast_id=? ORDER BY created_at,resolution_hash LIMIT 1",
+            &[json!(forecast_id)],
+        )
+        .await?
     else {
         return Ok(json!({"status": "none"}));
     };
     let specification_hash = text(&row, "specification_hash").unwrap_or_default();
-    let complete = completed(session, forecast_id, specification_hash).await?;
+    let complete = completed(db, forecast_id, specification_hash).await?;
     let mut value = json!({
         "status": if complete { "complete" } else { "review" },
         "reason": text(&row, "reason"),
@@ -439,7 +425,7 @@ pub async fn status(session: &D1DatabaseSession, forecast_id: &str) -> Result<Va
     });
     // Additive: callers that only understand "review" keep working, and a closed review is
     // reported rather than hidden inside the same word.
-    if let Some(determination) = closure_determination(session, forecast_id, specification_hash).await? {
+    if let Some(determination) = closure_determination(db, forecast_id, specification_hash).await? {
         value["determination"] = json!(determination);
     }
     Ok(value)
@@ -459,6 +445,163 @@ mod tests {
         assert_eq!(instant_ms("2026-09-15T10:00:00-05:00"), 1_789_484_400_000);
         // A leap day, so the civil-date arithmetic is exercised rather than assumed.
         assert_eq!(instant_ms("2024-02-29T00:00:00Z"), 1709164800000);
+    }
+
+    /// The schema is where the guard actually lives: five consumers read the blocker view and
+    /// the state trigger reads the view. This runs against the migrations that are deployed
+    /// rather than against a description of them, which is what the SQLite double exists for.
+    #[test]
+    fn a_closure_releases_the_blocker_view_and_the_state_trigger() {
+        use crate::db::{Database, Sqlite};
+        const SPEC: &str = "1111111111111111111111111111111111111111111111111111111111111111";
+        const RESOLUTION: &str = "2222222222222222222222222222222222222222222222222222222222222222";
+        const PROOF: &str = "3333333333333333333333333333333333333333333333333333333333333333";
+        const EVIDENCE: &str = "4444444444444444444444444444444444444444444444444444444444444444";
+        let db = Sqlite::from_migrations();
+        let run = |sql: &str| futures_lite::future::block_on(db.execute(sql, &[])).expect("statement");
+        let count = |sql: &str| {
+            futures_lite::future::block_on(db.first(sql, &[]))
+                .expect("query")
+                .and_then(|row| crate::db::int(&row, "n"))
+                .unwrap_or(-1)
+        };
+        let review_body = format!(
+            "{{\"schemaVersion\":1,\"forecastId\":\"f\",\"specificationHash\":\"{SPEC}\",\
+             \"resolutionHash\":\"{RESOLUTION}\",\"lastReceiptAt\":10,\
+             \"evidence\":[{{\"contentHash\":\"{EVIDENCE}\",\"reason\":\"publication_time_unknown\"}}]}}"
+        );
+        let closure_body = |review_proof: &str| {
+            format!(
+                "{{\"determination\":\"INVALID\",\"evidenceHash\":\"{EVIDENCE}\",\"forecastId\":\"f\",\
+                 \"reason\":\"publication_time_unknown\",\"reviewProofHash\":\"{review_proof}\",\
+                 \"specificationHash\":\"{SPEC}\"}}"
+            )
+        };
+        run("INSERT INTO users(id,display_name,handle,recovery_hash,created_at) VALUES('u','H','h','r',1)");
+        run(&format!(
+            "INSERT INTO forecasts(id,creator_id,draft_id,snapshot,revision,state,category,title,question,\
+             normalized_question,specification_hash,open_at,close_at,created_at,updated_at,mutation_key) \
+             VALUES('f','u','d','{{}}',1,'RESOLVING','CRYPTO','t','q','q','{SPEC}',0,1,1,1,'k')"
+        ));
+        run(&format!(
+            "INSERT INTO resolution_timing_reviews(forecast_id,specification_hash,resolution_hash,reason,\
+             last_receipt_at,candidate_cutoff_at,proof_hash,body,created_at) \
+             VALUES('f','{SPEC}','{RESOLUTION}','publication_time_unknown',10,NULL,'{PROOF}','{review_body}',1)"
+        ));
+
+        assert_eq!(count("SELECT COUNT(*) AS n FROM forecast_resolution_blockers"), 1);
+        assert!(
+            futures_lite::future::block_on(db.execute("UPDATE forecasts SET state='FINALIZED' WHERE id='f'", &[]))
+                .is_err(),
+            "an unresolved review must hold the rewarded states"
+        );
+
+        // A closure is bound to the review it concludes; a proof it does not name is refused.
+        let wrong = format!(
+            "INSERT INTO resolution_timing_closures(forecast_id,specification_hash,review_proof_hash,\
+             determination,reason,evidence_hash,proof_hash,body,created_at) \
+             VALUES('f','{SPEC}','{RESOLUTION}','INVALID','publication_time_unknown','{EVIDENCE}','{PROOF}',\
+             '{}',1)",
+            closure_body(RESOLUTION)
+        );
+        assert!(
+            futures_lite::future::block_on(db.execute(&wrong, &[])).is_err(),
+            "a closure has to name the proof of the review it concludes"
+        );
+
+        let right = format!(
+            "INSERT INTO resolution_timing_closures(forecast_id,specification_hash,review_proof_hash,\
+             determination,reason,evidence_hash,proof_hash,body,created_at) \
+             VALUES('f','{SPEC}','{PROOF}','INVALID','publication_time_unknown','{EVIDENCE}','{PROOF}',\
+             '{}',1)",
+            closure_body(PROOF)
+        );
+        run(&right);
+        assert_eq!(
+            count("SELECT COUNT(*) AS n FROM forecast_resolution_blockers"),
+            0,
+            "the closure is what turns the boolean false everywhere at once"
+        );
+        assert!(
+            futures_lite::future::block_on(db.execute("UPDATE forecasts SET state='FINALIZED' WHERE id='f'", &[]))
+                .is_ok(),
+            "and the state trigger stops holding the forecast"
+        );
+    }
+
+    /// `RouteError` carries a `worker::Error`, so it has no `Debug` and cannot be `.expect`ed.
+    fn ok<T>(outcome: std::result::Result<T, crate::routes::RouteError>, what: &str) -> T {
+        match outcome {
+            Ok(value) => value,
+            Err(_) => panic!("{what} failed"),
+        }
+    }
+
+    /// A real domain object from the golden vectors, so the test reads what the port reads
+    /// rather than a hand-built approximation of it.
+    fn golden_forecast() -> Forecast {
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/lifecycle-golden.json");
+        let value: Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).expect("golden vectors")).expect("json");
+        let first = &value["steps"][0]["before"];
+        forecast_domain::lifecycle::Snapshot::from_json(&first.to_string())
+            .expect("snapshot")
+            .base()
+            .clone()
+    }
+
+    /// The projection the scheduler and the operator both read, against the deployed schema.
+    #[test]
+    fn the_status_reports_a_review_and_not_a_determination_it_does_not_have() {
+        use crate::db::{Database, Sqlite};
+        let forecast = golden_forecast();
+        let (id, spec) = (forecast.forecast_id.clone(), forecast.specification_hash.clone());
+        let db = Sqlite::from_migrations();
+        let run = |sql: &str| futures_lite::future::block_on(db.execute(sql, &[])).expect("statement");
+
+        let none = ok(futures_lite::future::block_on(status(&db, &id)), "status");
+        assert_eq!(none["status"], "none", "a forecast with no review has no timing state");
+
+        run("INSERT INTO users(id,display_name,handle,recovery_hash,created_at) VALUES('u','H','h','r',1)");
+        run(&format!(
+            "INSERT INTO forecasts(id,creator_id,draft_id,snapshot,revision,state,category,title,question,\
+             normalized_question,specification_hash,open_at,close_at,created_at,updated_at,mutation_key) \
+             VALUES('{id}','u','d','{{}}',1,'RESOLVING','CRYPTO','t','q','q','{spec}',0,1,1,1,'k')"
+        ));
+        run(&format!(
+            "INSERT INTO resolution_timing_reviews(forecast_id,specification_hash,resolution_hash,reason,\
+             last_receipt_at,candidate_cutoff_at,proof_hash,body,created_at) \
+             VALUES('{id}','{spec}','2222222222222222222222222222222222222222222222222222222222222222',\
+             'evidence_may_predate_participation',4242,7,'3333333333333333333333333333333333333333333333333333333333333333',\
+             '{{\"forecastId\":\"{id}\",\"specificationHash\":\"{spec}\",\
+             \"resolutionHash\":\"2222222222222222222222222222222222222222222222222222222222222222\",\
+             \"lastReceiptAt\":4242}}',1)"
+        ));
+        let open = ok(futures_lite::future::block_on(status(&db, &id)), "status");
+        assert_eq!(open["status"], "review");
+        assert_eq!(open["reason"], "evidence_may_predate_participation");
+        assert_eq!(open["candidateCutoffAt"], 7);
+        assert_eq!(
+            open["proofHash"],
+            "3333333333333333333333333333333333333333333333333333333333333333"
+        );
+        assert!(
+            open.get("determination").is_none(),
+            "an open review has no determination: {open}"
+        );
+
+        // Only `publication_time_unknown` is settled by its own proof; a review that says the
+        // evidence may predate participation is a judgement and stays one.
+        let closed = ok(
+            futures_lite::future::block_on(close_indeterminate(&db, &forecast, 1)),
+            "close",
+        );
+        assert!(!closed, "this reason is not one a closure can reach");
+        assert_eq!(
+            ok(futures_lite::future::block_on(status(&db, &id)), "status")["status"],
+            "review"
+        );
     }
 
     #[test]
