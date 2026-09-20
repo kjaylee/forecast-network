@@ -5,9 +5,11 @@
 //! an observation is queued, **before** any AI is scheduled or awaited. Participation stops
 //! while the evidence is looked at, not after a model has had an opinion about it.
 //!
-//! The polling loop is not here yet. It needs the conditional-fetch wrapper around the
-//! collector's own transport — `If-None-Match` and a 304 that the collector has to see as a
-//! response rather than as a failure — and that wiring is easier to get wrong than to write.
+//! The polling loop is below. Its one subtlety is where the conditional request goes: the
+//! collector owns the fetch, so `If-None-Match` and `If-Modified-Since` have to be added by a
+//! wrapper *around* that fetch rather than by a call beside it. A 304 then comes back as a
+//! response the collector would call an unexpected status, so the wrapper records it and the
+//! caller reads the flag rather than the status.
 
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -23,6 +25,12 @@ pub const MIN_INTERVAL_MS: i64 = 60_000;
 pub const MAX_ARTIFACT_BYTES: usize = 524_288;
 const DAY_MS: i64 = 86_400_000;
 pub const AI_SCOPE: &str = "official-watch-ai";
+
+/// The transport, boxed so the watch can hold one without becoming generic over it. It takes
+/// the target and the headers the caller wants, and returns what came back.
+pub type Fetcher = Box<dyn Fn(String, Vec<(String, String)>) -> FetchFuture>;
+
+pub type FetchFuture = std::pin::Pin<Box<dyn std::future::Future<Output = Result<crate::sources::TextResponse, ()>>>>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WatchError {
@@ -405,6 +413,251 @@ pub async fn check_known(db: &dyn Database, forecast: &Value) -> Result<Vec<Valu
     Ok(found)
 }
 
+/// Poll one source under its lease: fetch what changed, discover what a feed now links to, and
+/// queue the articles whose text is relevant to a binding.
+pub async fn poll(
+    db: &dyn Database,
+    fetch: &Fetcher,
+    host: &dyn ForecastSource,
+    hold: Option<&dyn Hold>,
+    source: &Row,
+    now_ms: i64,
+) -> Result<&'static str, WatchError> {
+    use crate::sources::{collect, discover_articles, SourceError, SourceRejected};
+    use std::cell::{Cell, RefCell};
+    use std::rc::Rc;
+
+    let source_url = text(source, "url").unwrap_or("").to_string();
+    let source_id = text(source, "id").unwrap_or("").to_string();
+    let etag = text(source, "etag")
+        .map(str::to_string)
+        .filter(|value| !value.is_empty());
+    let last_modified = text(source, "last_modified")
+        .map(str::to_string)
+        .filter(|value| !value.is_empty());
+    let interval_ms = int(source, "interval_ms").unwrap_or(0);
+    let kind = text(source, "kind").unwrap_or("").to_string();
+    let parent_id = text(source, "parent_id").map(str::to_string);
+
+    // The collector owns the fetch, so the conditional request is a wrapper around it. A 304
+    // then arrives as a status the collector would call unexpected, and the wrapper is what
+    // remembers it happened, and whether it was answerable.
+    let captured: Rc<RefCell<Vec<(String, String)>>> = Rc::new(RefCell::new(Vec::new()));
+    let saw_304 = Rc::new(Cell::new(false));
+    let unconditional_304 = Rc::new(Cell::new(false));
+    let fetch_within = |target: String| {
+        let (captured, saw_304, unconditional_304) = (captured.clone(), saw_304.clone(), unconditional_304.clone());
+        let (want_etag, want_modified) = (etag.clone(), last_modified.clone());
+        let is_source = target == source_url;
+        // The conditional request itself. Without it a poller asks for the whole document
+        // every time and the publisher answers it, which is the cost this is here to avoid.
+        let mut headers: Vec<(String, String)> = Vec::new();
+        if is_source {
+            if let Some(value) = want_etag.clone() {
+                headers.push(("If-None-Match".to_string(), value));
+            }
+            if let Some(value) = want_modified.clone() {
+                headers.push(("If-Modified-Since".to_string(), value));
+            }
+        }
+        let response = fetch(target, headers);
+        async move {
+            let mut response = response.await?;
+            captured.borrow_mut().append(&mut response.headers.clone());
+            if response.status == 304 {
+                saw_304.set(true);
+                if !is_source || (want_etag.is_none() && want_modified.is_none()) {
+                    unconditional_304.set(true);
+                }
+            }
+            // RSS and Atom are XML documents, subject to the same byte and redirect bounds.
+            // Only the media label is normalized, never the bytes.
+            let label = response
+                .headers
+                .iter()
+                .rev()
+                .find(|(key, _)| key.eq_ignore_ascii_case("content-type"))
+                .map(|(_, value)| value.split(';').next().unwrap_or("").trim().to_lowercase())
+                .unwrap_or_default();
+            if label == "application/rss+xml" || label == "application/atom+xml" {
+                response
+                    .headers
+                    .retain(|(key, _)| !key.eq_ignore_ascii_case("content-type"));
+                response
+                    .headers
+                    .push(("content-type".to_string(), "application/xml".to_string()));
+            }
+            Ok(response)
+        }
+    };
+    let collected = match collect(fetch_within, &source_id, &source_url, true, None, now_ms).await {
+        Err(SourceError::Rejected(SourceRejected::HttpStatus(304))) if saw_304.get() => {
+            if unconditional_304.get() {
+                return Err(WatchError::Rejected("Unconditional source returned 304".to_string()));
+            }
+            poll_done(db, source, etag.as_deref(), last_modified.as_deref(), now_ms).await?;
+            return Ok("unchanged");
+        }
+        Err(error) => return Err(source_error(error)),
+        Ok(collected) => collected,
+    };
+    if kind == "index" {
+        let discovered = discover_articles(&collected.artifact_body, &collected.url);
+        if discovered.is_empty() {
+            return Err(WatchError::Rejected(
+                "Official feed no longer exposes readable article links".to_string(),
+            ));
+        }
+        let mut active_ids: Vec<String> = Vec::new();
+        for url in &discovered {
+            let article_id = format!("article-{}", &hash_hex(url)[..32]);
+            active_ids.push(article_id.clone());
+            register(
+                db,
+                Registration {
+                    source_id: &article_id,
+                    url,
+                    kind: "article",
+                    interval_ms: interval_ms.max(3_600_000),
+                    parent_id: Some(&source_id),
+                    pinned: false,
+                },
+                now_ms,
+            )
+            .await?;
+            db.execute(
+                "UPDATE official_watch_sources SET enabled=1,next_poll=? WHERE id=? AND enabled=0",
+                &[json!(now_ms), json!(article_id)],
+            )
+            .await?;
+        }
+        // A feed has a bounded live window. Older observations stay fully retained for the
+        // publication guards and review; polling does not grow with the publisher's lifetime
+        // article count.
+        let placeholders = vec!["?"; active_ids.len()].join(",");
+        let mut parameters: Vec<Value> = vec![json!(source_id)];
+        parameters.extend(active_ids.iter().map(|id| json!(id)));
+        db.execute(
+            &format!(
+                "UPDATE official_watch_sources SET enabled=0 WHERE parent_id=? AND pinned=0 AND id NOT IN ({placeholders})"
+            ),
+            &parameters,
+        )
+        .await?;
+        poll_done(db, source, etag.as_deref(), last_modified.as_deref(), now_ms).await?;
+        return Ok("index");
+    }
+    let (body, (date, precision)) = crate::article::article_content(&collected.artifact_body)
+        .map_err(|_| WatchError::Rejected("Article evidence could not be read".to_string()))?;
+    if body.len() < 40 {
+        return Err(WatchError::Rejected("Article text is incomplete".to_string()));
+    }
+    let content_hash = hash_hex(&compact(&json!({
+        "text": body, "publicationDate": date, "datePrecision": precision,
+    })));
+    let root_id = parent_id.clone().unwrap_or_else(|| source_id.clone());
+    let identity = hash_hex(&format!("{root_id}{}{content_hash}", collected.url));
+    let mut observation = json!({
+        "id": identity, "sourceId": root_id, "url": collected.url,
+        "contentHash": content_hash, "artifactHash": collected.content_sha256,
+        "excerpt": body.chars().take(24_000).collect::<String>(), "observedAt": now_ms,
+        "publicationDate": date, "datePrecision": precision, "policy": POLICY,
+    });
+    if db
+        .first(
+            "SELECT body FROM official_source_observations WHERE id=?",
+            &[json!(identity)],
+        )
+        .await?
+        .is_none()
+    {
+        let mut statements = artifact_sql(
+            &[(
+                collected.content_sha256.clone(),
+                collected.artifact_kind.to_string(),
+                collected.artifact_body.clone(),
+                collected.media_type.clone(),
+            )],
+            now_ms,
+        )?;
+        statements.push((
+            "INSERT OR IGNORE INTO official_source_observations(id,source_id,url,content_hash,artifact_hash,body,observed_at) VALUES(?,?,?,?,?,?,?)".to_string(),
+            vec![
+                json!(identity),
+                json!(root_id),
+                json!(source_url),
+                json!(content_hash),
+                json!(collected.content_sha256),
+                json!(compact(&observation)),
+                json!(now_ms),
+            ],
+        ));
+        db.batch(&statements).await?;
+    }
+    if let Some(row) = db
+        .first(
+            "SELECT body FROM official_source_observations WHERE id=?",
+            &[json!(identity)],
+        )
+        .await?
+    {
+        if let Ok(stored) = serde_json::from_str::<Value>(text(&row, "body").unwrap_or("")) {
+            observation = stored;
+        }
+    }
+    let bindings = db
+        .all(
+            "SELECT * FROM official_watch_bindings WHERE source_id=? LIMIT ?",
+            &[json!(root_id), json!(MAX_BINDINGS)],
+        )
+        .await?;
+    for binding in bindings {
+        let families: Vec<String> =
+            serde_json::from_str(text(&binding, "families").unwrap_or("[]")).unwrap_or_default();
+        if relevant(&body, &families) {
+            if let Some(forecast_id) = text(&binding, "forecast_id") {
+                enqueue(db, host, forecast_id, &observation, now_ms, hold).await?;
+            }
+        }
+    }
+    poll_done(db, source, etag.as_deref(), last_modified.as_deref(), now_ms).await?;
+    Ok("article")
+}
+
+fn source_error(error: crate::sources::SourceError) -> WatchError {
+    match error {
+        crate::sources::SourceError::Unavailable => WatchError::Unavailable,
+        crate::sources::SourceError::Rejected(rejected) => WatchError::Rejected(rejected.message()),
+    }
+}
+
+async fn poll_done(
+    db: &dyn Database,
+    source: &Row,
+    etag: Option<&str>,
+    modified: Option<&str>,
+    now_ms: i64,
+) -> Result<(), WatchError> {
+    let etag: String = etag.unwrap_or("").chars().take(512).collect();
+    let modified: String = modified.unwrap_or("").chars().take(128).collect();
+    let interval = int(source, "interval_ms").unwrap_or(0);
+    let id = text(source, "id").unwrap_or("");
+    db.execute(
+        "UPDATE official_watch_sources SET etag=?,last_modified=?,checked_at=?,next_poll=?,failure_count=0,last_error=NULL WHERE id=? AND lease_token=? AND lease_until>?",
+        &[
+            json!(if etag.is_empty() { None } else { Some(etag) }),
+            json!(if modified.is_empty() { None } else { Some(modified) }),
+            json!(now_ms),
+            json!(now_ms + interval),
+            json!(id),
+            json!(text(source, "lease_token").unwrap_or("")),
+            json!(now_ms),
+        ],
+    )
+    .await?;
+    Ok(())
+}
+
 /// The dispatch table for the source list, exposed so a caller can render what is watched.
 pub async fn registered(db: &dyn Database, id: &str) -> Result<Option<Row>, WatchError> {
     Ok(db
@@ -500,6 +753,9 @@ mod tests {
         ))
         .unwrap();
     }
+
+    /// What the transport was asked for, so a test can say which headers went out.
+    type HeaderLog = std::rc::Rc<std::cell::RefCell<Vec<Vec<(String, String)>>>>;
 
     fn block<F: std::future::Future>(future: F) -> F::Output {
         futures_lite::future::block_on(future)
@@ -731,6 +987,138 @@ mod tests {
             json!({"id": "o2", "contentHash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"});
         block(enqueue(&db, &closed, "f", &other, 7, Some(&recorder))).unwrap();
         assert_eq!(recorder.0.borrow().len(), 1, "a finalized forecast is not held again");
+    }
+
+    #[test]
+    fn a_poll_asks_conditionally_and_reads_a_not_modified_as_unchanged() {
+        use std::cell::RefCell;
+        use std::rc::Rc;
+        let db = Sqlite::from_migrations();
+        parents(&db, "f", "o1");
+        // `poll_done` writes under the lease the caller took, so the fixture has to hold one.
+        block(db.execute(
+            "UPDATE official_watch_sources SET etag='v1', last_modified='yesterday', lease_token='L', lease_until=1000 WHERE id='apple'",
+            &[],
+        ))
+        .unwrap();
+        let source = block(db.first("SELECT * FROM official_watch_sources WHERE id='apple'", &[]))
+            .unwrap()
+            .unwrap();
+        let host = Source { forecast: forecast() };
+        let seen: HeaderLog = Rc::new(RefCell::new(Vec::new()));
+        let recorder = seen.clone();
+        let fetch: Fetcher = Box::new(move |_target, headers| {
+            recorder.borrow_mut().push(headers);
+            Box::pin(async {
+                Ok(crate::sources::TextResponse {
+                    status: 304,
+                    headers: vec![("content-type".to_string(), "text/html".to_string())],
+                    body: String::new(),
+                })
+            })
+        });
+        let outcome = block(poll(&db, &fetch, &host, None, &source, 100)).unwrap();
+        assert_eq!(outcome, "unchanged");
+        let headers = seen.borrow();
+        assert_eq!(headers.len(), 1, "one attempt, not a retry loop");
+        assert!(
+            headers[0]
+                .iter()
+                .any(|(key, value)| key == "If-None-Match" && value == "v1"),
+            "{:?}",
+            headers[0]
+        );
+        assert!(
+            headers[0]
+                .iter()
+                .any(|(key, value)| key == "If-Modified-Since" && value == "yesterday"),
+            "{:?}",
+            headers[0]
+        );
+        // A successful conditional poll clears the failure state and re-arms the interval.
+        let row = block(db.first(
+            "SELECT checked_at, next_poll, failure_count FROM official_watch_sources WHERE id='apple'",
+            &[],
+        ))
+        .unwrap()
+        .unwrap();
+        assert_eq!(int(&row, "checked_at"), Some(100));
+        assert_eq!(int(&row, "next_poll"), Some(100 + 300_000));
+    }
+
+    #[test]
+    fn a_not_modified_with_nothing_to_compare_against_is_a_refusal() {
+        // The reference refuses a 304 it did not ask for: a source answering "unchanged" to an
+        // unconditional request is not something the poller can act on.
+        let db = Sqlite::from_migrations();
+        parents(&db, "f", "o1");
+        block(db.execute(
+            "UPDATE official_watch_sources SET lease_token='L', lease_until=1000 WHERE id='apple'",
+            &[],
+        ))
+        .unwrap();
+        let source = block(db.first("SELECT * FROM official_watch_sources WHERE id='apple'", &[]))
+            .unwrap()
+            .unwrap();
+        let host = Source { forecast: forecast() };
+        let fetch: Fetcher = Box::new(move |_target, _headers| {
+            Box::pin(async {
+                Ok(crate::sources::TextResponse {
+                    status: 304,
+                    headers: vec![("content-type".to_string(), "text/html".to_string())],
+                    body: String::new(),
+                })
+            })
+        });
+        let error = block(poll(&db, &fetch, &host, None, &source, 100)).unwrap_err();
+        assert_eq!(error.message(), "Unconditional source returned 304");
+    }
+
+    #[test]
+    fn an_index_feed_queues_what_it_links_to_and_closes_the_rest_of_the_window() {
+        let db = Sqlite::from_migrations();
+        parents(&db, "f", "o1");
+        block(db.execute(
+            "INSERT INTO official_watch_bindings(forecast_id,source_id,families) VALUES('f','apple','[\"Product X\"]')",
+            &[],
+        ))
+        .unwrap();
+        block(db.execute(
+            "UPDATE official_watch_sources SET lease_token='L', lease_until=1000 WHERE id='apple'",
+            &[],
+        ))
+        .unwrap();
+        let current = block(db.first("SELECT * FROM official_watch_sources WHERE id='apple'", &[]))
+            .unwrap()
+            .unwrap();
+        let host = Source { forecast: forecast() };
+        // Long enough to clear the collector's readable-content floor, which a link-only feed
+        // body is not.
+        let payload = "<a href=\"/newsroom/2026/09/product-x-announced/\">Product X announced today</a>\
+                       <a href=\"/newsroom/2026/09/older-story/\">An older story about something else</a>\
+                       <p>Product X is announced and this feed describes it at length.</p>"
+            .to_string();
+        let fetch: Fetcher = Box::new(move |_target, _headers| {
+            let payload = payload.clone();
+            Box::pin(async move {
+                Ok(crate::sources::TextResponse {
+                    status: 200,
+                    headers: vec![("content-type".to_string(), "text/html".to_string())],
+                    body: format!("<html><body><main>{payload}</main></body></html>"),
+                })
+            })
+        });
+        assert_eq!(block(poll(&db, &fetch, &host, None, &current, 100)).unwrap(), "index");
+        // Both discovered articles are registered under the feed.
+        let children = block(db.all(
+            "SELECT id FROM official_watch_sources WHERE parent_id='apple' ORDER BY id",
+            &[],
+        ))
+        .unwrap();
+        assert_eq!(children.len(), 2, "the feed's live window");
+        assert!(children
+            .iter()
+            .all(|row| text(row, "id").unwrap().starts_with("article-")));
     }
 
     #[test]
