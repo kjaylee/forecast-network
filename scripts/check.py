@@ -68,7 +68,10 @@ def main() -> int:
                 [sys.executable, "scripts/generate_billing_golden.py", "--check"],
                 # Product KPIs are definitions rather than arithmetic: a merged alias counted
                 # twice, or an immature window reported as zero, is a plausible wrong answer.
-                [sys.executable, "scripts/generate_analytics_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_analytics_golden.py", "--check"],
+                # The Solana wire codecs: a port one byte out produces a rejected transaction,
+                # or a different valid instruction.
+                [sys.executable, "scripts/generate_solana_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:
