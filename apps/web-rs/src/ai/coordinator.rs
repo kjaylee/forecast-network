@@ -358,6 +358,41 @@ fn retained(
     }
 }
 
+/// The judge's policy, kept here because it is the one place both the payload and its tests read.
+///
+/// The UNRESOLVED/INVALID paragraph is the fix for the deadlock: UNRESOLVED means more evidence
+/// could still settle the question and the resolver retries; INVALID means the evidence cannot
+/// settle it however long it is kept, and it is terminal. Without the distinction a forecast whose
+/// evidence is authentic but cannot establish an outcome is refused as UNRESOLVED forever, because
+/// the check that follows refuses UNRESOLVED.
+pub fn resolution_policy() -> &'static str {
+    "Judge only immutable clauses from retained evidence. Cite matching clause IDs. Do not change \
+     dates or definitions. For a negative outcome require evidence of complete coverage of the \
+     specified time interval, not absence on a homepage. An incomplete archive, missing required \
+     source, unavailable document or lack of a statement on a page is NOT proof of NO; return \
+     UNRESOLVED for missing coverage. The successfully fetched subset must satisfy every required \
+     evidentiary clause; fallback collection must not silently waive a primary-source-only \
+     condition. Choose UNRESOLVED for insufficient or conflicting evidence, never guess. Choose \
+     INVALID when the retained evidence is authentic but cannot establish the outcome, in \
+     particular when its publication time cannot be placed relative to participation. INVALID \
+     credits nothing and returns every commitment, so it is the correct answer for a question the \
+     evidence cannot answer, and it is not a guess. CLEAR requires no conflicts and null \
+     conflict_explanation."
+}
+
+/// The counter-judge's policy. `agrees=false` is for a decision that is wrong, not for evidence
+/// that is incomplete — incomplete is the case INVALID exists for.
+pub fn counter_policy() -> &'static str {
+    "Independently challenge the preceding judge using only the immutable specification and \
+     retained evidence. agrees=true only if its exact outcome, matching clauses, confidence and \
+     explanation are all supportable. Incomplete evidence, ambiguity, failure to prove a negative \
+     or material alternative interpretation must set agrees=false. An INVALID outcome is \
+     supportable when the evidence is authentic but cannot establish the outcome, in particular \
+     when its publication time cannot be placed relative to participation; do not set agrees=false \
+     merely because the evidence is incomplete, since that is the case INVALID exists for. \
+     Challenge it if the evidence does in fact establish YES or NO, or if it cites the wrong clause."
+}
+
 fn instructions(task: &str, display_language: Option<&str>) -> String {
     if let Some(language) = display_language {
         let target = match language {
