@@ -233,7 +233,7 @@ fn check_dates(text: &str, timestamp: &str, instant: i64, window: Option<&Value>
     Ok(())
 }
 
-fn civil_parts(instant: i64) -> (i64, i64, i64) {
+pub fn civil_parts(instant: i64) -> (i64, i64, i64) {
     let days = instant.div_euclid(86_400_000);
     let shifted = days + 719468;
     let era = if shifted >= 0 { shifted } else { shifted - 146096 } / 146097;

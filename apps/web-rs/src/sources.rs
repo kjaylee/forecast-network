@@ -18,51 +18,81 @@ pub const MAX_EXCERPT_BYTES: usize = 24000;
 pub const MAX_SOURCE_REDIRECTS: usize = 3;
 pub const SOURCE_POLICY_VERSION: &str = "public-official-hosts-v2";
 
-/// Host registrations assert authority, not that every page proves every question.
-/// `SourceVerifier` and the immutable outcome clauses must still assess each page.
-pub const OFFICIAL_HOSTS: &[&str] = &[
-    "www.apple.com",
-    "apple.com",
-    "blogs.nvidia.com",
-    "nvidianews.nvidia.com",
-    "www.nvidia.com",
-    "openai.com",
-    "blog.google",
-    "deepmind.google",
-    "www.microsoft.com",
-    "blogs.microsoft.com",
-    "news.microsoft.com",
-    "news.samsung.com",
-    "www.nasa.gov",
-    "science.nasa.gov",
-    "www.esa.int",
-    "www.spacex.com",
-    "www.noaa.gov",
-    "www.climate.gov",
-    "www.who.int",
-    "www.un.org",
-    "www.federalreserve.gov",
-    "www.bls.gov",
-    "www.bea.gov",
-    "www.ecb.europa.eu",
-    "www.bok.or.kr",
-    "kostat.go.kr",
-    "www.kostat.go.kr",
-    "www.kma.go.kr",
-    "solana.com",
-    "ethereum.org",
-    "api.kraken.com",
-    "www.bitstamp.net",
-    "www.fifa.com",
-    "www.olympics.com",
+/// Whether this exact host is registered for the kind of source being fetched.
+///
+/// An official source may only use an official host; a fallback may use either, because a
+/// fallback is only consulted when no primary could be retained and refusing it there would turn
+/// a publisher's own page into an unavailable source. The comparison is on the exact host, so a
+/// subdomain nobody registered is not covered by registering its parent.
+pub fn registered_host(host: &str, official: bool) -> bool {
+    if OFFICIAL_HOSTS.iter().any(|(registered, _)| *registered == host) {
+        return true;
+    }
+    !official && FALLBACK_HOSTS.iter().any(|(registered, _)| *registered == host)
+}
+
+/// The publisher a registered host belongs to, for the compiler payload.
+pub fn host_owner(host: &str) -> Option<&'static str> {
+    OFFICIAL_HOSTS
+        .iter()
+        .chain(FALLBACK_HOSTS.iter())
+        .find(|(registered, _)| *registered == host)
+        .map(|(_, owner)| *owner)
+}
+
+/// The registered official hosts, and the publisher each one is.
+///
+/// The name is not decoration: it travels in the compiler payload so the model knows which
+/// publisher an approved host belongs to, and it is what makes a host registration an assertion
+/// about authority rather than a list of strings. Membership is derived from this table.
+pub const OFFICIAL_HOSTS: &[(&str, &str)] = &[
+    ("www.apple.com", "Apple"),
+    ("apple.com", "Apple"),
+    ("blogs.nvidia.com", "NVIDIA"),
+    ("nvidianews.nvidia.com", "NVIDIA"),
+    ("www.nvidia.com", "NVIDIA"),
+    ("openai.com", "OpenAI"),
+    ("blog.google", "Google"),
+    ("deepmind.google", "Google DeepMind"),
+    ("www.microsoft.com", "Microsoft"),
+    ("blogs.microsoft.com", "Microsoft"),
+    ("news.microsoft.com", "Microsoft"),
+    ("news.samsung.com", "Samsung"),
+    ("www.nasa.gov", "NASA"),
+    ("science.nasa.gov", "NASA"),
+    ("www.esa.int", "European Space Agency"),
+    ("www.spacex.com", "SpaceX"),
+    ("www.noaa.gov", "NOAA"),
+    ("www.climate.gov", "NOAA Climate"),
+    ("www.who.int", "World Health Organization"),
+    ("www.un.org", "United Nations"),
+    ("www.federalreserve.gov", "Federal Reserve"),
+    ("www.bls.gov", "US BLS"),
+    ("www.bea.gov", "US BEA"),
+    ("www.ecb.europa.eu", "ECB"),
+    ("www.bok.or.kr", "Bank of Korea"),
+    ("kostat.go.kr", "Statistics Korea"),
+    ("www.kostat.go.kr", "Statistics Korea"),
+    ("www.kma.go.kr", "KMA"),
+    ("solana.com", "Solana"),
+    ("ethereum.org", "Ethereum"),
+    ("api.kraken.com", "Kraken public market data"),
+    ("www.bitstamp.net", "Bitstamp public market data"),
+    ("www.fifa.com", "FIFA"),
+    ("www.olympics.com", "Olympics"),
 ];
 
-pub const FALLBACK_HOSTS: &[&str] = &[
-    "www.reuters.com",
-    "reuters.com",
-    "apnews.com",
-    "www.bbc.com",
-    "www.bbc.co.uk",
+/// The registered fallback hosts, and the publisher each one is.
+///
+/// The name is not decoration: it travels in the compiler payload so the model knows which
+/// publisher an approved host belongs to, and it is what makes a host registration an assertion
+/// about authority rather than a list of strings. Membership is derived from this table.
+pub const FALLBACK_HOSTS: &[(&str, &str)] = &[
+    ("www.reuters.com", "Reuters"),
+    ("reuters.com", "Reuters"),
+    ("apnews.com", "AP"),
+    ("www.bbc.com", "BBC"),
+    ("www.bbc.co.uk", "BBC"),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -413,7 +443,7 @@ pub fn validate_public_url(url: &str, official: bool) -> Result<String, SourceRe
     if host.parse::<std::net::IpAddr>().is_ok() {
         return Err(SourceRejected::IpAddress);
     }
-    let registered = OFFICIAL_HOSTS.contains(&host.as_str()) || (!official && FALLBACK_HOSTS.contains(&host.as_str()));
+    let registered = registered_host(&host, official);
     if !registered {
         return Err(SourceRejected::Unregistered);
     }

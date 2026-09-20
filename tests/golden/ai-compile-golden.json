@@ -1,0 +1,2620 @@
+{
+  "cases": [
+    {
+      "candidates": [],
+      "distinct_measurement_windows": false,
+      "expect": {
+        "aiForecast": {
+          "artifactHash": "cacfebba4a40c1510cfe4b42f87436c35896a036e94c4b683129582c65206c0a",
+          "asOf": 1000,
+          "model": "test-model",
+          "modelVersion": "gemini-tested-revision",
+          "probability": 62.0,
+          "provider": "gemini",
+          "rationale": "Available source context suggests 62%, with launch uncertainty.",
+          "specificationHash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9"
+        },
+        "artifacts": [
+          {
+            "body": "{\"input\":{\"approved_fallback_hosts\":{\"apnews.com\":\"AP\",\"reuters.com\":\"Reuters\",\"www.bbc.co.uk\":\"BBC\",\"www.bbc.com\":\"BBC\",\"www.reuters.com\":\"Reuters\"},\"approved_official_hosts\":{\"api.kraken.com\":\"Kraken public market data\",\"apple.com\":\"Apple\",\"blog.google\":\"Google\",\"blogs.microsoft.com\":\"Microsoft\",\"blogs.nvidia.com\":\"NVIDIA\",\"deepmind.google\":\"Google DeepMind\",\"ethereum.org\":\"Ethereum\",\"kostat.go.kr\":\"Statistics Korea\",\"news.microsoft.com\":\"Microsoft\",\"news.samsung.com\":\"Samsung\",\"nvidianews.nvidia.com\":\"NVIDIA\",\"openai.com\":\"OpenAI\",\"science.nasa.gov\":\"NASA\",\"solana.com\":\"Solana\",\"www.apple.com\":\"Apple\",\"www.bea.gov\":\"US BEA\",\"www.bitstamp.net\":\"Bitstamp public market data\",\"www.bls.gov\":\"US BLS\",\"www.bok.or.kr\":\"Bank of Korea\",\"www.climate.gov\":\"NOAA Climate\",\"www.ecb.europa.eu\":\"ECB\",\"www.esa.int\":\"European Space Agency\",\"www.federalreserve.gov\":\"Federal Reserve\",\"www.fifa.com\":\"FIFA\",\"www.kma.go.kr\":\"KMA\",\"www.kostat.go.kr\":\"Statistics Korea\",\"www.microsoft.com\":\"Microsoft\",\"www.nasa.gov\":\"NASA\",\"www.noaa.gov\":\"NOAA\",\"www.nvidia.com\":\"NVIDIA\",\"www.olympics.com\":\"Olympics\",\"www.spacex.com\":\"SpaceX\",\"www.un.org\":\"United Nations\",\"www.who.int\":\"World Health Organization\"},\"candidates\":[],\"compiler_wire_version\":\"compiler-utc-candidate-ref-v3\",\"now_ms\":1000,\"output_language\":\"en\",\"policy\":\"Compile an objective, publicly verifiable future YES/NO/INVALID question. Translate the original input into English faithfully, preserving all entities, amounts, criteria, deadlines and timezones; never add or remove conditions. The English specification will be shown to the user for review before publication. Preserve user intent, explicitly resolve timezone to UTC, and use exactly now_ms as open_at_ms. Output close_at_utc as exact YYYY-MM-DDTHH:MM:SSZ; NEVER calculate or output close_at_ms. Repeat close_at_utc verbatim in canonical_question and each YES/NO rule condition, so human text and deadlines cannot diverge. Avoid alternative numeric dates in those texts. share_title must be a concise English question of at most 60 characters and must be timeless: omit ALL deadlines, dates, end-of-year, before/by date, this/next year and other timeframe phrases. The UI displays the exact closing time separately. Preserve product names/model numbers and the substantive event; never substitute an approximate or different deadline in the title. Do not invent a missing deadline or definition: encode high ambiguity so validation rejects it. Prefer one specific official text source that can resolve the question; add sources only when criteria require them. Optional fallback sources are used only when no primary can be retrieved, not mandatory corroboration. Choose 1-4 directly accessible relevant text sources on the approved hosts; all primary sources must be official. No login pages, search redirects, generic company homepage without resolution evidence, PDFs or private personal information. Document exhaustive YES/NO/INVALID clauses and source failure rules. Identify every supplied semantically similar candidate by candidate_ref (c0, c1, etc.) only; NEVER output or copy forecast_id or specification_hash in duplicate_candidates. References select the exact supplied identity and specification; assess similarity and material rule differences. Never invent or repeat a reference. Integer ambiguity score 0..10000.\",\"question\":\"Will Apple announce Product X before the stated deadline?\",\"schema_version\":1},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_utc\":\"1970-01-01T00:06:40Z\",\"compiler_wire_version\":\"compiler-utc-candidate-ref-v3\",\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"}",
+            "hash": "de29a43bb83788b9815d6898e0935e56dc03247973533d4ea6b14040420a6c1b",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"candidate_context_hash\":\"31dce5351bf142de4493531fe24a3a36ab367055758aeb9c6edd8af7a8b10bff\",\"candidate_lookup\":[],\"candidate_lookup_hash\":\"31dce5351bf142de4493531fe24a3a36ab367055758aeb9c6edd8af7a8b10bff\",\"close_at_ms\":400000,\"close_at_utc\":\"1970-01-01T00:06:40Z\",\"compiler_input_hash\":\"b147194c33c15ece76b74723460dc091294bf79aceaf94778cceff86b536ca24\",\"compiler_wire_version\":\"compiler-utc-candidate-ref-v3\",\"kind\":\"compiler_normalization\",\"normalization_version\":\"exact-utc-and-candidate-reference-v3\",\"normalized_specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}},\"raw_decision_artifact_hash\":\"de29a43bb83788b9815d6898e0935e56dc03247973533d4ea6b14040420a6c1b\",\"schema_version\":1,\"specification_hash\":\"b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9\"}",
+            "hash": "cd8a71a1ef08dbe640dcba8c48aae427e95dcd68f3a152812f94220f05686027",
+            "kind": "compiler-normalization"
+          },
+          {
+            "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+            "hash": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+            "kind": "source"
+          },
+          {
+            "body": "{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false}",
+            "hash": "acacf22bcc4e3687e13aea5411aee59559380dddf3a472962b6f0489447e7e21",
+            "kind": "source-collection"
+          },
+          {
+            "body": "{\"input\":{\"original_question\":\"Will Apple announce Product X before the stated deadline?\",\"output_language\":\"en\",\"policy\":\"Independently judge exact criteria for objective coverage, non-overlap, timeframe, missing definitions and whether fetched source documents and dates preserve the original user's question without changing intent. Verify every public specification field is English, including the title, all rules, invalidation rules and source names; set english_language_passed accordingly. Compare against the exact original-language input and set intent_preserved=false if translation adds or removes a criterion, amount, entity, deadline or timezone. Verify the share title is a faithful timeless description of the same event/product without a deadline or timeframe phrase; set title_consistent=false if it changes the entity, product, amount, event or temporal meaning. Omitting the deadline from the title is intentional because the exact closing time is displayed separately, while the canonical question and rules retain it. Verify documents are genuine and appropriate for eventual resolution. Reject if unavailable sources are required by any outcome clause; a source subset must satisfy the published criteria, never waive a required document. unverifiable or ambiguous questions. Do not rewrite the specification. Ambiguity limit is 1000 basis points. Mere source page reachability is insufficient.\",\"schema_version\":1,\"source_collection\":{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false},\"source_documents\":[{\"text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"url\":\"https://www.apple.com/newsroom/\"}],\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"ambiguity_passed\":true,\"english_language_passed\":true,\"explanation\":\"Objective and source-verifiable criteria; faithful English translation.\",\"intent_preserved\":true,\"objectively_resolvable\":true,\"sources_appropriate\":true,\"title_consistent\":true},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"}",
+            "hash": "2ad2f0405d748f757b22fe6597b6b38540bf56024966dd4e6595a098e9a5be28",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"input\":{\"candidates\":[],\"policy\":\"Independently compare every supplied candidate. Verify specification.duplicate_candidates includes every semantically similar candidate, IDs/hashes and material rule differences. Report candidates_accurate=false if any match is omitted or misclassified. Threshold 8500 basis points. An empty candidate search is complete, never invent matching forecasts.\",\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"candidates_accurate\":true,\"check_completed\":true,\"explanation\":\"All candidates assessed.\"},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"}",
+            "hash": "dc7566826c5a27699a1fb14c2fd1eeea41c89f530b5e850e0f32e4b52c2e736d",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}",
+            "hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+            "kind": "specification"
+          },
+          {
+            "body": "{\"ambiguity_judge\":{\"created_at_ms\":1000,\"input_hash\":\"b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"1647ab557577f6dbe18b8e3722950f920b18fde3dc41cad769789f2aa38f2528\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":1000,\"input_hash\":\"b147194c33c15ece76b74723460dc091294bf79aceaf94778cceff86b536ca24\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"public-official-hosts-v2\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":1000,\"input_hash\":\"b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"d415dd6e7862c8262b29d5185a7b8715add8606e05e1098c0838040210606f13\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective and source-verifiable criteria; faithful English translation.\\nDuplicate check: All candidates assessed.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9\",\"validated_at_ms\":1000}",
+            "hash": "754c59e97d872b9368d2c0261db136726c777b5436d292ec57a05e3b5a73389c",
+            "kind": "validation"
+          },
+          {
+            "body": "{\"input\":{\"as_of_ms\":1000,\"as_of_utc\":\"1970-01-01T00:00:01.000Z\",\"policy\":\"Estimate the probability of the published YES clause ultimately being satisfied, given only the supplied source context and knowledge you actually have as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish facts supported by the retained source documents from prior or historical knowledge. Do not assert a product is currently the latest version, a company currently does something, or any other current fact unless the retained source documents support it. If source context lacks current information, explicitly acknowledge that uncertainty instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale acknowledging important uncertainty. Never invent web research, crowd forecasts or observations. No betting, payouts or investment advice.\",\"schema_version\":1,\"source_documents\":[{\"text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"url\":\"https://www.apple.com/newsroom/\"}],\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"rationale\":\"Available source context suggests 62%, with launch uncertainty.\",\"yesProbabilityBp\":6200},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AI_FORECAST\"}",
+            "hash": "3924b26593deb0cb75e95dbb6242d6221d1bee595f8c3c172eb9b23ff171f785",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"as_of_ms\":1000,\"decision_artifact_hash\":\"3924b26593deb0cb75e95dbb6242d6221d1bee595f8c3c172eb9b23ff171f785\",\"kind\":\"ai_forecast\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"rationale\":\"Available source context suggests 62%, with launch uncertainty.\",\"schema_version\":1,\"specification_hash\":\"b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9\",\"yes_probability_bp\":6200}",
+            "hash": "cacfebba4a40c1510cfe4b42f87436c35896a036e94c4b683129582c65206c0a",
+            "kind": "ai-forecast"
+          }
+        ],
+        "assessment": {
+          "ambiguity_judge": {
+            "created_at_ms": 1000,
+            "input_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "1647ab557577f6dbe18b8e3722950f920b18fde3dc41cad769789f2aa38f2528",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "AMBIGUITY_JUDGE"
+          },
+          "ambiguity_limit_bp": 1000,
+          "ambiguity_passed": true,
+          "compiler": {
+            "created_at_ms": 1000,
+            "input_hash": "b147194c33c15ece76b74723460dc091294bf79aceaf94778cceff86b536ca24",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "MARKET_COMPILER"
+          },
+          "deterministic_check_version": "public-official-hosts-v2",
+          "deterministic_passed": true,
+          "duplicate_check_completed": true,
+          "duplicate_detector": {
+            "created_at_ms": 1000,
+            "input_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "d415dd6e7862c8262b29d5185a7b8715add8606e05e1098c0838040210606f13",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "DUPLICATE_DETECTOR"
+          },
+          "duplicate_similarity_threshold_bp": 8500,
+          "explanation": "Objective and source-verifiable criteria; faithful English translation.\nDuplicate check: All candidates assessed.",
+          "objectively_resolvable": true,
+          "schema_version": 1,
+          "specification_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+          "validated_at_ms": 1000
+        },
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 400000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        }
+      },
+      "name": "no-candidates",
+      "now_ms": 1000,
+      "payloads": [
+        {
+          "approved_fallback_hosts": {
+            "apnews.com": "AP",
+            "reuters.com": "Reuters",
+            "www.bbc.co.uk": "BBC",
+            "www.bbc.com": "BBC",
+            "www.reuters.com": "Reuters"
+          },
+          "approved_official_hosts": {
+            "api.kraken.com": "Kraken public market data",
+            "apple.com": "Apple",
+            "blog.google": "Google",
+            "blogs.microsoft.com": "Microsoft",
+            "blogs.nvidia.com": "NVIDIA",
+            "deepmind.google": "Google DeepMind",
+            "ethereum.org": "Ethereum",
+            "kostat.go.kr": "Statistics Korea",
+            "news.microsoft.com": "Microsoft",
+            "news.samsung.com": "Samsung",
+            "nvidianews.nvidia.com": "NVIDIA",
+            "openai.com": "OpenAI",
+            "science.nasa.gov": "NASA",
+            "solana.com": "Solana",
+            "www.apple.com": "Apple",
+            "www.bea.gov": "US BEA",
+            "www.bitstamp.net": "Bitstamp public market data",
+            "www.bls.gov": "US BLS",
+            "www.bok.or.kr": "Bank of Korea",
+            "www.climate.gov": "NOAA Climate",
+            "www.ecb.europa.eu": "ECB",
+            "www.esa.int": "European Space Agency",
+            "www.federalreserve.gov": "Federal Reserve",
+            "www.fifa.com": "FIFA",
+            "www.kma.go.kr": "KMA",
+            "www.kostat.go.kr": "Statistics Korea",
+            "www.microsoft.com": "Microsoft",
+            "www.nasa.gov": "NASA",
+            "www.noaa.gov": "NOAA",
+            "www.nvidia.com": "NVIDIA",
+            "www.olympics.com": "Olympics",
+            "www.spacex.com": "SpaceX",
+            "www.un.org": "United Nations",
+            "www.who.int": "World Health Organization"
+          },
+          "candidates": [],
+          "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+          "now_ms": 1000,
+          "output_language": "en",
+          "policy": "Compile an objective, publicly verifiable future YES/NO/INVALID question. Translate the original input into English faithfully, preserving all entities, amounts, criteria, deadlines and timezones; never add or remove conditions. The English specification will be shown to the user for review before publication. Preserve user intent, explicitly resolve timezone to UTC, and use exactly now_ms as open_at_ms. Output close_at_utc as exact YYYY-MM-DDTHH:MM:SSZ; NEVER calculate or output close_at_ms. Repeat close_at_utc verbatim in canonical_question and each YES/NO rule condition, so human text and deadlines cannot diverge. Avoid alternative numeric dates in those texts. share_title must be a concise English question of at most 60 characters and must be timeless: omit ALL deadlines, dates, end-of-year, before/by date, this/next year and other timeframe phrases. The UI displays the exact closing time separately. Preserve product names/model numbers and the substantive event; never substitute an approximate or different deadline in the title. Do not invent a missing deadline or definition: encode high ambiguity so validation rejects it. Prefer one specific official text source that can resolve the question; add sources only when criteria require them. Optional fallback sources are used only when no primary can be retrieved, not mandatory corroboration. Choose 1-4 directly accessible relevant text sources on the approved hosts; all primary sources must be official. No login pages, search redirects, generic company homepage without resolution evidence, PDFs or private personal information. Document exhaustive YES/NO/INVALID clauses and source failure rules. Identify every supplied semantically similar candidate by candidate_ref (c0, c1, etc.) only; NEVER output or copy forecast_id or specification_hash in duplicate_candidates. References select the exact supplied identity and specification; assess similarity and material rule differences. Never invent or repeat a reference. Integer ambiguity score 0..10000.",
+          "question": "Will Apple announce Product X before the stated deadline?",
+          "schema_version": 1
+        },
+        {
+          "original_question": "Will Apple announce Product X before the stated deadline?",
+          "output_language": "en",
+          "policy": "Independently judge exact criteria for objective coverage, non-overlap, timeframe, missing definitions and whether fetched source documents and dates preserve the original user's question without changing intent. Verify every public specification field is English, including the title, all rules, invalidation rules and source names; set english_language_passed accordingly. Compare against the exact original-language input and set intent_preserved=false if translation adds or removes a criterion, amount, entity, deadline or timezone. Verify the share title is a faithful timeless description of the same event/product without a deadline or timeframe phrase; set title_consistent=false if it changes the entity, product, amount, event or temporal meaning. Omitting the deadline from the title is intentional because the exact closing time is displayed separately, while the canonical question and rules retain it. Verify documents are genuine and appropriate for eventual resolution. Reject if unavailable sources are required by any outcome clause; a source subset must satisfy the published criteria, never waive a required document. unverifiable or ambiguous questions. Do not rewrite the specification. Ambiguity limit is 1000 basis points. Mere source page reachability is insufficient.",
+          "schema_version": 1,
+          "source_collection": {
+            "kind": "source_collection",
+            "policy": "primary-first-v1",
+            "retained_sources": [
+              {
+                "evidence_hash": "37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2",
+                "source_id": "apple-news"
+              }
+            ],
+            "schema_version": 1,
+            "unavailable_sources": [],
+            "unfetched_fallback_source_ids": [],
+            "used_fallback": false
+          },
+          "source_documents": [
+            {
+              "text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 400000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        },
+        {
+          "candidates": [],
+          "policy": "Independently compare every supplied candidate. Verify specification.duplicate_candidates includes every semantically similar candidate, IDs/hashes and material rule differences. Report candidates_accurate=false if any match is omitted or misclassified. Threshold 8500 basis points. An empty candidate search is complete, never invent matching forecasts.",
+          "schema_version": 1,
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 400000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        },
+        {
+          "as_of_ms": 1000,
+          "as_of_utc": "1970-01-01T00:00:01.000Z",
+          "policy": "Estimate the probability of the published YES clause ultimately being satisfied, given only the supplied source context and knowledge you actually have as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish facts supported by the retained source documents from prior or historical knowledge. Do not assert a product is currently the latest version, a company currently does something, or any other current fact unless the retained source documents support it. If source context lacks current information, explicitly acknowledge that uncertainty instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale acknowledging important uncertainty. Never invent web research, crowd forecasts or observations. No betting, payouts or investment advice.",
+          "schema_version": 1,
+          "source_documents": [
+            {
+              "text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 400000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        }
+      ],
+      "question": "Will Apple announce Product X before the stated deadline?",
+      "responses": [
+        {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+          "category": "TECHNOLOGY",
+          "close_at_utc": "1970-01-01T00:06:40Z",
+          "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        },
+        {
+          "ambiguity_passed": true,
+          "english_language_passed": true,
+          "explanation": "Objective and source-verifiable criteria; faithful English translation.",
+          "intent_preserved": true,
+          "objectively_resolvable": true,
+          "sources_appropriate": true,
+          "title_consistent": true
+        },
+        {
+          "candidates_accurate": true,
+          "check_completed": true,
+          "explanation": "All candidates assessed."
+        },
+        {
+          "rationale": "Available source context suggests 62%, with launch uncertainty.",
+          "yesProbabilityBp": 6200
+        }
+      ],
+      "sources": [
+        {
+          "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+          "contentType": "text/html",
+          "status": 200,
+          "url": "https://www.apple.com/newsroom/"
+        }
+      ]
+    },
+    {
+      "candidates": [
+        {
+          "audit_head_hash": null,
+          "challenge_started_at_ms": null,
+          "challenge_until_ms": null,
+          "created_at_ms": 1000,
+          "creator_id": "creator-1",
+          "dispute_reviews": [],
+          "disputes": [],
+          "finalized_outcome": null,
+          "finalized_resolution_hash": null,
+          "forecast_id": "forecast-0",
+          "latest_event": null,
+          "pause": null,
+          "published_at_ms": null,
+          "resolution": null,
+          "revision": 0,
+          "schema_version": 1,
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38",
+          "state": "DRAFT",
+          "updated_at_ms": 1000,
+          "validation_assessment": null
+        },
+        {
+          "audit_head_hash": null,
+          "challenge_started_at_ms": null,
+          "challenge_until_ms": null,
+          "created_at_ms": 1000,
+          "creator_id": "creator-1",
+          "dispute_reviews": [],
+          "disputes": [],
+          "finalized_outcome": null,
+          "finalized_resolution_hash": null,
+          "forecast_id": "forecast-1",
+          "latest_event": null,
+          "pause": null,
+          "published_at_ms": null,
+          "resolution": null,
+          "revision": 0,
+          "schema_version": 1,
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38",
+          "state": "DRAFT",
+          "updated_at_ms": 1000,
+          "validation_assessment": null
+        }
+      ],
+      "distinct_measurement_windows": false,
+      "expect": {
+        "aiForecast": {
+          "artifactHash": "64fb4212c7dd26b890a654d2c5730c437e258488504413162626f395538b72ad",
+          "asOf": 1000,
+          "model": "test-model",
+          "modelVersion": "gemini-tested-revision",
+          "probability": 62.0,
+          "provider": "gemini",
+          "rationale": "Available source context suggests 62%, with launch uncertainty.",
+          "specificationHash": "7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c"
+        },
+        "artifacts": [
+          {
+            "body": "{\"input\":{\"approved_fallback_hosts\":{\"apnews.com\":\"AP\",\"reuters.com\":\"Reuters\",\"www.bbc.co.uk\":\"BBC\",\"www.bbc.com\":\"BBC\",\"www.reuters.com\":\"Reuters\"},\"approved_official_hosts\":{\"api.kraken.com\":\"Kraken public market data\",\"apple.com\":\"Apple\",\"blog.google\":\"Google\",\"blogs.microsoft.com\":\"Microsoft\",\"blogs.nvidia.com\":\"NVIDIA\",\"deepmind.google\":\"Google DeepMind\",\"ethereum.org\":\"Ethereum\",\"kostat.go.kr\":\"Statistics Korea\",\"news.microsoft.com\":\"Microsoft\",\"news.samsung.com\":\"Samsung\",\"nvidianews.nvidia.com\":\"NVIDIA\",\"openai.com\":\"OpenAI\",\"science.nasa.gov\":\"NASA\",\"solana.com\":\"Solana\",\"www.apple.com\":\"Apple\",\"www.bea.gov\":\"US BEA\",\"www.bitstamp.net\":\"Bitstamp public market data\",\"www.bls.gov\":\"US BLS\",\"www.bok.or.kr\":\"Bank of Korea\",\"www.climate.gov\":\"NOAA Climate\",\"www.ecb.europa.eu\":\"ECB\",\"www.esa.int\":\"European Space Agency\",\"www.federalreserve.gov\":\"Federal Reserve\",\"www.fifa.com\":\"FIFA\",\"www.kma.go.kr\":\"KMA\",\"www.kostat.go.kr\":\"Statistics Korea\",\"www.microsoft.com\":\"Microsoft\",\"www.nasa.gov\":\"NASA\",\"www.noaa.gov\":\"NOAA\",\"www.nvidia.com\":\"NVIDIA\",\"www.olympics.com\":\"Olympics\",\"www.spacex.com\":\"SpaceX\",\"www.un.org\":\"United Nations\",\"www.who.int\":\"World Health Organization\"},\"candidates\":[{\"candidate_ref\":\"c0\",\"forecast_id\":\"forecast-0\",\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme officially announce Product X before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":100,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"},{\"candidate_ref\":\"c1\",\"forecast_id\":\"forecast-1\",\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme officially announce Product X before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":100,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"}],\"compiler_wire_version\":\"compiler-utc-candidate-ref-v3\",\"now_ms\":1000,\"output_language\":\"en\",\"policy\":\"Compile an objective, publicly verifiable future YES/NO/INVALID question. Translate the original input into English faithfully, preserving all entities, amounts, criteria, deadlines and timezones; never add or remove conditions. The English specification will be shown to the user for review before publication. Preserve user intent, explicitly resolve timezone to UTC, and use exactly now_ms as open_at_ms. Output close_at_utc as exact YYYY-MM-DDTHH:MM:SSZ; NEVER calculate or output close_at_ms. Repeat close_at_utc verbatim in canonical_question and each YES/NO rule condition, so human text and deadlines cannot diverge. Avoid alternative numeric dates in those texts. share_title must be a concise English question of at most 60 characters and must be timeless: omit ALL deadlines, dates, end-of-year, before/by date, this/next year and other timeframe phrases. The UI displays the exact closing time separately. Preserve product names/model numbers and the substantive event; never substitute an approximate or different deadline in the title. Do not invent a missing deadline or definition: encode high ambiguity so validation rejects it. Prefer one specific official text source that can resolve the question; add sources only when criteria require them. Optional fallback sources are used only when no primary can be retrieved, not mandatory corroboration. Choose 1-4 directly accessible relevant text sources on the approved hosts; all primary sources must be official. No login pages, search redirects, generic company homepage without resolution evidence, PDFs or private personal information. Document exhaustive YES/NO/INVALID clauses and source failure rules. Identify every supplied semantically similar candidate by candidate_ref (c0, c1, etc.) only; NEVER output or copy forecast_id or specification_hash in duplicate_candidates. References select the exact supplied identity and specification; assess similarity and material rule differences. Never invent or repeat a reference. Integer ambiguity score 0..10000.\",\"question\":\"Will Apple announce Product X before the stated deadline?\",\"schema_version\":1},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_utc\":\"1970-01-01T00:06:40Z\",\"compiler_wire_version\":\"compiler-utc-candidate-ref-v3\",\"duplicate_candidates\":[{\"candidate_ref\":\"c0\",\"explanation\":\"Candidate 0 is the same event.\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000},{\"candidate_ref\":\"c1\",\"explanation\":\"Candidate 1 is the same event.\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000}],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"}",
+            "hash": "3639793bb60cc0cdd99c40a6b3b9db8797770cb1e0503fc65b7a477cb656cc29",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"candidate_context_hash\":\"88afea9ed84bac097f0bd1d13a8ad53453303594b7dacfd3a9f64c252ea16986\",\"candidate_lookup\":[{\"candidate_ref\":\"c0\",\"forecast_id\":\"forecast-0\",\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"},{\"candidate_ref\":\"c1\",\"forecast_id\":\"forecast-1\",\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"}],\"candidate_lookup_hash\":\"c8d15bf300e1dd8a654c1e67a969faab8336b7aa2a4f6f8e98e63d21f4ea8a1e\",\"close_at_ms\":400000,\"close_at_utc\":\"1970-01-01T00:06:40Z\",\"compiler_input_hash\":\"5e39ce05ebe469fe0e7827065f2af77f94662300cdbd7ebd461c8f2f489b130d\",\"compiler_wire_version\":\"compiler-utc-candidate-ref-v3\",\"kind\":\"compiler_normalization\",\"normalization_version\":\"exact-utc-and-candidate-reference-v3\",\"normalized_specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[{\"explanation\":\"Candidate 0 is the same event.\",\"forecast_id\":\"forecast-0\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"},{\"explanation\":\"Candidate 1 is the same event.\",\"forecast_id\":\"forecast-1\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"}],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}},\"raw_decision_artifact_hash\":\"3639793bb60cc0cdd99c40a6b3b9db8797770cb1e0503fc65b7a477cb656cc29\",\"schema_version\":1,\"specification_hash\":\"7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c\"}",
+            "hash": "a3a389e171fc12af362d67239fb22df0782478770a2162e4e7e7d9d8d1280f85",
+            "kind": "compiler-normalization"
+          },
+          {
+            "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+            "hash": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+            "kind": "source"
+          },
+          {
+            "body": "{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false}",
+            "hash": "acacf22bcc4e3687e13aea5411aee59559380dddf3a472962b6f0489447e7e21",
+            "kind": "source-collection"
+          },
+          {
+            "body": "{\"input\":{\"original_question\":\"Will Apple announce Product X before the stated deadline?\",\"output_language\":\"en\",\"policy\":\"Independently judge exact criteria for objective coverage, non-overlap, timeframe, missing definitions and whether fetched source documents and dates preserve the original user's question without changing intent. Verify every public specification field is English, including the title, all rules, invalidation rules and source names; set english_language_passed accordingly. Compare against the exact original-language input and set intent_preserved=false if translation adds or removes a criterion, amount, entity, deadline or timezone. Verify the share title is a faithful timeless description of the same event/product without a deadline or timeframe phrase; set title_consistent=false if it changes the entity, product, amount, event or temporal meaning. Omitting the deadline from the title is intentional because the exact closing time is displayed separately, while the canonical question and rules retain it. Verify documents are genuine and appropriate for eventual resolution. Reject if unavailable sources are required by any outcome clause; a source subset must satisfy the published criteria, never waive a required document. unverifiable or ambiguous questions. Do not rewrite the specification. Ambiguity limit is 1000 basis points. Mere source page reachability is insufficient.\",\"schema_version\":1,\"source_collection\":{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false},\"source_documents\":[{\"text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"url\":\"https://www.apple.com/newsroom/\"}],\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[{\"explanation\":\"Candidate 0 is the same event.\",\"forecast_id\":\"forecast-0\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"},{\"explanation\":\"Candidate 1 is the same event.\",\"forecast_id\":\"forecast-1\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"}],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"ambiguity_passed\":true,\"english_language_passed\":true,\"explanation\":\"Objective and source-verifiable criteria; faithful English translation.\",\"intent_preserved\":true,\"objectively_resolvable\":true,\"sources_appropriate\":true,\"title_consistent\":true},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"}",
+            "hash": "52d35e6b502863d105ca01a55c054b3ff14c255185a6f5cacb8124240151c26d",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"input\":{\"candidates\":[{\"candidate_ref\":\"c0\",\"forecast_id\":\"forecast-0\",\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme officially announce Product X before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":100,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"},{\"candidate_ref\":\"c1\",\"forecast_id\":\"forecast-1\",\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme officially announce Product X before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":100,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"}],\"policy\":\"Independently compare every supplied candidate. Verify specification.duplicate_candidates includes every semantically similar candidate, IDs/hashes and material rule differences. Report candidates_accurate=false if any match is omitted or misclassified. Threshold 8500 basis points. An empty candidate search is complete, never invent matching forecasts.\",\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[{\"explanation\":\"Candidate 0 is the same event.\",\"forecast_id\":\"forecast-0\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"},{\"explanation\":\"Candidate 1 is the same event.\",\"forecast_id\":\"forecast-1\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"}],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"candidates_accurate\":true,\"check_completed\":true,\"explanation\":\"All candidates assessed.\"},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"}",
+            "hash": "484019c4035bf124cbc76f3aa99a2bcb3008dbd5d9b6cb1566b053b3bac366ae",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[{\"explanation\":\"Candidate 0 is the same event.\",\"forecast_id\":\"forecast-0\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"},{\"explanation\":\"Candidate 1 is the same event.\",\"forecast_id\":\"forecast-1\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"}],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}",
+            "hash": "7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c",
+            "kind": "specification"
+          },
+          {
+            "body": "{\"ambiguity_judge\":{\"created_at_ms\":1000,\"input_hash\":\"7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"e7aa7ab79f03b35596e19eb48de50cf09be891f2693e8e33951e312a452dc093\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":1000,\"input_hash\":\"5e39ce05ebe469fe0e7827065f2af77f94662300cdbd7ebd461c8f2f489b130d\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"public-official-hosts-v2\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":1000,\"input_hash\":\"7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"82cd7aa3896219ac5210c77088ed7bf27f82b0baa0332201752d3d85a55eb608\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective and source-verifiable criteria; faithful English translation.\\nDuplicate check: All candidates assessed.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c\",\"validated_at_ms\":1000}",
+            "hash": "9c994899e22f58856409a092f813565c0899e437e914807f2ddd8e39b06b05c5",
+            "kind": "validation"
+          },
+          {
+            "body": "{\"input\":{\"as_of_ms\":1000,\"as_of_utc\":\"1970-01-01T00:00:01.000Z\",\"policy\":\"Estimate the probability of the published YES clause ultimately being satisfied, given only the supplied source context and knowledge you actually have as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish facts supported by the retained source documents from prior or historical knowledge. Do not assert a product is currently the latest version, a company currently does something, or any other current fact unless the retained source documents support it. If source context lacks current information, explicitly acknowledge that uncertainty instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale acknowledging important uncertainty. Never invent web research, crowd forecasts or observations. No betting, payouts or investment advice.\",\"schema_version\":1,\"source_documents\":[{\"text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"url\":\"https://www.apple.com/newsroom/\"}],\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[{\"explanation\":\"Candidate 0 is the same event.\",\"forecast_id\":\"forecast-0\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"},{\"explanation\":\"Candidate 1 is the same event.\",\"forecast_id\":\"forecast-1\",\"materially_different_rules\":false,\"schema_version\":1,\"similarity_bp\":8000,\"specification_hash\":\"f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38\"}],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"rationale\":\"Available source context suggests 62%, with launch uncertainty.\",\"yesProbabilityBp\":6200},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AI_FORECAST\"}",
+            "hash": "f46d8596b9b1e0b4bede9ceaf65007567e0acc56662324f36c5af8dd38ce79f5",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"as_of_ms\":1000,\"decision_artifact_hash\":\"f46d8596b9b1e0b4bede9ceaf65007567e0acc56662324f36c5af8dd38ce79f5\",\"kind\":\"ai_forecast\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"rationale\":\"Available source context suggests 62%, with launch uncertainty.\",\"schema_version\":1,\"specification_hash\":\"7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c\",\"yes_probability_bp\":6200}",
+            "hash": "64fb4212c7dd26b890a654d2c5730c437e258488504413162626f395538b72ad",
+            "kind": "ai-forecast"
+          }
+        ],
+        "assessment": {
+          "ambiguity_judge": {
+            "created_at_ms": 1000,
+            "input_hash": "7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "e7aa7ab79f03b35596e19eb48de50cf09be891f2693e8e33951e312a452dc093",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "AMBIGUITY_JUDGE"
+          },
+          "ambiguity_limit_bp": 1000,
+          "ambiguity_passed": true,
+          "compiler": {
+            "created_at_ms": 1000,
+            "input_hash": "5e39ce05ebe469fe0e7827065f2af77f94662300cdbd7ebd461c8f2f489b130d",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "MARKET_COMPILER"
+          },
+          "deterministic_check_version": "public-official-hosts-v2",
+          "deterministic_passed": true,
+          "duplicate_check_completed": true,
+          "duplicate_detector": {
+            "created_at_ms": 1000,
+            "input_hash": "7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "82cd7aa3896219ac5210c77088ed7bf27f82b0baa0332201752d3d85a55eb608",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "DUPLICATE_DETECTOR"
+          },
+          "duplicate_similarity_threshold_bp": 8500,
+          "explanation": "Objective and source-verifiable criteria; faithful English translation.\nDuplicate check: All candidates assessed.",
+          "objectively_resolvable": true,
+          "schema_version": 1,
+          "specification_hash": "7256e05b1cfa314800fdbec7e6bcaa64c65933811f2dd03fddc1955103f1bf2c",
+          "validated_at_ms": 1000
+        },
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 400000,
+          "duplicate_candidates": [
+            {
+              "explanation": "Candidate 0 is the same event.",
+              "forecast_id": "forecast-0",
+              "materially_different_rules": false,
+              "schema_version": 1,
+              "similarity_bp": 8000,
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            },
+            {
+              "explanation": "Candidate 1 is the same event.",
+              "forecast_id": "forecast-1",
+              "materially_different_rules": false,
+              "schema_version": 1,
+              "similarity_bp": 8000,
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            }
+          ],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        }
+      },
+      "name": "two-candidates",
+      "now_ms": 1000,
+      "payloads": [
+        {
+          "approved_fallback_hosts": {
+            "apnews.com": "AP",
+            "reuters.com": "Reuters",
+            "www.bbc.co.uk": "BBC",
+            "www.bbc.com": "BBC",
+            "www.reuters.com": "Reuters"
+          },
+          "approved_official_hosts": {
+            "api.kraken.com": "Kraken public market data",
+            "apple.com": "Apple",
+            "blog.google": "Google",
+            "blogs.microsoft.com": "Microsoft",
+            "blogs.nvidia.com": "NVIDIA",
+            "deepmind.google": "Google DeepMind",
+            "ethereum.org": "Ethereum",
+            "kostat.go.kr": "Statistics Korea",
+            "news.microsoft.com": "Microsoft",
+            "news.samsung.com": "Samsung",
+            "nvidianews.nvidia.com": "NVIDIA",
+            "openai.com": "OpenAI",
+            "science.nasa.gov": "NASA",
+            "solana.com": "Solana",
+            "www.apple.com": "Apple",
+            "www.bea.gov": "US BEA",
+            "www.bitstamp.net": "Bitstamp public market data",
+            "www.bls.gov": "US BLS",
+            "www.bok.or.kr": "Bank of Korea",
+            "www.climate.gov": "NOAA Climate",
+            "www.ecb.europa.eu": "ECB",
+            "www.esa.int": "European Space Agency",
+            "www.federalreserve.gov": "Federal Reserve",
+            "www.fifa.com": "FIFA",
+            "www.kma.go.kr": "KMA",
+            "www.kostat.go.kr": "Statistics Korea",
+            "www.microsoft.com": "Microsoft",
+            "www.nasa.gov": "NASA",
+            "www.noaa.gov": "NOAA",
+            "www.nvidia.com": "NVIDIA",
+            "www.olympics.com": "Olympics",
+            "www.spacex.com": "SpaceX",
+            "www.un.org": "United Nations",
+            "www.who.int": "World Health Organization"
+          },
+          "candidates": [
+            {
+              "candidate_ref": "c0",
+              "forecast_id": "forecast-0",
+              "specification": {
+                "ambiguity_score_bp": 500,
+                "canonical_question": "Will Acme officially announce Product X before the deadline?",
+                "category": "TECHNOLOGY",
+                "close_at_ms": 1000,
+                "duplicate_candidates": [],
+                "invalidation_rules": [
+                  "Apply INVALID if the named product has multiple incompatible identities."
+                ],
+                "open_at_ms": 100,
+                "rules": [
+                  {
+                    "clause_id": "yes-rule",
+                    "condition": "An official announcement dated before closing names Product X.",
+                    "outcome": "YES",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "no-rule",
+                    "condition": "No qualifying announcement exists at closing.",
+                    "outcome": "NO",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "invalid-rule",
+                    "condition": "The named company or product cannot be uniquely identified.",
+                    "outcome": "INVALID",
+                    "schema_version": 1
+                  }
+                ],
+                "schema_version": 1,
+                "share_title": "Will Acme announce Product X?",
+                "source_policy": {
+                  "fallback_sources": [
+                    {
+                      "is_official": false,
+                      "name": "Independent News Wire",
+                      "schema_version": 1,
+                      "source_id": "news-wire",
+                      "url": "https://wire.example/acme"
+                    }
+                  ],
+                  "primary_sources": [
+                    {
+                      "is_official": true,
+                      "name": "Acme Newsroom",
+                      "schema_version": 1,
+                      "source_id": "acme-news",
+                      "url": "https://acme.example/news"
+                    }
+                  ],
+                  "schema_version": 1
+                }
+              },
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            },
+            {
+              "candidate_ref": "c1",
+              "forecast_id": "forecast-1",
+              "specification": {
+                "ambiguity_score_bp": 500,
+                "canonical_question": "Will Acme officially announce Product X before the deadline?",
+                "category": "TECHNOLOGY",
+                "close_at_ms": 1000,
+                "duplicate_candidates": [],
+                "invalidation_rules": [
+                  "Apply INVALID if the named product has multiple incompatible identities."
+                ],
+                "open_at_ms": 100,
+                "rules": [
+                  {
+                    "clause_id": "yes-rule",
+                    "condition": "An official announcement dated before closing names Product X.",
+                    "outcome": "YES",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "no-rule",
+                    "condition": "No qualifying announcement exists at closing.",
+                    "outcome": "NO",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "invalid-rule",
+                    "condition": "The named company or product cannot be uniquely identified.",
+                    "outcome": "INVALID",
+                    "schema_version": 1
+                  }
+                ],
+                "schema_version": 1,
+                "share_title": "Will Acme announce Product X?",
+                "source_policy": {
+                  "fallback_sources": [
+                    {
+                      "is_official": false,
+                      "name": "Independent News Wire",
+                      "schema_version": 1,
+                      "source_id": "news-wire",
+                      "url": "https://wire.example/acme"
+                    }
+                  ],
+                  "primary_sources": [
+                    {
+                      "is_official": true,
+                      "name": "Acme Newsroom",
+                      "schema_version": 1,
+                      "source_id": "acme-news",
+                      "url": "https://acme.example/news"
+                    }
+                  ],
+                  "schema_version": 1
+                }
+              },
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            }
+          ],
+          "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+          "now_ms": 1000,
+          "output_language": "en",
+          "policy": "Compile an objective, publicly verifiable future YES/NO/INVALID question. Translate the original input into English faithfully, preserving all entities, amounts, criteria, deadlines and timezones; never add or remove conditions. The English specification will be shown to the user for review before publication. Preserve user intent, explicitly resolve timezone to UTC, and use exactly now_ms as open_at_ms. Output close_at_utc as exact YYYY-MM-DDTHH:MM:SSZ; NEVER calculate or output close_at_ms. Repeat close_at_utc verbatim in canonical_question and each YES/NO rule condition, so human text and deadlines cannot diverge. Avoid alternative numeric dates in those texts. share_title must be a concise English question of at most 60 characters and must be timeless: omit ALL deadlines, dates, end-of-year, before/by date, this/next year and other timeframe phrases. The UI displays the exact closing time separately. Preserve product names/model numbers and the substantive event; never substitute an approximate or different deadline in the title. Do not invent a missing deadline or definition: encode high ambiguity so validation rejects it. Prefer one specific official text source that can resolve the question; add sources only when criteria require them. Optional fallback sources are used only when no primary can be retrieved, not mandatory corroboration. Choose 1-4 directly accessible relevant text sources on the approved hosts; all primary sources must be official. No login pages, search redirects, generic company homepage without resolution evidence, PDFs or private personal information. Document exhaustive YES/NO/INVALID clauses and source failure rules. Identify every supplied semantically similar candidate by candidate_ref (c0, c1, etc.) only; NEVER output or copy forecast_id or specification_hash in duplicate_candidates. References select the exact supplied identity and specification; assess similarity and material rule differences. Never invent or repeat a reference. Integer ambiguity score 0..10000.",
+          "question": "Will Apple announce Product X before the stated deadline?",
+          "schema_version": 1
+        },
+        {
+          "original_question": "Will Apple announce Product X before the stated deadline?",
+          "output_language": "en",
+          "policy": "Independently judge exact criteria for objective coverage, non-overlap, timeframe, missing definitions and whether fetched source documents and dates preserve the original user's question without changing intent. Verify every public specification field is English, including the title, all rules, invalidation rules and source names; set english_language_passed accordingly. Compare against the exact original-language input and set intent_preserved=false if translation adds or removes a criterion, amount, entity, deadline or timezone. Verify the share title is a faithful timeless description of the same event/product without a deadline or timeframe phrase; set title_consistent=false if it changes the entity, product, amount, event or temporal meaning. Omitting the deadline from the title is intentional because the exact closing time is displayed separately, while the canonical question and rules retain it. Verify documents are genuine and appropriate for eventual resolution. Reject if unavailable sources are required by any outcome clause; a source subset must satisfy the published criteria, never waive a required document. unverifiable or ambiguous questions. Do not rewrite the specification. Ambiguity limit is 1000 basis points. Mere source page reachability is insufficient.",
+          "schema_version": 1,
+          "source_collection": {
+            "kind": "source_collection",
+            "policy": "primary-first-v1",
+            "retained_sources": [
+              {
+                "evidence_hash": "37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2",
+                "source_id": "apple-news"
+              }
+            ],
+            "schema_version": 1,
+            "unavailable_sources": [],
+            "unfetched_fallback_source_ids": [],
+            "used_fallback": false
+          },
+          "source_documents": [
+            {
+              "text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 400000,
+            "duplicate_candidates": [
+              {
+                "explanation": "Candidate 0 is the same event.",
+                "forecast_id": "forecast-0",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 8000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              },
+              {
+                "explanation": "Candidate 1 is the same event.",
+                "forecast_id": "forecast-1",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 8000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              }
+            ],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        },
+        {
+          "candidates": [
+            {
+              "candidate_ref": "c0",
+              "forecast_id": "forecast-0",
+              "specification": {
+                "ambiguity_score_bp": 500,
+                "canonical_question": "Will Acme officially announce Product X before the deadline?",
+                "category": "TECHNOLOGY",
+                "close_at_ms": 1000,
+                "duplicate_candidates": [],
+                "invalidation_rules": [
+                  "Apply INVALID if the named product has multiple incompatible identities."
+                ],
+                "open_at_ms": 100,
+                "rules": [
+                  {
+                    "clause_id": "yes-rule",
+                    "condition": "An official announcement dated before closing names Product X.",
+                    "outcome": "YES",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "no-rule",
+                    "condition": "No qualifying announcement exists at closing.",
+                    "outcome": "NO",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "invalid-rule",
+                    "condition": "The named company or product cannot be uniquely identified.",
+                    "outcome": "INVALID",
+                    "schema_version": 1
+                  }
+                ],
+                "schema_version": 1,
+                "share_title": "Will Acme announce Product X?",
+                "source_policy": {
+                  "fallback_sources": [
+                    {
+                      "is_official": false,
+                      "name": "Independent News Wire",
+                      "schema_version": 1,
+                      "source_id": "news-wire",
+                      "url": "https://wire.example/acme"
+                    }
+                  ],
+                  "primary_sources": [
+                    {
+                      "is_official": true,
+                      "name": "Acme Newsroom",
+                      "schema_version": 1,
+                      "source_id": "acme-news",
+                      "url": "https://acme.example/news"
+                    }
+                  ],
+                  "schema_version": 1
+                }
+              },
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            },
+            {
+              "candidate_ref": "c1",
+              "forecast_id": "forecast-1",
+              "specification": {
+                "ambiguity_score_bp": 500,
+                "canonical_question": "Will Acme officially announce Product X before the deadline?",
+                "category": "TECHNOLOGY",
+                "close_at_ms": 1000,
+                "duplicate_candidates": [],
+                "invalidation_rules": [
+                  "Apply INVALID if the named product has multiple incompatible identities."
+                ],
+                "open_at_ms": 100,
+                "rules": [
+                  {
+                    "clause_id": "yes-rule",
+                    "condition": "An official announcement dated before closing names Product X.",
+                    "outcome": "YES",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "no-rule",
+                    "condition": "No qualifying announcement exists at closing.",
+                    "outcome": "NO",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "invalid-rule",
+                    "condition": "The named company or product cannot be uniquely identified.",
+                    "outcome": "INVALID",
+                    "schema_version": 1
+                  }
+                ],
+                "schema_version": 1,
+                "share_title": "Will Acme announce Product X?",
+                "source_policy": {
+                  "fallback_sources": [
+                    {
+                      "is_official": false,
+                      "name": "Independent News Wire",
+                      "schema_version": 1,
+                      "source_id": "news-wire",
+                      "url": "https://wire.example/acme"
+                    }
+                  ],
+                  "primary_sources": [
+                    {
+                      "is_official": true,
+                      "name": "Acme Newsroom",
+                      "schema_version": 1,
+                      "source_id": "acme-news",
+                      "url": "https://acme.example/news"
+                    }
+                  ],
+                  "schema_version": 1
+                }
+              },
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            }
+          ],
+          "policy": "Independently compare every supplied candidate. Verify specification.duplicate_candidates includes every semantically similar candidate, IDs/hashes and material rule differences. Report candidates_accurate=false if any match is omitted or misclassified. Threshold 8500 basis points. An empty candidate search is complete, never invent matching forecasts.",
+          "schema_version": 1,
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 400000,
+            "duplicate_candidates": [
+              {
+                "explanation": "Candidate 0 is the same event.",
+                "forecast_id": "forecast-0",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 8000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              },
+              {
+                "explanation": "Candidate 1 is the same event.",
+                "forecast_id": "forecast-1",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 8000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              }
+            ],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        },
+        {
+          "as_of_ms": 1000,
+          "as_of_utc": "1970-01-01T00:00:01.000Z",
+          "policy": "Estimate the probability of the published YES clause ultimately being satisfied, given only the supplied source context and knowledge you actually have as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish facts supported by the retained source documents from prior or historical knowledge. Do not assert a product is currently the latest version, a company currently does something, or any other current fact unless the retained source documents support it. If source context lacks current information, explicitly acknowledge that uncertainty instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale acknowledging important uncertainty. Never invent web research, crowd forecasts or observations. No betting, payouts or investment advice.",
+          "schema_version": 1,
+          "source_documents": [
+            {
+              "text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 400000,
+            "duplicate_candidates": [
+              {
+                "explanation": "Candidate 0 is the same event.",
+                "forecast_id": "forecast-0",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 8000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              },
+              {
+                "explanation": "Candidate 1 is the same event.",
+                "forecast_id": "forecast-1",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 8000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              }
+            ],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        }
+      ],
+      "question": "Will Apple announce Product X before the stated deadline?",
+      "responses": [
+        {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+          "category": "TECHNOLOGY",
+          "close_at_utc": "1970-01-01T00:06:40Z",
+          "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+          "duplicate_candidates": [
+            {
+              "candidate_ref": "c0",
+              "explanation": "Candidate 0 is the same event.",
+              "materially_different_rules": false,
+              "schema_version": 1,
+              "similarity_bp": 8000
+            },
+            {
+              "candidate_ref": "c1",
+              "explanation": "Candidate 1 is the same event.",
+              "materially_different_rules": false,
+              "schema_version": 1,
+              "similarity_bp": 8000
+            }
+          ],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        },
+        {
+          "ambiguity_passed": true,
+          "english_language_passed": true,
+          "explanation": "Objective and source-verifiable criteria; faithful English translation.",
+          "intent_preserved": true,
+          "objectively_resolvable": true,
+          "sources_appropriate": true,
+          "title_consistent": true
+        },
+        {
+          "candidates_accurate": true,
+          "check_completed": true,
+          "explanation": "All candidates assessed."
+        },
+        {
+          "rationale": "Available source context suggests 62%, with launch uncertainty.",
+          "yesProbabilityBp": 6200
+        }
+      ],
+      "sources": [
+        {
+          "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+          "contentType": "text/html",
+          "status": 200,
+          "url": "https://www.apple.com/newsroom/"
+        }
+      ]
+    },
+    {
+      "candidates": [
+        {
+          "audit_head_hash": null,
+          "challenge_started_at_ms": null,
+          "challenge_until_ms": null,
+          "created_at_ms": 1000,
+          "creator_id": "creator-1",
+          "dispute_reviews": [],
+          "disputes": [],
+          "finalized_outcome": null,
+          "finalized_resolution_hash": null,
+          "forecast_id": "forecast-0",
+          "latest_event": null,
+          "pause": null,
+          "published_at_ms": null,
+          "resolution": null,
+          "revision": 0,
+          "schema_version": 1,
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38",
+          "state": "DRAFT",
+          "updated_at_ms": 1000,
+          "validation_assessment": null
+        },
+        {
+          "audit_head_hash": null,
+          "challenge_started_at_ms": null,
+          "challenge_until_ms": null,
+          "created_at_ms": 1000,
+          "creator_id": "creator-1",
+          "dispute_reviews": [],
+          "disputes": [],
+          "finalized_outcome": null,
+          "finalized_resolution_hash": null,
+          "forecast_id": "forecast-1",
+          "latest_event": null,
+          "pause": null,
+          "published_at_ms": null,
+          "resolution": null,
+          "revision": 0,
+          "schema_version": 1,
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38",
+          "state": "DRAFT",
+          "updated_at_ms": 1000,
+          "validation_assessment": null
+        }
+      ],
+      "distinct_measurement_windows": false,
+      "error": {
+        "code": "compiler_not_publishable",
+        "message": "Objective and source-verifiable criteria; faithful English translation.\nDuplicate check: All candidates assessed."
+      },
+      "name": "materially-equal-candidate",
+      "now_ms": 1000,
+      "payloads": [
+        {
+          "approved_fallback_hosts": {
+            "apnews.com": "AP",
+            "reuters.com": "Reuters",
+            "www.bbc.co.uk": "BBC",
+            "www.bbc.com": "BBC",
+            "www.reuters.com": "Reuters"
+          },
+          "approved_official_hosts": {
+            "api.kraken.com": "Kraken public market data",
+            "apple.com": "Apple",
+            "blog.google": "Google",
+            "blogs.microsoft.com": "Microsoft",
+            "blogs.nvidia.com": "NVIDIA",
+            "deepmind.google": "Google DeepMind",
+            "ethereum.org": "Ethereum",
+            "kostat.go.kr": "Statistics Korea",
+            "news.microsoft.com": "Microsoft",
+            "news.samsung.com": "Samsung",
+            "nvidianews.nvidia.com": "NVIDIA",
+            "openai.com": "OpenAI",
+            "science.nasa.gov": "NASA",
+            "solana.com": "Solana",
+            "www.apple.com": "Apple",
+            "www.bea.gov": "US BEA",
+            "www.bitstamp.net": "Bitstamp public market data",
+            "www.bls.gov": "US BLS",
+            "www.bok.or.kr": "Bank of Korea",
+            "www.climate.gov": "NOAA Climate",
+            "www.ecb.europa.eu": "ECB",
+            "www.esa.int": "European Space Agency",
+            "www.federalreserve.gov": "Federal Reserve",
+            "www.fifa.com": "FIFA",
+            "www.kma.go.kr": "KMA",
+            "www.kostat.go.kr": "Statistics Korea",
+            "www.microsoft.com": "Microsoft",
+            "www.nasa.gov": "NASA",
+            "www.noaa.gov": "NOAA",
+            "www.nvidia.com": "NVIDIA",
+            "www.olympics.com": "Olympics",
+            "www.spacex.com": "SpaceX",
+            "www.un.org": "United Nations",
+            "www.who.int": "World Health Organization"
+          },
+          "candidates": [
+            {
+              "candidate_ref": "c0",
+              "forecast_id": "forecast-0",
+              "specification": {
+                "ambiguity_score_bp": 500,
+                "canonical_question": "Will Acme officially announce Product X before the deadline?",
+                "category": "TECHNOLOGY",
+                "close_at_ms": 1000,
+                "duplicate_candidates": [],
+                "invalidation_rules": [
+                  "Apply INVALID if the named product has multiple incompatible identities."
+                ],
+                "open_at_ms": 100,
+                "rules": [
+                  {
+                    "clause_id": "yes-rule",
+                    "condition": "An official announcement dated before closing names Product X.",
+                    "outcome": "YES",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "no-rule",
+                    "condition": "No qualifying announcement exists at closing.",
+                    "outcome": "NO",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "invalid-rule",
+                    "condition": "The named company or product cannot be uniquely identified.",
+                    "outcome": "INVALID",
+                    "schema_version": 1
+                  }
+                ],
+                "schema_version": 1,
+                "share_title": "Will Acme announce Product X?",
+                "source_policy": {
+                  "fallback_sources": [
+                    {
+                      "is_official": false,
+                      "name": "Independent News Wire",
+                      "schema_version": 1,
+                      "source_id": "news-wire",
+                      "url": "https://wire.example/acme"
+                    }
+                  ],
+                  "primary_sources": [
+                    {
+                      "is_official": true,
+                      "name": "Acme Newsroom",
+                      "schema_version": 1,
+                      "source_id": "acme-news",
+                      "url": "https://acme.example/news"
+                    }
+                  ],
+                  "schema_version": 1
+                }
+              },
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            },
+            {
+              "candidate_ref": "c1",
+              "forecast_id": "forecast-1",
+              "specification": {
+                "ambiguity_score_bp": 500,
+                "canonical_question": "Will Acme officially announce Product X before the deadline?",
+                "category": "TECHNOLOGY",
+                "close_at_ms": 1000,
+                "duplicate_candidates": [],
+                "invalidation_rules": [
+                  "Apply INVALID if the named product has multiple incompatible identities."
+                ],
+                "open_at_ms": 100,
+                "rules": [
+                  {
+                    "clause_id": "yes-rule",
+                    "condition": "An official announcement dated before closing names Product X.",
+                    "outcome": "YES",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "no-rule",
+                    "condition": "No qualifying announcement exists at closing.",
+                    "outcome": "NO",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "invalid-rule",
+                    "condition": "The named company or product cannot be uniquely identified.",
+                    "outcome": "INVALID",
+                    "schema_version": 1
+                  }
+                ],
+                "schema_version": 1,
+                "share_title": "Will Acme announce Product X?",
+                "source_policy": {
+                  "fallback_sources": [
+                    {
+                      "is_official": false,
+                      "name": "Independent News Wire",
+                      "schema_version": 1,
+                      "source_id": "news-wire",
+                      "url": "https://wire.example/acme"
+                    }
+                  ],
+                  "primary_sources": [
+                    {
+                      "is_official": true,
+                      "name": "Acme Newsroom",
+                      "schema_version": 1,
+                      "source_id": "acme-news",
+                      "url": "https://acme.example/news"
+                    }
+                  ],
+                  "schema_version": 1
+                }
+              },
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            }
+          ],
+          "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+          "now_ms": 1000,
+          "output_language": "en",
+          "policy": "Compile an objective, publicly verifiable future YES/NO/INVALID question. Translate the original input into English faithfully, preserving all entities, amounts, criteria, deadlines and timezones; never add or remove conditions. The English specification will be shown to the user for review before publication. Preserve user intent, explicitly resolve timezone to UTC, and use exactly now_ms as open_at_ms. Output close_at_utc as exact YYYY-MM-DDTHH:MM:SSZ; NEVER calculate or output close_at_ms. Repeat close_at_utc verbatim in canonical_question and each YES/NO rule condition, so human text and deadlines cannot diverge. Avoid alternative numeric dates in those texts. share_title must be a concise English question of at most 60 characters and must be timeless: omit ALL deadlines, dates, end-of-year, before/by date, this/next year and other timeframe phrases. The UI displays the exact closing time separately. Preserve product names/model numbers and the substantive event; never substitute an approximate or different deadline in the title. Do not invent a missing deadline or definition: encode high ambiguity so validation rejects it. Prefer one specific official text source that can resolve the question; add sources only when criteria require them. Optional fallback sources are used only when no primary can be retrieved, not mandatory corroboration. Choose 1-4 directly accessible relevant text sources on the approved hosts; all primary sources must be official. No login pages, search redirects, generic company homepage without resolution evidence, PDFs or private personal information. Document exhaustive YES/NO/INVALID clauses and source failure rules. Identify every supplied semantically similar candidate by candidate_ref (c0, c1, etc.) only; NEVER output or copy forecast_id or specification_hash in duplicate_candidates. References select the exact supplied identity and specification; assess similarity and material rule differences. Never invent or repeat a reference. Integer ambiguity score 0..10000.",
+          "question": "Will Apple announce Product X before the stated deadline?",
+          "schema_version": 1
+        },
+        {
+          "original_question": "Will Apple announce Product X before the stated deadline?",
+          "output_language": "en",
+          "policy": "Independently judge exact criteria for objective coverage, non-overlap, timeframe, missing definitions and whether fetched source documents and dates preserve the original user's question without changing intent. Verify every public specification field is English, including the title, all rules, invalidation rules and source names; set english_language_passed accordingly. Compare against the exact original-language input and set intent_preserved=false if translation adds or removes a criterion, amount, entity, deadline or timezone. Verify the share title is a faithful timeless description of the same event/product without a deadline or timeframe phrase; set title_consistent=false if it changes the entity, product, amount, event or temporal meaning. Omitting the deadline from the title is intentional because the exact closing time is displayed separately, while the canonical question and rules retain it. Verify documents are genuine and appropriate for eventual resolution. Reject if unavailable sources are required by any outcome clause; a source subset must satisfy the published criteria, never waive a required document. unverifiable or ambiguous questions. Do not rewrite the specification. Ambiguity limit is 1000 basis points. Mere source page reachability is insufficient.",
+          "schema_version": 1,
+          "source_collection": {
+            "kind": "source_collection",
+            "policy": "primary-first-v1",
+            "retained_sources": [
+              {
+                "evidence_hash": "37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2",
+                "source_id": "apple-news"
+              }
+            ],
+            "schema_version": 1,
+            "unavailable_sources": [],
+            "unfetched_fallback_source_ids": [],
+            "used_fallback": false
+          },
+          "source_documents": [
+            {
+              "text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 400000,
+            "duplicate_candidates": [
+              {
+                "explanation": "Candidate 0 is the same event.",
+                "forecast_id": "forecast-0",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 9000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              },
+              {
+                "explanation": "Candidate 1 is the same event.",
+                "forecast_id": "forecast-1",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 9000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              }
+            ],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        },
+        {
+          "candidates": [
+            {
+              "candidate_ref": "c0",
+              "forecast_id": "forecast-0",
+              "specification": {
+                "ambiguity_score_bp": 500,
+                "canonical_question": "Will Acme officially announce Product X before the deadline?",
+                "category": "TECHNOLOGY",
+                "close_at_ms": 1000,
+                "duplicate_candidates": [],
+                "invalidation_rules": [
+                  "Apply INVALID if the named product has multiple incompatible identities."
+                ],
+                "open_at_ms": 100,
+                "rules": [
+                  {
+                    "clause_id": "yes-rule",
+                    "condition": "An official announcement dated before closing names Product X.",
+                    "outcome": "YES",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "no-rule",
+                    "condition": "No qualifying announcement exists at closing.",
+                    "outcome": "NO",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "invalid-rule",
+                    "condition": "The named company or product cannot be uniquely identified.",
+                    "outcome": "INVALID",
+                    "schema_version": 1
+                  }
+                ],
+                "schema_version": 1,
+                "share_title": "Will Acme announce Product X?",
+                "source_policy": {
+                  "fallback_sources": [
+                    {
+                      "is_official": false,
+                      "name": "Independent News Wire",
+                      "schema_version": 1,
+                      "source_id": "news-wire",
+                      "url": "https://wire.example/acme"
+                    }
+                  ],
+                  "primary_sources": [
+                    {
+                      "is_official": true,
+                      "name": "Acme Newsroom",
+                      "schema_version": 1,
+                      "source_id": "acme-news",
+                      "url": "https://acme.example/news"
+                    }
+                  ],
+                  "schema_version": 1
+                }
+              },
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            },
+            {
+              "candidate_ref": "c1",
+              "forecast_id": "forecast-1",
+              "specification": {
+                "ambiguity_score_bp": 500,
+                "canonical_question": "Will Acme officially announce Product X before the deadline?",
+                "category": "TECHNOLOGY",
+                "close_at_ms": 1000,
+                "duplicate_candidates": [],
+                "invalidation_rules": [
+                  "Apply INVALID if the named product has multiple incompatible identities."
+                ],
+                "open_at_ms": 100,
+                "rules": [
+                  {
+                    "clause_id": "yes-rule",
+                    "condition": "An official announcement dated before closing names Product X.",
+                    "outcome": "YES",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "no-rule",
+                    "condition": "No qualifying announcement exists at closing.",
+                    "outcome": "NO",
+                    "schema_version": 1
+                  },
+                  {
+                    "clause_id": "invalid-rule",
+                    "condition": "The named company or product cannot be uniquely identified.",
+                    "outcome": "INVALID",
+                    "schema_version": 1
+                  }
+                ],
+                "schema_version": 1,
+                "share_title": "Will Acme announce Product X?",
+                "source_policy": {
+                  "fallback_sources": [
+                    {
+                      "is_official": false,
+                      "name": "Independent News Wire",
+                      "schema_version": 1,
+                      "source_id": "news-wire",
+                      "url": "https://wire.example/acme"
+                    }
+                  ],
+                  "primary_sources": [
+                    {
+                      "is_official": true,
+                      "name": "Acme Newsroom",
+                      "schema_version": 1,
+                      "source_id": "acme-news",
+                      "url": "https://acme.example/news"
+                    }
+                  ],
+                  "schema_version": 1
+                }
+              },
+              "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+            }
+          ],
+          "policy": "Independently compare every supplied candidate. Verify specification.duplicate_candidates includes every semantically similar candidate, IDs/hashes and material rule differences. Report candidates_accurate=false if any match is omitted or misclassified. Threshold 8500 basis points. An empty candidate search is complete, never invent matching forecasts.",
+          "schema_version": 1,
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 400000,
+            "duplicate_candidates": [
+              {
+                "explanation": "Candidate 0 is the same event.",
+                "forecast_id": "forecast-0",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 9000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              },
+              {
+                "explanation": "Candidate 1 is the same event.",
+                "forecast_id": "forecast-1",
+                "materially_different_rules": false,
+                "schema_version": 1,
+                "similarity_bp": 9000,
+                "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+              }
+            ],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        }
+      ],
+      "question": "Will Apple announce Product X before the stated deadline?",
+      "responses": [
+        {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+          "category": "TECHNOLOGY",
+          "close_at_utc": "1970-01-01T00:06:40Z",
+          "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+          "duplicate_candidates": [
+            {
+              "candidate_ref": "c0",
+              "explanation": "Candidate 0 is the same event.",
+              "materially_different_rules": false,
+              "schema_version": 1,
+              "similarity_bp": 9000
+            },
+            {
+              "candidate_ref": "c1",
+              "explanation": "Candidate 1 is the same event.",
+              "materially_different_rules": false,
+              "schema_version": 1,
+              "similarity_bp": 9000
+            }
+          ],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        },
+        {
+          "ambiguity_passed": true,
+          "english_language_passed": true,
+          "explanation": "Objective and source-verifiable criteria; faithful English translation.",
+          "intent_preserved": true,
+          "objectively_resolvable": true,
+          "sources_appropriate": true,
+          "title_consistent": true
+        },
+        {
+          "candidates_accurate": true,
+          "check_completed": true,
+          "explanation": "All candidates assessed."
+        },
+        {
+          "rationale": "Available source context suggests 62%, with launch uncertainty.",
+          "yesProbabilityBp": 6200
+        }
+      ],
+      "sources": [
+        {
+          "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+          "contentType": "text/html",
+          "status": 200,
+          "url": "https://www.apple.com/newsroom/"
+        }
+      ]
+    },
+    {
+      "candidates": [],
+      "distinct_measurement_windows": false,
+      "expect": {
+        "aiForecast": {
+          "artifactHash": "5fcc27e4b4d775a937364f6abf21e3907b9f0fdcb6f44086524e38e8a297f359",
+          "asOf": 1000,
+          "model": "test-model",
+          "modelVersion": "gemini-tested-revision",
+          "probability": 62.0,
+          "provider": "gemini",
+          "rationale": "Available source context suggests 62%, with launch uncertainty.",
+          "specificationHash": "5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf"
+        },
+        "artifacts": [
+          {
+            "body": "{\"input\":{\"approved_fallback_hosts\":{\"apnews.com\":\"AP\",\"reuters.com\":\"Reuters\",\"www.bbc.co.uk\":\"BBC\",\"www.bbc.com\":\"BBC\",\"www.reuters.com\":\"Reuters\"},\"approved_official_hosts\":{\"api.kraken.com\":\"Kraken public market data\",\"apple.com\":\"Apple\",\"blog.google\":\"Google\",\"blogs.microsoft.com\":\"Microsoft\",\"blogs.nvidia.com\":\"NVIDIA\",\"deepmind.google\":\"Google DeepMind\",\"ethereum.org\":\"Ethereum\",\"kostat.go.kr\":\"Statistics Korea\",\"news.microsoft.com\":\"Microsoft\",\"news.samsung.com\":\"Samsung\",\"nvidianews.nvidia.com\":\"NVIDIA\",\"openai.com\":\"OpenAI\",\"science.nasa.gov\":\"NASA\",\"solana.com\":\"Solana\",\"www.apple.com\":\"Apple\",\"www.bea.gov\":\"US BEA\",\"www.bitstamp.net\":\"Bitstamp public market data\",\"www.bls.gov\":\"US BLS\",\"www.bok.or.kr\":\"Bank of Korea\",\"www.climate.gov\":\"NOAA Climate\",\"www.ecb.europa.eu\":\"ECB\",\"www.esa.int\":\"European Space Agency\",\"www.federalreserve.gov\":\"Federal Reserve\",\"www.fifa.com\":\"FIFA\",\"www.kma.go.kr\":\"KMA\",\"www.kostat.go.kr\":\"Statistics Korea\",\"www.microsoft.com\":\"Microsoft\",\"www.nasa.gov\":\"NASA\",\"www.noaa.gov\":\"NOAA\",\"www.nvidia.com\":\"NVIDIA\",\"www.olympics.com\":\"Olympics\",\"www.spacex.com\":\"SpaceX\",\"www.un.org\":\"United Nations\",\"www.who.int\":\"World Health Organization\"},\"candidates\":[],\"compiler_wire_version\":\"compiler-utc-candidate-ref-v3\",\"measurement_window\":{\"canonical_expression\":\"[1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z)\",\"end_at_ms\":86800000,\"end_at_utc\":\"1970-01-02T00:06:40Z\",\"end_exclusive\":true,\"input_expression\":\"[1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z)\",\"start_at_ms\":120000,\"start_at_utc\":\"1970-01-01T00:02:00Z\",\"start_inclusive\":true,\"version\":\"single-bracket-utc-window-v1\"},\"now_ms\":1000,\"output_language\":\"en\",\"policy\":\"Compile an objective, publicly verifiable future YES/NO/INVALID question. Translate the original input into English faithfully, preserving all entities, amounts, criteria, deadlines and timezones; never add or remove conditions. The English specification will be shown to the user for review before publication. Preserve user intent, explicitly resolve timezone to UTC, and use exactly now_ms as open_at_ms. Output close_at_utc as exact YYYY-MM-DDTHH:MM:SSZ; NEVER calculate or output close_at_ms. Repeat close_at_utc verbatim in canonical_question and each YES/NO rule condition, so human text and deadlines cannot diverge. Avoid alternative numeric dates in those texts. share_title must be a concise English question of at most 60 characters and must be timeless: omit ALL deadlines, dates, end-of-year, before/by date, this/next year and other timeframe phrases. The UI displays the exact closing time separately. Preserve product names/model numbers and the substantive event; never substitute an approximate or different deadline in the title. Do not invent a missing deadline or definition: encode high ambiguity so validation rejects it. Prefer one specific official text source that can resolve the question; add sources only when criteria require them. Optional fallback sources are used only when no primary can be retrieved, not mandatory corroboration. Choose 1-4 directly accessible relevant text sources on the approved hosts; all primary sources must be official. No login pages, search redirects, generic company homepage without resolution evidence, PDFs or private personal information. Document exhaustive YES/NO/INVALID clauses and source failure rules. Identify every supplied semantically similar candidate by candidate_ref (c0, c1, etc.) only; NEVER output or copy forecast_id or specification_hash in duplicate_candidates. References select the exact supplied identity and specification; assess similarity and material rule differences. Never invent or repeat a reference. Integer ambiguity score 0..10000. This input specifies one measurement window. Its start and end have different roles: copy measurement_window.canonical_expression exactly once into canonical_question and each YES/NO rule condition, including the opening [ and closing ). Set close_at_utc to its end_at_utc. Never replace start by end, move the window, omit it or use start as a separate deadline. Outside that bracket interval, every explicit time must be the exact closing UTC timestamp; the earlier instruction to avoid alternative dates does not remove this verified window start.\",\"question\":\"During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?\",\"schema_version\":1},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?\",\"category\":\"TECHNOLOGY\",\"close_at_utc\":\"1970-01-02T00:06:40Z\",\"compiler_wire_version\":\"compiler-utc-candidate-ref-v3\",\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"}",
+            "hash": "5bb1afa428c43b6e0d9a9f3673179d2bd2bcf29bc4a520fdb8f8a95ec47643d2",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"candidate_context_hash\":\"31dce5351bf142de4493531fe24a3a36ab367055758aeb9c6edd8af7a8b10bff\",\"candidate_lookup\":[],\"candidate_lookup_hash\":\"31dce5351bf142de4493531fe24a3a36ab367055758aeb9c6edd8af7a8b10bff\",\"close_at_ms\":86800000,\"close_at_utc\":\"1970-01-02T00:06:40Z\",\"compiler_input_hash\":\"6a9b9f82c88ca2cd1fb5eab8879242cc14b5d915058a10fa4b8f8c6858248d16\",\"compiler_wire_version\":\"compiler-utc-candidate-ref-v3\",\"kind\":\"compiler_normalization\",\"measurement_window\":{\"canonical_expression\":\"[1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z)\",\"end_at_ms\":86800000,\"end_at_utc\":\"1970-01-02T00:06:40Z\",\"end_exclusive\":true,\"input_expression\":\"[1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z)\",\"start_at_ms\":120000,\"start_at_utc\":\"1970-01-01T00:02:00Z\",\"start_inclusive\":true,\"version\":\"single-bracket-utc-window-v1\"},\"normalization_version\":\"exact-utc-window-and-candidate-reference-v4\",\"normalized_specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":86800000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}},\"raw_decision_artifact_hash\":\"5bb1afa428c43b6e0d9a9f3673179d2bd2bcf29bc4a520fdb8f8a95ec47643d2\",\"schema_version\":1,\"specification_hash\":\"5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf\"}",
+            "hash": "c47c22b6ed975b67a0a8db3861726f896eb64117b78491a88d43c39686e9debb",
+            "kind": "compiler-normalization"
+          },
+          {
+            "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+            "hash": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+            "kind": "source"
+          },
+          {
+            "body": "{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false}",
+            "hash": "acacf22bcc4e3687e13aea5411aee59559380dddf3a472962b6f0489447e7e21",
+            "kind": "source-collection"
+          },
+          {
+            "body": "{\"input\":{\"original_question\":\"During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?\",\"output_language\":\"en\",\"policy\":\"Independently judge exact criteria for objective coverage, non-overlap, timeframe, missing definitions and whether fetched source documents and dates preserve the original user's question without changing intent. Verify every public specification field is English, including the title, all rules, invalidation rules and source names; set english_language_passed accordingly. Compare against the exact original-language input and set intent_preserved=false if translation adds or removes a criterion, amount, entity, deadline or timezone. Verify the share title is a faithful timeless description of the same event/product without a deadline or timeframe phrase; set title_consistent=false if it changes the entity, product, amount, event or temporal meaning. Omitting the deadline from the title is intentional because the exact closing time is displayed separately, while the canonical question and rules retain it. Verify documents are genuine and appropriate for eventual resolution. Reject if unavailable sources are required by any outcome clause; a source subset must satisfy the published criteria, never waive a required document. unverifiable or ambiguous questions. Do not rewrite the specification. Ambiguity limit is 1000 basis points. Mere source page reachability is insufficient.\",\"schema_version\":1,\"source_collection\":{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false},\"source_documents\":[{\"text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"url\":\"https://www.apple.com/newsroom/\"}],\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":86800000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"ambiguity_passed\":true,\"english_language_passed\":true,\"explanation\":\"Objective and source-verifiable criteria; faithful English translation.\",\"intent_preserved\":true,\"objectively_resolvable\":true,\"sources_appropriate\":true,\"title_consistent\":true},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"}",
+            "hash": "51f4dbba9de8e2f220394a6141dec9683c55bf267abadce377a61f6599820fec",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"input\":{\"candidates\":[],\"policy\":\"Independently compare every supplied candidate. Verify specification.duplicate_candidates includes every semantically similar candidate, IDs/hashes and material rule differences. Report candidates_accurate=false if any match is omitted or misclassified. Threshold 8500 basis points. An empty candidate search is complete, never invent matching forecasts.\",\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":86800000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"candidates_accurate\":true,\"check_completed\":true,\"explanation\":\"All candidates assessed.\"},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"}",
+            "hash": "c7b1ebda18e5d56c83562e6760d796964651c08ad0fa70bdd0bdb9c1b6833436",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":86800000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}",
+            "hash": "5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf",
+            "kind": "specification"
+          },
+          {
+            "body": "{\"ambiguity_judge\":{\"created_at_ms\":1000,\"input_hash\":\"5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"0cbb4a561e972c021469788a5033844b55a3aa21d2a6419c816a14dfb049a367\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":1000,\"input_hash\":\"6a9b9f82c88ca2cd1fb5eab8879242cc14b5d915058a10fa4b8f8c6858248d16\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"public-official-hosts-v2\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":1000,\"input_hash\":\"5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"dde8b5a6dbd1d13f858cebf8af35ab9763bebee15b7f6705222c03c1f5b26f2e\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective and source-verifiable criteria; faithful English translation.\\nDuplicate check: All candidates assessed.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf\",\"validated_at_ms\":1000}",
+            "hash": "32198d5fa8b649e0bc25e160f9743d19cf73861f849499c4f6d5a1b1948851fb",
+            "kind": "validation"
+          },
+          {
+            "body": "{\"input\":{\"as_of_ms\":1000,\"as_of_utc\":\"1970-01-01T00:00:01.000Z\",\"policy\":\"Estimate the probability of the published YES clause ultimately being satisfied, given only the supplied source context and knowledge you actually have as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish facts supported by the retained source documents from prior or historical knowledge. Do not assert a product is currently the latest version, a company currently does something, or any other current fact unless the retained source documents support it. If source context lacks current information, explicitly acknowledge that uncertainty instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale acknowledging important uncertainty. Never invent web research, crowd forecasts or observations. No betting, payouts or investment advice.\",\"schema_version\":1,\"source_documents\":[{\"text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"url\":\"https://www.apple.com/newsroom/\"}],\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":86800000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"rationale\":\"Available source context suggests 62%, with launch uncertainty.\",\"yesProbabilityBp\":6200},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AI_FORECAST\"}",
+            "hash": "a71367d2ef82277277766104905e784b7b6cf68b4bc19eadbf0f208d928a6f78",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"as_of_ms\":1000,\"decision_artifact_hash\":\"a71367d2ef82277277766104905e784b7b6cf68b4bc19eadbf0f208d928a6f78\",\"kind\":\"ai_forecast\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"rationale\":\"Available source context suggests 62%, with launch uncertainty.\",\"schema_version\":1,\"specification_hash\":\"5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf\",\"yes_probability_bp\":6200}",
+            "hash": "5fcc27e4b4d775a937364f6abf21e3907b9f0fdcb6f44086524e38e8a297f359",
+            "kind": "ai-forecast"
+          }
+        ],
+        "assessment": {
+          "ambiguity_judge": {
+            "created_at_ms": 1000,
+            "input_hash": "5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "0cbb4a561e972c021469788a5033844b55a3aa21d2a6419c816a14dfb049a367",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "AMBIGUITY_JUDGE"
+          },
+          "ambiguity_limit_bp": 1000,
+          "ambiguity_passed": true,
+          "compiler": {
+            "created_at_ms": 1000,
+            "input_hash": "6a9b9f82c88ca2cd1fb5eab8879242cc14b5d915058a10fa4b8f8c6858248d16",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "MARKET_COMPILER"
+          },
+          "deterministic_check_version": "public-official-hosts-v2",
+          "deterministic_passed": true,
+          "duplicate_check_completed": true,
+          "duplicate_detector": {
+            "created_at_ms": 1000,
+            "input_hash": "5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "dde8b5a6dbd1d13f858cebf8af35ab9763bebee15b7f6705222c03c1f5b26f2e",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "DUPLICATE_DETECTOR"
+          },
+          "duplicate_similarity_threshold_bp": 8500,
+          "explanation": "Objective and source-verifiable criteria; faithful English translation.\nDuplicate check: All candidates assessed.",
+          "objectively_resolvable": true,
+          "schema_version": 1,
+          "specification_hash": "5f1069f89956c930e524c38a694647bab50f5a4c9aa428b58602d0ae8ea472bf",
+          "validated_at_ms": 1000
+        },
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 86800000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        }
+      },
+      "name": "measurement-window",
+      "now_ms": 1000,
+      "payloads": [
+        {
+          "approved_fallback_hosts": {
+            "apnews.com": "AP",
+            "reuters.com": "Reuters",
+            "www.bbc.co.uk": "BBC",
+            "www.bbc.com": "BBC",
+            "www.reuters.com": "Reuters"
+          },
+          "approved_official_hosts": {
+            "api.kraken.com": "Kraken public market data",
+            "apple.com": "Apple",
+            "blog.google": "Google",
+            "blogs.microsoft.com": "Microsoft",
+            "blogs.nvidia.com": "NVIDIA",
+            "deepmind.google": "Google DeepMind",
+            "ethereum.org": "Ethereum",
+            "kostat.go.kr": "Statistics Korea",
+            "news.microsoft.com": "Microsoft",
+            "news.samsung.com": "Samsung",
+            "nvidianews.nvidia.com": "NVIDIA",
+            "openai.com": "OpenAI",
+            "science.nasa.gov": "NASA",
+            "solana.com": "Solana",
+            "www.apple.com": "Apple",
+            "www.bea.gov": "US BEA",
+            "www.bitstamp.net": "Bitstamp public market data",
+            "www.bls.gov": "US BLS",
+            "www.bok.or.kr": "Bank of Korea",
+            "www.climate.gov": "NOAA Climate",
+            "www.ecb.europa.eu": "ECB",
+            "www.esa.int": "European Space Agency",
+            "www.federalreserve.gov": "Federal Reserve",
+            "www.fifa.com": "FIFA",
+            "www.kma.go.kr": "KMA",
+            "www.kostat.go.kr": "Statistics Korea",
+            "www.microsoft.com": "Microsoft",
+            "www.nasa.gov": "NASA",
+            "www.noaa.gov": "NOAA",
+            "www.nvidia.com": "NVIDIA",
+            "www.olympics.com": "Olympics",
+            "www.spacex.com": "SpaceX",
+            "www.un.org": "United Nations",
+            "www.who.int": "World Health Organization"
+          },
+          "candidates": [],
+          "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+          "measurement_window": {
+            "canonical_expression": "[1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z)",
+            "end_at_ms": 86800000,
+            "end_at_utc": "1970-01-02T00:06:40Z",
+            "end_exclusive": true,
+            "input_expression": "[1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z)",
+            "start_at_ms": 120000,
+            "start_at_utc": "1970-01-01T00:02:00Z",
+            "start_inclusive": true,
+            "version": "single-bracket-utc-window-v1"
+          },
+          "now_ms": 1000,
+          "output_language": "en",
+          "policy": "Compile an objective, publicly verifiable future YES/NO/INVALID question. Translate the original input into English faithfully, preserving all entities, amounts, criteria, deadlines and timezones; never add or remove conditions. The English specification will be shown to the user for review before publication. Preserve user intent, explicitly resolve timezone to UTC, and use exactly now_ms as open_at_ms. Output close_at_utc as exact YYYY-MM-DDTHH:MM:SSZ; NEVER calculate or output close_at_ms. Repeat close_at_utc verbatim in canonical_question and each YES/NO rule condition, so human text and deadlines cannot diverge. Avoid alternative numeric dates in those texts. share_title must be a concise English question of at most 60 characters and must be timeless: omit ALL deadlines, dates, end-of-year, before/by date, this/next year and other timeframe phrases. The UI displays the exact closing time separately. Preserve product names/model numbers and the substantive event; never substitute an approximate or different deadline in the title. Do not invent a missing deadline or definition: encode high ambiguity so validation rejects it. Prefer one specific official text source that can resolve the question; add sources only when criteria require them. Optional fallback sources are used only when no primary can be retrieved, not mandatory corroboration. Choose 1-4 directly accessible relevant text sources on the approved hosts; all primary sources must be official. No login pages, search redirects, generic company homepage without resolution evidence, PDFs or private personal information. Document exhaustive YES/NO/INVALID clauses and source failure rules. Identify every supplied semantically similar candidate by candidate_ref (c0, c1, etc.) only; NEVER output or copy forecast_id or specification_hash in duplicate_candidates. References select the exact supplied identity and specification; assess similarity and material rule differences. Never invent or repeat a reference. Integer ambiguity score 0..10000. This input specifies one measurement window. Its start and end have different roles: copy measurement_window.canonical_expression exactly once into canonical_question and each YES/NO rule condition, including the opening [ and closing ). Set close_at_utc to its end_at_utc. Never replace start by end, move the window, omit it or use start as a separate deadline. Outside that bracket interval, every explicit time must be the exact closing UTC timestamp; the earlier instruction to avoid alternative dates does not remove this verified window start.",
+          "question": "During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?",
+          "schema_version": 1
+        },
+        {
+          "original_question": "During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?",
+          "output_language": "en",
+          "policy": "Independently judge exact criteria for objective coverage, non-overlap, timeframe, missing definitions and whether fetched source documents and dates preserve the original user's question without changing intent. Verify every public specification field is English, including the title, all rules, invalidation rules and source names; set english_language_passed accordingly. Compare against the exact original-language input and set intent_preserved=false if translation adds or removes a criterion, amount, entity, deadline or timezone. Verify the share title is a faithful timeless description of the same event/product without a deadline or timeframe phrase; set title_consistent=false if it changes the entity, product, amount, event or temporal meaning. Omitting the deadline from the title is intentional because the exact closing time is displayed separately, while the canonical question and rules retain it. Verify documents are genuine and appropriate for eventual resolution. Reject if unavailable sources are required by any outcome clause; a source subset must satisfy the published criteria, never waive a required document. unverifiable or ambiguous questions. Do not rewrite the specification. Ambiguity limit is 1000 basis points. Mere source page reachability is insufficient.",
+          "schema_version": 1,
+          "source_collection": {
+            "kind": "source_collection",
+            "policy": "primary-first-v1",
+            "retained_sources": [
+              {
+                "evidence_hash": "37760081e77c7bbd4ab67d8fe0cfda17248c88bcaa2346c5db4ac48e2b984bd2",
+                "source_id": "apple-news"
+              }
+            ],
+            "schema_version": 1,
+            "unavailable_sources": [],
+            "unfetched_fallback_source_ids": [],
+            "used_fallback": false
+          },
+          "source_documents": [
+            {
+              "text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 86800000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        },
+        {
+          "candidates": [],
+          "policy": "Independently compare every supplied candidate. Verify specification.duplicate_candidates includes every semantically similar candidate, IDs/hashes and material rule differences. Report candidates_accurate=false if any match is omitted or misclassified. Threshold 8500 basis points. An empty candidate search is complete, never invent matching forecasts.",
+          "schema_version": 1,
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 86800000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        },
+        {
+          "as_of_ms": 1000,
+          "as_of_utc": "1970-01-01T00:00:01.000Z",
+          "policy": "Estimate the probability of the published YES clause ultimately being satisfied, given only the supplied source context and knowledge you actually have as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish facts supported by the retained source documents from prior or historical knowledge. Do not assert a product is currently the latest version, a company currently does something, or any other current fact unless the retained source documents support it. If source context lacks current information, explicitly acknowledge that uncertainty instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale acknowledging important uncertainty. Never invent web research, crowd forecasts or observations. No betting, payouts or investment advice.",
+          "schema_version": 1,
+          "source_documents": [
+            {
+              "text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 86800000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        }
+      ],
+      "question": "During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?",
+      "responses": [
+        {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "During [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z), will Apple officially announce Product X?",
+          "category": "TECHNOLOGY",
+          "close_at_utc": "1970-01-02T00:06:40Z",
+          "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Measurement interval: [1970-01-01T00:02:00Z, 1970-01-02T00:06:40Z).",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        },
+        {
+          "ambiguity_passed": true,
+          "english_language_passed": true,
+          "explanation": "Objective and source-verifiable criteria; faithful English translation.",
+          "intent_preserved": true,
+          "objectively_resolvable": true,
+          "sources_appropriate": true,
+          "title_consistent": true
+        },
+        {
+          "candidates_accurate": true,
+          "check_completed": true,
+          "explanation": "All candidates assessed."
+        },
+        {
+          "rationale": "Available source context suggests 62%, with launch uncertainty.",
+          "yesProbabilityBp": 6200
+        }
+      ],
+      "sources": [
+        {
+          "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+          "contentType": "text/html",
+          "status": 200,
+          "url": "https://www.apple.com/newsroom/"
+        }
+      ]
+    }
+  ],
+  "description": "compile_question end to end: the compiler call, source collection, the ambiguity judge, the duplicate detector and the probability estimate.",
+  "providers": [
+    {
+      "apiKey": "test-key",
+      "model": "test-model",
+      "provider": "gemini"
+    }
+  ],
+  "wireVersion": "compiler-utc-candidate-ref-v3"
+}
