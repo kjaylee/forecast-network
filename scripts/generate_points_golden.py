@@ -38,6 +38,7 @@ sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/applicat
 from forecast_application.database import SQLiteDatabase  # noqa: E402
 from forecast_application.errors import AppError  # noqa: E402
 from forecast_application.points import PointsService  # noqa: E402
+from forecast_application.service import Application  # noqa: E402
 from tests.test_points import PointsTests  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/points-golden.json"
@@ -97,14 +98,58 @@ async def build() -> dict:
     # are left to the award trigger, which writes them from the awards.
     tables = ["users", "forecasts", "user_forecasts", "point_positions", "point_accounts",
               "point_awards", "point_ledger"]
+    # --- the evidence reward: the earliest held report whose evidence the trigger cites.
+    #
+    # Each case runs on its own fixture, because the reward is once-per-forecast and a shared store
+    # would make the second case a replay of the first.
+    reward_cases = []
+    for name, hashes, status in [
+        ("reward:none-cited", [], "held"),
+        ("reward:no-report", ["c" * 64], "held"),
+        ("reward:not-held", ["b" * 64], "received"),
+        ("reward:ok", ["b" * 64], "held"),
+        ("reward:again", ["b" * 64], "held"),
+    ]:
+        paid = PointsTests(methodName="runTest")
+        await paid.asyncSetUp()
+        await paid.opened("f-reward")
+        await paid.db.execute(
+            "INSERT INTO evidence_reports(id,forecast_id,user_id,url,status,artifact_hash,created_at,updated_at) "
+            "VALUES(?,?,?,?,?,?,?,?)",
+            ("er-1", "f-reward", "user-b", "https://www.apple.com/newsroom/x", status,
+             "b" * 64, paid.now - 500, paid.now - 500))
+        clock = paid
+        shim = type("App", (), {"db": paid.db, "now_ms": staticmethod(lambda: clock.now),
+                                "random_token": staticmethod(lambda: "t" * 32)})()
+        result = await Application.reward_evidence_report(shim, "f-reward", hashes)
+        if name == "reward:again":
+            # The `NOT EXISTS` guard is per forecast, not per report: a second qualifying report
+            # cannot pay again.
+            await paid.db.execute(
+                "INSERT INTO evidence_reports(id,forecast_id,user_id,url,status,artifact_hash,created_at,updated_at) "
+                "VALUES(?,?,?,?,?,?,?,?)",
+                ("er-2", "f-reward", "user-c", "https://www.apple.com/newsroom/y", "held",
+                 "b" * 64, paid.now - 400, paid.now - 400))
+            result = await Application.reward_evidence_report(shim, "f-reward", hashes)
+        reward_cases.append({
+            # The status the report *starts* with: the rows below are the state after the call,
+            # and a `reward:ok` report reads `rewarded` there, which is not what the query matched.
+            "call": name, "input": {"forecastId": "f-reward", "evidenceHashes": hashes,
+                                    "reportStatus": status}, "result": result,
+            "rows": {table: [dict(row) for row in await paid.db.all(f"SELECT * FROM {table} ORDER BY rowid")]
+                     for table in ("point_accounts", "point_evidence_rewards", "evidence_reports")},
+        })
+        paid.connection.close()
+
     rows = {table: [dict(row) for row in await case.db.all(f"SELECT * FROM {table} ORDER BY rowid")]
             for table in tables}
     return {
         "description": "The participation-points read models: the assembled history, the four "
-                       "onboarding states, and the identifier rules.",
+                       "onboarding states, the identifier rules, and the evidence reward.",
         "now": case.now,
         "rows": rows,
         "calls": calls,
+        "rewards": reward_cases,
     }
 
 

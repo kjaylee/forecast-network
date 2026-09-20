@@ -3,7 +3,7 @@
 use serde_json::{json, Value};
 use worker::*;
 
-use crate::db::{get, int, text, Database, Row};
+use crate::db::{self, get, int, text, Database, Row};
 
 pub const POLICY_VERSION: &str = "participation-points-v1";
 
@@ -231,6 +231,99 @@ pub async fn positions(
     Ok(result)
 }
 
+/// `EVIDENCE_REWARD_POINTS`: the fixed credit for the report that surfaced the evidence an
+/// accepted early resolution cites.
+///
+/// Nothing calls the reward yet: `automation.accept` is the caller, and the orchestration half of
+/// `automation.py` waits on the application layer. The same shape as `eligibility`'s deciding half,
+/// which carried `allow(dead_code)` until the early-resolution automation landed.
+#[allow(dead_code)]
+pub const EVIDENCE_REWARD_POINTS: i64 = 100;
+
+/// `Application.reward_evidence_report`: credit the *earliest* held report whose retained evidence
+/// the accepted trigger cites.
+///
+/// Three things about it are the whole rule. The report has to be `held`, because a report nobody
+/// reviewed is not evidence. The `NOT EXISTS` guard makes the reward once-per-forecast rather than
+/// once-per-report, so a second qualifying report cannot pay twice. And the earliest is chosen by
+/// `created_at, id`, which is what makes the payout deterministic when two arrived together.
+#[allow(dead_code)]
+pub async fn reward_evidence_report(
+    db: &dyn Database,
+    forecast_id: &str,
+    evidence_hashes: &[String],
+    now_ms: i64,
+    random_token: &dyn Fn() -> String,
+) -> Result<Option<Value>, PointsError> {
+    if evidence_hashes.is_empty() {
+        return Ok(None);
+    }
+    let placeholders = vec!["?"; evidence_hashes.len()].join(",");
+    let mut params = vec![json!(forecast_id)];
+    params.extend(evidence_hashes.iter().map(|hash| json!(hash)));
+    let report = db
+        .first(
+            &format!(
+                "SELECT r.* FROM evidence_reports r WHERE r.forecast_id=? AND r.status='held' \
+                 AND r.artifact_hash IN ({placeholders}) AND NOT EXISTS(SELECT 1 FROM point_evidence_rewards w \
+                 WHERE w.forecast_id=r.forecast_id) ORDER BY r.created_at,r.id LIMIT 1"
+            ),
+            &params,
+        )
+        .await?;
+    let Some(report) = report else {
+        return Ok(None);
+    };
+    let user_id = text(&report, "user_id").unwrap_or("").to_string();
+    let account = db
+        .first(
+            "SELECT available,committed FROM point_accounts WHERE user_id=?",
+            &[json!(user_id)],
+        )
+        .await?;
+    // No account is no reward, not an error: the caller is an accepted trigger, and failing here
+    // would undo a resolution that has already been decided.
+    let Some(account) = account else {
+        return Ok(None);
+    };
+    let report_id = text(&report, "id").unwrap_or("");
+    let token = (random_token)();
+    let reward_id = format!("pr_{}", &token[..24.min(token.len())]);
+    db.batch(&[
+        (
+            "UPDATE point_accounts SET available=available+?,updated_at=? WHERE user_id=?".to_string(),
+            vec![json!(EVIDENCE_REWARD_POINTS), json!(now_ms), json!(user_id)],
+        ),
+        (
+            concat!(
+                "INSERT INTO point_evidence_rewards(id,report_id,user_id,forecast_id,amount,available_after,",
+                "committed_after,created_at) VALUES(?,?,?,?,?,?,?,?)",
+            )
+            .to_string(),
+            vec![
+                json!(reward_id),
+                json!(report_id),
+                json!(user_id),
+                json!(forecast_id),
+                json!(EVIDENCE_REWARD_POINTS),
+                json!(int(&account, "available").unwrap_or(0) + EVIDENCE_REWARD_POINTS),
+                db::get(&account, "committed").clone(),
+                json!(now_ms),
+            ],
+        ),
+        (
+            "UPDATE evidence_reports SET status='rewarded',updated_at=? WHERE id=?".to_string(),
+            vec![json!(now_ms), json!(report_id)],
+        ),
+    ])
+    .await?;
+    Ok(Some(json!({
+        "reportId": report_id,
+        "userId": user_id,
+        "amount": EVIDENCE_REWARD_POINTS,
+    })))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -284,7 +377,7 @@ mod tests {
     /// order below is the order the triggers admit — the entry first, with no position yet, and the
     /// position it opened afterwards. The grant entries and the account are left to the award
     /// trigger, which writes both from the awards.
-    fn seed(db: &Sqlite, document: &Value) {
+    fn seed(db: &Sqlite, document: &Value, staked: bool) {
         let insert = |table: &str, row: &Value| {
             let fields = row.as_object().expect("a fixture row");
             let columns: Vec<&str> = fields.keys().map(String::as_str).collect();
@@ -301,9 +394,11 @@ mod tests {
                 insert(table, &row);
             }
         }
-        for row in document["rows"]["point_ledger"].as_array().cloned().unwrap_or_default() {
-            if row["kind"] == json!("reservation") {
-                insert("point_ledger", &row);
+        if staked {
+            for row in document["rows"]["point_ledger"].as_array().cloned().unwrap_or_default() {
+                if row["kind"] == json!("reservation") {
+                    insert("point_ledger", &row);
+                }
             }
         }
         // The position is not restored: the ledger's own trigger opens it on a first stake, which
@@ -332,7 +427,7 @@ mod tests {
         let document = golden();
         let calls = document["calls"].as_array().expect("calls").clone();
         let db = Sqlite::from_migrations();
-        seed(&db, &document);
+        seed(&db, &document, true);
         let mut index = 0usize;
 
         for position in 0..6 {
@@ -394,5 +489,139 @@ mod tests {
             "every recorded call that this signature can express is replayed"
         );
         assert_eq!(calls.len(), 13);
+    }
+
+    #[test]
+    fn the_reference_evidence_reward_is_reproduced_case_for_case() {
+        // The reward pays once per forecast, so each case runs on its own store: sharing one would
+        // make every case after the first a replay of it.
+        let document = golden();
+        let now = document["now"].as_i64().unwrap();
+        for entry in document["rewards"].as_array().expect("rewards") {
+            let name = entry["call"].as_str().unwrap();
+            let db = Sqlite::from_migrations();
+            seed(&db, &document, false);
+            // The reward fixture has no stake, so user-a's account is the grant alone. The stake
+            // belongs to the reader's fixture, and the vector records each fixture's own state.
+            db.run(
+                "UPDATE point_accounts SET available=1000,committed=0,updated_at=? WHERE user_id='user-a'",
+                &[json!(now - 200)],
+            )
+            .expect("account");
+            // The report under test: its status is the case, and everything else is the fixture.
+            // The reward cases name their own forecast, so the fixture gets a second one: the
+            // report's `forecast_id` is a foreign key, and a report about a question nobody
+            // published is not a row the store accepts. The row is copied from the seeded one and
+            // re-keyed, so every other column stays what the fixture made it.
+            let (seeded, _) = db
+                .run("SELECT * FROM forecasts WHERE id='f-staked'", &[])
+                .expect("the seeded forecast");
+            let mut copied = seeded[0].clone();
+            copied.insert("id".to_string(), json!("f-reward"));
+            copied.insert("draft_id".to_string(), json!("draft:f-reward"));
+            // The question and its normalization are unique per closing instant, so a second
+            // forecast about the same question at the same time is not a row the store accepts.
+            copied.insert("normalized_question".to_string(), json!("reward question"));
+            // And the specification hash is unique too: one published specification is one question.
+            copied.insert("specification_hash".to_string(), json!("c".repeat(64)));
+            let columns: Vec<&str> = copied.keys().map(String::as_str).collect();
+            let params: Vec<Value> = columns.iter().map(|name| copied[*name].clone()).collect();
+            db.run(
+                &format!(
+                    "INSERT INTO forecasts({}) VALUES({})",
+                    columns.join(","),
+                    vec!["?"; columns.len()].join(",")
+                ),
+                &params,
+            )
+            .expect("second forecast");
+            db.run(
+                concat!(
+                    "INSERT INTO evidence_reports(id,forecast_id,user_id,url,status,artifact_hash,created_at,",
+                    "updated_at) VALUES('er-1','f-reward','user-b','https://www.apple.com/newsroom/x',?,?,?,?)",
+                ),
+                &[
+                    entry["input"]["reportStatus"].clone(),
+                    json!("b".repeat(64)),
+                    json!(now - 500),
+                    json!(now - 500),
+                ],
+            )
+            .expect("report");
+            if name == "reward:again" {
+                // The second report is inserted before the second attempt, so the `NOT EXISTS`
+                // guard is what refuses it rather than the absence of a candidate.
+                db.run(
+                    concat!(
+                        "INSERT INTO evidence_reports(id,forecast_id,user_id,url,status,artifact_hash,created_at,",
+                        "updated_at) VALUES('er-2','f-reward','user-c','https://www.apple.com/newsroom/y','held',?,?,?)",
+                    ),
+                    &[json!("b".repeat(64)), json!(now - 400), json!(now - 400)],
+                )
+                .expect("second report");
+            }
+            let hashes: Vec<String> = entry["input"]["evidenceHashes"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default()
+                .iter()
+                .filter_map(|hash| hash.as_str().map(str::to_string))
+                .collect();
+            let token = || "t".repeat(32);
+            let mut produced =
+                block(reward_evidence_report(&db, "f-reward", &hashes, now, &token)).expect("the reward");
+            if name == "reward:again" {
+                // The vector's second call is the one it records: the first paid, and the guard is
+                // what refuses the second after another report qualifies.
+                produced = block(reward_evidence_report(&db, "f-reward", &hashes, now, &token)).expect("the reward");
+            }
+            assert_eq!(
+                produced.unwrap_or(Value::Null),
+                entry["result"],
+                "{name}: a different reward"
+            );
+            // The account is compared whole; the report and the reward row are compared on the
+            // columns this path writes, because the fixture's own rows carry fields it never
+            // touches.
+            let (accounts, _) = db
+                .run("SELECT * FROM point_accounts ORDER BY rowid", &[])
+                .expect("accounts");
+            assert_eq!(json!(accounts), entry["rows"]["point_accounts"], "{name}: accounts");
+            for table in ["point_evidence_rewards", "evidence_reports"] {
+                let (rows, _) = db
+                    .run(&format!("SELECT * FROM {table} ORDER BY rowid"), &[])
+                    .expect("rows");
+                let kept = |rows: Vec<Row>| -> Value {
+                    rows.iter()
+                        .map(|row| {
+                            let mut kept = serde_json::Map::new();
+                            for key in ["id", "status", "report_id", "user_id", "forecast_id", "amount"] {
+                                if let Some(value) = row.get(key) {
+                                    kept.insert(key.to_string(), value.clone());
+                                }
+                            }
+                            Value::Object(kept)
+                        })
+                        .collect::<Vec<Value>>()
+                        .into()
+                };
+                // The fixture's own rows carry fields the reward never touches, so the comparison
+                // is on the columns this path writes.
+                assert_eq!(
+                    kept(rows),
+                    kept(
+                        entry["rows"][table]
+                            .as_array()
+                            .cloned()
+                            .unwrap_or_default()
+                            .iter()
+                            .filter_map(Value::as_object)
+                            .cloned()
+                            .collect()
+                    ),
+                    "{name}: {table}"
+                );
+            }
+        }
     }
 }

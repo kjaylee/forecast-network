@@ -282,8 +282,286 @@
       }
     }
   ],
-  "description": "The participation-points read models: the assembled history, the four onboarding states, and the identifier rules.",
+  "description": "The participation-points read models: the assembled history, the four onboarding states, the identifier rules, and the evidence reward.",
   "now": 1000000,
+  "rewards": [
+    {
+      "call": "reward:none-cited",
+      "input": {
+        "evidenceHashes": [],
+        "forecastId": "f-reward",
+        "reportStatus": "held"
+      },
+      "result": null,
+      "rows": {
+        "evidence_reports": [
+          {
+            "article_id": null,
+            "artifact_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "created_at": 999500,
+            "forecast_id": "f-reward",
+            "id": "er-1",
+            "observation_id": null,
+            "status": "held",
+            "updated_at": 999500,
+            "url": "https://www.apple.com/newsroom/x",
+            "user_id": "user-b"
+          }
+        ],
+        "point_accounts": [
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-a"
+          },
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-b"
+          },
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-c"
+          }
+        ],
+        "point_evidence_rewards": []
+      }
+    },
+    {
+      "call": "reward:no-report",
+      "input": {
+        "evidenceHashes": [
+          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        ],
+        "forecastId": "f-reward",
+        "reportStatus": "held"
+      },
+      "result": null,
+      "rows": {
+        "evidence_reports": [
+          {
+            "article_id": null,
+            "artifact_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "created_at": 999500,
+            "forecast_id": "f-reward",
+            "id": "er-1",
+            "observation_id": null,
+            "status": "held",
+            "updated_at": 999500,
+            "url": "https://www.apple.com/newsroom/x",
+            "user_id": "user-b"
+          }
+        ],
+        "point_accounts": [
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-a"
+          },
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-b"
+          },
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-c"
+          }
+        ],
+        "point_evidence_rewards": []
+      }
+    },
+    {
+      "call": "reward:not-held",
+      "input": {
+        "evidenceHashes": [
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ],
+        "forecastId": "f-reward",
+        "reportStatus": "received"
+      },
+      "result": null,
+      "rows": {
+        "evidence_reports": [
+          {
+            "article_id": null,
+            "artifact_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "created_at": 999500,
+            "forecast_id": "f-reward",
+            "id": "er-1",
+            "observation_id": null,
+            "status": "received",
+            "updated_at": 999500,
+            "url": "https://www.apple.com/newsroom/x",
+            "user_id": "user-b"
+          }
+        ],
+        "point_accounts": [
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-a"
+          },
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-b"
+          },
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-c"
+          }
+        ],
+        "point_evidence_rewards": []
+      }
+    },
+    {
+      "call": "reward:ok",
+      "input": {
+        "evidenceHashes": [
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ],
+        "forecastId": "f-reward",
+        "reportStatus": "held"
+      },
+      "result": {
+        "amount": 100,
+        "reportId": "er-1",
+        "userId": "user-b"
+      },
+      "rows": {
+        "evidence_reports": [
+          {
+            "article_id": null,
+            "artifact_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "created_at": 999500,
+            "forecast_id": "f-reward",
+            "id": "er-1",
+            "observation_id": null,
+            "status": "rewarded",
+            "updated_at": 1000000,
+            "url": "https://www.apple.com/newsroom/x",
+            "user_id": "user-b"
+          }
+        ],
+        "point_accounts": [
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-a"
+          },
+          {
+            "available": 1100,
+            "committed": 0,
+            "updated_at": 1000000,
+            "user_id": "user-b"
+          },
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-c"
+          }
+        ],
+        "point_evidence_rewards": [
+          {
+            "amount": 100,
+            "available_after": 1100,
+            "committed_after": 0,
+            "created_at": 1000000,
+            "forecast_id": "f-reward",
+            "id": "pr_tttttttttttttttttttttttt",
+            "report_id": "er-1",
+            "user_id": "user-b"
+          }
+        ]
+      }
+    },
+    {
+      "call": "reward:again",
+      "input": {
+        "evidenceHashes": [
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ],
+        "forecastId": "f-reward",
+        "reportStatus": "held"
+      },
+      "result": null,
+      "rows": {
+        "evidence_reports": [
+          {
+            "article_id": null,
+            "artifact_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "created_at": 999500,
+            "forecast_id": "f-reward",
+            "id": "er-1",
+            "observation_id": null,
+            "status": "rewarded",
+            "updated_at": 1000000,
+            "url": "https://www.apple.com/newsroom/x",
+            "user_id": "user-b"
+          },
+          {
+            "article_id": null,
+            "artifact_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "created_at": 999600,
+            "forecast_id": "f-reward",
+            "id": "er-2",
+            "observation_id": null,
+            "status": "held",
+            "updated_at": 999600,
+            "url": "https://www.apple.com/newsroom/y",
+            "user_id": "user-c"
+          }
+        ],
+        "point_accounts": [
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-a"
+          },
+          {
+            "available": 1100,
+            "committed": 0,
+            "updated_at": 1000000,
+            "user_id": "user-b"
+          },
+          {
+            "available": 1000,
+            "committed": 0,
+            "updated_at": 999800,
+            "user_id": "user-c"
+          }
+        ],
+        "point_evidence_rewards": [
+          {
+            "amount": 100,
+            "available_after": 1100,
+            "committed_after": 0,
+            "created_at": 1000000,
+            "forecast_id": "f-reward",
+            "id": "pr_tttttttttttttttttttttttt",
+            "report_id": "er-1",
+            "user_id": "user-b"
+          }
+        ]
+      }
+    }
+  ],
   "rows": {
     "forecasts": [
       {
