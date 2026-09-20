@@ -491,6 +491,8 @@ impl<'a> Automation<'a> {
                 now_ms: self.now_ms,
                 extra,
                 job_token: None,
+                // An upgrade re-reads its evidence from retained bytes; it does not carry any.
+                timing_artifacts: Vec::new(),
             };
             mutate::mutate(self.db, mutation, self.now_ms, self.token, None)
                 .await
@@ -518,6 +520,8 @@ impl<'a> Automation<'a> {
                 now_ms: self.now_ms,
                 extra,
                 job_token: None,
+                // An upgrade re-reads its evidence from retained bytes; it does not carry any.
+                timing_artifacts: Vec::new(),
             };
             mutate::mutate(self.db, mutation, self.now_ms, self.token, None)
                 .await

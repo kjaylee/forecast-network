@@ -133,6 +133,9 @@ pub struct Mutation<'a> {
     pub now_ms: i64,
     pub extra: Vec<Statement>,
     pub job_token: Option<String>,
+    /// Evidence supplied *with this request*, so the timing review reads the same bytes the caller
+    /// did rather than re-fetching a page that may have changed. `(hash, body, media type)`.
+    pub timing_artifacts: Vec<(String, String, String)>,
 }
 
 fn transition_error() -> RouteError {
@@ -246,7 +249,8 @@ pub async fn mutate(
         Payload::ProposeResolution { .. } | Payload::AdjudicateResolution { .. } | Payload::Finalize { .. }
     ) {
         if let Some(resolution) = result.forecast.base().resolution.as_ref() {
-            crate::resolution_timing::check(db, forecast, resolution, mutation.now_ms, &[]).await?;
+            crate::resolution_timing::check(db, forecast, resolution, mutation.now_ms, &mutation.timing_artifacts)
+                .await?;
         }
     }
     let changed = &result.forecast;

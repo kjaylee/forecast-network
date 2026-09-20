@@ -296,6 +296,10 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
     } = job;
     for _ in 0..MAX_TRANSITIONS_PER_LEASE {
         let snapshot = load(db, forecast_id).await.map_err(JobFailure::from)?;
+        // What this transition carries beyond the command: the judge's artifacts, and the evidence
+        // the timing review reads. Both are per-lease, not accumulated across the loop.
+        let mut extra: Vec<Statement> = Vec::new();
+        let mut timing_artifacts: Vec<(String, String, String)> = Vec::new();
         let forecast = snapshot.base().clone();
         let state = forecast.state.clone();
         if state == "RESOLVING" {
@@ -364,6 +368,34 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                         let _ = retain(db, &artifact, now_ms).await;
                     }
                 }
+                // The artifacts the judge produced travel with the command *and* with the timing
+                // review: the review reads the bytes the judge read, rather than re-fetching a page
+                // that may have changed since.
+                let rows: Vec<crate::source_watch::Retained> = result
+                    .artifacts
+                    .iter()
+                    .map(|artifact| {
+                        (
+                            artifact.hash.clone(),
+                            artifact.kind.to_string(),
+                            artifact.body.clone(),
+                            "application/json".to_string(),
+                        )
+                    })
+                    .collect();
+                extra = crate::source_watch::artifact_sql(&rows, now_ms)
+                    .map_err(|refusal| JobFailure::new(refusal.code()))?;
+                timing_artifacts = result
+                    .artifacts
+                    .iter()
+                    .map(|artifact| {
+                        (
+                            artifact.hash.clone(),
+                            artifact.body.clone(),
+                            "application/json".to_string(),
+                        )
+                    })
+                    .collect();
                 Payload::ProposeResolution {
                     schema_version: 1,
                     resolution: forecast_domain::lifecycle::AnyResolution::Standard(resolution),
@@ -410,8 +442,9 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                 payload,
                 key,
                 now_ms: at,
-                extra: Vec::new(),
+                extra,
                 job_token: Some(job_token.to_string()),
+                timing_artifacts,
             },
             now_ms,
             token,
@@ -574,6 +607,7 @@ pub async fn run_due_jobs(
                                     now_ms,
                                     extra: Vec::new(),
                                     job_token: Some(token.clone()),
+                                    timing_artifacts: Vec::new(),
                                 },
                                 now_ms,
                                 &crate::mutate::random_token,

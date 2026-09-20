@@ -134,6 +134,53 @@ fn sort_keys(value: &Value) -> Value {
     }
 }
 
+/// The three ways retaining evidence can be refused, each with the reference's own code and text.
+///
+/// An enum rather than a message: the codes are a closed set, and a caller that had to re-derive
+/// them from text would be inventing a mapping the reference does not have — or, worse, leaking a
+/// string to keep it alive for a signature that wants `&'static str`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArtifactRefusal {
+    TooLarge,
+    Invalid,
+    HashMismatch,
+}
+
+impl ArtifactRefusal {
+    pub fn status(self) -> u16 {
+        match self {
+            ArtifactRefusal::TooLarge => 413,
+            ArtifactRefusal::Invalid | ArtifactRefusal::HashMismatch => 502,
+        }
+    }
+
+    pub fn code(self) -> &'static str {
+        match self {
+            ArtifactRefusal::TooLarge => "artifact_too_large",
+            ArtifactRefusal::Invalid => "artifact_invalid",
+            ArtifactRefusal::HashMismatch => "artifact_hash_mismatch",
+        }
+    }
+
+    pub fn message(self) -> &'static str {
+        match self {
+            ArtifactRefusal::TooLarge => "The evidence exceeds the storage limit.",
+            ArtifactRefusal::Invalid => "The AI result did not pass format validation.",
+            ArtifactRefusal::HashMismatch => "The evidence did not pass integrity verification.",
+        }
+    }
+}
+
+impl From<ArtifactRefusal> for WatchError {
+    fn from(refusal: ArtifactRefusal) -> Self {
+        WatchError::Refused {
+            status: refusal.status(),
+            code: refusal.code().to_string(),
+            message: refusal.message().to_string(),
+        }
+    }
+}
+
 /// `Application._artifact_sql`: the statements evidence is retained with, refusing anything that
 /// is not self-consistent before it becomes immutable.
 ///
@@ -146,37 +193,22 @@ fn sort_keys(value: &Value) -> Value {
 pub fn artifact_sql(
     artifacts: &[(String, String, String, String)],
     now_ms: i64,
-) -> Result<Vec<(String, Vec<Value>)>, WatchError> {
-    let over = |status: u16, code: &str, message: &str| WatchError::Refused {
-        status,
-        code: code.to_string(),
-        message: message.to_string(),
-    };
+) -> Result<Vec<(String, Vec<Value>)>, ArtifactRefusal> {
     let mut statements = Vec::new();
     let mut total = 0usize;
     for (content_hash, kind, body, media_type) in artifacts {
         total += body.len();
         if body.len() > MAX_ARTIFACT_BYTES || total > 4 * MAX_ARTIFACT_BYTES {
-            return Err(over(
-                413,
-                "artifact_too_large",
-                "The evidence exceeds the storage limit.",
-            ));
+            return Err(ArtifactRefusal::TooLarge);
         }
         let mut hashes = vec![hash_hex(body)];
         if media_type == "application/json" {
-            let parsed: Value = serde_json::from_str(body)
-                .map_err(|_| over(502, "artifact_invalid", "The AI result did not pass format validation."))?;
-            let commitment = forecast_domain::content_hash(&parsed)
-                .map_err(|_| over(502, "artifact_invalid", "The AI result did not pass format validation."))?;
+            let parsed: Value = serde_json::from_str(body).map_err(|_| ArtifactRefusal::Invalid)?;
+            let commitment = forecast_domain::content_hash(&parsed).map_err(|_| ArtifactRefusal::Invalid)?;
             hashes.push(commitment);
         }
         if !hashes.contains(content_hash) {
-            return Err(over(
-                502,
-                "artifact_hash_mismatch",
-                "The evidence did not pass integrity verification.",
-            ));
+            return Err(ArtifactRefusal::HashMismatch);
         }
         statements.push((
             "INSERT OR IGNORE INTO artifacts(hash,kind,body,media_type,created_at) VALUES(?,?,?,?,?)".to_string(),
@@ -1672,14 +1704,7 @@ mod tests {
             )],
             1,
         );
-        assert_eq!(
-            wrong.unwrap_err(),
-            WatchError::Refused {
-                status: 502,
-                code: "artifact_hash_mismatch".to_string(),
-                message: "The evidence did not pass integrity verification.".to_string(),
-            }
-        );
+        assert_eq!(wrong.unwrap_err(), ArtifactRefusal::HashMismatch);
         let body = "<p>x</p>";
         let right = artifact_sql(&[(hash_hex(body), "source".into(), body.into(), "text/html".into())], 7).unwrap();
         assert_eq!(right.len(), 1);
@@ -1717,13 +1742,6 @@ mod tests {
             )],
             7,
         );
-        assert_eq!(
-            refused.unwrap_err(),
-            WatchError::Refused {
-                status: 502,
-                code: "artifact_invalid".to_string(),
-                message: "The AI result did not pass format validation.".to_string(),
-            }
-        );
+        assert_eq!(refused.unwrap_err(), ArtifactRefusal::Invalid);
     }
 }
