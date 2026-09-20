@@ -2,7 +2,9 @@
 
 use serde_json::{json, Map, Value};
 
+use crate::db::{get, int, text, Row};
 use crate::discovery::integer;
+use crate::reads::PROFILE_CARD_PREFIX;
 
 pub fn display_translation(row: &Map<String, Value>) -> Option<Value> {
     let raw = row.get("display_translation")?.as_str().filter(|s| !s.is_empty())?;
@@ -163,4 +165,127 @@ LEFT JOIN active_participation_holds h ON h.forecast_id=f.id
 LEFT JOIN forecast_translations t ON t.forecast_id=f.id AND t.language='en' AND t.specification_hash=f.specification_hash
 "
     ))
+}
+
+// ---------------------------------------------------------------- profile cards
+
+/// `PROFILE_CARD_SQL`. One statement observes the identity, the whole scoring ledger, the
+/// translated titles, the newest history and the highlight at a single database snapshot — which is
+/// what makes `asOf` a statement about one read rather than about a sequence of them.
+/// Nothing calls the card yet: `profile_cards::snapshot` is the caller, and the publish route is
+/// part of the write phase this Worker still forwards to the Python Worker.
+#[allow(dead_code)]
+pub const PROFILE_CARD_SQL: &str = concat!(
+    "\nWITH target AS (\n",
+    " SELECT id,display_name,handle,created_at FROM users WHERE id=?\n",
+    "), finalizations AS (\n",
+    " SELECT e.forecast_id,MIN(e.created_at) AS finalized_at\n",
+    " FROM events e JOIN eligible_reputation_scores s ON s.forecast_id=e.forecast_id\n",
+    " JOIN target u ON u.id=s.user_id\n",
+    " WHERE json_extract(e.event,'$.command_name')='finalize'\n",
+    " GROUP BY e.forecast_id\n",
+    "), ledger AS (\n",
+    " SELECT s.forecast_id,s.outcome AS resolved_outcome,s.correct,s.probability,s.brier_score,\n",
+    "        f.specification_hash,COALESCE(json_extract(t.body,'$.title'),f.title) AS title,\n",
+    "        e.finalized_at\n",
+    " FROM eligible_reputation_scores s JOIN target u ON u.id=s.user_id\n",
+    " JOIN forecasts f ON f.id=s.forecast_id\n",
+    " JOIN finalizations e ON e.forecast_id=s.forecast_id\n",
+    " LEFT JOIN forecast_translations t ON t.forecast_id=f.id AND t.language='en'\n",
+    "  AND t.specification_hash=f.specification_hash\n",
+    " WHERE f.state IN ('FINALIZED','ARCHIVED') AND f.finalized_outcome=s.outcome\n",
+    "), scored AS (\n",
+    " SELECT *,\n",
+    "   CASE WHEN correct=1 THEN resolved_outcome\n",
+    "        WHEN resolved_outcome='YES' THEN 'NO' ELSE 'YES' END AS outcome,\n",
+    "   CASE WHEN (resolved_outcome='YES' AND correct=1) OR (resolved_outcome='NO' AND correct=0)\n",
+    "        THEN probability ELSE 100-probability END AS confidence,\n",
+    "   (probability-CASE WHEN resolved_outcome='YES' THEN 100 ELSE 0 END)*\n",
+    "   (probability-CASE WHEN resolved_outcome='YES' THEN 100 ELSE 0 END) AS squared_error\n",
+    " FROM ledger WHERE resolved_outcome IN ('YES','NO') AND correct IN (0,1) AND brier_score IS NOT NULL\n",
+    "), calibration_bins AS (\n",
+    " SELECT MIN(9,CAST(probability/10 AS INTEGER)) AS bin,\n",
+    "        SUM(probability) AS probability_sum,\n",
+    "        SUM(CASE WHEN resolved_outcome='YES' THEN 100 ELSE 0 END) AS outcome_sum\n",
+    " FROM scored GROUP BY bin\n",
+    "), newest AS (\n",
+    " SELECT * FROM scored ORDER BY finalized_at DESC,forecast_id ASC LIMIT 20\n",
+    "), highlight AS (\n",
+    " SELECT * FROM scored WHERE correct=1\n",
+    " ORDER BY squared_error ASC,finalized_at DESC,forecast_id ASC LIMIT 1\n",
+    ")\n",
+    "SELECT u.*,\n",
+    " (SELECT COUNT(*) FROM eligible_user_forecasts v WHERE v.user_id=u.id) AS total_forecasts,\n",
+    " (SELECT COUNT(*) FROM scored) AS resolved_forecasts,\n",
+    " (SELECT COALESCE(SUM(correct),0) FROM scored) AS correct_forecasts,\n",
+    " (SELECT COUNT(*) FROM ledger WHERE resolved_outcome='INVALID') AS invalid_forecasts,\n",
+    " (SELECT COALESCE(SUM(squared_error),0) FROM scored) AS brier_numerator,\n",
+    " (SELECT COALESCE(SUM(ABS(probability_sum-outcome_sum)),0) FROM calibration_bins) AS calibration_error_numerator,\n",
+    " (SELECT json_group_array(json_object('forecastId',forecast_id,'title',title,\n",
+    "   'outcome',outcome,'resolvedOutcome',resolved_outcome,'correct',correct,\n",
+    "   'confidence',confidence,'finalizedAt',finalized_at)) FROM newest) AS history_json,\n",
+    " (SELECT json_object('forecastId',forecast_id,'title',title,'outcome',outcome,\n",
+    "   'confidence',confidence,'resolvedAt',finalized_at,'specificationHash',specification_hash)\n",
+    "  FROM highlight) AS highlight_json\n",
+    "FROM target u\n",
+);
+
+/// `profile_card_payload`. Only the documented public fields — no account secret, no wallet.
+#[allow(dead_code)]
+pub fn profile_card_payload(row: &Row, as_of: i64) -> Value {
+    let count = int(row, "resolved_forecasts").unwrap_or(0);
+    let mut history: Vec<Value> = serde_json::from_str(text(row, "history_json").unwrap_or("[]")).unwrap_or_default();
+    for item in &mut history {
+        // SQLite reports the flag as `0`/`1`; the card reports it as a boolean, and the canonical
+        // encoding of `true` is not the encoding of `1`.
+        item["correct"] = json!(item["correct"].as_i64().unwrap_or(0) != 0);
+    }
+    let highlight: Value = text(row, "highlight_json")
+        .filter(|text| !text.is_empty())
+        .and_then(|text| serde_json::from_str(text).ok())
+        .unwrap_or(Value::Null);
+    let correct = int(row, "correct_forecasts").unwrap_or(0);
+    let brier = int(row, "brier_numerator").unwrap_or(0);
+    let calibration = int(row, "calibration_error_numerator").unwrap_or(0);
+    json!({
+        "schemaVersion": 1, "asOf": as_of,
+        "user": {"id": get(row, "id"), "displayName": get(row, "display_name"),
+                 "handle": get(row, "handle"), "createdAt": get(row, "created_at")},
+        "metrics": {
+            "totalForecasts": get(row, "total_forecasts"), "resolvedForecasts": count,
+            "correctForecasts": correct, "invalidForecasts": get(row, "invalid_forecasts"),
+            // Integer division first, then the float: Python computes `correct*100/count` as a
+            // float, and a port that divided in integer arithmetic would report `0` for a perfect
+            // score below 100.
+            "accuracy": if count != 0 { Some(correct as f64 * 100.0 / count as f64) } else { None },
+            "brierScore": if count != 0 { Some(brier as f64 / (10000.0 * count as f64)) } else { None },
+            "calibrationScore": if count != 0 { Some(1.0 - calibration as f64 / (100.0 * count as f64)) } else { None },
+        },
+        "sampleStatus": if count == 0 { "new" } else if count < 10 { "provisional" } else { "established" },
+        "history": history,
+        "historyTruncated": count > history.len() as i64,
+        "highlight": highlight,
+        "methodology": {
+            "version": "profile-card-v1",
+            "totalForecasts": "Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.",
+            "accuracy": "Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.",
+            "brierScore": "Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.",
+            "calibrationScore": "One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.",
+            "history": "The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.",
+            "highlight": "The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.",
+            "sampleStatus": "New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.",
+            "commitment": "An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.",
+        },
+        "commitmentProfile": {"algorithm": "SHA-256", "encoding": "UTF-8",
+            "prefix": PROFILE_CARD_PREFIX,
+            "canonicalization": "profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes"},
+    })
+}
+
+/// `profile_card_json`: the versioned display encoding, which is the *commitment* rule — non-ASCII
+/// raw, keys sorted, compact. `forecast_domain`'s integer-only rules do not apply to a payload whose
+/// accuracy is a float.
+#[allow(dead_code)]
+pub fn profile_card_json(payload: &Value) -> String {
+    crate::source_watch::compact(payload)
 }

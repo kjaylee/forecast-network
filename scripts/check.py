@@ -123,7 +123,10 @@ def main() -> int:
                 [sys.executable, "scripts/generate_solana_rpc_golden.py", "--check"],
                 # The points read models: an assembled history, four onboarding states, and an
                 # identifier rule that refuses rather than reporting a missing position.
-                [sys.executable, "scripts/generate_points_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_points_golden.py", "--check"],
+                # The profile card: one snapshot read, three metric divisions, and a publication the
+                # public lookup verifies against the hash it is stored under.
+                [sys.executable, "scripts/generate_profile_card_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

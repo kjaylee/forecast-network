@@ -12,7 +12,9 @@ use forecast_domain::{canonical_bytes, content_hash};
 use crate::db::{text, Database};
 use crate::routes::RouteError;
 
-pub const MAX_ARTIFACT_BYTES: usize = 262_144;
+/// The reference's `MAX_ARTIFACT_BYTES`. It bounds a retained artifact body, and it is also the
+/// unit of the four-artifact cap at the evidence boundary (`total > 4*MAX_ARTIFACT_BYTES`).
+pub const MAX_ARTIFACT_BYTES: usize = 524_288;
 pub const MAX_SNAPSHOT_BYTES: usize = 1_048_576;
 
 pub type Statement = (String, Vec<Value>);

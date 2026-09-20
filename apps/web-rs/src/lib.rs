@@ -27,6 +27,7 @@ mod mutate;
 pub mod participation_holds;
 pub mod point_markets;
 mod points;
+pub mod profile_cards;
 mod projections;
 mod reads;
 mod registry;

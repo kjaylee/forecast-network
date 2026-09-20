@@ -1,0 +1,363 @@
+{
+  "calls": [
+    {
+      "call": "snapshot:empty",
+      "input": {
+        "userId": "u_e7f6c011776e8db7cd330b54"
+      },
+      "result": {
+        "asOf": 1800000000000,
+        "canonicalJson": "{\"asOf\":1800000000000,\"commitmentProfile\":{\"algorithm\":\"SHA-256\",\"canonicalization\":\"profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes\",\"encoding\":\"UTF-8\",\"prefix\":\"forecast-network:sha256:profile-card-json:v1\\n\"},\"highlight\":null,\"history\":[],\"historyTruncated\":false,\"methodology\":{\"accuracy\":\"Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.\",\"brierScore\":\"Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.\",\"calibrationScore\":\"One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.\",\"commitment\":\"An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.\",\"highlight\":\"The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.\",\"history\":\"The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.\",\"sampleStatus\":\"New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.\",\"totalForecasts\":\"Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.\",\"version\":\"profile-card-v1\"},\"metrics\":{\"accuracy\":null,\"brierScore\":null,\"calibrationScore\":null,\"correctForecasts\":0,\"invalidForecasts\":0,\"resolvedForecasts\":0,\"totalForecasts\":0},\"sampleStatus\":\"new\",\"schemaVersion\":1,\"user\":{\"createdAt\":1800000000000,\"displayName\":\"다른 사용자\",\"handle\":\"f_e7f6c011776e\",\"id\":\"u_e7f6c011776e8db7cd330b54\"}}",
+        "commitmentProfile": {
+          "algorithm": "SHA-256",
+          "canonicalization": "profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes",
+          "encoding": "UTF-8",
+          "prefix": "forecast-network:sha256:profile-card-json:v1\n"
+        },
+        "highlight": null,
+        "history": [],
+        "historyTruncated": false,
+        "methodology": {
+          "accuracy": "Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.",
+          "brierScore": "Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.",
+          "calibrationScore": "One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.",
+          "commitment": "An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.",
+          "highlight": "The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.",
+          "history": "The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.",
+          "sampleStatus": "New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.",
+          "totalForecasts": "Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.",
+          "version": "profile-card-v1"
+        },
+        "metrics": {
+          "accuracy": null,
+          "brierScore": null,
+          "calibrationScore": null,
+          "correctForecasts": 0,
+          "invalidForecasts": 0,
+          "resolvedForecasts": 0,
+          "totalForecasts": 0
+        },
+        "sampleStatus": "new",
+        "schemaVersion": 1,
+        "snapshotHash": "4652cbe0b01f51f2830f79eef15e9fe2e6fff260993c77c2bb111f98d4ed2bcd",
+        "user": {
+          "createdAt": 1800000000000,
+          "displayName": "다른 사용자",
+          "handle": "f_e7f6c011776e",
+          "id": "u_e7f6c011776e8db7cd330b54"
+        }
+      }
+    },
+    {
+      "call": "snapshot:unknown",
+      "error": {
+        "code": "profile_not_found",
+        "message": "Profile not found.",
+        "status": 404
+      },
+      "input": {
+        "userId": "u-nobody"
+      }
+    },
+    {
+      "call": "snapshot:scored",
+      "input": {
+        "userId": "u_e7f6c011776e8db7cd330b54"
+      },
+      "result": {
+        "asOf": 1800000101000,
+        "canonicalJson": "{\"asOf\":1800000101000,\"commitmentProfile\":{\"algorithm\":\"SHA-256\",\"canonicalization\":\"profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes\",\"encoding\":\"UTF-8\",\"prefix\":\"forecast-network:sha256:profile-card-json:v1\\n\"},\"highlight\":null,\"history\":[],\"historyTruncated\":false,\"methodology\":{\"accuracy\":\"Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.\",\"brierScore\":\"Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.\",\"calibrationScore\":\"One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.\",\"commitment\":\"An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.\",\"highlight\":\"The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.\",\"history\":\"The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.\",\"sampleStatus\":\"New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.\",\"totalForecasts\":\"Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.\",\"version\":\"profile-card-v1\"},\"metrics\":{\"accuracy\":null,\"brierScore\":null,\"calibrationScore\":null,\"correctForecasts\":0,\"invalidForecasts\":0,\"resolvedForecasts\":0,\"totalForecasts\":1},\"sampleStatus\":\"new\",\"schemaVersion\":1,\"user\":{\"createdAt\":1800000000000,\"displayName\":\"다른 사용자\",\"handle\":\"f_e7f6c011776e\",\"id\":\"u_e7f6c011776e8db7cd330b54\"}}",
+        "commitmentProfile": {
+          "algorithm": "SHA-256",
+          "canonicalization": "profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes",
+          "encoding": "UTF-8",
+          "prefix": "forecast-network:sha256:profile-card-json:v1\n"
+        },
+        "highlight": null,
+        "history": [],
+        "historyTruncated": false,
+        "methodology": {
+          "accuracy": "Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.",
+          "brierScore": "Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.",
+          "calibrationScore": "One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.",
+          "commitment": "An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.",
+          "highlight": "The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.",
+          "history": "The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.",
+          "sampleStatus": "New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.",
+          "totalForecasts": "Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.",
+          "version": "profile-card-v1"
+        },
+        "metrics": {
+          "accuracy": null,
+          "brierScore": null,
+          "calibrationScore": null,
+          "correctForecasts": 0,
+          "invalidForecasts": 0,
+          "resolvedForecasts": 0,
+          "totalForecasts": 1
+        },
+        "sampleStatus": "new",
+        "schemaVersion": 1,
+        "snapshotHash": "119ef52ddeefddfeea0b4edfacb639ee289da3d8fb1644295bdb2cc66d66e0b7",
+        "user": {
+          "createdAt": 1800000000000,
+          "displayName": "다른 사용자",
+          "handle": "f_e7f6c011776e",
+          "id": "u_e7f6c011776e8db7cd330b54"
+        }
+      }
+    },
+    {
+      "call": "create",
+      "input": {
+        "userId": "u_e7f6c011776e8db7cd330b54"
+      },
+      "result": {
+        "asOf": 1800000101000,
+        "canonicalJson": "{\"asOf\":1800000101000,\"commitmentProfile\":{\"algorithm\":\"SHA-256\",\"canonicalization\":\"profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes\",\"encoding\":\"UTF-8\",\"prefix\":\"forecast-network:sha256:profile-card-json:v1\\n\"},\"highlight\":null,\"history\":[],\"historyTruncated\":false,\"methodology\":{\"accuracy\":\"Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.\",\"brierScore\":\"Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.\",\"calibrationScore\":\"One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.\",\"commitment\":\"An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.\",\"highlight\":\"The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.\",\"history\":\"The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.\",\"sampleStatus\":\"New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.\",\"totalForecasts\":\"Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.\",\"version\":\"profile-card-v1\"},\"metrics\":{\"accuracy\":null,\"brierScore\":null,\"calibrationScore\":null,\"correctForecasts\":0,\"invalidForecasts\":0,\"resolvedForecasts\":0,\"totalForecasts\":1},\"sampleStatus\":\"new\",\"schemaVersion\":1,\"user\":{\"createdAt\":1800000000000,\"displayName\":\"다른 사용자\",\"handle\":\"f_e7f6c011776e\",\"id\":\"u_e7f6c011776e8db7cd330b54\"}}",
+        "commitmentProfile": {
+          "algorithm": "SHA-256",
+          "canonicalization": "profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes",
+          "encoding": "UTF-8",
+          "prefix": "forecast-network:sha256:profile-card-json:v1\n"
+        },
+        "highlight": null,
+        "history": [],
+        "historyTruncated": false,
+        "methodology": {
+          "accuracy": "Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.",
+          "brierScore": "Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.",
+          "calibrationScore": "One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.",
+          "commitment": "An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.",
+          "highlight": "The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.",
+          "history": "The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.",
+          "sampleStatus": "New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.",
+          "totalForecasts": "Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.",
+          "version": "profile-card-v1"
+        },
+        "metrics": {
+          "accuracy": null,
+          "brierScore": null,
+          "calibrationScore": null,
+          "correctForecasts": 0,
+          "invalidForecasts": 0,
+          "resolvedForecasts": 0,
+          "totalForecasts": 1
+        },
+        "sampleStatus": "new",
+        "schemaVersion": 1,
+        "snapshotHash": "119ef52ddeefddfeea0b4edfacb639ee289da3d8fb1644295bdb2cc66d66e0b7",
+        "user": {
+          "createdAt": 1800000000000,
+          "displayName": "다른 사용자",
+          "handle": "f_e7f6c011776e",
+          "id": "u_e7f6c011776e8db7cd330b54"
+        }
+      }
+    },
+    {
+      "call": "lookup:published",
+      "input": {
+        "snapshotHash": "119ef52ddeefddfeea0b4edfacb639ee289da3d8fb1644295bdb2cc66d66e0b7"
+      },
+      "result": {
+        "asOf": 1800000101000,
+        "canonicalJson": "{\"asOf\":1800000101000,\"commitmentProfile\":{\"algorithm\":\"SHA-256\",\"canonicalization\":\"profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes\",\"encoding\":\"UTF-8\",\"prefix\":\"forecast-network:sha256:profile-card-json:v1\\n\"},\"highlight\":null,\"history\":[],\"historyTruncated\":false,\"methodology\":{\"accuracy\":\"Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.\",\"brierScore\":\"Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.\",\"calibrationScore\":\"One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.\",\"commitment\":\"An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.\",\"highlight\":\"The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.\",\"history\":\"The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.\",\"sampleStatus\":\"New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.\",\"totalForecasts\":\"Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.\",\"version\":\"profile-card-v1\"},\"metrics\":{\"accuracy\":null,\"brierScore\":null,\"calibrationScore\":null,\"correctForecasts\":0,\"invalidForecasts\":0,\"resolvedForecasts\":0,\"totalForecasts\":1},\"sampleStatus\":\"new\",\"schemaVersion\":1,\"user\":{\"createdAt\":1800000000000,\"displayName\":\"다른 사용자\",\"handle\":\"f_e7f6c011776e\",\"id\":\"u_e7f6c011776e8db7cd330b54\"}}",
+        "commitmentProfile": {
+          "algorithm": "SHA-256",
+          "canonicalization": "profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes",
+          "encoding": "UTF-8",
+          "prefix": "forecast-network:sha256:profile-card-json:v1\n"
+        },
+        "highlight": null,
+        "history": [],
+        "historyTruncated": false,
+        "methodology": {
+          "accuracy": "Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.",
+          "brierScore": "Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.",
+          "calibrationScore": "One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.",
+          "commitment": "An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.",
+          "highlight": "The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.",
+          "history": "The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.",
+          "sampleStatus": "New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.",
+          "totalForecasts": "Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.",
+          "version": "profile-card-v1"
+        },
+        "metrics": {
+          "accuracy": null,
+          "brierScore": null,
+          "calibrationScore": null,
+          "correctForecasts": 0,
+          "invalidForecasts": 0,
+          "resolvedForecasts": 0,
+          "totalForecasts": 1
+        },
+        "sampleStatus": "new",
+        "schemaVersion": 1,
+        "snapshotHash": "119ef52ddeefddfeea0b4edfacb639ee289da3d8fb1644295bdb2cc66d66e0b7",
+        "user": {
+          "createdAt": 1800000000000,
+          "displayName": "다른 사용자",
+          "handle": "f_e7f6c011776e",
+          "id": "u_e7f6c011776e8db7cd330b54"
+        }
+      }
+    },
+    {
+      "call": "lookup:not-a-hash",
+      "error": {
+        "code": "profile_card_not_found",
+        "message": "Shared profile record not found.",
+        "status": 404
+      },
+      "input": {
+        "snapshotHash": "nope"
+      }
+    },
+    {
+      "call": "lookup:unknown",
+      "error": {
+        "code": "profile_card_integrity_failed",
+        "message": "This shared profile record failed integrity verification.",
+        "status": 503
+      },
+      "input": {
+        "snapshotHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    }
+  ],
+  "description": "The profile card: the single-snapshot read, the three metric divisions, the boolean `correct`, and the publication the public lookup verifies.",
+  "forecastId": "f_19581e27de7ced00ff1ce50b",
+  "initial": {
+    "artifacts": [],
+    "forecasts": [],
+    "user_forecasts": [],
+    "users": [
+      {
+        "created_at": 1800000000000,
+        "display_name": "테스터",
+        "handle": "f_4e07408562be",
+        "id": "u_4e07408562bedb8b60ce05c1",
+        "recovery_hash": "7444c5ccee4aba92f325831bd6df61ececb73bb98b0df02ee6032633a4e43c96"
+      },
+      {
+        "created_at": 1800000000000,
+        "display_name": "다른 사용자",
+        "handle": "f_e7f6c011776e",
+        "id": "u_e7f6c011776e8db7cd330b54",
+        "recovery_hash": "0ec2e8eb334b6f181d147a055a970b6e391d1e6872dae8924342378ebc1c1aaf"
+      }
+    ]
+  },
+  "now": 1800000101000,
+  "rows": {
+    "artifacts": [
+      {
+        "body": "{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme officially announce Product X before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme officially announce Product X before the deadline?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}}",
+        "created_at": 1800000000000,
+        "hash": "7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28",
+        "kind": "specification",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"81429d457193b8011bcc45b3c0066d82fd4d941b59993ebf0dc369970ed1185d\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7005b665785b2f3fa9085621b6c400e23e97f9c242c5a7e7a6de08e76d8550d8\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"validated_at_ms\":1800000000000}",
+        "created_at": 1800000000000,
+        "hash": "b6975234c822832aa0835894d633803a9e2ee1a7d6b92fd8464572dd83eae8f7",
+        "kind": "validation",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"confidence\":80,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"forecaster_id\":\"u_e7f6c011776e8db7cd330b54\",\"outcome\":\"YES\",\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"submitted_at_ms\":1800000000000}",
+        "created_at": 1800000000000,
+        "hash": "af7e818c9784a31540982a395bfcacb4399df0dc93d2e5c0b71a16b1b91a26f2",
+        "kind": "user_forecast",
+        "media_type": "application/json"
+      },
+      {
+        "body": "<meta property=\"article:published_time\" content=\"2027-01-15T08:01:40+00:00\"><article>Immutable official announcement.</article>",
+        "created_at": 1800000101000,
+        "hash": "91e3bb7e7f3324ab464dc560dcb2748d8d6b739df280dd94bf2022aadb3a16e4",
+        "kind": "source",
+        "media_type": "text/plain"
+      },
+      {
+        "body": "{\"confidence_bp\":9400,\"conflict_explanation\":null,\"conflict_status\":\"CLEAR\",\"counter_judge\":{\"created_at_ms\":1800000100013,\"input_hash\":\"bd009539fdc5f83853f8969eb5eb50252e183382761daed583b1f61b85783f24\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"2320582dc82669289f1dd96b4bc6d4b9594c826e19cc10c1ab93d2017e0c2d30\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"COUNTER_JUDGE\"},\"counter_judge_agrees\":true,\"evidence\":[{\"collected_at_ms\":1800000100010,\"collector\":{\"created_at_ms\":1800000100010,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"91e3bb7e7f3324ab464dc560dcb2748d8d6b739df280dd94bf2022aadb3a16e4\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"EVIDENCE_COLLECTOR\"},\"content_sha256\":\"91e3bb7e7f3324ab464dc560dcb2748d8d6b739df280dd94bf2022aadb3a16e4\",\"evidence_id\":\"evidence-1\",\"schema_version\":1,\"snapshot_uri\":\"urn:sha256:91e3bb7e7f3324ab464dc560dcb2748d8d6b739df280dd94bf2022aadb3a16e4\",\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news/product-x\"}],\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"judge\":{\"created_at_ms\":1800000100012,\"input_hash\":\"b40f328e1cd522369bbd76a6f469928e8d9da18b7842b7483c25d3b84c28fb76\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"fd5b9b19c4f50ebe8d5d370a7b68a9e12d325dd4000431910cdd9b5dec588a16\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"RESOLUTION_JUDGE\"},\"proposed_at_ms\":1800000101000,\"proposed_outcome\":\"YES\",\"reason_summary\":\"The retained official evidence satisfies the selected clause.\",\"rule_conflicts\":[],\"rule_matches\":[\"yes-rule\"],\"schema_version\":1,\"source_verifications\":[{\"evidence_hash\":\"bddc57c08846d95403973f55017f2b3e82c59baf5e4fa1466fd38de3747e6902\",\"explanation\":\"Snapshot origin and retained bytes verified.\",\"schema_version\":1,\"source_id\":\"acme-news\",\"verified\":true,\"verifier\":{\"created_at_ms\":1800000100011,\"input_hash\":\"bddc57c08846d95403973f55017f2b3e82c59baf5e4fa1466fd38de3747e6902\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"6baf52f658f0814f330601968e48a871cffdd52899b2af39c7438e8e62a372c1\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"SOURCE_VERIFIER\"}}],\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\"}",
+        "created_at": 1800000101000,
+        "hash": "3383b02726b1a38a95c87fff52f4a76862a71296b2d9e5c1c2f5a9e8cc22889e",
+        "kind": "resolution",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"asOf\":1800000101000,\"commitmentProfile\":{\"algorithm\":\"SHA-256\",\"canonicalization\":\"profile-card-json-v1: compact UTF-8 JSON with recursively sorted keys; verify the exact supplied canonicalJson bytes\",\"encoding\":\"UTF-8\",\"prefix\":\"forecast-network:sha256:profile-card-json:v1\\n\"},\"highlight\":null,\"history\":[],\"historyTruncated\":false,\"methodology\":{\"accuracy\":\"Correct personal choices divided by all scored, finalized YES/NO forecasts, as a percentage. INVALID is excluded.\",\"brierScore\":\"Mean squared error of the recorded YES probability against the finalized result. Zero is best; INVALID is excluded.\",\"calibrationScore\":\"One minus weighted absolute calibration error in ten YES-probability bins. INVALID is excluded.\",\"commitment\":\"An owner-published application snapshot, not an on-chain certificate. Hash the exact retained canonicalJson UTF-8 bytes with the stated prefix.\",\"highlight\":\"The correct personal forecast with the lowest Brier error; ties use latest finalization, then forecast ID. This is a selected example.\",\"history\":\"The newest 20 scored YES/NO results. Outcome and confidence are the user's actual choice; resolvedOutcome is the final result.\",\"sampleStatus\":\"New means no scored YES/NO results; provisional means 1–9; established means at least 10. These are sample sizes, not rankings.\",\"totalForecasts\":\"Distinct forecasts with an eligible personal forecast, including pending and invalid question results; evidence-voided submissions are excluded.\",\"version\":\"profile-card-v1\"},\"metrics\":{\"accuracy\":null,\"brierScore\":null,\"calibrationScore\":null,\"correctForecasts\":0,\"invalidForecasts\":0,\"resolvedForecasts\":0,\"totalForecasts\":1},\"sampleStatus\":\"new\",\"schemaVersion\":1,\"user\":{\"createdAt\":1800000000000,\"displayName\":\"다른 사용자\",\"handle\":\"f_e7f6c011776e\",\"id\":\"u_e7f6c011776e8db7cd330b54\"}}",
+        "created_at": 1800000101000,
+        "hash": "119ef52ddeefddfeea0b4edfacb639ee289da3d8fb1644295bdb2cc66d66e0b7",
+        "kind": "profile-share-snapshot",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"schemaVersion\":1}",
+        "created_at": 1800000101000,
+        "hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "kind": "profile-share-snapshot",
+        "media_type": "application/json"
+      }
+    ],
+    "forecasts": [
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": 1800172901000,
+        "close_at": 1800000100000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_2c624232cdd221771294dfbb",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_19581e27de7ced00ff1ce50b",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "job:6",
+        "normalized_question": "will acme officially announce product x before the deadline?",
+        "open_at": 1800000000000,
+        "question": "Will Acme officially announce Product X before the deadline?",
+        "retry_at": 0,
+        "revision": 7,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"6eace1a6249a1b77562d255f6e8cd0721f0b25b3ed1cc9e9042137c7ac1bc777\",\"challenge_started_at_ms\":1800000101000,\"challenge_until_ms\":1800172901000,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"latest_event\":{\"artifact_hash\":null,\"command_id\":\"job:6\",\"command_name\":\"begin_challenge\",\"effects\":[],\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"new_state\":\"CHALLENGE\",\"occurred_at_ms\":1800000101000,\"old_state\":\"PROPOSED\",\"previous_event_hash\":\"038c0ba745b62bd1494706de4d951ba07464e9ccb296bad6dc146e39aa92ec3d\",\"revision\":7,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"state_hash\":\"c719b6b8a9ab658ee4af25cb86acac90e1662fd6aec92b8a0b896cd6ad3edd88\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":{\"confidence_bp\":9400,\"conflict_explanation\":null,\"conflict_status\":\"CLEAR\",\"counter_judge\":{\"created_at_ms\":1800000100013,\"input_hash\":\"bd009539fdc5f83853f8969eb5eb50252e183382761daed583b1f61b85783f24\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"2320582dc82669289f1dd96b4bc6d4b9594c826e19cc10c1ab93d2017e0c2d30\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"COUNTER_JUDGE\"},\"counter_judge_agrees\":true,\"evidence\":[{\"collected_at_ms\":1800000100010,\"collector\":{\"created_at_ms\":1800000100010,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"91e3bb7e7f3324ab464dc560dcb2748d8d6b739df280dd94bf2022aadb3a16e4\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"EVIDENCE_COLLECTOR\"},\"content_sha256\":\"91e3bb7e7f3324ab464dc560dcb2748d8d6b739df280dd94bf2022aadb3a16e4\",\"evidence_id\":\"evidence-1\",\"schema_version\":1,\"snapshot_uri\":\"urn:sha256:91e3bb7e7f3324ab464dc560dcb2748d8d6b739df280dd94bf2022aadb3a16e4\",\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news/product-x\"}],\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"judge\":{\"created_at_ms\":1800000100012,\"input_hash\":\"b40f328e1cd522369bbd76a6f469928e8d9da18b7842b7483c25d3b84c28fb76\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"fd5b9b19c4f50ebe8d5d370a7b68a9e12d325dd4000431910cdd9b5dec588a16\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"RESOLUTION_JUDGE\"},\"proposed_at_ms\":1800000101000,\"proposed_outcome\":\"YES\",\"reason_summary\":\"The retained official evidence satisfies the selected clause.\",\"rule_conflicts\":[],\"rule_matches\":[\"yes-rule\"],\"schema_version\":1,\"source_verifications\":[{\"evidence_hash\":\"bddc57c08846d95403973f55017f2b3e82c59baf5e4fa1466fd38de3747e6902\",\"explanation\":\"Snapshot origin and retained bytes verified.\",\"schema_version\":1,\"source_id\":\"acme-news\",\"verified\":true,\"verifier\":{\"created_at_ms\":1800000100011,\"input_hash\":\"bddc57c08846d95403973f55017f2b3e82c59baf5e4fa1466fd38de3747e6902\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"6baf52f658f0814f330601968e48a871cffdd52899b2af39c7438e8e62a372c1\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"SOURCE_VERIFIER\"}}],\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\"},\"revision\":7,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme officially announce Product X before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme officially announce Product X before the deadline?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"state\":\"CHALLENGE\",\"updated_at_ms\":1800000101000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"81429d457193b8011bcc45b3c0066d82fd4d941b59993ebf0dc369970ed1185d\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7005b665785b2f3fa9085621b6c400e23e97f9c242c5a7e7a6de08e76d8550d8\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28",
+        "state": "CHALLENGE",
+        "title": "Will Acme officially announce Product X before the deadline?",
+        "updated_at": 1800000101000
+      }
+    ],
+    "user_forecasts": [
+      {
+        "body": "{\"confidence\":80,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"forecaster_id\":\"u_e7f6c011776e8db7cd330b54\",\"outcome\":\"YES\",\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"submitted_at_ms\":1800000000000}",
+        "confidence": 80,
+        "forecast_id": "f_19581e27de7ced00ff1ce50b",
+        "outcome": "YES",
+        "revision": 3,
+        "submitted_at": 1800000000000,
+        "user_id": "u_e7f6c011776e8db7cd330b54",
+        "yes_probability": 80
+      }
+    ],
+    "users": [
+      {
+        "created_at": 1800000000000,
+        "display_name": "테스터",
+        "handle": "f_4e07408562be",
+        "id": "u_4e07408562bedb8b60ce05c1",
+        "recovery_hash": "7444c5ccee4aba92f325831bd6df61ececb73bb98b0df02ee6032633a4e43c96"
+      },
+      {
+        "created_at": 1800000000000,
+        "display_name": "다른 사용자",
+        "handle": "f_e7f6c011776e",
+        "id": "u_e7f6c011776e8db7cd330b54",
+        "recovery_hash": "0ec2e8eb334b6f181d147a055a970b6e391d1e6872dae8924342378ebc1c1aaf"
+      }
+    ]
+  }
+}
