@@ -1,0 +1,216 @@
+{
+  "blockhash": "4NxfraNr8a8YY5prg5LcCN8huUwgCoxmw5K3wPAR73Va",
+  "calls": [
+    {
+      "call": "prepare:no-blockhash",
+      "error": {
+        "code": "attestation_blockhash",
+        "message": "A recent Devnet blockhash is required.",
+        "status": 400
+      },
+      "input": {}
+    },
+    {
+      "call": "prepare:blockhash-not-a-string",
+      "error": {
+        "code": "attestation_blockhash",
+        "message": "A recent Devnet blockhash is required.",
+        "status": 400
+      },
+      "input": {}
+    },
+    {
+      "call": "prepare:blockhash-not-base58",
+      "error": {
+        "code": "attestation_blockhash",
+        "message": "A recent Devnet blockhash is required.",
+        "status": 400
+      },
+      "input": {}
+    },
+    {
+      "call": "prepare:no-receipt",
+      "error": {
+        "code": "attestation_requires_forecast",
+        "message": "Record a forecast before stamping it on-chain.",
+        "status": 409
+      },
+      "input": {}
+    },
+    {
+      "call": "prepare:no-wallet",
+      "error": {
+        "code": "attestation_requires_wallet",
+        "message": "Sign in with your wallet to stamp a forecast on-chain.",
+        "status": 409
+      },
+      "input": {}
+    },
+    {
+      "call": "prepare:ok",
+      "input": {},
+      "result": {
+        "attestationId": "at_attestationtoken10000000",
+        "cluster": "devnet",
+        "expiresAt": 1800000090000,
+        "feePayer": "7kuT1dfMhUysWcLEV1eYk8ir7RTjszHmsUdrrPQNThcv",
+        "memo": "forecast-attest-v1 forecast=f-att receipt=6c29827386d79a89aa81c99ac2cb21e3d46e07678cfc8cf68a65591452f20aeb",
+        "signerAddress": "EWo1KkENqJgXTfLz6tGRqfu8XJVsELwmkHHUgPtHB1sc",
+        "transaction": "AocLuHS0Ic/mVwF4iPtID/J8P/d0crb05HM6jcmNFPxYytNA5eJa/NYYz191RkPXiGQR6PZ1GoDtTwpw0agWuOYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgEBA2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ucFSlNamSkhBk0k6HFg2jh8fDW13bySu4HkH6hAQQVEjTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRAQIBAWpmb3JlY2FzdC1hdHRlc3QtdjEgZm9yZWNhc3Q9Zi1hdHQgcmVjZWlwdD02YzI5ODI3Mzg2ZDc5YTg5YWE4MWM5OWFjMmNiMjFlM2Q0NmUwNzY3OGNmYzhjZjY4YTY1NTkxNDUyZjIwYWVi"
+      }
+    },
+    {
+      "call": "confirm:not-a-signature",
+      "error": {
+        "code": "attestation_confirm_invalid",
+        "message": "A transaction signature is required.",
+        "status": 400
+      },
+      "input": {}
+    },
+    {
+      "call": "confirm:unknown",
+      "error": {
+        "code": "attestation_not_found",
+        "message": "This attestation was not prepared here.",
+        "status": 404
+      },
+      "input": {}
+    },
+    {
+      "call": "confirm:negative-slot",
+      "error": {
+        "code": "attestation_confirm_invalid",
+        "message": "A transaction signature is required.",
+        "status": 400
+      },
+      "input": {}
+    },
+    {
+      "call": "confirm:ok",
+      "input": {},
+      "result": {
+        "at": 1800000000000,
+        "available": true,
+        "cluster": "devnet",
+        "commitment": "a0ffac183d3d76c36da0f8a0e7f723c70935a5852a79c23c8c1d02cea7532c5b",
+        "explorer": "https://explorer.solana.com/tx/2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T?cluster=devnet",
+        "memo": "forecast-attest-v1 forecast=f-att receipt=6c29827386d79a89aa81c99ac2cb21e3d46e07678cfc8cf68a65591452f20aeb",
+        "signature": "2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T",
+        "slot": 12345,
+        "status": "submitted"
+      }
+    },
+    {
+      "call": "confirm:again",
+      "input": {},
+      "result": {
+        "at": 1800000000000,
+        "available": true,
+        "cluster": "devnet",
+        "commitment": "a0ffac183d3d76c36da0f8a0e7f723c70935a5852a79c23c8c1d02cea7532c5b",
+        "explorer": "https://explorer.solana.com/tx/2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T?cluster=devnet",
+        "memo": "forecast-attest-v1 forecast=f-att receipt=6c29827386d79a89aa81c99ac2cb21e3d46e07678cfc8cf68a65591452f20aeb",
+        "signature": "2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T",
+        "slot": 12345,
+        "status": "submitted"
+      }
+    },
+    {
+      "call": "confirm:different-signature",
+      "error": {
+        "code": "attestation_conflict",
+        "message": "This attestation already has a different signature.",
+        "status": 409
+      },
+      "input": {}
+    },
+    {
+      "call": "status:anonymous",
+      "input": {},
+      "result": null
+    },
+    {
+      "call": "status:stamped",
+      "input": {},
+      "result": {
+        "at": 1800000000000,
+        "available": true,
+        "cluster": "devnet",
+        "commitment": "a0ffac183d3d76c36da0f8a0e7f723c70935a5852a79c23c8c1d02cea7532c5b",
+        "explorer": "https://explorer.solana.com/tx/2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T?cluster=devnet",
+        "memo": "forecast-attest-v1 forecast=f-att receipt=6c29827386d79a89aa81c99ac2cb21e3d46e07678cfc8cf68a65591452f20aeb",
+        "signature": "2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T",
+        "slot": 12345,
+        "status": "submitted"
+      }
+    },
+    {
+      "call": "status:unstamped",
+      "input": {},
+      "result": {
+        "available": true,
+        "status": "none"
+      }
+    }
+  ],
+  "description": "The Devnet memo attestation service: the relayer-paid transaction with the wallet's signature slot zeroed, the idempotent confirm, and the status shapes.",
+  "now": 1800000000000,
+  "rateLimited": [
+    {
+      "limit": 20,
+      "scope": "attest:u-noreceipt",
+      "windowMs": 86400000
+    },
+    {
+      "limit": 20,
+      "scope": "attest:u-receipt-nowallet",
+      "windowMs": 86400000
+    },
+    {
+      "limit": 20,
+      "scope": "attest:u-wallet",
+      "windowMs": 86400000
+    }
+  ],
+  "relayer": "7kuT1dfMhUysWcLEV1eYk8ir7RTjszHmsUdrrPQNThcv",
+  "rows": {
+    "forecast_attestations": [
+      {
+        "address": "EWo1KkENqJgXTfLz6tGRqfu8XJVsELwmkHHUgPtHB1sc",
+        "blockhash": "4NxfraNr8a8YY5prg5LcCN8huUwgCoxmw5K3wPAR73Va",
+        "created_at": 1800000000000,
+        "forecast_id": "f-att",
+        "id": "at_attestationtoken10000000",
+        "memo": "forecast-attest-v1 forecast=f-att receipt=6c29827386d79a89aa81c99ac2cb21e3d46e07678cfc8cf68a65591452f20aeb",
+        "message_hash": "870bb874b421cfe657017888fb480ff27c3ff77472b6f4e4733a8dc98d14fc58",
+        "receipt_hash": "6c29827386d79a89aa81c99ac2cb21e3d46e07678cfc8cf68a65591452f20aeb",
+        "reported_slot": 12345,
+        "signature": "2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T",
+        "status": "submitted",
+        "updated_at": 1800000000000,
+        "user_id": "u-wallet"
+      }
+    ]
+  },
+  "unavailableCalls": [
+    {
+      "call": "unavailable:prepare",
+      "error": {
+        "code": "attestation_unavailable",
+        "message": "On-chain stamping is not configured.",
+        "status": 503
+      },
+      "input": {}
+    },
+    {
+      "call": "unavailable:status",
+      "input": {},
+      "result": {
+        "available": false,
+        "status": "none"
+      }
+    }
+  ],
+  "wallet": "EWo1KkENqJgXTfLz6tGRqfu8XJVsELwmkHHUgPtHB1sc"
+}

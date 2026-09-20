@@ -104,7 +104,10 @@ def main() -> int:
                 # Recurring episodes publish and bind *before* their window opens, through the
                 # ordinary seed path — so the cadence arithmetic and the retry backoff are the
                 # whole of what can go quietly wrong.
-                [sys.executable, "scripts/generate_risk_feed_series_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_risk_feed_series_golden.py", "--check"],
+                # The Devnet memo attestation hands the phone an *incomplete* transaction: one real
+                # signature and one zeroed slot the wallet fills. The zeroes are the contract.
+                [sys.executable, "scripts/generate_attestation_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:
