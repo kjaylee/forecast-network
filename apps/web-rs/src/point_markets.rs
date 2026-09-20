@@ -26,7 +26,7 @@ use forecast_domain::pricing::{
     accept_quote, close_market, initialize_market, market_probability_bp, quote_buy, AcceptLimits, PricingPolicy,
     PricingQuote, PricingReceipt, PricingState, ATOMIC_UNITS_PER_POINT,
 };
-use forecast_domain::{canonical_bytes, content_hash, Record};
+use forecast_domain::{canonical_bytes, content_hash, python_json_bytes, Record};
 
 use crate::db::{int, text, Database, Row};
 
@@ -89,8 +89,13 @@ pub fn identifier(value: &str) -> Result<&str, MarketError> {
 ///
 /// These hashes key rows — a funding identity, a fill identity — rather than committing to a
 /// domain record, so they must not carry the commitment prefix a record hash does.
+///
+/// The reference hashes with `json.dumps`'s *default* `ensure_ascii`, so this is
+/// `python_json_bytes` and not `canonical_bytes`. The keys are arbitrary user text, and the two
+/// disagree on any non-ASCII character: a request key written `café` would name one row here and
+/// a different one in the reference, which is one request spending twice.
 pub fn hash_of(value: &Value) -> String {
-    let bytes = canonical_bytes(value).unwrap_or_default();
+    let bytes = python_json_bytes(value).unwrap_or_default();
     let text = String::from_utf8_lossy(&bytes).to_string();
     crate::source_watch::hash_hex(&text)
 }
@@ -1484,6 +1489,20 @@ mod tests {
 
         check(calls, &mut index, block(markets.budget("shadow")));
         check(calls, &mut index, block(markets.fund_treasury(700, &token(), "shadow")));
+        // A grant is keyed by a hash of the request key, and that key is arbitrary text. The
+        // reference hashes it with `json.dumps`'s default `ensure_ascii`, so the same key written
+        // with a non-ASCII character must name the same row — and a port that wrote the character's
+        // bytes instead of its escape would treat one grant as two.
+        check(
+            calls,
+            &mut index,
+            block(markets.fund_treasury(50, "treasury-café-1", "shadow")),
+        );
+        check(
+            calls,
+            &mut index,
+            block(markets.fund_treasury(50, "treasury-café-1", "shadow")),
+        );
         check(calls, &mut index, block(markets.fund_treasury(700, &token(), "shadow")));
 
         let specification_hash = |fid: &str| -> String {
@@ -1521,6 +1540,23 @@ mod tests {
             calls,
             &mut index,
             block(markets.accept("user-a", "market-one", &quote_id, claims.parse().unwrap(), &token())),
+        );
+
+        // A fill is keyed on arbitrary text, the same way a grant is. The same key has to name
+        // the same fill, or one request spends twice.
+        let unicode_quote = block(markets.quote("user-b", "market-one", "YES", 20)).expect("a third quote");
+        let unicode_claims: i64 = unicode_quote["claimsAtomic"].as_str().unwrap().parse().unwrap();
+        let unicode_id = unicode_quote["quoteId"].as_str().unwrap().to_string();
+        check(calls, &mut index, Ok(unicode_quote));
+        check(
+            calls,
+            &mut index,
+            block(markets.accept("user-b", "market-one", &unicode_id, unicode_claims, "fill-café-1")),
+        );
+        check(
+            calls,
+            &mut index,
+            block(markets.accept("user-b", "market-one", &unicode_id, unicode_claims, "fill-café-1")),
         );
 
         let other = block(markets.quote("user-b", "market-one", "NO", 60)).expect("a second quote");

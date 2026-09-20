@@ -9,8 +9,8 @@
 use crate::auth::{self, Authentication};
 use crate::db::{self, Database, Row};
 use crate::wallets::{
-    self, decode_address, decode_signature, BoxFuture, SignatureVerifier, WalletError, WalletService,
-    CHAIN, CHALLENGE_LIFETIME_MS,
+    self, decode_address, decode_signature, BoxFuture, SignatureVerifier, WalletError, WalletService, CHAIN,
+    CHALLENGE_LIFETIME_MS,
 };
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -156,8 +156,7 @@ impl<'a> WalletLogin<'a> {
             .await
             .map_err(|_| storage_unavailable())?;
         let live = row.as_ref().is_some_and(|row| {
-            db::get(row, "revoked_at") == &Value::Null
-                && db::int(row, "expires_at").is_some_and(|at| at > self.now())
+            db::get(row, "revoked_at") == &Value::Null && db::int(row, "expires_at").is_some_and(|at| at > self.now())
         });
         if !live {
             return Err(failure("wallet_context_required"));
@@ -216,7 +215,9 @@ impl<'a> WalletLogin<'a> {
             return Err(challenge_invalid("Choose your wallet and sign-in action."));
         };
         let keys: BTreeSet<&str> = fields.keys().map(String::as_str).collect();
-        let allowed: BTreeSet<&str> = ["address", "mode", "expectedUserId", "displayName"].into_iter().collect();
+        let allowed: BTreeSet<&str> = ["address", "mode", "expectedUserId", "displayName"]
+            .into_iter()
+            .collect();
         let required: BTreeSet<&str> = ["address", "mode", "expectedUserId"].into_iter().collect();
         if !required.is_subset(&keys) || !keys.is_subset(&allowed) {
             return Err(challenge_invalid("Choose your wallet and sign-in action."));
@@ -272,7 +273,10 @@ impl<'a> WalletLogin<'a> {
             }
             // `str(session_token)`: the reference stringifies whatever reached it, and a `None`
             // session is already ruled out by `agrees` above, so this is the session it read.
-            source_hash = json!((self.token_hash)(&format!("session:{}", session_token.unwrap_or_default())));
+            source_hash = json!((self.token_hash)(&format!(
+                "session:{}",
+                session_token.unwrap_or_default()
+            )));
         } else {
             if fields["expectedUserId"] != Value::Null {
                 return Err(challenge_invalid("Use migration to keep an existing guest profile."));
@@ -319,7 +323,11 @@ impl<'a> WalletLogin<'a> {
             commitment,
             // The migration line is present or absent, never blank: a sign-in message that named
             // no existing profile must not be replayable as one that did.
-            if mode == "migrate" { format!("Existing profile: {target}\n") } else { String::new() },
+            if mode == "migrate" {
+                format!("Existing profile: {target}\n")
+            } else {
+                String::new()
+            },
             identifier,
             now,
             expiry,
@@ -386,7 +394,10 @@ impl<'a> WalletLogin<'a> {
         ];
         // The guard is what turns a lost race into an ordinary refusal instead of a half-applied
         // challenge; any failure here means the sign-in moved, so the code is the default one.
-        self.db.batch(&statements).await.map_err(|_| failure("wallet_login_changed"))?;
+        self.db
+            .batch(&statements)
+            .await
+            .map_err(|_| failure("wallet_login_changed"))?;
         Ok(json!({
             "challengeId": identifier,
             "address": address,
@@ -399,7 +410,12 @@ impl<'a> WalletLogin<'a> {
 
     /// `_challenge`. Every field the later batch will rely on is re-checked here, because between
     /// the challenge and the batch there is an await.
-    async fn _challenge(&self, identifier: &str, context_token: Option<&Value>, address: &str) -> Result<Row, WalletError> {
+    async fn _challenge(
+        &self,
+        identifier: &str,
+        context_token: Option<&Value>,
+        address: &str,
+    ) -> Result<Row, WalletError> {
         let context = self._context(context_token).await?;
         let row = self
             .db
@@ -445,11 +461,15 @@ impl<'a> WalletLogin<'a> {
         session_token: Option<&str>,
     ) -> Result<Value, WalletError> {
         let Some(fields) = body.as_object() else {
-            return Err(challenge_invalid("A challenge, wallet address, and signature are required."));
+            return Err(challenge_invalid(
+                "A challenge, wallet address, and signature are required.",
+            ));
         };
         let keys: BTreeSet<&str> = fields.keys().map(String::as_str).collect();
         if keys != ["challengeId", "address", "signature"].into_iter().collect() {
-            return Err(challenge_invalid("A challenge, wallet address, and signature are required."));
+            return Err(challenge_invalid(
+                "A challenge, wallet address, and signature are required.",
+            ));
         }
         let identifier = fields["challengeId"].as_str().unwrap_or_default();
         if !identifier.starts_with("wl_") || !auth::shaped(&identifier[3..]) {
@@ -728,7 +748,10 @@ impl<'a> WalletLogin<'a> {
                 ],
             ),
         ]);
-        self.db.batch(&statements).await.map_err(|_| failure("wallet_login_changed"))?;
+        self.db
+            .batch(&statements)
+            .await
+            .map_err(|_| failure("wallet_login_changed"))?;
         let saved = self
             .db
             .first("SELECT * FROM users WHERE id=?", &[json!(uid)])
@@ -832,7 +855,6 @@ fn storage_unavailable() -> WalletError {
     )
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -851,7 +873,8 @@ mod tests {
     }
 
     fn golden() -> Value {
-        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/wallet-login-golden.json");
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/wallet-login-golden.json");
         serde_json::from_str(&std::fs::read_to_string(&path).expect("wallet login golden")).expect("json")
     }
 
@@ -952,7 +975,15 @@ mod tests {
         }
 
         fn login<'a>(&'a self, db: &'a dyn Database, origin: &str) -> Result<WalletLogin<'a>, String> {
-            WalletLogin::new(db, &*self.clock, &*self.hash, &*self.token, &*self.verifier, &*self.points, origin)
+            WalletLogin::new(
+                db,
+                &*self.clock,
+                &*self.hash,
+                &*self.token,
+                &*self.verifier,
+                &*self.points,
+                origin,
+            )
         }
     }
 
@@ -969,17 +1000,34 @@ mod tests {
         fn check(&mut self, position: usize, produced: Result<Value, WalletError>) {
             let entry = &self.calls[position];
             let name = entry["call"].as_str().unwrap().to_string();
-            assert_eq!(entry["call"], self.calls[self.index]["call"], "call {position} is not the one being replayed");
+            assert_eq!(
+                entry["call"], self.calls[self.index]["call"],
+                "call {position} is not the one being replayed"
+            );
             match produced {
                 Ok(value) => {
-                    assert!(entry["error"].is_null(), "{name}: succeeded where the reference refused");
+                    assert!(
+                        entry["error"].is_null(),
+                        "{name}: succeeded where the reference refused"
+                    );
                     assert_eq!(value, entry["result"], "{name}: a different result");
                 }
                 Err(error) => {
-                    assert!(!entry["error"].is_null(), "{name}: refused with {error:?} where the reference succeeded");
-                    assert_eq!(error.status as i64, entry["error"]["status"].as_i64().unwrap(), "{name}: status");
+                    assert!(
+                        !entry["error"].is_null(),
+                        "{name}: refused with {error:?} where the reference succeeded"
+                    );
+                    assert_eq!(
+                        error.status as i64,
+                        entry["error"]["status"].as_i64().unwrap(),
+                        "{name}: status"
+                    );
                     assert_eq!(Some(error.code), entry["error"]["code"].as_str(), "{name}: code");
-                    assert_eq!(Some(error.message), entry["error"]["message"].as_str(), "{name}: message");
+                    assert_eq!(
+                        Some(error.message),
+                        entry["error"]["message"].as_str(),
+                        "{name}: message"
+                    );
                 }
             }
             self.index += 1;
@@ -995,7 +1043,7 @@ mod tests {
             self.recorded(position, "sessionToken").as_str().map(str::to_string)
         }
 
-        /// Dispatch on what the vector says the call *is*, not on what it is named — 
+        /// Dispatch on what the vector says the call *is*, not on what it is named —
         /// `verify:other-context` is a context call, and a replay that guessed from the name would
         /// run the wrong method against the right entry.
         fn at(&mut self, position: usize) {
@@ -1056,7 +1104,11 @@ mod tests {
             token_hash: &*effects.hash,
             random_token: &*effects.token,
         };
-        let mut replay = Replay { calls: &calls, index: 0, login: &login };
+        let mut replay = Replay {
+            calls: &calls,
+            index: 0,
+            login: &login,
+        };
 
         // A context is reused while it is live, and every way of failing to supply one — including
         // an explicitly empty string, which Python reads as absent — produces a fresh one.
@@ -1079,22 +1131,35 @@ mod tests {
         for position in 11..19 {
             replay.at(position);
         }
-        assert_eq!(calls[11]["input"]["contextToken"], ctx, "every challenge names the live context");
+        assert_eq!(
+            calls[11]["input"]["contextToken"], ctx,
+            "every challenge names the live context"
+        );
         // A guest profile has to exist before the migrate path has anything to convert, and it
         // consumes three tokens — so it is replayed here, in place, rather than assumed.
         let guest = block(auth.register(Some(&json!("Guest Migrator")))).expect("guest");
         let guest_session = guest["sessionToken"].clone();
         let guest_code = guest["recoveryCode"].as_str().unwrap().to_string();
-        assert_eq!(calls[19]["input"]["body"]["expectedUserId"], guest["user"]["id"], "the guest the vector migrates");
+        assert_eq!(
+            calls[19]["input"]["body"]["expectedUserId"], guest["user"]["id"],
+            "the guest the vector migrates"
+        );
         for position in 19..22 {
             replay.at(position);
         }
-        assert_eq!(calls[20]["input"]["sessionToken"], guest_session, "the migrate challenges carry the guest's session");
+        assert_eq!(
+            calls[20]["input"]["sessionToken"], guest_session,
+            "the migrate challenges carry the guest's session"
+        );
 
         // A sign-in that creates a profile, and the verifier sees the exact message it signed.
         replay.at(22);
         replay.at(23);
-        assert_eq!(state.creations.get(), 1, "ownership was proven before the quota was charged");
+        assert_eq!(
+            state.creations.get(),
+            1,
+            "ownership was proven before the quota was charged"
+        );
 
         // Every refusal that can be reached without disturbing what was just created.
         for position in 24..36 {
@@ -1130,7 +1195,8 @@ mod tests {
         // the profile's name belongs to the account, and the account is not being renamed.
         assert_eq!(calls[40]["input"]["body"]["displayName"], json!("Named Migrator"));
         assert_eq!(
-            calls[41]["result"]["user"]["displayName"], json!("Guest Migrator"),
+            calls[41]["result"]["user"]["displayName"],
+            json!("Guest Migrator"),
             "the migrated profile keeps the name it registered with, not the challenge's"
         );
 
@@ -1173,8 +1239,16 @@ mod tests {
         }
 
         assert_eq!(replay.index, calls.len(), "every recorded call is replayed");
-        assert_eq!(json!(*state.verified.borrow()), document["verified"], "the verifier saw different messages");
-        assert_eq!(state.creations.get(), document["creations"].as_i64().unwrap(), "creations");
+        assert_eq!(
+            json!(*state.verified.borrow()),
+            document["verified"],
+            "the verifier saw different messages"
+        );
+        assert_eq!(
+            state.creations.get(),
+            document["creations"].as_i64().unwrap(),
+            "creations"
+        );
 
         // And the store itself, which is what a divergent statement would have moved.
         for (table, expected) in document["rows"].as_object().expect("rows") {
@@ -1195,18 +1269,34 @@ mod tests {
         let db = Sqlite::from_migrations();
         let state = State::new(now, &calls);
         let effects = Effects::new(&state);
-        let mut login = effects.login(&db, ESCAPED).expect("a non-ASCII origin is still an exact origin");
+        let mut login = effects
+            .login(&db, ESCAPED)
+            .expect("a non-ASCII origin is still an exact origin");
         login.on_create = Some(&*effects.on_create);
 
-        let mut replay = Replay { calls: &calls, index: 0, login: &login };
+        let mut replay = Replay {
+            calls: &calls,
+            index: 0,
+            login: &login,
+        };
         for position in 0..3 {
             replay.at(position);
         }
         assert_eq!(replay.index, calls.len());
-        assert_eq!(json!(*state.verified.borrow()), document["escapedVerified"], "the verifier saw different messages");
+        assert_eq!(
+            json!(*state.verified.borrow()),
+            document["escapedVerified"],
+            "the verifier saw different messages"
+        );
 
-        let body = document["escapedRows"]["wallet_login_audit"][0]["body"].as_str().unwrap().to_string();
-        assert!(body.is_ascii(), "an audit body is ASCII, with every non-ASCII character escaped: {body}");
+        let body = document["escapedRows"]["wallet_login_audit"][0]["body"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        assert!(
+            body.is_ascii(),
+            "an audit body is ASCII, with every non-ASCII character escaped: {body}"
+        );
         assert!(
             body.contains(r"https://\u00e9xample.test"),
             "and the origin's e-acute is stored as its escape, not its bytes: {body}"
@@ -1223,10 +1313,17 @@ mod tests {
         let db = Sqlite::from_migrations();
         let state = State::new(0, &[]);
         let effects = Effects::new(&state);
-        for origin in ["http://forecast.eastsea.xyz", "https://forecast.eastsea.xyz/", "forecast.eastsea.xyz"] {
+        for origin in [
+            "http://forecast.eastsea.xyz",
+            "https://forecast.eastsea.xyz/",
+            "forecast.eastsea.xyz",
+        ] {
             assert!(effects.login(&db, origin).is_err(), "{origin} is not an exact origin");
         }
         assert!(effects.login(&db, ORIGIN).is_ok());
-        assert!(effects.login(&db, "http://localhost").is_ok(), "local development is the one exception");
+        assert!(
+            effects.login(&db, "http://localhost").is_ok(),
+            "local development is the one exception"
+        );
     }
 }

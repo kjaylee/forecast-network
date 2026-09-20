@@ -1,0 +1,114 @@
+{
+  "cases": [
+    {
+      "commitment": "{\"a\":[1,2,3],\"b\":1,\"c\":null}",
+      "escaped": "{\"a\":[1,2,3],\"b\":1,\"c\":null}",
+      "name": "ascii",
+      "raw": "{\"a\":[1,2,3],\"b\":1,\"c\":null}",
+      "value": {
+        "a": [
+          1,
+          2,
+          3
+        ],
+        "b": 1,
+        "c": null
+      }
+    },
+    {
+      "commitment": "{\"text\":\"café\"}",
+      "escaped": "{\"text\":\"caf\\u00e9\"}",
+      "name": "accent",
+      "raw": "{\"text\":\"café\"}",
+      "value": {
+        "text": "café"
+      }
+    },
+    {
+      "commitment": "{\"emoji\":\"😀\",\"tail\":\"x\"}",
+      "escaped": "{\"emoji\":\"\\ud83d\\ude00\",\"tail\":\"x\"}",
+      "name": "astral",
+      "raw": "{\"emoji\":\"😀\",\"tail\":\"x\"}",
+      "value": {
+        "emoji": "😀",
+        "tail": "x"
+      }
+    },
+    {
+      "commitment": "{\"a\":2,\"clé\":1}",
+      "escaped": "{\"a\":2,\"cl\\u00e9\":1}",
+      "name": "unicode-key",
+      "raw": "{\"a\":2,\"clé\":1}",
+      "value": {
+        "a": 2,
+        "clé": 1
+      }
+    },
+    {
+      "commitment": "{\"text\":\"quote \\\" backslash \\\\ newline \\n tab \\t carriage \\r delete \"}",
+      "escaped": "{\"text\":\"quote \\\" backslash \\\\ newline \\n tab \\t carriage \\r delete \\u007f\"}",
+      "name": "escapes",
+      "raw": "{\"text\":\"quote \\\" backslash \\\\ newline \\n tab \\t carriage \\r delete \"}",
+      "value": {
+        "text": "quote \" backslash \\ newline \n tab \t carriage \r delete "
+      }
+    },
+    {
+      "commitment": "{\"text\":\" separator   space  delete\"}",
+      "escaped": "{\"text\":\"\\u2028separator \\u00a0 space \\u007f delete\"}",
+      "name": "line-separator",
+      "raw": "{\"text\":\" separator   space  delete\"}",
+      "value": {
+        "text": " separator   space  delete"
+      }
+    },
+    {
+      "commitment": "{\"text\":\"\\u0000\\u001f\"}",
+      "escaped": "{\"text\":\"\\u0000\\u001f\\u0080\"}",
+      "name": "control",
+      "raw": "{\"text\":\"\\u0000\\u001f\"}",
+      "value": {
+        "text": "\u0000\u001f"
+      }
+    },
+    {
+      "commitment": "{\"outer\":{\"inner\":[\"é\",{\"深\":\"度\"}]}}",
+      "escaped": "{\"outer\":{\"inner\":[\"\\u00e9\",{\"\\u6df1\":\"\\u5ea6\"}]}}",
+      "name": "nested",
+      "raw": "{\"outer\":{\"inner\":[\"é\",{\"深\":\"度\"}]}}",
+      "value": {
+        "outer": {
+          "inner": [
+            "é",
+            {
+              "深": "度"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "commitment": "{\"big\":9007199254740991,\"small\":-9007199254740991,\"truthy\":true,\"zero\":0}",
+      "escaped": "{\"big\":9007199254740991,\"small\":-9007199254740991,\"truthy\":true,\"zero\":0}",
+      "name": "numbers",
+      "raw": "{\"big\":9007199254740991,\"small\":-9007199254740991,\"truthy\":true,\"zero\":0}",
+      "value": {
+        "big": 9007199254740991,
+        "small": -9007199254740991,
+        "truthy": true,
+        "zero": 0
+      }
+    },
+    {
+      "commitment": "{\"array\":[],\"object\":{}}",
+      "escaped": "{\"array\":[],\"object\":{}}",
+      "name": "empty",
+      "raw": "{\"array\":[],\"object\":{}}",
+      "value": {
+        "array": [],
+        "object": {}
+      }
+    }
+  ],
+  "description": "Python's two canonical-JSON encodings: the commitment rule that keeps non-ASCII raw, and json.dumps's default that escapes it."
+}

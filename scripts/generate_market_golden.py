@@ -125,6 +125,12 @@ async def build_lifecycle(fixture: Fixture) -> dict:
 
     await fixture.call("budget", fixture.markets.budget("shadow"))
     await fixture.call("fund_treasury", fixture.markets.fund_treasury(700, fixture.token(), "shadow"))
+    # A request key is user-supplied text, and both funding and fills key their rows on a hash of
+    # it. The reference hashes with `json.dumps`'s default `ensure_ascii`, so a key with a
+    # non-ASCII character names a different row than one that only escaped it — and a port that
+    # emitted raw UTF-8 would accept the same key twice as two different requests.
+    await fixture.call("fund_treasury_unicode", fixture.markets.fund_treasury(50, "treasury-café-1", "shadow"))
+    await fixture.call("fund_treasury_unicode_replay", fixture.markets.fund_treasury(50, "treasury-café-1", "shadow"))
     # Funding twice with the same request key must not fund twice.
     await fixture.maybe("fund_treasury_again", fixture.markets.fund_treasury(700, fixture.token(), "shadow"))
 
@@ -147,6 +153,23 @@ async def build_lifecycle(fixture: Fixture) -> dict:
     await fixture.maybe(
         "accept_replay",
         fixture.markets.accept("user-a", "market-one", quote["quoteId"], int(quote["claimsAtomic"]), fixture.token()),
+    )
+
+    # A fill is keyed by the request that produced it, and that key is user-supplied text. The
+    # reference hashes it with `json.dumps`'s default `ensure_ascii`, so a key with a non-ASCII
+    # character names a different row than the same key escaped — and a port that wrote raw UTF-8
+    # would treat one request as two.
+    unicode_quote = await fixture.call("quote_unicode_key", fixture.markets.quote("user-b", "market-one", "YES", 20))
+    unicode_key = "fill-café-1"
+    await fixture.call(
+        "accept_unicode_key",
+        fixture.markets.accept("user-b", "market-one", unicode_quote["quoteId"],
+                               int(unicode_quote["claimsAtomic"]), unicode_key),
+    )
+    await fixture.maybe(
+        "accept_unicode_key_replay",
+        fixture.markets.accept("user-b", "market-one", unicode_quote["quoteId"],
+                               int(unicode_quote["claimsAtomic"]), unicode_key),
     )
 
     other = await fixture.call("quote_other_side", fixture.markets.quote("user-b", "market-one", "NO", 60))

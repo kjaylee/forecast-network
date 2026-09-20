@@ -1,6 +1,7 @@
 //! Canonical JSON commitments identical to `forecast_domain.serialization`.
 //!
-//! Rules: object keys sorted by code point, separators `,` and `:`, non-ASCII emitted raw,
+//! Rules: object keys sorted by code point, separators `,` and `:`, non-ASCII emitted raw by
+//! default (`canonical_bytes`) and escaped by `python_json_bytes`,
 //! integers only (|n| <= 2^53-1), no NaN/Infinity, strings must be valid UTF-8 without unpaired
 //! surrogates (guaranteed by Rust `String`). `serde_json::Value` with the default `BTreeMap`
 //! object representation already sorts keys; the writer below enforces the numeric rules.
@@ -46,26 +47,31 @@ pub fn canonical_bytes<T: Serialize + ?Sized>(value: &T) -> Result<Vec<u8>> {
 ///   * A **commitment** (`forecast_domain.serialization.canonical_bytes`, and the `sort_keys`
 ///     calls that pass `ensure_ascii=False`) drops the escapes, so one text has one byte string
 ///     and one hash no matter how it is written.
-///   * An **audit body** — `wallet_login`, `resolution_timing`, `markets._hash`,
-///     `participation_holds` — keeps the escapes, so the stored record is ASCII and a non-ASCII
-///     profile name cannot change the row's bytes.
+///   * An **audit body**, and the hashes that key rows — `wallet_login`, `markets._hash`,
+///     `points`, `resolution_timing`'s proof hashes, `participation_holds`' request hash — keep
+///     the escapes, so the stored record is printable ASCII and a profile name with an accent
+///     cannot change the row's bytes.
 ///
-/// Picking the wrong one is invisible until the first non-ASCII value, and then it is a different
-/// digest for the same event rather than a visible failure.
+/// Picking the wrong one is invisible until the first value they disagree on, and then it is a
+/// different digest for the same event rather than a visible failure.
 pub fn python_json_bytes<T: Serialize + ?Sized>(value: &T) -> Result<Vec<u8>> {
-    Ok(escape_non_ascii(&canonical_bytes(value)?))
+    Ok(ensure_ascii(&canonical_bytes(value)?))
 }
 
-/// `ensure_ascii=True` over already-valid JSON text.
+/// Python's `ensure_ascii` over already-valid JSON text.
 ///
-/// Every structural character of JSON is ASCII and `canonical_bytes` has already escaped the
-/// control characters, so a character outside ASCII can only be inside a string literal — which is
-/// why this can walk the text rather than parse it.
-fn escape_non_ascii(bytes: &[u8]) -> Vec<u8> {
+/// The rule is *not* "escape the non-ASCII characters": it is "escape everything outside
+/// `0x20..=0x7e`", so DEL is escaped as `\u007f` even though it is ASCII — and `serde_json` leaves
+/// it raw. Above the BMP the escape is a surrogate pair, which is why this goes through UTF-16.
+///
+/// Walking the text rather than parsing it is sound because every structural character of JSON is
+/// printable ASCII: a character outside that range can only be inside a string literal, and
+/// `canonical_bytes` has already turned the control characters into escapes this pass leaves alone.
+pub fn ensure_ascii(bytes: &[u8]) -> Vec<u8> {
     let text = String::from_utf8_lossy(bytes);
     let mut out = String::with_capacity(text.len());
     for character in text.chars() {
-        if (character as u32) < 0x80 {
+        if (0x20..=0x7e).contains(&(character as u32)) {
             out.push(character);
             continue;
         }
@@ -151,4 +157,64 @@ pub fn detect_duplicate_keys(text: &str) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn golden() -> Value {
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/canonical-json-golden.json");
+        serde_json::from_str(&std::fs::read_to_string(&path).expect("canonical json golden")).expect("json")
+    }
+
+    #[test]
+    fn both_encoding_rules_match_python() {
+        // The reference uses `json.dumps(..., sort_keys=True, separators=(",", ":"))` with
+        // `ensure_ascii` both ways, and the two agree on every ASCII value — which is exactly why
+        // a port can pick the wrong one and pass a whole suite before the first accent arrives.
+        let document = golden();
+        for case in document["cases"].as_array().expect("cases") {
+            let name = case["name"].as_str().unwrap();
+            let value = &case["value"];
+            assert_eq!(
+                String::from_utf8(canonical_bytes(value).expect("canonical")).unwrap(),
+                case["raw"].as_str().unwrap(),
+                "{name}: the commitment rule"
+            );
+            assert_eq!(
+                String::from_utf8(python_json_bytes(value).expect("escaped")).unwrap(),
+                case["escaped"].as_str().unwrap(),
+                "{name}: the default ensure_ascii rule"
+            );
+            // `forecast_domain.dumps` is the commitment rule reached the other way; it has to
+            // agree with `canonical_bytes` or there are two rules where there should be one.
+            assert_eq!(
+                String::from_utf8(canonical_bytes(&value).expect("canonical")).unwrap(),
+                case["commitment"].as_str().unwrap(),
+                "{name}: the commitment rule through the domain helper"
+            );
+        }
+    }
+
+    #[test]
+    fn the_escaped_rule_covers_ascii_it_is_easy_to_miss() {
+        // `ensure_ascii` is not "escape the non-ASCII characters": the rule is everything outside
+        // `0x20..=0x7e`, so DEL is escaped too — and `serde_json` leaves it raw. An astral
+        // character becomes two escapes, which is what going through UTF-16 buys.
+        assert_eq!(
+            String::from_utf8(python_json_bytes(&json!({"t": "\u{7f}"})).unwrap()).unwrap(),
+            r#"{"t":"\u007f"}"#
+        );
+        assert_eq!(
+            String::from_utf8(python_json_bytes(&json!({"t": "\u{1f600}"})).unwrap()).unwrap(),
+            r#"{"t":"\ud83d\ude00"}"#
+        );
+        assert_eq!(
+            String::from_utf8(python_json_bytes(&json!("plain")).unwrap()).unwrap(),
+            r#""plain""#
+        );
+    }
 }

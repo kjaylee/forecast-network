@@ -13,6 +13,7 @@
 //! through whichever caller was forgotten, which is why the blockers are a view and the review
 //! is closed rather than bypassed.
 
+use forecast_domain::python_json_bytes;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use worker::*;
@@ -238,30 +239,15 @@ async fn analyze(
     Err(review_error())
 }
 
-/// The reference serializes with `sort_keys=True, separators=(",",":")`, and the proof hash is
-/// taken over that exact text.
+/// The reference serializes with `sort_keys=True, separators=(",",":")` and the default
+/// `ensure_ascii` — the second of the two canonical rules, not the commitment rule
+/// `canonical_bytes` implements. The proof hash is taken over this exact text, and the evidence
+/// it covers carries article publication strings, so an accented one would hash differently.
 fn canonical_body(body: &str) -> String {
     let Ok(value) = serde_json::from_str::<Value>(body) else {
         return body.to_string();
     };
-    let sorted = sort_keys(&value, false);
-    serde_json::to_string(&sorted).unwrap_or_else(|_| body.to_string())
-}
-
-fn sort_keys(value: &Value, _inside: bool) -> Value {
-    match value {
-        Value::Object(fields) => {
-            let mut keys: Vec<&String> = fields.keys().collect();
-            keys.sort();
-            let mut out = serde_json::Map::new();
-            for key in keys {
-                out.insert(key.clone(), sort_keys(&fields[key], true));
-            }
-            Value::Object(out)
-        }
-        Value::Array(items) => Value::Array(items.iter().map(|item| sort_keys(item, _inside)).collect()),
-        other => other.clone(),
-    }
+    String::from_utf8(python_json_bytes(&value).unwrap_or_default()).unwrap_or_else(|_| body.to_string())
 }
 
 /// Whether the retained bytes are the evidence the resolution claims, and the first of them.
@@ -581,5 +567,27 @@ mod tests {
     fn the_proof_body_is_canonical_so_its_hash_matches_the_reference() {
         let body = canonical_body(r#"{"b":1,"a":{"d":2,"c":3}}"#);
         assert_eq!(body, r#"{"a":{"c":3,"d":2},"b":1}"#);
+    }
+
+    #[test]
+    fn the_proof_body_escapes_the_way_the_reference_does() {
+        // The proof hash is taken over this text, and the evidence it covers carries article
+        // publication strings — so this is the `ensure_ascii` rule and not the commitment rule.
+        // The vector is the one that pins both rules, run through the function the module uses.
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/canonical-json-golden.json");
+        let document: Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).expect("canonical json golden")).expect("json");
+        for case in document["cases"].as_array().expect("cases") {
+            let name = case["name"].as_str().unwrap();
+            let text = serde_json::to_string(&case["value"]).expect("text");
+            assert_eq!(
+                canonical_body(&text),
+                case["escaped"].as_str().unwrap(),
+                "{name}: the review body rule"
+            );
+        }
+        // Text that is not JSON is passed through rather than silently replaced by an empty body.
+        assert_eq!(canonical_body("not json"), "not json");
     }
 }

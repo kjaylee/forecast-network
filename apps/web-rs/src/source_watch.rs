@@ -91,6 +91,17 @@ pub fn compact(value: &Value) -> String {
     serde_json::to_string(&sorted).unwrap_or_default()
 }
 
+/// The same encoding with Python's **default** `ensure_ascii`, which escapes every character
+/// outside the printable ASCII range — DEL included.
+///
+/// The reference uses both forms, and which one a call site gets is not cosmetic: an escaped and
+/// an unescaped encoding of the same value are two different strings, so a hash taken over the
+/// wrong one names a different row. `compact` is for commitments, `compact_ascii` for the
+/// records that key on arbitrary user text.
+pub fn compact_ascii(value: &Value) -> String {
+    String::from_utf8(forecast_domain::ensure_ascii(compact(value).as_bytes())).unwrap_or_default()
+}
+
 fn sort_keys(value: &Value) -> Value {
     match value {
         Value::Object(fields) => {

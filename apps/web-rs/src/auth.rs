@@ -131,11 +131,7 @@ fn sign_in_changed() -> AuthError {
 /// handler. One code covers all three here, because the `Database` trait has already flattened the
 /// driver's error to `worker::Error` and the distinction is no longer recoverable.
 fn unavailable() -> AuthError {
-    AuthError::new(
-        503,
-        "authentication_unavailable",
-        "Sign-in is temporarily unavailable.",
-    )
+    AuthError::new(503, "authentication_unavailable", "Sign-in is temporarily unavailable.")
 }
 
 /// `re.fullmatch(r"[A-Za-z0-9_-]{32,256}", value)`.
@@ -265,7 +261,11 @@ impl Authentication<'_> {
 
     /// `login`. Every write is guarded by a compare-and-set row, so a code that stopped being
     /// valid between the read and the batch cannot be spent anyway.
-    pub async fn login(&self, recovery_code: Option<&Value>, context_token: Option<&Value>) -> Result<Value, AuthError> {
+    pub async fn login(
+        &self,
+        recovery_code: Option<&Value>,
+        context_token: Option<&Value>,
+    ) -> Result<Value, AuthError> {
         let Some(recovery_code) = recovery_code.and_then(Value::as_str) else {
             return Err(invalid_recovery_code());
         };
@@ -388,7 +388,12 @@ impl Authentication<'_> {
             }
             None => statements.push((
                 "INSERT INTO sessions(token_hash,user_id,created_at,expires_at) VALUES(?,?,?,?)".to_string(),
-                vec![json!(session_hash), user_id.clone(), json!(now), json!(now + SESSION_LIFETIME_MS)],
+                vec![
+                    json!(session_hash),
+                    user_id.clone(),
+                    json!(now),
+                    json!(now + SESSION_LIFETIME_MS),
+                ],
             )),
         }
         statements.push((
@@ -407,7 +412,11 @@ impl Authentication<'_> {
                 .await
                 .map_err(|_| unavailable())?;
             if converted.is_some() {
-                return Err(AuthError::new(401, "invalid_recovery_code", "Sign in with your wallet to continue."));
+                return Err(AuthError::new(
+                    401,
+                    "invalid_recovery_code",
+                    "Sign in with your wallet to continue.",
+                ));
             }
             if let Some(context) = &context {
                 let latest = self
@@ -495,12 +504,11 @@ impl Authentication<'_> {
             )
             .await
             .map_err(|_| unavailable())?;
-        let bound_hash = bound.as_ref().map_or(Value::Null, |row| db::get(row, "context_hash").clone());
+        let bound_hash = bound
+            .as_ref()
+            .map_or(Value::Null, |row| db::get(row, "context_hash").clone());
         let now = self.now();
-        let both = vec![
-            context_hash.map_or(Value::Null, Value::from),
-            bound_hash,
-        ];
+        let both = vec![context_hash.map_or(Value::Null, Value::from), bound_hash];
         let with_now = |both: Vec<Value>| {
             let mut params = vec![json!(now)];
             params.extend(both);
@@ -569,14 +577,28 @@ mod tests {
         let name = entry["call"].as_str().unwrap();
         match produced {
             Ok(value) => {
-                assert!(entry["error"].is_null(), "{name}: succeeded where the reference refused");
+                assert!(
+                    entry["error"].is_null(),
+                    "{name}: succeeded where the reference refused"
+                );
                 assert_eq!(value, entry["result"], "{name}: a different result");
             }
             Err(error) => {
-                assert!(!entry["error"].is_null(), "{name}: refused with {error:?} where the reference succeeded");
-                assert_eq!(error.status as i64, entry["error"]["status"].as_i64().unwrap(), "{name}: status");
+                assert!(
+                    !entry["error"].is_null(),
+                    "{name}: refused with {error:?} where the reference succeeded"
+                );
+                assert_eq!(
+                    error.status as i64,
+                    entry["error"]["status"].as_i64().unwrap(),
+                    "{name}: status"
+                );
                 assert_eq!(Some(error.code), entry["error"]["code"].as_str(), "{name}: code");
-                assert_eq!(Some(error.message), entry["error"]["message"].as_str(), "{name}: message");
+                assert_eq!(
+                    Some(error.message),
+                    entry["error"]["message"].as_str(),
+                    "{name}: message"
+                );
             }
         }
         *index += 1;
@@ -618,7 +640,10 @@ mod tests {
                 .clone()
         };
         let string_at = |position: usize, field: &str| {
-            calls[position]["input"].get(field).and_then(Value::as_str).map(str::to_string)
+            calls[position]["input"]
+                .get(field)
+                .and_then(Value::as_str)
+                .map(str::to_string)
         };
         let refused = |name: &str| {
             let entry = calls
@@ -641,19 +666,42 @@ mod tests {
         let registered = calls[0]["result"].clone();
         let session = registered["sessionToken"].as_str().unwrap().to_string();
         assert_eq!(
-            calls[8]["input"]["recoveryCode"],
-            registered["recoveryCode"],
+            calls[8]["input"]["recoveryCode"], registered["recoveryCode"],
             "every later login uses the code that registration handed back"
         );
         let user_id = registered["user"]["id"].as_str().unwrap().to_string();
-        assert_eq!(registered["user"]["handle"], json!("f_token3000000"), "the handle is the token's first twelve");
-        assert_eq!(registered["user"]["displayName"], json!("Ada Lovelace"), "the name is trimmed");
+        assert_eq!(
+            registered["user"]["handle"],
+            json!("f_token3000000"),
+            "the handle is the token's first twelve"
+        );
+        assert_eq!(
+            registered["user"]["displayName"],
+            json!("Ada Lovelace"),
+            "the name is trimmed"
+        );
 
         // login without a context: off-shape, unknown, and absent are three different messages.
-        check(calls, &mut index, block(auth.login(input(8, "recoveryCode").as_ref(), None)));
-        check(calls, &mut index, block(auth.login(input(9, "recoveryCode").as_ref(), None)));
-        check(calls, &mut index, block(auth.login(input(10, "recoveryCode").as_ref(), None)));
-        check(calls, &mut index, block(auth.login(input(11, "recoveryCode").as_ref(), None)));
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(8, "recoveryCode").as_ref(), None)),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(9, "recoveryCode").as_ref(), None)),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(10, "recoveryCode").as_ref(), None)),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(11, "recoveryCode").as_ref(), None)),
+        );
         // A malformed code, an unknown one and an absent one are all 401, and they are told
         // apart only by their message — which is the whole reason `text` and `shaped` are not
         // the same check.
@@ -665,8 +713,16 @@ mod tests {
             refused("login:unknown").1,
             "an off-shape code and an unknown one are told apart by their message"
         );
-        check(calls, &mut index, block(auth.login(input(12, "recoveryCode").as_ref(), None)));
-        check(calls, &mut index, block(auth.login(input(13, "recoveryCode").as_ref(), None)));
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(12, "recoveryCode").as_ref(), None)),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(13, "recoveryCode").as_ref(), None)),
+        );
 
         // login with a context: every reason a prepared sign-in stops being usable.
         let good = format!("{:0<32}", "contextgood");
@@ -704,31 +760,89 @@ mod tests {
         )
         .expect("challenge");
 
-        check(calls, &mut index, block(auth.login(input(14, "recoveryCode").as_ref(), input(14, "contextToken").as_ref())));
-        check(calls, &mut index, block(auth.login(input(15, "recoveryCode").as_ref(), input(15, "contextToken").as_ref())));
-        check(calls, &mut index, block(auth.login(input(16, "recoveryCode").as_ref(), input(16, "contextToken").as_ref())));
-        check(calls, &mut index, block(auth.login(input(17, "recoveryCode").as_ref(), input(17, "contextToken").as_ref())));
-        check(calls, &mut index, block(auth.login(input(18, "recoveryCode").as_ref(), input(18, "contextToken").as_ref())));
-        check(calls, &mut index, block(auth.login(input(19, "recoveryCode").as_ref(), input(19, "contextToken").as_ref())));
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(14, "recoveryCode").as_ref(), input(14, "contextToken").as_ref())),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(15, "recoveryCode").as_ref(), input(15, "contextToken").as_ref())),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(16, "recoveryCode").as_ref(), input(16, "contextToken").as_ref())),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(17, "recoveryCode").as_ref(), input(17, "contextToken").as_ref())),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(18, "recoveryCode").as_ref(), input(18, "contextToken").as_ref())),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(19, "recoveryCode").as_ref(), input(19, "contextToken").as_ref())),
+        );
         let bound_session = calls[19]["result"]["sessionToken"].as_str().unwrap().to_string();
 
         // authenticate: the two branches, and the ways each fails.
-        check(calls, &mut index, present(block(auth.authenticate(Some(&session), None))));
-        check(calls, &mut index, present(block(auth.authenticate(Some(&bound_session), Some(&good)))));
-        check(calls, &mut index, present(block(auth.authenticate(Some(&bound_session), None))));
-        check(calls, &mut index, present(block(auth.authenticate(Some(&session), Some(&good)))));
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(Some(&session), None))),
+        );
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(Some(&bound_session), Some(&good)))),
+        );
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(Some(&bound_session), None))),
+        );
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(Some(&session), Some(&good)))),
+        );
         check(calls, &mut index, present(block(auth.authenticate(None, None))));
         check(calls, &mut index, present(block(auth.authenticate(Some(""), None))));
-        check(calls, &mut index, present(block(auth.authenticate(string_at(26, "sessionToken").as_deref(), None))));
-        check(calls, &mut index, present(block(auth.authenticate(Some(&session), string_at(27, "contextToken").as_deref()))));
-        check(calls, &mut index, present(block(auth.authenticate(string_at(28, "sessionToken").as_deref(), None))));
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(string_at(26, "sessionToken").as_deref(), None))),
+        );
+        check(
+            calls,
+            &mut index,
+            present(block(
+                auth.authenticate(Some(&session), string_at(27, "contextToken").as_deref()),
+            )),
+        );
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(string_at(28, "sessionToken").as_deref(), None))),
+        );
         // A context bumped to a new epoch invalidates the session that recorded the old one.
         db.run(
             "UPDATE wallet_login_contexts SET epoch=epoch+1 WHERE token_hash=?",
             &[json!(digest(&format!("wallet-context:{good}")))],
         )
         .expect("bump");
-        check(calls, &mut index, present(block(auth.authenticate(Some(&bound_session), Some(&good)))));
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(Some(&bound_session), Some(&good)))),
+        );
         assert!(
             recorded(calls, "authenticate:stale-epoch")["result"].is_null(),
             "a context on a new epoch invalidates the session that recorded the old one"
@@ -748,12 +862,32 @@ mod tests {
         )
         .expect("conversion");
 
-        check(calls, &mut index, present(block(auth.authenticate(Some(&session), None))));
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(Some(&session), None))),
+        );
         prepare(&format!("{:0<32}", "contextconverted"), 600_000, false);
-        check(calls, &mut index, block(auth.login(input(31, "recoveryCode").as_ref(), input(31, "contextToken").as_ref())));
-        check(calls, &mut index, block(auth.login(input(32, "recoveryCode").as_ref(), None)));
-        check(calls, &mut index, block(auth.register(input(33, "displayName").as_ref())));
-        check(calls, &mut index, present(block(auth.authenticate(Some(&bound_session), Some(&good)))));
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(31, "recoveryCode").as_ref(), input(31, "contextToken").as_ref())),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.login(input(32, "recoveryCode").as_ref(), None)),
+        );
+        check(
+            calls,
+            &mut index,
+            block(auth.register(input(33, "displayName").as_ref())),
+        );
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(Some(&bound_session), Some(&good)))),
+        );
         // Restoring the epoch reaches the bound branch: a conversion does not close a session the
         // wallet itself established, only the recovery-code path behind it.
         db.run(
@@ -761,7 +895,11 @@ mod tests {
             &[json!(digest(&format!("wallet-context:{good}")))],
         )
         .expect("restore");
-        check(calls, &mut index, present(block(auth.authenticate(Some(&bound_session), Some(&good)))));
+        check(
+            calls,
+            &mut index,
+            present(block(auth.authenticate(Some(&bound_session), Some(&good)))),
+        );
         assert!(
             !recorded(calls, "authenticate:converted-bound-restored")["result"].is_null(),
             "a wallet-established session outlives the conversion that closed the recovery path"
@@ -787,11 +925,17 @@ mod tests {
             let value = &entry["input"];
             match checked_text(Some(value), 40, 1) {
                 Ok(text) => {
-                    assert!(entry["error"].is_null(), "{value}: accepted where the reference refused");
+                    assert!(
+                        entry["error"].is_null(),
+                        "{value}: accepted where the reference refused"
+                    );
                     assert_eq!(json!(text), entry["result"], "{value}: a different trim");
                 }
                 Err(error) => {
-                    assert!(!entry["error"].is_null(), "{value}: refused where the reference accepted");
+                    assert!(
+                        !entry["error"].is_null(),
+                        "{value}: refused where the reference accepted"
+                    );
                     assert_eq!(Some(error.code), entry["error"]["code"].as_str(), "{value}: code");
                 }
             }

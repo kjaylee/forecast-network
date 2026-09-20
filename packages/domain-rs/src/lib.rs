@@ -13,6 +13,8 @@ pub mod models;
 pub mod pricing;
 pub mod risk_feed;
 
-pub use canonical::{canonical_bytes, content_hash, python_json_bytes, COMMITMENT_PREFIX, MAX_SAFE_INTEGER};
+pub use canonical::{
+    canonical_bytes, content_hash, ensure_ascii, python_json_bytes, COMMITMENT_PREFIX, MAX_SAFE_INTEGER,
+};
 pub use errors::{require, Result, ValidationError};
 pub use fields::Record;

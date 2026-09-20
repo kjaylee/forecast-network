@@ -85,7 +85,12 @@ def main() -> int:
                 # Wallet sign-in is where a signature creates an account and replaces a recovery
                 # credential, and the message it signs is the authorization — so the vector keeps
                 # the verifier's call log, not just the outcomes.
-                [sys.executable, "scripts/generate_wallet_login_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_wallet_login_golden.py", "--check"],
+                # Python has two canonical-JSON encodings, one keyword argument apart, and the
+                # reference uses both — for commitments and for the hashes that key rows. They
+                # agree on every ASCII value, so picking the wrong one is invisible until the
+                # first accent, and then it is a different digest for the same request.
+                [sys.executable, "scripts/generate_canonical_json_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

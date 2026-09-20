@@ -22,7 +22,7 @@
 
 use serde_json::{json, Map, Value};
 
-use forecast_domain::canonical_bytes;
+use forecast_domain::python_json_bytes;
 
 use crate::db::{int, text, Database};
 
@@ -78,8 +78,14 @@ fn storage_unavailable() -> BillingError {
 }
 
 /// `_json`: the reference's compact sorted encoding.
+///
+/// `python_json_bytes`, not `canonical_bytes`: the reference takes `json.dumps`'s default
+/// `ensure_ascii`, and these values carry user-supplied identifiers. The two encodings agree on
+/// every ASCII value and disagree on the first non-ASCII one — where the disagreement is a
+/// different request hash for the same request, or a replayed idempotency key that no longer
+/// matches.
 fn encode(value: &Value) -> String {
-    String::from_utf8(canonical_bytes(value).unwrap_or_default()).unwrap_or_default()
+    String::from_utf8(python_json_bytes(value).unwrap_or_default()).unwrap_or_default()
 }
 
 /// `_hash`: a plain digest of the canonical form. These key audit rows rather than committing to

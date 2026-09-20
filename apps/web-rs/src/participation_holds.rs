@@ -10,7 +10,7 @@ use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 
 use crate::db::{text, Database};
-use crate::source_watch::compact;
+use crate::source_watch::{compact, compact_ascii};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HoldError {
@@ -165,9 +165,15 @@ pub async fn change(
 
     // The request hash is over the forecast and the body together, so the same identifier
     // used against a different forecast is a conflict rather than a replay.
+    //
+    // `compact_ascii`, not `compact`: the reference hashes this one with `json.dumps`'s default
+    // `ensure_ascii`, and `evidenceUrl` is only required to have no character at or below a space
+    // — so a URL with an accent in its path passes that check and then hashes differently. The
+    // result stored below keeps the other encoding, because the reference stores it with
+    // `ensure_ascii=False`. Two encodings in one function, each matching its own call site.
     let mut scoped = body.clone();
     scoped.insert("forecastId".to_string(), Value::String(forecast_id.to_string()));
-    let request_hash = hex::encode(Sha256::digest(compact(&Value::Object(scoped)).as_bytes()));
+    let request_hash = hex::encode(Sha256::digest(compact_ascii(&Value::Object(scoped)).as_bytes()));
 
     if let Some(previous) = prior(db, key, &request_hash).await? {
         return Ok(previous);
