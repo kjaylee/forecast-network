@@ -76,6 +76,50 @@ class PythonExtractionTests(unittest.TestCase):
         self.assertEqual(sql_parity.python_statements(source), [])
 
 
+class RustContinuationTests(unittest.TestCase):
+    """The harness reported parity while silently skipping whole modules, three times over."""
+
+    def test_a_statement_written_across_lines_is_one_statement(self):
+        # Rust continues a string with a backslash, and `.` does not match a newline, so the
+        # literal first failed to match and then mispaired every quote after it. Adding a module
+        # looked like adding nothing.
+        source = 'let sql = "SELECT a FROM t \\\n         WHERE b=?";\n'
+        found = sql_parity.rust_statements(source)
+        self.assertEqual(len(found), 1, found)
+        self.assertEqual(sql_parity.canonical(found[0][1]), sql_parity.canonical("SELECT a FROM t WHERE b=?"))
+
+    def test_the_backslash_does_not_survive_into_the_statement(self):
+        source = 'let sql = "SELECT a FROM some_table \\\n  WHERE b=?";\n'
+        self.assertNotIn("\\", sql_parity.rust_statements(source)[0][1])
+
+
+class PythonFoldingTests(unittest.TestCase):
+    def test_a_statement_built_from_a_module_constant_is_one_statement(self):
+        source = '_ADDRESS = ("SELECT address FROM wallet_identities WHERE user_id=?"\n            "AND status=\'active\'")\nsql = "SELECT * FROM v WHERE address=" + _ADDRESS\n'
+        found = sql_parity.python_statements(source)
+        self.assertTrue(any(sql_parity.canonical("SELECT * FROM v WHERE address=SELECT address FROM wallet_identities WHERE user_id=?AND status='active'") == sql_parity.canonical(item) for item in found), found)
+
+    def test_a_statement_finished_with_plus_equals_is_one_statement(self):
+        # The reference finishes `daily_sql` with `+=` inside a method, so a fold that only
+        # reads the first assignment sees a fragment and calls a correct port drift.
+        source = "\n".join([
+            "def f(self):",
+            '    sql = "WITH inventory AS (" + base + "), daily AS (SELECT *"' ,
+            '    sql += " FROM inventory) "',
+            '    sql += "SELECT * FROM daily"',
+        ]) + "\n"
+        joined = [sql_parity.canonical(item) for item in sql_parity.python_statements(source)]
+        self.assertIn(
+            sql_parity.canonical("WITH inventory AS ({})  , daily AS (SELECT * FROM inventory) SELECT * FROM daily"),
+            joined,
+        )
+
+    def test_a_runtime_value_in_a_concatenation_becomes_the_same_hole_as_a_rust_one(self):
+        source = 'sql = "SELECT a FROM " + table + " WHERE b=?"\n'
+        self.assertEqual([sql_parity.canonical(item) for item in sql_parity.python_statements(source)],
+                         [sql_parity.canonical("SELECT a FROM {} WHERE b=?")])
+
+
 class ComparisonTests(unittest.TestCase):
     def corpus(self, *statements):
         return [sql_parity.canonical(item) for item in statements]
@@ -108,7 +152,8 @@ class ComparisonTests(unittest.TestCase):
         drifted = [(path.name, line)
                    for path in sorted(sql_parity.RUST_SOURCES.glob("*.rs"))
                    for line, statement in sql_parity.rust_statements(path.read_text(encoding="utf-8"))
-                   if not sql_parity.accounted_for(statement, canon_only)]
+                   if not sql_parity.accounted_for(statement, canon_only)
+                   and not any(marker in sql_parity.canonical(statement) for marker in sql_parity.DIVERGENCES)]
         self.assertEqual(drifted, [], "the edge Worker has drifted from the Python Worker")
 
 

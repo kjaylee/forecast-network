@@ -32,7 +32,10 @@ RUST_SOURCES = ROOT / "apps/web-rs/src"
 PYTHON_ROOTS = ("packages/application/src", "packages/domain/src", "apps/web/src")
 
 SQL_START = re.compile(r"^(SELECT|WITH|INSERT|UPDATE|DELETE)\b", re.I)
-RUST_STRING = re.compile(r'"((?:[^"\\]|\\.)*)"')
+# `\\[\s\S]` and not `\\.`: Rust continues a string across lines with a backslash, and `.`
+# does not match a newline, so a literal written that way first failed to match and then mispaired
+# every quote after it. The harness reported parity while silently skipping whole modules.
+RUST_STRING = re.compile(r'"((?:[^"\\]|\\[\s\S])*)"')
 # Rust format holes (`{}`, `{guard_sql}`) and Python f-string expressions both stand for a
 # value supplied at runtime, so both become the same marker and compare equal.
 HOLE = "\x00"
@@ -41,6 +44,16 @@ MIN_STATEMENT = 20
 # variable with `+`. Its fixed pieces are compared instead; below this length a piece is
 # too small to be evidence of anything.
 MIN_FRAGMENT = 12
+
+# Deliberate differences. Each entry is a Rust statement that is not the Python statement and is
+# not meant to be; the key identifies it, the value says why, so the next reader does not have to
+# reconstruct the reasoning from a diff. Anything absent from here fails the check, so adding an
+# entry is a decision someone has to make on purpose.
+DIVERGENCES = {
+    "SELECTu.idFROMsessionssJOINusersuONu.id=":
+        "`auth::user_id` reads only the id, where Python's `authenticate` builds a whole public "
+        "user. The session guard is identical; the projection is narrower because the caller is.",
+}
 
 
 def canonical(sql: str) -> str:
@@ -64,6 +77,16 @@ def canonical(sql: str) -> str:
     return "".join(out)
 
 
+def drop_continuations(raw: str) -> str:
+    """Rust's `\` at the end of a line removes the newline and the indentation after it.
+
+    The harness compares source text, so without this every continuation arrives as a stray
+    backslash in the middle of the statement — `JOIN x\ON` — and a statement written that way
+    reads as drift when it is identical.
+    """
+    return re.sub(r"\\\r?\n[ \t]*", "", raw)
+
+
 def rust_statements(source: str) -> list[tuple[int, str]]:
     """(line, statement) for every SQL string literal in one Rust file."""
     # `'"'` is the one Rust char literal whose contents can close a string and splice
@@ -75,14 +98,14 @@ def rust_statements(source: str) -> list[tuple[int, str]]:
         match = RUST_STRING.search(source, index)
         if match is None:
             return statements
-        parts, cursor = [match.group(1)], match.end()
+        parts, cursor = [drop_continuations(match.group(1))], match.end()
         while True:
             remainder = source[cursor:]
             gap = len(remainder) - len(remainder.lstrip())
             following = RUST_STRING.match(source, cursor + gap)
             if following is None:
                 break
-            parts.append(following.group(1))
+            parts.append(drop_continuations(following.group(1)))
             cursor = following.end()
         joined = " ".join(parts).strip()
         if len(joined) > MIN_STATEMENT and SQL_START.match(joined):
@@ -91,19 +114,67 @@ def rust_statements(source: str) -> list[tuple[int, str]]:
 
 
 def python_statements(source: str) -> list[str]:
-    """Every SQL string Python builds, already folded across implicit concatenation."""
+    """Every SQL string Python builds, with its constants folded in.
+
+    Python assembles some statements from several pieces — implicit concatenation, `+` between
+    literals, and module-level constants like the current-address subquery — and an AST fold is
+    the only way to see the statement rather than the pieces. A piece that cannot be folded is a
+    value supplied at runtime, so it becomes the same marker a Rust format hole becomes.
+    """
     try:
         tree = ast.parse(source)
     except SyntaxError:
         return []
+    # Every assignment in the file, in tree order, so a statement finished by `+=` inside a
+    # method is folded as one statement. Scoping is deliberately ignored: a name reused for two
+    # different values folds to whichever came last, which can only invent a statement Python
+    # does not run -- a visible failure -- never hide one it does.
+    constants: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            folded = _fold(node.value, constants, 0)
+            if folded is not None:
+                constants[node.targets[0].id] = folded
+        elif (
+            isinstance(node, ast.AugAssign)
+            and isinstance(node.target, ast.Name)
+            and isinstance(node.op, ast.Add)
+            and constants.get(node.target.id) is not None
+        ):
+            added = _fold(node.value, constants, 0)
+            if added is not None:
+                constants[node.target.id] += added
     found: list[str] = []
     for node in ast.walk(tree):
-        if isinstance(node, ast.Constant) and isinstance(node.value, str):
-            found.append(node.value)
-        elif isinstance(node, ast.JoinedStr):
-            found.append("".join(part.value if isinstance(part, ast.Constant) and isinstance(part.value, str)
-                                 else "{}" for part in node.values))
-    return [text for text in found if len(text.strip()) > MIN_STATEMENT and SQL_START.match(text.strip())]
+        folded = _fold(node, constants, 0)
+        if folded is None:
+            continue
+        text = folded.strip()
+        if len(text) > MIN_STATEMENT and SQL_START.match(text):
+            found.append(folded)
+    # The same statement is reachable from several nodes; comparing it once is enough.
+    return list(dict.fromkeys(found))
+
+
+def _fold(node: ast.AST, constants: dict[str, str], depth: int) -> str | None:
+    if depth > 8:
+        return None
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.FormattedValue):
+        return HOLE
+    if isinstance(node, ast.JoinedStr):
+        return "".join(_fold(part, constants, depth + 1) or HOLE for part in node.values)
+    if isinstance(node, ast.Name):
+        return constants.get(node.id)
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _fold(node.left, constants, depth + 1)
+        right = _fold(node.right, constants, depth + 1)
+        if left is None and right is None:
+            return None
+        # Inside a string concatenation an unfoldable side is a runtime value, not noise.
+        return (HOLE if left is None else left) + (HOLE if right is None else right)
+    return None
 
 
 def corpus() -> list[tuple[str, str, str]]:
@@ -145,11 +216,17 @@ def main() -> int:
 
     entries = corpus()
     canon_only = [entry[2] for entry in entries]
-    checked = mismatched = 0
+    checked = mismatched = known = 0
     for path in sorted(RUST_SOURCES.glob("*.rs")):
         for line, statement in rust_statements(path.read_text(encoding="utf-8")):
             checked += 1
             if accounted_for(statement, canon_only):
+                continue
+            divergence = next(
+                (reason for marker, reason in DIVERGENCES.items() if marker in canonical(statement)), None)
+            if divergence is not None:
+                known += 1
+                print(f"Known difference: {path.name}:{line} — {divergence}")
                 continue
             mismatched += 1
             print(f"\n{path.name}:{line} is not a query the Python Worker runs:", file=sys.stderr)
@@ -165,7 +242,8 @@ def main() -> int:
     if mismatched:
         print(f"\n{mismatched} of {checked} edge Worker statements are not in the Python Worker.", file=sys.stderr)
         return 1
-    print(f"SQL parity verified: {checked} edge statements against {len(entries)} Python statements")
+    detail = f", {known} known difference{'s' if known != 1 else ''}" if known else ""
+    print(f"SQL parity verified: {checked} edge statements against {len(entries)} Python statements{detail}")
     return 0
 
 
