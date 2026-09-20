@@ -19,6 +19,7 @@ pub mod html_parse;
 mod markets;
 mod mutate;
 pub mod participation_holds;
+pub mod point_markets;
 mod points;
 mod projections;
 mod reads;

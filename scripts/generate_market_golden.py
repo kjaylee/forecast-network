@@ -40,6 +40,9 @@ GOLDEN = ROOT / "tests/golden/market-golden.json"
 
 # Every table a market lifecycle writes to, in a fixed order so the dump is comparable.
 TABLES = [
+    # The fixture the market reads from is part of the vector: a port that seeds a different
+    # forecast is not reproducing the lifecycle, it is running a different one.
+    "users", "forecasts",
     "market_treasuries", "market_funding", "point_markets", "market_shadow_accounts",
     "point_fractions", "market_quotes", "market_fills", "market_positions",
     "market_settlements", "market_closures", "market_account_ledger", "point_accounts",
@@ -110,11 +113,15 @@ class Fixture:
         return dumped
 
 
-async def build_lifecycle(fixture: Fixture) -> dict:
+async def seed_only(fixture: Fixture) -> dict:
     for uid in ("user-a", "user-b", "user-c"):
         await fixture.user(uid)
-    await fixture.opened("market-one")
-    await fixture.opened("market-two")
+    for fid in ("market-one", "market-two", "market-three"):
+        await fixture.opened(fid)
+    return await fixture.rows()
+
+
+async def build_lifecycle(fixture: Fixture) -> dict:
 
     await fixture.call("budget", fixture.markets.budget("shadow"))
     await fixture.call("fund_treasury", fixture.markets.fund_treasury(700, fixture.token(), "shadow"))
@@ -158,7 +165,6 @@ async def build_lifecycle(fixture: Fixture) -> dict:
 
 async def build_settlement(fixture: Fixture) -> dict:
     """Settle a market against a finalized outcome, on the active path."""
-    await fixture.opened("market-three")
     specification_hash = (
         await fixture.db.first("SELECT specification_hash FROM forecasts WHERE id=?", ("market-three",))
     )["specification_hash"]
@@ -179,9 +185,13 @@ async def build_settlement(fixture: Fixture) -> dict:
 
 async def build() -> dict:
     fixture = Fixture()
+    # The state the market reads from, captured before it writes anything: a port seeds exactly
+    # this, so a divergence in the fixture cannot be mistaken for a divergence in the port.
+    fixture_rows = await seed_only(fixture)
     lifecycle = await build_lifecycle(fixture)
     settlement = await build_settlement(fixture)
     return {
+        "fixtureRows": fixture_rows,
         "description": "A point market's ordinary path: treasury, create, quote, fill, look, settle.",
         "scale": str(SCALE),
         "calls": fixture.calls,

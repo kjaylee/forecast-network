@@ -350,6 +350,159 @@
     }
   ],
   "description": "A point market's ordinary path: treasury, create, quote, fill, look, settle.",
+  "fixtureRows": {
+    "forecasts": [
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1001000,
+        "created_at": 999900,
+        "creator_id": "user-a",
+        "draft_id": "draft:market-one",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "market-one",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish",
+        "normalized_question": "will market-one be announced?",
+        "open_at": 999900,
+        "question": "Will market-one be announced?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"b9ec26c60599c3eb2500544f8de4b47bd1e9d1f457de3f622fe7186807e30a3f\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":999900,\"creator_id\":\"user-a\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"market-one\",\"latest_event\":{\"artifact_hash\":\"ab5841ffe28b0d3817e1ad90d500fc4c43bfa1f11894a88967a479d812eff79d\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"market-one\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"52c0633e922d33a3a5859fda8d7acb5b7615308c835cd35674821a75e4cc6028\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"state_hash\":\"f0999631ec2e54bf0c0a6191d391eb3143090631c045d755efbce78d9284ade5\"},\"pause\":null,\"published_at_ms\":1000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will market-one be announced?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1001000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":999900,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"state\":\"OPEN\",\"updated_at_ms\":1000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"30da0f5af50f8067055d07c14dcd4a03e67a0758b465ac324c500721d892f690\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"965e90802c79adadc8150411d3892376f8f976b1ac264a9461ec0320b5681624\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"validated_at_ms\":1000000}}",
+        "specification_hash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "state": "OPEN",
+        "title": "Will Acme announce Product X?",
+        "updated_at": 1000000
+      },
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1001000,
+        "created_at": 999900,
+        "creator_id": "user-a",
+        "draft_id": "draft:market-two",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "market-two",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish",
+        "normalized_question": "will market-two be announced?",
+        "open_at": 999900,
+        "question": "Will market-two be announced?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"086497a59c0ba306ecb10eb8b604f80a860a482d58c8f5fe9a89fb97a38f2c62\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":999900,\"creator_id\":\"user-a\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"market-two\",\"latest_event\":{\"artifact_hash\":\"0e8ac724f8da056cb1da7694461cf3acfdbb704fe592ce0dd475a82946f24214\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"market-two\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"0f4786b3b47882a99db72a15c4a7d0c65e09a2582f2cc38494875cd94aca35a0\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"state_hash\":\"d92b76f189e25d9dcfdb4e3ec93fbc47c83cd9137d24529dd3811ce6de762a7c\"},\"pause\":null,\"published_at_ms\":1000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will market-two be announced?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1001000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":999900,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"state\":\"OPEN\",\"updated_at_ms\":1000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"af487845bb42a7c46fe38a9fa64cb7a1c7b884bbcd539e7eced9941793305683\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"b6420136bd785ada1564f161d7d84cea0194aa2d54a577c6ee889ba7474b6100\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"validated_at_ms\":1000000}}",
+        "specification_hash": "1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88",
+        "state": "OPEN",
+        "title": "Will Acme announce Product X?",
+        "updated_at": 1000000
+      },
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1001000,
+        "created_at": 999900,
+        "creator_id": "user-a",
+        "draft_id": "draft:market-three",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "market-three",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish",
+        "normalized_question": "will market-three be announced?",
+        "open_at": 999900,
+        "question": "Will market-three be announced?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"3a24bab953d7bebd1dc9be8b40df62ed674d60e25b9c399321f302316c2b5b82\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":999900,\"creator_id\":\"user-a\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"market-three\",\"latest_event\":{\"artifact_hash\":\"41ac786d952c4183490d6eadc14a1cd8d598e7af13bfc00f9aba80c88dd8664a\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"market-three\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"8b47e5d1da53f77af28f26aab08a31b81949bb72e1ab65d1940fe5723e6db467\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"state_hash\":\"a70129d0ecb22b9a697cae751c1c1f1ecaf95826d80b9f4c00f630ea29b87913\"},\"pause\":null,\"published_at_ms\":1000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will market-three be announced?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1001000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":999900,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"state\":\"OPEN\",\"updated_at_ms\":1000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"9ebbcf780f46a3812b51d5eb63b4869746a4e0031cf0baaef522e37920147083\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"5825334eb1ce9bfaba504543e27c8ea3aa5150f6b89dfce7cd516a3e00b08832\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"validated_at_ms\":1000000}}",
+        "specification_hash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b",
+        "state": "OPEN",
+        "title": "Will Acme announce Product X?",
+        "updated_at": 1000000
+      }
+    ],
+    "market_account_ledger": [],
+    "market_closures": [],
+    "market_fills": [],
+    "market_funding": [],
+    "market_positions": [],
+    "market_quotes": [],
+    "market_settlements": [],
+    "market_shadow_accounts": [],
+    "market_treasuries": [
+      {
+        "available_atomic": 0,
+        "issued_atomic": 0,
+        "mode": "shadow",
+        "revision": 0
+      },
+      {
+        "available_atomic": 0,
+        "issued_atomic": 0,
+        "mode": "active",
+        "revision": 0
+      }
+    ],
+    "point_accounts": [
+      {
+        "available": 1000,
+        "committed": 0,
+        "updated_at": 999800,
+        "user_id": "user-a"
+      },
+      {
+        "available": 1000,
+        "committed": 0,
+        "updated_at": 999800,
+        "user_id": "user-b"
+      },
+      {
+        "available": 1000,
+        "committed": 0,
+        "updated_at": 999800,
+        "user_id": "user-c"
+      }
+    ],
+    "point_fractions": [],
+    "point_markets": [],
+    "point_positions": [],
+    "users": [
+      {
+        "created_at": 999800,
+        "display_name": "user-a",
+        "handle": "user-a",
+        "id": "user-a",
+        "recovery_hash": "hash:user-a"
+      },
+      {
+        "created_at": 999800,
+        "display_name": "user-b",
+        "handle": "user-b",
+        "id": "user-b",
+        "recovery_hash": "hash:user-b"
+      },
+      {
+        "created_at": 999800,
+        "display_name": "user-c",
+        "handle": "user-c",
+        "id": "user-c",
+        "recovery_hash": "hash:user-c"
+      }
+    ]
+  },
   "lifecycle": {
     "other": {
       "claimsAtomic": "128111649",
@@ -384,6 +537,89 @@
     "specificationHash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2"
   },
   "rows": {
+    "forecasts": [
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1001000,
+        "created_at": 999900,
+        "creator_id": "user-a",
+        "draft_id": "draft:market-one",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "market-one",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish",
+        "normalized_question": "will market-one be announced?",
+        "open_at": 999900,
+        "question": "Will market-one be announced?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"b9ec26c60599c3eb2500544f8de4b47bd1e9d1f457de3f622fe7186807e30a3f\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":999900,\"creator_id\":\"user-a\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"market-one\",\"latest_event\":{\"artifact_hash\":\"ab5841ffe28b0d3817e1ad90d500fc4c43bfa1f11894a88967a479d812eff79d\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"market-one\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"52c0633e922d33a3a5859fda8d7acb5b7615308c835cd35674821a75e4cc6028\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"state_hash\":\"f0999631ec2e54bf0c0a6191d391eb3143090631c045d755efbce78d9284ade5\"},\"pause\":null,\"published_at_ms\":1000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will market-one be announced?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1001000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":999900,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"state\":\"OPEN\",\"updated_at_ms\":1000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"30da0f5af50f8067055d07c14dcd4a03e67a0758b465ac324c500721d892f690\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"965e90802c79adadc8150411d3892376f8f976b1ac264a9461ec0320b5681624\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2\",\"validated_at_ms\":1000000}}",
+        "specification_hash": "9d567bad9a7cc5a6a070d99225ab9f699787db39544c1bd9ef81566a401f19d2",
+        "state": "OPEN",
+        "title": "Will Acme announce Product X?",
+        "updated_at": 1000000
+      },
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1001000,
+        "created_at": 999900,
+        "creator_id": "user-a",
+        "draft_id": "draft:market-two",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "market-two",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish",
+        "normalized_question": "will market-two be announced?",
+        "open_at": 999900,
+        "question": "Will market-two be announced?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"086497a59c0ba306ecb10eb8b604f80a860a482d58c8f5fe9a89fb97a38f2c62\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":999900,\"creator_id\":\"user-a\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"market-two\",\"latest_event\":{\"artifact_hash\":\"0e8ac724f8da056cb1da7694461cf3acfdbb704fe592ce0dd475a82946f24214\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"market-two\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"0f4786b3b47882a99db72a15c4a7d0c65e09a2582f2cc38494875cd94aca35a0\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"state_hash\":\"d92b76f189e25d9dcfdb4e3ec93fbc47c83cd9137d24529dd3811ce6de762a7c\"},\"pause\":null,\"published_at_ms\":1000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will market-two be announced?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1001000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":999900,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"state\":\"OPEN\",\"updated_at_ms\":1000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"af487845bb42a7c46fe38a9fa64cb7a1c7b884bbcd539e7eced9941793305683\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"b6420136bd785ada1564f161d7d84cea0194aa2d54a577c6ee889ba7474b6100\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88\",\"validated_at_ms\":1000000}}",
+        "specification_hash": "1424e1e1ebc19625173370a4b0006ca9f7f0fa974887c315a259e711b2224c88",
+        "state": "OPEN",
+        "title": "Will Acme announce Product X?",
+        "updated_at": 1000000
+      },
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1001000,
+        "created_at": 999900,
+        "creator_id": "user-a",
+        "draft_id": "draft:market-three",
+        "failure_count": 0,
+        "finalized_outcome": "YES",
+        "id": "market-three",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish",
+        "normalized_question": "will market-three be announced?",
+        "open_at": 999900,
+        "question": "Will market-three be announced?",
+        "retry_at": 0,
+        "revision": 7,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"b42174d3c1beacf2f91bd97d261b9b765215cda2df728be8f7cc32bdebedc5a2\",\"challenge_started_at_ms\":1002100,\"challenge_until_ms\":1003100,\"created_at_ms\":999900,\"creator_id\":\"user-a\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":\"YES\",\"finalized_resolution_hash\":\"4e36b2211caef0f5ddb53fd11681e425cefecf13d1951b809e15b4be51e010d2\",\"forecast_id\":\"market-three\",\"latest_event\":{\"artifact_hash\":\"4e36b2211caef0f5ddb53fd11681e425cefecf13d1951b809e15b4be51e010d2\",\"command_id\":\"final:6\",\"command_name\":\"finalize\",\"effects\":[\"REPUTATION_UPDATE_REQUIRED\",\"RESULT_NOTIFICATION_REQUIRED\",\"RESOLUTION_COMMITMENT_REQUIRED\"],\"forecast_id\":\"market-three\",\"new_state\":\"FINALIZED\",\"occurred_at_ms\":1003100,\"old_state\":\"CHALLENGE\",\"previous_event_hash\":\"5661aa55f33833b0c1e04dd8fe0361aaa24978965064fef9a658f55acbbeb7bb\",\"revision\":7,\"schema_version\":1,\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"state_hash\":\"5c1398591f1c2da08ae32e3ff58103395ffcb58f595153c9ddb52d68e3b92d45\"},\"pause\":null,\"published_at_ms\":1000000,\"resolution\":{\"confidence_bp\":9400,\"conflict_explanation\":null,\"conflict_status\":\"CLEAR\",\"counter_judge\":{\"created_at_ms\":1001013,\"input_hash\":\"e27869f07c7afa5e0bf61dbfde562afc5cbb43538745e20621f1ebdc4cb0bb22\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"11c3eab459b5fdc4d73c048fe4794147bdaa17d3772ec37cfb3a12e57cc14536\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"COUNTER_JUDGE\"},\"counter_judge_agrees\":true,\"evidence\":[{\"collected_at_ms\":1001010,\"collector\":{\"created_at_ms\":1001010,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7d6132036e33eb193ec008362f292a989026031345eb4527f43601908e83b49c\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"EVIDENCE_COLLECTOR\"},\"content_sha256\":\"7d6132036e33eb193ec008362f292a989026031345eb4527f43601908e83b49c\",\"evidence_id\":\"evidence-1\",\"schema_version\":1,\"snapshot_uri\":\"urn:sha256:7d6132036e33eb193ec008362f292a989026031345eb4527f43601908e83b49c\",\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news/product-x\"}],\"forecast_id\":\"market-three\",\"judge\":{\"created_at_ms\":1001012,\"input_hash\":\"c6cef620049119694ec3e3b5ae6f495448f835fbb6659b41dcb1f4bc6ef36954\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"3121ab56984e9a2799d3746c235ff7be7daececdcc1a1e8eec34a23624151465\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"RESOLUTION_JUDGE\"},\"proposed_at_ms\":1002000,\"proposed_outcome\":\"YES\",\"reason_summary\":\"The retained official evidence satisfies the selected clause.\",\"rule_conflicts\":[],\"rule_matches\":[\"yes-rule\"],\"schema_version\":1,\"source_verifications\":[{\"evidence_hash\":\"05fb32beb5e8ff2c04424b7d72d12d6185c25b0864782578dd6b6b32f61329bc\",\"explanation\":\"Snapshot origin and retained bytes verified.\",\"schema_version\":1,\"source_id\":\"acme-news\",\"verified\":true,\"verifier\":{\"created_at_ms\":1001011,\"input_hash\":\"05fb32beb5e8ff2c04424b7d72d12d6185c25b0864782578dd6b6b32f61329bc\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"e6069725c15bf8a1c58407a594f25fdb1ffb7a8d76704555d05897f66564f91a\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"SOURCE_VERIFIER\"}}],\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\"},\"revision\":7,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will market-three be announced?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1001000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":999900,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"state\":\"FINALIZED\",\"updated_at_ms\":1003100,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"9ebbcf780f46a3812b51d5eb63b4869746a4e0031cf0baaef522e37920147083\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"5825334eb1ce9bfaba504543e27c8ea3aa5150f6b89dfce7cd516a3e00b08832\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b\",\"validated_at_ms\":1000000}}",
+        "specification_hash": "b8b98a0a9a6e2309c6481ae79d7a93910d70f59c0a2bfbe77030ba4fb481f38b",
+        "state": "FINALIZED",
+        "title": "Will Acme announce Product X?",
+        "updated_at": 1003100
+      }
+    ],
     "market_account_ledger": [
       {
         "available_after": 900,
@@ -678,7 +914,30 @@
         "status": "settled"
       }
     ],
-    "point_positions": []
+    "point_positions": [],
+    "users": [
+      {
+        "created_at": 999800,
+        "display_name": "user-a",
+        "handle": "user-a",
+        "id": "user-a",
+        "recovery_hash": "hash:user-a"
+      },
+      {
+        "created_at": 999800,
+        "display_name": "user-b",
+        "handle": "user-b",
+        "id": "user-b",
+        "recovery_hash": "hash:user-b"
+      },
+      {
+        "created_at": 999800,
+        "display_name": "user-c",
+        "handle": "user-c",
+        "id": "user-c",
+        "recovery_hash": "hash:user-c"
+      }
+    ]
   },
   "scale": "1000000",
   "settlement": {
