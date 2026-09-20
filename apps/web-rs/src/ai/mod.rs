@@ -7,3 +7,4 @@
 pub mod schema;
 pub mod strict;
 pub mod text;
+pub mod window;

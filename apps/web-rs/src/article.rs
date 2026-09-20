@@ -162,6 +162,16 @@ pub fn instant_ms(publication: &str) -> i64 {
     (days * 86400 + hour * 3600 + minute * 60 + second - offset) * 1000
 }
 
+/// The instant a string denotes, if it denotes one. `strptime` in the reference: the calendar is
+/// checked, not only the shape, so `2026-13-01T00:00:00Z` is not an instant.
+pub fn instant_from_str(text: &str) -> Option<i64> {
+    let value = Value::String(text.to_string());
+    match publication_date(Some(&value)) {
+        (Some(_), INSTANT) => Some(instant_ms(text)),
+        _ => None,
+    }
+}
+
 fn article_type(value: &Value) -> bool {
     let kinds: Vec<&Value> = match value {
         Value::String(_) => vec![value],
