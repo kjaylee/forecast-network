@@ -107,7 +107,10 @@ def main() -> int:
                 [sys.executable, "scripts/generate_risk_feed_series_golden.py", "--check"],
                 # The Devnet memo attestation hands the phone an *incomplete* transaction: one real
                 # signature and one zeroed slot the wallet fills. The zeroes are the contract.
-                [sys.executable, "scripts/generate_attestation_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_attestation_golden.py", "--check"],
+                # The AI failure → HTTP failure table. Its unknown codes are deliberately neutral,
+                # and "say more" and "try again later" are different statuses.
+                [sys.executable, "scripts/generate_ai_error_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

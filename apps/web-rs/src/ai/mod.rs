@@ -11,6 +11,7 @@ pub mod compiler_wire;
 pub mod coordinator;
 pub mod dispute;
 pub mod early;
+pub mod error;
 pub mod resolution;
 pub mod schema;
 pub mod strict;

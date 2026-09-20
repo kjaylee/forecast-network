@@ -1,0 +1,205 @@
+{
+  "cases": [
+    {
+      "name": "rejected:compiler_deadline_timezone",
+      "result": {
+        "code": "deadline_clarification_required",
+        "message": "Specify the closing date, time, and time zone. The question and resolution rules must use the same deadline.",
+        "status": 422
+      }
+    },
+    {
+      "name": "rejected:compiler_deadline_invalid",
+      "result": {
+        "code": "deadline_clarification_required",
+        "message": "Specify the closing date, time, and time zone. The question and resolution rules must use the same deadline.",
+        "status": 422
+      }
+    },
+    {
+      "name": "rejected:compiler_deadline_mismatch",
+      "result": {
+        "code": "deadline_clarification_required",
+        "message": "Specify the closing date, time, and time zone. The question and resolution rules must use the same deadline.",
+        "status": 422
+      }
+    },
+    {
+      "name": "rejected:compiler_deadline_range",
+      "result": {
+        "code": "deadline_clarification_required",
+        "message": "Specify the closing date, time, and time zone. The question and resolution rules must use the same deadline.",
+        "status": 422
+      }
+    },
+    {
+      "name": "rejected:question_already_resolved",
+      "result": {
+        "code": "question_already_resolved",
+        "message": "Official evidence already answers this question. Choose an unresolved future event.",
+        "status": 422
+      }
+    },
+    {
+      "name": "rejected:source_rejected",
+      "result": {
+        "code": "source_not_usable",
+        "message": "The selected evidence page could not be read or is unsupported. Specify a shorter official text page that opens without signing in, then request another review.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:resolution_domain_rejected",
+      "result": {
+        "code": "resolution_domain_rejected",
+        "message": "The AI resolution was refused by the immutable domain checks. The retained judge output records what it proposed.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:compiler_not_publishable",
+      "result": {
+        "code": "specification_needs_review",
+        "message": "The AI review could not approve the resolution criteria. Clarify the subject, the fact to verify, and the deadline before requesting another review.",
+        "status": 422
+      }
+    },
+    {
+      "name": "rejected:ai_output_size",
+      "result": {
+        "code": "ai_response_invalid",
+        "message": "The AI response was incomplete or did not match the required format. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:ai_output_json",
+      "result": {
+        "code": "ai_response_invalid",
+        "message": "The AI response was incomplete or did not match the required format. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:ai_output_type",
+      "result": {
+        "code": "ai_response_invalid",
+        "message": "The AI response was incomplete or did not match the required format. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:ai_output_enum",
+      "result": {
+        "code": "ai_response_invalid",
+        "message": "The AI response was incomplete or did not match the required format. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:ai_output_fields",
+      "result": {
+        "code": "ai_response_invalid",
+        "message": "The AI response was incomplete or did not match the required format. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:ai_output_text_length",
+      "result": {
+        "code": "ai_response_invalid",
+        "message": "The AI response was incomplete or did not match the required format. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:ai_output_range",
+      "result": {
+        "code": "ai_response_invalid",
+        "message": "The AI response was incomplete or did not match the required format. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:ai_output_incomplete",
+      "result": {
+        "code": "ai_response_invalid",
+        "message": "The AI response was incomplete or did not match the required format. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:compiler_domain_validation",
+      "result": {
+        "code": "ai_response_invalid",
+        "message": "The AI response was incomplete or did not match the required format. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:ai_rejected",
+      "result": {
+        "code": "ai_review_incomplete",
+        "message": "The AI review could not be completed. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:<empty>",
+      "result": {
+        "code": "ai_review_incomplete",
+        "message": "The AI review could not be completed. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:something_new",
+      "result": {
+        "code": "ai_review_incomplete",
+        "message": "The AI review could not be completed. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "rejected:SOURCE_REJECTED",
+      "result": {
+        "code": "ai_review_incomplete",
+        "message": "The AI review could not be completed. Please try again later.",
+        "status": 502
+      }
+    },
+    {
+      "name": "unavailable:source-cause",
+      "result": {
+        "code": "source_temporarily_unavailable",
+        "message": "The official evidence page could not be reached. Try again later or specify an official text page that opens without signing in.",
+        "status": 503
+      }
+    },
+    {
+      "name": "unavailable:source-artifact",
+      "result": {
+        "code": "source_temporarily_unavailable",
+        "message": "The official evidence page could not be reached. Try again later or specify an official text page that opens without signing in.",
+        "status": 503
+      }
+    },
+    {
+      "name": "unavailable:provider",
+      "result": {
+        "code": "ai_unavailable",
+        "message": "The AI provider is unavailable. Please try again later.",
+        "status": 503
+      }
+    },
+    {
+      "name": "not-an-ai-error",
+      "result": {
+        "code": "ai_validation_failed",
+        "message": "The AI result failed validation. No result was finalized.",
+        "status": 502
+      }
+    }
+  ],
+  "description": "The AI failure → HTTP failure table: the deadline and output code sets, the deliberately neutral fallthrough, and the two ways a source failure is recognised."
+}
