@@ -30,6 +30,7 @@ mod routes;
 pub mod scheduler;
 pub mod source_watch;
 pub mod sources;
+pub mod translations;
 mod writes;
 
 pub const VERSION: &str = "0.13.0";

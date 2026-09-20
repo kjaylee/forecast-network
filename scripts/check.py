@@ -57,7 +57,9 @@ def main() -> int:
                 [sys.executable, "scripts/generate_compile_golden.py", "--check"],
                 # The early-resolution path: the only way a positive result is reached without a
                 # deadline passing, so its refusals matter as much as its acceptances.
-                [sys.executable, "scripts/generate_early_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_early_golden.py", "--check"],
+                # A display translation is presentation only, and this is what that costs.
+                [sys.executable, "scripts/generate_translation_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:
