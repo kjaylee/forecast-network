@@ -365,7 +365,7 @@ pub fn reservation_sql(
 
 async fn submission_response(context: &Context<'_>, user_id: &str, forecast_id: &str, mut receipt: Value) -> Handler {
     let session = context.session;
-    let eligibility = crate::eligibility::combined(session, forecast_id, Some(user_id)).await?;
+    let eligibility = crate::eligibility::combined(&crate::db::D1(session), forecast_id, Some(user_id)).await?;
     if eligibility["status"] != "none" {
         let effective = first(
             session,

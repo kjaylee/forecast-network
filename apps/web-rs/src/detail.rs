@@ -214,7 +214,7 @@ pub async fn forecast_detail(
         "evidenceReports": {"count": reports.as_ref().map_or(json!(0), |r| get(r, "n").clone()),
                             "mine": reports.as_ref().map_or(Value::Null, |r| get(r, "mine").clone()), "reward": EVIDENCE_REWARD_POINTS},
         "attestation": crate::registry::attestation(session, user_id, forecast_id, attestation_available).await?,
-        "eligibility": crate::eligibility::combined(session, forecast_id, user_id).await?,
+        "eligibility": crate::eligibility::combined(&crate::db::D1(session), forecast_id, user_id).await?,
         "points": points, "stake": stake,
         "displayTranslation": translation_row.and_then(display_translation).unwrap_or(Value::Null),
         "auditTruncated": events.len() == 500, "historyTruncated": history.len() == 300,

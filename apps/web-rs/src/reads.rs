@@ -550,7 +550,7 @@ pub async fn me(context: &Context<'_>, user_id: Option<&str>) -> Handler {
             item["myForecast"] = submission(&body, get(choice, "revision"));
         }
         item["stake"] = positions.get(id).cloned().unwrap_or(Value::Null);
-        item["eligibility"] = crate::eligibility::combined(session, id, Some(user_id)).await?;
+        item["eligibility"] = crate::eligibility::combined(&crate::db::D1(session), id, Some(user_id)).await?;
         cards.push(item);
     }
     let points = crate::points::summary(session, user_id)
