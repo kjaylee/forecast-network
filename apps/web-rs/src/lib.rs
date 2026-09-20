@@ -39,6 +39,7 @@ pub mod solana;
 pub mod source_watch;
 pub mod sources;
 pub mod translations;
+pub mod wallets;
 mod writes;
 
 pub const VERSION: &str = "0.13.0";

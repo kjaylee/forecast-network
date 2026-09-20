@@ -1,0 +1,256 @@
+{
+  "decodes": [
+    {
+      "kind": "address",
+      "name": "decode:ordinary-58666666",
+      "result": "5866666666666666666666666666666666666666666666666666666666666666",
+      "value": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH"
+    },
+    {
+      "kind": "address",
+      "name": "decode:ordinary-c9a3f86a",
+      "result": "c9a3f86aae465f0e56513864510f3997561fa2c9e85ea21dc2292309f3cd6022",
+      "value": "Ea7xtAAqsG7dT5vCQwGK18NUMSJFwavDDphEfaF3Nfe1"
+    },
+    {
+      "kind": "address",
+      "name": "decode:ordinary-d75a9801",
+      "result": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+      "value": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z"
+    },
+    {
+      "kind": "address",
+      "name": "decode:ordinary-3d4017c3",
+      "result": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+      "value": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5"
+    },
+    {
+      "error": {
+        "code": "wallet_address_invalid",
+        "message": "Use a valid, non-small-order Ed25519 wallet public key."
+      },
+      "kind": "address",
+      "name": "decode:ordinary-4ccd089b",
+      "value": "6AoKS5iPKnvmJrknxwLPvHMcMR8jPxQVqT5wbrUnJNQz"
+    },
+    {
+      "error": {
+        "code": "wallet_address_invalid",
+        "message": "Enter a valid Solana wallet address."
+      },
+      "kind": "address",
+      "name": "decode:short",
+      "value": "1"
+    },
+    {
+      "error": {
+        "code": "wallet_address_invalid",
+        "message": "Enter a valid Solana wallet address."
+      },
+      "kind": "address",
+      "name": "decode:bad-character",
+      "value": "0OIl1111111111111111111111111111"
+    },
+    {
+      "error": {
+        "code": "wallet_address_invalid",
+        "message": "Enter a valid Solana wallet address."
+      },
+      "kind": "address",
+      "name": "decode:too-long",
+      "value": "111111111111111111111111111111111111111111111"
+    },
+    {
+      "error": {
+        "code": "wallet_address_invalid",
+        "message": "Use a valid, non-small-order Ed25519 wallet public key."
+      },
+      "kind": "address",
+      "name": "decode:noncanonical",
+      "value": "H242rsh5hzpvDdct56PG5YPQbKUT37EmySQLoQqrYUJr"
+    },
+    {
+      "error": {
+        "code": "wallet_address_invalid",
+        "message": "Use a valid, non-small-order Ed25519 wallet public key."
+      },
+      "kind": "address",
+      "name": "decode:small-order",
+      "value": "11111111111111111111111111111111"
+    },
+    {
+      "error": {
+        "code": "wallet_address_invalid",
+        "message": "Enter a valid Solana wallet address."
+      },
+      "kind": "address",
+      "name": "decode:not-a-string",
+      "value": null
+    }
+  ],
+  "description": "The wallet codecs: RFC 8032 decoding with the 8-torsion rejected, canonical base58 addresses, and strict signature decoding.",
+  "malformed": [
+    {
+      "hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "name": "all-ff",
+      "valid": false
+    },
+    {
+      "hex": "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+      "name": "y-equals-p",
+      "valid": false
+    },
+    {
+      "hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+      "name": "y-greater-than-p",
+      "valid": false
+    },
+    {
+      "hex": "00000000000000000000000000000000000000000000000000000000000000",
+      "name": "short",
+      "valid": false
+    },
+    {
+      "hex": "000000000000000000000000000000000000000000000000000000000000000000",
+      "name": "long",
+      "valid": false
+    }
+  ],
+  "ordinary": [
+    {
+      "hex": "5866666666666666666666666666666666666666666666666666666666666666",
+      "valid": true
+    },
+    {
+      "hex": "c9a3f86aae465f0e56513864510f3997561fa2c9e85ea21dc2292309f3cd6022",
+      "valid": true
+    },
+    {
+      "hex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+      "valid": true
+    },
+    {
+      "hex": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+      "valid": true
+    },
+    {
+      "hex": "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb",
+      "valid": false
+    }
+  ],
+  "rounds": [
+    {
+      "address": "11111111111111111111111111111111",
+      "raw": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "address": "4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofM",
+      "raw": "0100000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "address": "1thX6LZfHDZZKUs92febYZhYRcXddmzfzF2NvTkPNE",
+      "raw": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+    },
+    {
+      "address": "JEKNVnkbo3jma5nREBBJCDoXFVeKkD56V3xKrvRmWxFG",
+      "raw": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  ],
+  "signatures": [
+    {
+      "error": {
+        "code": "wallet_signature_invalid",
+        "message": "The wallet returned an invalid signature."
+      },
+      "kind": "signature",
+      "name": "signature:short",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "error": {
+        "code": "wallet_signature_invalid",
+        "message": "The wallet returned an invalid signature."
+      },
+      "kind": "signature",
+      "name": "signature:bad-characters",
+      "value": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    },
+    {
+      "error": {
+        "code": "wallet_signature_invalid",
+        "message": "The wallet returned an invalid signature."
+      },
+      "kind": "signature",
+      "name": "signature:not-canonical",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "error": {
+        "code": "wallet_signature_invalid",
+        "message": "The wallet returned an invalid signature."
+      },
+      "kind": "signature",
+      "name": "signature:not-a-string",
+      "value": null
+    },
+    {
+      "error": {
+        "code": "wallet_signature_invalid",
+        "message": "The wallet returned an invalid signature."
+      },
+      "kind": "signature",
+      "name": "signature:too-long",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    },
+    {
+      "kind": "signature",
+      "name": "signature:valid",
+      "result": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
+      "value": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+Pw=="
+    },
+    {
+      "kind": "signature",
+      "name": "signature:standard-padding",
+      "result": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  ],
+  "smallOrder": [
+    {
+      "hex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "valid": false
+    },
+    {
+      "hex": "0100000000000000000000000000000000000000000000000000000000000000",
+      "valid": false
+    },
+    {
+      "hex": "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+      "valid": false
+    },
+    {
+      "hex": "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+      "valid": false
+    },
+    {
+      "hex": "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+      "valid": false
+    },
+    {
+      "hex": "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a",
+      "valid": false
+    },
+    {
+      "hex": "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05",
+      "valid": false
+    },
+    {
+      "hex": "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa",
+      "valid": false
+    },
+    {
+      "hex": "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85",
+      "valid": false
+    }
+  ]
+}
