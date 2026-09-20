@@ -399,6 +399,62 @@ impl Scheduler<'_> {
     }
 }
 
+/// `AI_WORKFLOW_TIMEOUT_SECONDS`.
+pub const AI_WORKFLOW_TIMEOUT_SECONDS: i64 = 240;
+
+/// `read_artifact`.
+pub async fn read_artifact(db: &dyn Database, digest: &str) -> Result<Option<String>, String> {
+    let row = db
+        .first("SELECT body FROM artifacts WHERE hash=?", &[json!(digest)])
+        .await
+        .map_err(|error| error.to_string())?;
+    Ok(row.as_ref().and_then(|row| text(row, "body").map(str::to_string)))
+}
+
+/// `_retain_rejected`: the artifacts a refusal carried are kept even though the work failed.
+///
+/// They are what a later reviewer reads to see *what* the model proposed, so dropping them on the
+/// failure path would leave every rejection with only a code.
+pub async fn retain_rejected(db: &dyn Database, artifacts: &[crate::ai::coordinator::Artifact]) -> Result<(), String> {
+    if artifacts.is_empty() {
+        return Ok(());
+    }
+    let rows: Vec<(String, String, String, String)> = artifacts
+        .iter()
+        .map(|artifact| {
+            (
+                artifact.hash.clone(),
+                artifact.kind.to_string(),
+                artifact.body.clone(),
+                "application/json".to_string(),
+            )
+        })
+        .collect();
+    let statements = crate::source_watch::artifact_sql(&rows, 0).map_err(|error| error.message())?;
+    db.batch(&statements).await.map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+/// The acceptance half of `_bounded_ai`.
+///
+/// The reference wraps the work in `asyncio.timeout(240)` *and* checks the wall clock afterwards,
+/// because the injected clock also catches a suspension past the lease boundary — a Worker that
+/// was frozen for minutes returns with a result the deadline rule has already invalidated. The
+/// timer belongs to the seam that makes the call; this is the part that decides whether the answer
+/// that came back may be accepted.
+pub fn workflow_deadline_passed(started_ms: i64, now_ms: i64) -> bool {
+    now_ms - started_ms >= AI_WORKFLOW_TIMEOUT_SECONDS * 1000
+}
+
+/// `_bounded_ai`'s refusal.
+pub fn workflow_timeout() -> (u16, &'static str, &'static str) {
+    (
+        504,
+        "ai_workflow_timeout",
+        "The AI review timed out. No result was finalized.",
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

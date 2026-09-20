@@ -110,7 +110,10 @@ def main() -> int:
                 [sys.executable, "scripts/generate_attestation_golden.py", "--check"],
                 # The AI failure → HTTP failure table. Its unknown codes are deliberately neutral,
                 # and "say more" and "try again later" are different statuses.
-                [sys.executable, "scripts/generate_ai_error_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_ai_error_golden.py", "--check"],
+                # The operator refresh: an AI call is awaited inside it, so the guard batch is what
+                # keeps a revoked binding from being written under a lease that was already stale.
+                [sys.executable, "scripts/generate_risk_refresh_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

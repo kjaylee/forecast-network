@@ -219,6 +219,16 @@ def _fold(node: ast.AST, constants: dict[str, str], depth: int) -> str | None:
         return "".join(_fold(part, constants, depth + 1) or HOLE for part in node.values)
     if isinstance(node, ast.Name):
         return constants.get(node.id)
+    # `sql.replace(a, b)`, chained: how the reference derives one statement from another without
+    # repeating it. A chain of them is a statement the Worker runs, and reading only the base would
+    # leave the derived one invisible — the same failure the `+` fold exists to prevent.
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "replace" and len(node.args) == 2:
+        base = _fold(node.func.value, constants, depth + 1)
+        old = _fold(node.args[0], constants, depth + 1)
+        new = _fold(node.args[1], constants, depth + 1)
+        if base is not None and old is not None and new is not None:
+            return base.replace(old, new)
+        return None
     if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
         left = _fold(node.left, constants, depth + 1)
         right = _fold(node.right, constants, depth + 1)

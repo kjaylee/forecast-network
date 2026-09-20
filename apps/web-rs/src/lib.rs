@@ -36,6 +36,7 @@ pub mod risk_feed;
 pub mod risk_feed_series;
 pub mod risk_feed_v2;
 pub mod risk_ops;
+pub mod risk_refresh;
 mod routes;
 pub mod scheduler;
 pub mod seeker;

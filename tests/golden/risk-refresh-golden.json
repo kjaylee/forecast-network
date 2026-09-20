@@ -1,0 +1,283 @@
+{
+  "calls": [
+    {
+      "call": "clock:both",
+      "input": {
+        "asOfMs": 1800000000000,
+        "completedMs": 1800000000000,
+        "estimateHash": "bacef382af2ed4a52ddbee3a0bc6f5182f83fd1dafdd5dfcf9f6ea12c54761f2",
+        "forecastId": "f_19581e27de7ced00ff1ce50b",
+        "kinds": [
+          "ai-forecast",
+          "risk-prediction-sources"
+        ],
+        "sourceHash": "475118f2aa66cb99b05ed2d0204da7b96f76efcfd675ec44661cceb26f64364e",
+        "specificationHash": "c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624",
+        "startedMs": 1799999995000
+      },
+      "kind": "clock_statements",
+      "result": [
+        [
+          "INSERT OR IGNORE INTO artifacts(hash,kind,body,media_type,created_at) VALUES(?,?,?,?,?)",
+          [
+            "8d26d6191da41d799c6d3de4b31e01a0378c79e99251e6ee9a155545038405b8",
+            "risk-prediction-clock",
+            "{\"estimate_artifact_hash\":\"bacef382af2ed4a52ddbee3a0bc6f5182f83fd1dafdd5dfcf9f6ea12c54761f2\",\"evaluation_completed_at_ms\":1800000000000,\"evaluation_started_at_ms\":1800000000000,\"forecast_as_of_ms\":1800000000000,\"information_cutoff_ms\":1800000000000,\"source_bundle_hash\":\"475118f2aa66cb99b05ed2d0204da7b96f76efcfd675ec44661cceb26f64364e\",\"source_capture_completed_at_ms\":1800000000000,\"source_capture_started_at_ms\":1799999995000,\"source_watermark_ms\":null,\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"version\":\"risk-prediction-clock-v1\"}",
+            "application/json",
+            1800000000000
+          ]
+        ],
+        [
+          "INSERT OR IGNORE INTO risk_prediction_clocks_v2(estimate_artifact_hash,forecast_id,clock_artifact_hash,recorded_at) VALUES(?,?,?,?)",
+          [
+            "bacef382af2ed4a52ddbee3a0bc6f5182f83fd1dafdd5dfcf9f6ea12c54761f2",
+            "f_19581e27de7ced00ff1ce50b",
+            "8d26d6191da41d799c6d3de4b31e01a0378c79e99251e6ee9a155545038405b8",
+            1800000000000
+          ]
+        ]
+      ]
+    },
+    {
+      "call": "clock:estimate-only",
+      "input": {
+        "kinds": [
+          "ai-forecast"
+        ]
+      },
+      "kind": "clock_statements",
+      "result": []
+    },
+    {
+      "call": "refresh:unknown-binding",
+      "error": {
+        "code": "risk_binding_not_current",
+        "message": "The approved risk question is not available for refresh.",
+        "status": 409
+      },
+      "input": {
+        "bindingId": "no-such-binding"
+      },
+      "kind": "refresh_bound_prediction_v2"
+    },
+    {
+      "call": "refresh:ok",
+      "input": {
+        "bindingId": "usdc-depeg-1d-episode-1"
+      },
+      "kind": "refresh_bound_prediction_v2",
+      "result": {
+        "aiForecast": {
+          "artifactHash": "1fd584efd5304b6f2d21a3b06070b302ce67c5a8521744ccb53bff025aeb8ebb",
+          "asOf": 1800007201000,
+          "model": "test-model",
+          "modelVersion": "gemini-tested-revision",
+          "probability": 1.8,
+          "provider": "gemini",
+          "rationale": "Retained context; tail uncertainty.",
+          "specificationHash": "c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624"
+        },
+        "bindingId": "usdc-depeg-1d-episode-1",
+        "forecastId": "f_19581e27de7ced00ff1ce50b",
+        "status": "refreshed"
+      }
+    },
+    {
+      "call": "refresh:not-newer",
+      "error": {
+        "code": "ai_validation_failed",
+        "message": "The AI result failed validation. No result was finalized.",
+        "status": 502
+      },
+      "input": {
+        "bindingId": "usdc-depeg-1d-episode-1"
+      },
+      "kind": "refresh_bound_prediction_v2"
+    },
+    {
+      "call": "refresh:paused",
+      "error": {
+        "code": "risk_binding_not_current",
+        "message": "The approved risk question is not available for refresh.",
+        "status": 409
+      },
+      "input": {
+        "bindingId": "usdc-depeg-1d-episode-1"
+      },
+      "kind": "refresh_bound_prediction_v2"
+    },
+    {
+      "call": "refresh:resumed",
+      "error": {
+        "code": "ai_validation_failed",
+        "message": "The AI result failed validation. No result was finalized.",
+        "status": 502
+      },
+      "input": {
+        "bindingId": "usdc-depeg-1d-episode-1"
+      },
+      "kind": "refresh_bound_prediction_v2"
+    },
+    {
+      "call": "refresh:revoked",
+      "error": {
+        "code": "risk_binding_not_current",
+        "message": "The approved risk question is not available for refresh.",
+        "status": 409
+      },
+      "input": {
+        "bindingId": "usdc-depeg-1d-episode-1"
+      },
+      "kind": "refresh_bound_prediction_v2"
+    },
+    {
+      "call": "refresh:after-revocation",
+      "error": {
+        "code": "risk_binding_not_current",
+        "message": "The approved risk question is not available for refresh.",
+        "status": 409
+      },
+      "input": {
+        "bindingId": "usdc-depeg-1d-episode-1"
+      },
+      "kind": "refresh_bound_prediction_v2"
+    }
+  ],
+  "clockArtifacts": {
+    "estimate": "{\"as_of_ms\":1800000000000,\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\"}",
+    "sources": "{\"bundle\":\"x\"}"
+  },
+  "description": "The bound-prediction refresh: the currency query, the clock roles, and the stale-estimate rule — over the v2 producer's own approved binding.",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+  "rows": {
+    "artifacts": [
+      {
+        "body": "{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"category\":\"CRYPTO\",\"close_at_ms\":1800180000000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}",
+        "created_at": 1800000000000,
+        "hash": "c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624",
+        "kind": "specification",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7922b5ee0e01653056f200d4d661480deea87d0a865908b48c6c5ee26a71b773\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"5d44dd9dd74eb63290d43b49088e259b26116a0142a976e8e52c21255bbfdd36\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"validated_at_ms\":1800000000000}",
+        "created_at": 1800000000000,
+        "hash": "0be47caeb7bf3e8180570420959798293eeac3089372e7af55ba39381095388b",
+        "kind": "validation",
+        "media_type": "application/json"
+      },
+      {
+        "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+        "created_at": 1800007201000,
+        "hash": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+        "kind": "source",
+        "media_type": "text/html"
+      },
+      {
+        "body": "{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"29d465cd3bd4fbceebdd8cc944fd36ea2091b2d7ff88c8ca1b77f055096e92f6\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false}",
+        "created_at": 1800007201000,
+        "hash": "785bdc280eabc4c52bee1a21f7b143ff09b7e8212d5d01ba4d01d032680f91c3",
+        "kind": "source-collection",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"collection\":{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"29d465cd3bd4fbceebdd8cc944fd36ea2091b2d7ff88c8ca1b77f055096e92f6\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false},\"evaluated_at_ms\":1800007201000,\"snapshots\":[{\"collected_at_ms\":1800007201000,\"collector\":null,\"content_sha256\":\"1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"evidence_id\":\"evidence-1b518559163111905b566219d6d8f8ba\",\"schema_version\":1,\"snapshot_uri\":\"urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"version\":\"risk-prediction-sources-v1\"}",
+        "created_at": 1800007201000,
+        "hash": "af06392d550078682f4ab6ee8871039870ace81a866c8bbb0bbac64fee1fbe19",
+        "kind": "risk-prediction-sources",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"input\":{\"as_of_ms\":1800007201000,\"as_of_utc\":\"2027-01-15T10:00:01.000Z\",\"policy\":\"Estimate the probability of the published YES clause ultimately being satisfied, given only the supplied source context and knowledge you actually have as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish facts supported by the retained source documents from prior or historical knowledge. Do not assert a product is currently the latest version, a company currently does something, or any other current fact unless the retained source documents support it. If source context lacks current information, explicitly acknowledge that uncertainty instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale acknowledging important uncertainty. Never invent web research, crowd forecasts or observations. No betting, payouts or investment advice.\",\"schema_version\":1,\"source_documents\":[{\"text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"url\":\"https://www.apple.com/newsroom/\"}],\"source_provenance_hash\":\"af06392d550078682f4ab6ee8871039870ace81a866c8bbb0bbac64fee1fbe19\",\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"category\":\"CRYPTO\",\"close_at_ms\":1800180000000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"rationale\":\"Retained context; tail uncertainty.\",\"yesProbabilityBp\":180},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AI_FORECAST\"}",
+        "created_at": 1800007201000,
+        "hash": "edf8c731d694f38c4f6065eaf6eed053b966bae7396100bee6c04a4710fd10a7",
+        "kind": "ai-decision",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"as_of_ms\":1800007201000,\"decision_artifact_hash\":\"edf8c731d694f38c4f6065eaf6eed053b966bae7396100bee6c04a4710fd10a7\",\"kind\":\"ai_forecast\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"rationale\":\"Retained context; tail uncertainty.\",\"schema_version\":1,\"source_provenance_hash\":\"af06392d550078682f4ab6ee8871039870ace81a866c8bbb0bbac64fee1fbe19\",\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"yes_probability_bp\":180}",
+        "created_at": 1800007201000,
+        "hash": "1fd584efd5304b6f2d21a3b06070b302ce67c5a8521744ccb53bff025aeb8ebb",
+        "kind": "ai-forecast",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"estimate_artifact_hash\":\"1fd584efd5304b6f2d21a3b06070b302ce67c5a8521744ccb53bff025aeb8ebb\",\"evaluation_completed_at_ms\":1800007201000,\"evaluation_started_at_ms\":1800007201000,\"forecast_as_of_ms\":1800007201000,\"information_cutoff_ms\":1800007201000,\"source_bundle_hash\":\"af06392d550078682f4ab6ee8871039870ace81a866c8bbb0bbac64fee1fbe19\",\"source_capture_completed_at_ms\":1800007201000,\"source_capture_started_at_ms\":1800007201000,\"source_watermark_ms\":null,\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"version\":\"risk-prediction-clock-v1\"}",
+        "created_at": 1800007201000,
+        "hash": "c229e81d2837ef726fb1a2509d878b46130a07336ac169ec4cbc7df2d1af8e34",
+        "kind": "risk-prediction-clock",
+        "media_type": "application/json"
+      }
+    ],
+    "forecasts": [
+      {
+        "ai_forecast": "{\"artifactHash\":\"1fd584efd5304b6f2d21a3b06070b302ce67c5a8521744ccb53bff025aeb8ebb\",\"asOf\":1800007201000,\"model\":\"test-model\",\"modelVersion\":\"gemini-tested-revision\",\"probability\":1.8,\"provider\":\"gemini\",\"rationale\":\"Retained context; tail uncertainty.\",\"specificationHash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\"}",
+        "category": "CRYPTO",
+        "challenge_until": null,
+        "close_at": 1800180000000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_2c624232cdd221771294dfbb",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_19581e27de7ced00ff1ce50b",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish-risk-v2",
+        "normalized_question": "during [2027-01-15t10:00:00z, 2027-01-17t10:00:00z), will usdc/usd close strictly below usd 0.9900 on both kraken and bitstamp in any same completed 5-minute candle? submissions close exactly 2027-01-17t10:00:00z.",
+        "open_at": 1800000000000,
+        "question": "During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"1dfa16fc904aa884ca8778c2f5596defbfcbc7ef8e0b9065ee60790ef80ff1c8\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"latest_event\":{\"artifact_hash\":\"0be47caeb7bf3e8180570420959798293eeac3089372e7af55ba39381095388b\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"a391715d6f70d3f9ff12f2a9264bc28a8c07944591f7294e3dace0c5e7ef0e96\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"state_hash\":\"6ce41686cca0ca954f903c70fc67c087640e04962f9e8a6a1348536c33b87e10\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"category\":\"CRYPTO\",\"close_at_ms\":1800180000000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}},\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7922b5ee0e01653056f200d4d661480deea87d0a865908b48c6c5ee26a71b773\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"5d44dd9dd74eb63290d43b49088e259b26116a0142a976e8e52c21255bbfdd36\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624",
+        "state": "OPEN",
+        "title": "During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.",
+        "updated_at": 1800000000000
+      }
+    ],
+    "risk_feed_binding_revocations_v2": [
+      {
+        "binding_id": "usdc-depeg-1d-episode-1",
+        "reason": "operator withdrew it",
+        "revoked_at": 1800007201000,
+        "revoked_by": "admin"
+      }
+    ],
+    "risk_feed_bindings_v2": [
+      {
+        "approved_at": 1800000000000,
+        "approved_by": "authenticated-admin",
+        "binding_id": "usdc-depeg-1d-episode-1",
+        "binding_json": "{\"approval_artifact_hash\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"asset\":\"USDC\",\"authorization_valid_from_ms\":1800000000000,\"authorization_valid_until_ms\":1800180000000,\"binding_id\":\"usdc-depeg-1d-episode-1\",\"category\":\"CRYPTO\",\"channel\":\"depegRisk1d\",\"definition_hash\":\"9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be\",\"episode_id\":\"2027-01-15T10:00:00Z\",\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"interval\":\"[start,end)\",\"mapping_kind\":\"containing_upper_estimate\",\"mapping_profile_hash\":\"dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d\",\"mapping_profile_id\":\"monotone-any-event-containment\",\"mapping_profile_version\":\"containment-profile-v1\",\"operational_valid_from_ms\":1800007200000,\"operational_valid_until_ms\":1800093600000,\"policy_horizon_ms\":86400000,\"question_event_definition_hash\":\"c0c707e5c3781879cece6e03e8ba3667604737d47bfffe181e2ae9fd452a5625\",\"schema_version\":1,\"series_id\":\"usdc-depeg-1d-w48\",\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"target_end_ms\":1800180000000,\"target_start_ms\":1800007200000,\"version\":\"canonical-risk-binding-v2\"}",
+        "feed_id": "risk-v2",
+        "forecast_id": "f_19581e27de7ced00ff1ce50b"
+      }
+    ],
+    "risk_prediction_clocks_v2": [
+      {
+        "clock_artifact_hash": "c229e81d2837ef726fb1a2509d878b46130a07336ac169ec4cbc7df2d1af8e34",
+        "estimate_artifact_hash": "1fd584efd5304b6f2d21a3b06070b302ce67c5a8521744ccb53bff025aeb8ebb",
+        "forecast_id": "f_19581e27de7ced00ff1ce50b",
+        "recorded_at": 1800007201000
+      }
+    ],
+    "users": [
+      {
+        "created_at": 1800000000000,
+        "display_name": "테스터",
+        "handle": "f_4e07408562be",
+        "id": "u_4e07408562bedb8b60ce05c1",
+        "recovery_hash": "7444c5ccee4aba92f325831bd6df61ececb73bb98b0df02ee6032633a4e43c96"
+      },
+      {
+        "created_at": 1800000000000,
+        "display_name": "다른 사용자",
+        "handle": "f_e7f6c011776e",
+        "id": "u_e7f6c011776e8db7cd330b54",
+        "recovery_hash": "0ec2e8eb334b6f181d147a055a970b6e391d1e6872dae8924342378ebc1c1aaf"
+      }
+    ]
+  }
+}
