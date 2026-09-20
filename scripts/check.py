@@ -50,7 +50,9 @@ def main() -> int:
                 # The two AI pipelines whose hashes the lifecycle commits. A port that reaches
                 # the same verdict through a different conversation has not been ported.
                 [sys.executable, "scripts/generate_resolution_golden.py", "--check"],
-                [sys.executable, "scripts/generate_dispute_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_dispute_golden.py", "--check"],
+                # The compiler wire decides the deadline every published question commits to.
+                [sys.executable, "scripts/generate_compiler_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

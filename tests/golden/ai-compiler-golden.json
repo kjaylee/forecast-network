@@ -1,0 +1,4345 @@
+{
+  "candidate_context": {
+    "empty": [],
+    "one": [
+      {
+        "candidate_ref": "c0",
+        "forecast_id": "forecast-0",
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Acme officially announce Product X before the deadline?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 1000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 100,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [
+              {
+                "is_official": false,
+                "name": "Independent News Wire",
+                "schema_version": 1,
+                "source_id": "news-wire",
+                "url": "https://wire.example/acme"
+              }
+            ],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Acme Newsroom",
+                "schema_version": 1,
+                "source_id": "acme-news",
+                "url": "https://acme.example/news"
+              }
+            ],
+            "schema_version": 1
+          }
+        },
+        "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+      }
+    ],
+    "two": [
+      {
+        "candidate_ref": "c0",
+        "forecast_id": "forecast-0",
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Acme officially announce Product X before the deadline?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 1000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 100,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [
+              {
+                "is_official": false,
+                "name": "Independent News Wire",
+                "schema_version": 1,
+                "source_id": "news-wire",
+                "url": "https://wire.example/acme"
+              }
+            ],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Acme Newsroom",
+                "schema_version": 1,
+                "source_id": "acme-news",
+                "url": "https://acme.example/news"
+              }
+            ],
+            "schema_version": 1
+          }
+        },
+        "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+      },
+      {
+        "candidate_ref": "c1",
+        "forecast_id": "forecast-1",
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Acme officially announce Product X before the deadline?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 1000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 100,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [
+              {
+                "is_official": false,
+                "name": "Independent News Wire",
+                "schema_version": 1,
+                "source_id": "news-wire",
+                "url": "https://wire.example/acme"
+              }
+            ],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Acme Newsroom",
+                "schema_version": 1,
+                "source_id": "acme-news",
+                "url": "https://acme.example/news"
+              }
+            ],
+            "schema_version": 1
+          }
+        },
+        "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+      }
+    ]
+  },
+  "candidate_forecasts": {
+    "one": {
+      "audit_head_hash": null,
+      "challenge_started_at_ms": null,
+      "challenge_until_ms": null,
+      "created_at_ms": 100,
+      "creator_id": "creator-1",
+      "dispute_reviews": [],
+      "disputes": [],
+      "finalized_outcome": null,
+      "finalized_resolution_hash": null,
+      "forecast_id": "forecast-0",
+      "latest_event": null,
+      "pause": null,
+      "published_at_ms": null,
+      "resolution": null,
+      "revision": 0,
+      "schema_version": 1,
+      "specification": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme officially announce Product X before the deadline?",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1000,
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before closing names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at closing.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38",
+      "state": "DRAFT",
+      "updated_at_ms": 100,
+      "validation_assessment": null
+    },
+    "two": [
+      {
+        "audit_head_hash": null,
+        "challenge_started_at_ms": null,
+        "challenge_until_ms": null,
+        "created_at_ms": 100,
+        "creator_id": "creator-1",
+        "dispute_reviews": [],
+        "disputes": [],
+        "finalized_outcome": null,
+        "finalized_resolution_hash": null,
+        "forecast_id": "forecast-0",
+        "latest_event": null,
+        "pause": null,
+        "published_at_ms": null,
+        "resolution": null,
+        "revision": 0,
+        "schema_version": 1,
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Acme officially announce Product X before the deadline?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 1000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 100,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [
+              {
+                "is_official": false,
+                "name": "Independent News Wire",
+                "schema_version": 1,
+                "source_id": "news-wire",
+                "url": "https://wire.example/acme"
+              }
+            ],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Acme Newsroom",
+                "schema_version": 1,
+                "source_id": "acme-news",
+                "url": "https://acme.example/news"
+              }
+            ],
+            "schema_version": 1
+          }
+        },
+        "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38",
+        "state": "DRAFT",
+        "updated_at_ms": 100,
+        "validation_assessment": null
+      },
+      {
+        "audit_head_hash": null,
+        "challenge_started_at_ms": null,
+        "challenge_until_ms": null,
+        "created_at_ms": 100,
+        "creator_id": "creator-1",
+        "dispute_reviews": [],
+        "disputes": [],
+        "finalized_outcome": null,
+        "finalized_resolution_hash": null,
+        "forecast_id": "forecast-1",
+        "latest_event": null,
+        "pause": null,
+        "published_at_ms": null,
+        "resolution": null,
+        "revision": 0,
+        "schema_version": 1,
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Acme officially announce Product X before the deadline?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 1000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 100,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [
+              {
+                "is_official": false,
+                "name": "Independent News Wire",
+                "schema_version": 1,
+                "source_id": "news-wire",
+                "url": "https://wire.example/acme"
+              }
+            ],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Acme Newsroom",
+                "schema_version": 1,
+                "source_id": "acme-news",
+                "url": "https://acme.example/news"
+              }
+            ],
+            "schema_version": 1
+          }
+        },
+        "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38",
+        "state": "DRAFT",
+        "updated_at_ms": 100,
+        "validation_assessment": null
+      }
+    ]
+  },
+  "commitment": [
+    {
+      "accepted": true,
+      "expected": "88afea9ed84bac097f0bd1d13a8ad53453303594b7dacfd3a9f64c252ea16986",
+      "name": "unchanged"
+    },
+    {
+      "accepted": false,
+      "code": "compiler_candidate_context_changed",
+      "expected": "74e98fc55a1891dcbf5534e94dbb98d2e13b69bd114dd1e684faa9cc138e8090",
+      "name": "changed"
+    }
+  ],
+  "description": "The compiler wire: the schema the model sees, the candidate context it may refer to, and the normalization that turns its prose into the committed instant.",
+  "normalize": [
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "name": "plain",
+      "normalized": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1789992000000,
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "name": "windowed",
+      "normalized": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1789992000000,
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "name": "korean-deadline",
+      "normalized": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Acme will announce Product X before 2026-09-21T12:00:00Z.",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1789992000000,
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "Unidentifiable.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Acme will announce Product X before 2026년 9월 21일 12:00 UTC.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement before 2026년 9월 21일 12:00 UTC names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "Unidentifiable.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "애크미가 마감 전에 제품 X를 발표할까요?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_deadline_mismatch",
+        "message": "The compiler changed the requested UTC deadline; publication is blocked."
+      },
+      "name": "korean-deadline-mismatch",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Acme will announce Product X before 2026년 9월 22일 12:00 UTC.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "애크미가 마감 전에 제품 X를 발표할까요?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_deadline_invalid",
+        "message": "The input contains an invalid UTC date."
+      },
+      "name": "korean-deadline-invalid",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Acme will announce Product X before 2026년 13월 21일 12:00 UTC.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "애크미가 마감 전에 제품 X를 발표할까요?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "name": "korean-deadline-fully-spelled",
+      "normalized": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Acme will announce Product X before 2026-09-21T12:00:00Z.",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1789992000000,
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Acme will announce Product X before 2026년 9월 21일 12:00:00 UTC.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "애크미가 마감 전에 제품 X를 발표할까요?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_deadline_mismatch",
+        "message": "The compiler changed the requested UTC deadline; publication is blocked."
+      },
+      "name": "conflicting-iso-date",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-22T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "Unidentifiable.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_deadline_mismatch",
+        "message": "The question and YES/NO criteria must use the same deadline."
+      },
+      "name": "offset-spelling-is-not-the-instant",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T21:00:00+09:00.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "Unidentifiable.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_deadline_mismatch",
+        "message": "The question and YES/NO criteria must use the same deadline."
+      },
+      "name": "conflicting-plain-date",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists on 2026/09/22.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "Unidentifiable.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_wire_version",
+        "message": "Compiler wire version mismatch"
+      },
+      "name": "wire-version",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v2",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_deadline_timezone",
+        "message": "The deadline must specify an exact UTC time."
+      },
+      "name": "deadline-without-zone",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00 names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_deadline_invalid",
+        "message": "The deadline contains an invalid date or time."
+      },
+      "name": "deadline-impossible",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-02-30T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-02-30T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-02-30T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_measurement_window",
+        "message": "Use one exact half-open UTC measurement interval [start, end)."
+      },
+      "name": "two-intervals",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme during [2026-09-01T00:00:00Z, 2026-09-02T00:00:00Z) and [2026-09-03T00:00:00Z, 2026-09-04T00:00:00Z) announce X?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_measurement_window",
+        "message": "The compiler changed measurement start or end."
+      },
+      "name": "window-moved",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-02T00:00:00Z, 2026-09-21T12:00:00Z) Acme will announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) Acme will announce Product X?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_deadline_mismatch",
+        "message": "The exclusive measurement end must equal the closing deadline."
+      },
+      "name": "window-end-not-deadline",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) Acme will announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-22T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) Acme will announce Product X?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_deadline_mismatch",
+        "message": "Additional times outside the measurement interval need the exact closing UTC instant."
+      },
+      "name": "time-outside-window",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) Acme will announce Product X by 14:30.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) Acme will announce Product X by 14:30?"
+    },
+    {
+      "candidates": [],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_measurement_window",
+        "message": "Preserve the exact measurement interval once in each question and YES/NO criterion."
+      },
+      "name": "window-omitted",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Acme will announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) Acme will announce Product X?"
+    },
+    {
+      "candidates": [
+        {
+          "candidate_ref": "c0",
+          "forecast_id": "forecast-0",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        },
+        {
+          "candidate_ref": "c1",
+          "forecast_id": "forecast-1",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        }
+      ],
+      "distinct_windows": false,
+      "name": "candidate-valid",
+      "normalized": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1789992000000,
+        "duplicate_candidates": [
+          {
+            "explanation": "Same product, same deadline.",
+            "forecast_id": "forecast-0",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000,
+            "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [
+          {
+            "candidate_ref": "c0",
+            "explanation": "Same product, same deadline.",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [
+        {
+          "candidate_ref": "c0",
+          "forecast_id": "forecast-0",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        },
+        {
+          "candidate_ref": "c1",
+          "forecast_id": "forecast-1",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        }
+      ],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_candidate_reference",
+        "message": "Duplicate candidate reference is unknown or repeated"
+      },
+      "name": "candidate-unknown-ref",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [
+          {
+            "candidate_ref": "c7",
+            "explanation": "Same product, same deadline.",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [
+        {
+          "candidate_ref": "c0",
+          "forecast_id": "forecast-0",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        },
+        {
+          "candidate_ref": "c1",
+          "forecast_id": "forecast-1",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        }
+      ],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_candidate_reference",
+        "message": "Duplicate candidate reference is unknown or repeated"
+      },
+      "name": "candidate-repeated-ref",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [
+          {
+            "candidate_ref": "c0",
+            "explanation": "Same product, same deadline.",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000
+          },
+          {
+            "candidate_ref": "c0",
+            "explanation": "Same product, same deadline.",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [
+        {
+          "candidate_ref": "c0",
+          "forecast_id": "forecast-0",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        },
+        {
+          "candidate_ref": "c1",
+          "forecast_id": "forecast-1",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        }
+      ],
+      "distinct_windows": false,
+      "error": {
+        "code": "compiler_candidate_fields",
+        "message": "Duplicate output must use only the current reference wire"
+      },
+      "name": "candidate-wrong-fields",
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [
+          {
+            "candidate_ref": "c0",
+            "explanation": "Same product, same deadline.",
+            "forecast_id": "forecast-0",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [
+        {
+          "candidate_ref": "c0",
+          "forecast_id": "forecast-0",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        }
+      ],
+      "distinct_windows": false,
+      "name": "candidate-error-case",
+      "normalized": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1789992000000,
+        "duplicate_candidates": [
+          {
+            "explanation": "Same product, same deadline.",
+            "forecast_id": "forecast-0",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000,
+            "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [
+          {
+            "candidate_ref": "c0",
+            "explanation": "Same product, same deadline.",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before 2026-09-21T12:00:00Z names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at 2026-09-21T12:00:00Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "Will Acme announce Product X before 2026-09-21T12:00:00Z?"
+    },
+    {
+      "candidates": [
+        {
+          "candidate_ref": "c0",
+          "forecast_id": "forecast-0",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        },
+        {
+          "candidate_ref": "c1",
+          "forecast_id": "forecast-1",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "During [2026-09-02T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "4fcbb05ba0a935ce208c20bca6ca3990a18e70cd89b48e671d5598d0fe3be761"
+        }
+      ],
+      "distinct_windows": true,
+      "name": "distinct-measurement-windows",
+      "normalized": {
+        "_distinct_measurement_windows": [
+          "forecast-1"
+        ],
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1789992000000,
+        "duplicate_candidates": [
+          {
+            "explanation": "Distinct measurement interval [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) versus [2026-09-02T00:00:00Z, 2026-09-21T12:00:00Z): separate canonical episode. Same product, same deadline.",
+            "forecast_id": "forecast-1",
+            "materially_different_rules": true,
+            "schema_version": 1,
+            "similarity_bp": 9000,
+            "specification_hash": "4fcbb05ba0a935ce208c20bca6ca3990a18e70cd89b48e671d5598d0fe3be761"
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [
+          {
+            "candidate_ref": "c1",
+            "explanation": "Same product, same deadline.",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X?"
+    },
+    {
+      "candidates": [
+        {
+          "candidate_ref": "c0",
+          "forecast_id": "forecast-0",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        },
+        {
+          "candidate_ref": "c1",
+          "forecast_id": "forecast-1",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "46c3c91e9de3d01ab2f04b6d42a683387a1577f7f91303d5c66ccad18f859d35"
+        }
+      ],
+      "distinct_windows": true,
+      "name": "same-measurement-windows",
+      "normalized": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1789992000000,
+        "duplicate_candidates": [
+          {
+            "explanation": "Same product, same deadline.",
+            "forecast_id": "forecast-1",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000,
+            "specification_hash": "46c3c91e9de3d01ab2f04b6d42a683387a1577f7f91303d5c66ccad18f859d35"
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [
+          {
+            "candidate_ref": "c1",
+            "explanation": "Same product, same deadline.",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X?"
+    },
+    {
+      "candidates": [
+        {
+          "candidate_ref": "c0",
+          "forecast_id": "forecast-0",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Acme officially announce Product X before the deadline?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "f62dd9b40850e5c70bed8ac0f555edf2851260d68a36e15090da2152d91ebb38"
+        },
+        {
+          "candidate_ref": "c1",
+          "forecast_id": "forecast-1",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "During [2026-09-02T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 1000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 100,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [
+                {
+                  "is_official": false,
+                  "name": "Independent News Wire",
+                  "schema_version": 1,
+                  "source_id": "news-wire",
+                  "url": "https://wire.example/acme"
+                }
+              ],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Acme Newsroom",
+                  "schema_version": 1,
+                  "source_id": "acme-news",
+                  "url": "https://acme.example/news"
+                }
+              ],
+              "schema_version": 1
+            }
+          },
+          "specification_hash": "4fcbb05ba0a935ce208c20bca6ca3990a18e70cd89b48e671d5598d0fe3be761"
+        }
+      ],
+      "distinct_windows": false,
+      "name": "distinct-windows-not-asked-for",
+      "normalized": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 1789992000000,
+        "duplicate_candidates": [
+          {
+            "explanation": "Same product, same deadline.",
+            "forecast_id": "forecast-1",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000,
+            "specification_hash": "4fcbb05ba0a935ce208c20bca6ca3990a18e70cd89b48e671d5598d0fe3be761"
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "output": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X.",
+        "category": "TECHNOLOGY",
+        "close_at_utc": "2026-09-21T12:00:00Z",
+        "compiler_wire_version": "compiler-utc-candidate-ref-v3",
+        "duplicate_candidates": [
+          {
+            "candidate_ref": "c1",
+            "explanation": "Same product, same deadline.",
+            "materially_different_rules": false,
+            "schema_version": 1,
+            "similarity_bp": 9000
+          }
+        ],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 100,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No announcement inside [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) names Product X.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [
+            {
+              "is_official": false,
+              "name": "Independent News Wire",
+              "schema_version": 1,
+              "source_id": "news-wire",
+              "url": "https://wire.example/acme"
+            }
+          ],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Acme Newsroom",
+              "schema_version": 1,
+              "source_id": "acme-news",
+              "url": "https://acme.example/news"
+            }
+          ],
+          "schema_version": 1
+        }
+      },
+      "question": "During [2026-09-01T00:00:00Z, 2026-09-21T12:00:00Z) will Acme announce Product X?"
+    }
+  ],
+  "spec_schema": {
+    "0": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguity_score_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "canonical_question": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "TECHNOLOGY",
+            "CRYPTO",
+            "SCIENCE",
+            "ENTERTAINMENT",
+            "WORLD",
+            "SPORTS",
+            "OTHER"
+          ],
+          "type": "string"
+        },
+        "close_at_utc": {
+          "description": "Exact deadline YYYY-MM-DDTHH:MM:SSZ (UTC), repeated verbatim in canonical question and YES/NO rules.",
+          "maxLength": 20,
+          "minLength": 20,
+          "type": "string"
+        },
+        "compiler_wire_version": {
+          "enum": [
+            "compiler-utc-candidate-ref-v3"
+          ],
+          "type": "string"
+        },
+        "duplicate_candidates": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "candidate_ref": {
+                "maxLength": 3,
+                "minLength": 2,
+                "type": "string"
+              },
+              "explanation": {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "materially_different_rules": {
+                "type": "boolean"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "similarity_bp": {
+                "maximum": 10000,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "schema_version",
+              "similarity_bp",
+              "materially_different_rules",
+              "explanation",
+              "candidate_ref"
+            ],
+            "type": "object"
+          },
+          "maxItems": 0,
+          "type": "array"
+        },
+        "invalidation_rules": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "open_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rules": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "clause_id": {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "condition": {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "outcome": {
+                "enum": [
+                  "YES",
+                  "NO",
+                  "INVALID"
+                ],
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "schema_version",
+              "clause_id",
+              "outcome",
+              "condition"
+            ],
+            "type": "object"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "schema_version": {
+          "enum": [
+            1
+          ],
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "share_title": {
+          "description": "Concise timeless English question: no deadline, date, year-end, before/by date, this/next year or other timeframe phrase. Preserve product names and model numbers.",
+          "maxLength": 60,
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_policy": {
+          "additionalProperties": false,
+          "properties": {
+            "fallback_sources": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "is_official": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "schema_version": {
+                    "enum": [
+                      1
+                    ],
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "source_id": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "url": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "source_id",
+                  "name",
+                  "url",
+                  "is_official"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "primary_sources": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "is_official": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "schema_version": {
+                    "enum": [
+                      1
+                    ],
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "source_id": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "url": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "source_id",
+                  "name",
+                  "url",
+                  "is_official"
+                ],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "schema_version": {
+              "enum": [
+                1
+              ],
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "schema_version",
+            "primary_sources",
+            "fallback_sources"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "schema_version",
+        "canonical_question",
+        "rules",
+        "open_at_ms",
+        "source_policy",
+        "invalidation_rules",
+        "category",
+        "share_title",
+        "ambiguity_score_bp",
+        "duplicate_candidates",
+        "close_at_utc",
+        "compiler_wire_version"
+      ],
+      "type": "object"
+    },
+    "1": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguity_score_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "canonical_question": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "TECHNOLOGY",
+            "CRYPTO",
+            "SCIENCE",
+            "ENTERTAINMENT",
+            "WORLD",
+            "SPORTS",
+            "OTHER"
+          ],
+          "type": "string"
+        },
+        "close_at_utc": {
+          "description": "Exact deadline YYYY-MM-DDTHH:MM:SSZ (UTC), repeated verbatim in canonical question and YES/NO rules.",
+          "maxLength": 20,
+          "minLength": 20,
+          "type": "string"
+        },
+        "compiler_wire_version": {
+          "enum": [
+            "compiler-utc-candidate-ref-v3"
+          ],
+          "type": "string"
+        },
+        "duplicate_candidates": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "candidate_ref": {
+                "enum": [
+                  "c0"
+                ],
+                "maxLength": 3,
+                "minLength": 2,
+                "type": "string"
+              },
+              "explanation": {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "materially_different_rules": {
+                "type": "boolean"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "similarity_bp": {
+                "maximum": 10000,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "schema_version",
+              "similarity_bp",
+              "materially_different_rules",
+              "explanation",
+              "candidate_ref"
+            ],
+            "type": "object"
+          },
+          "maxItems": 1,
+          "type": "array"
+        },
+        "invalidation_rules": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "open_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rules": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "clause_id": {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "condition": {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "outcome": {
+                "enum": [
+                  "YES",
+                  "NO",
+                  "INVALID"
+                ],
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "schema_version",
+              "clause_id",
+              "outcome",
+              "condition"
+            ],
+            "type": "object"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "schema_version": {
+          "enum": [
+            1
+          ],
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "share_title": {
+          "description": "Concise timeless English question: no deadline, date, year-end, before/by date, this/next year or other timeframe phrase. Preserve product names and model numbers.",
+          "maxLength": 60,
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_policy": {
+          "additionalProperties": false,
+          "properties": {
+            "fallback_sources": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "is_official": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "schema_version": {
+                    "enum": [
+                      1
+                    ],
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "source_id": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "url": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "source_id",
+                  "name",
+                  "url",
+                  "is_official"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "primary_sources": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "is_official": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "schema_version": {
+                    "enum": [
+                      1
+                    ],
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "source_id": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "url": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "source_id",
+                  "name",
+                  "url",
+                  "is_official"
+                ],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "schema_version": {
+              "enum": [
+                1
+              ],
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "schema_version",
+            "primary_sources",
+            "fallback_sources"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "schema_version",
+        "canonical_question",
+        "rules",
+        "open_at_ms",
+        "source_policy",
+        "invalidation_rules",
+        "category",
+        "share_title",
+        "ambiguity_score_bp",
+        "duplicate_candidates",
+        "close_at_utc",
+        "compiler_wire_version"
+      ],
+      "type": "object"
+    },
+    "3": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguity_score_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "canonical_question": {
+          "maxLength": 1000000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "TECHNOLOGY",
+            "CRYPTO",
+            "SCIENCE",
+            "ENTERTAINMENT",
+            "WORLD",
+            "SPORTS",
+            "OTHER"
+          ],
+          "type": "string"
+        },
+        "close_at_utc": {
+          "description": "Exact deadline YYYY-MM-DDTHH:MM:SSZ (UTC), repeated verbatim in canonical question and YES/NO rules.",
+          "maxLength": 20,
+          "minLength": 20,
+          "type": "string"
+        },
+        "compiler_wire_version": {
+          "enum": [
+            "compiler-utc-candidate-ref-v3"
+          ],
+          "type": "string"
+        },
+        "duplicate_candidates": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "candidate_ref": {
+                "enum": [
+                  "c0",
+                  "c1",
+                  "c2"
+                ],
+                "maxLength": 3,
+                "minLength": 2,
+                "type": "string"
+              },
+              "explanation": {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "materially_different_rules": {
+                "type": "boolean"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "similarity_bp": {
+                "maximum": 10000,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "schema_version",
+              "similarity_bp",
+              "materially_different_rules",
+              "explanation",
+              "candidate_ref"
+            ],
+            "type": "object"
+          },
+          "maxItems": 3,
+          "type": "array"
+        },
+        "invalidation_rules": {
+          "items": {
+            "maxLength": 1000000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "open_at_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rules": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "clause_id": {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "condition": {
+                "maxLength": 1000000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "outcome": {
+                "enum": [
+                  "YES",
+                  "NO",
+                  "INVALID"
+                ],
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "schema_version",
+              "clause_id",
+              "outcome",
+              "condition"
+            ],
+            "type": "object"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "schema_version": {
+          "enum": [
+            1
+          ],
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "share_title": {
+          "description": "Concise timeless English question: no deadline, date, year-end, before/by date, this/next year or other timeframe phrase. Preserve product names and model numbers.",
+          "maxLength": 60,
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_policy": {
+          "additionalProperties": false,
+          "properties": {
+            "fallback_sources": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "is_official": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "schema_version": {
+                    "enum": [
+                      1
+                    ],
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "source_id": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "url": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "source_id",
+                  "name",
+                  "url",
+                  "is_official"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "primary_sources": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "is_official": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "schema_version": {
+                    "enum": [
+                      1
+                    ],
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "source_id": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "url": {
+                    "maxLength": 1000000,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "source_id",
+                  "name",
+                  "url",
+                  "is_official"
+                ],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "schema_version": {
+              "enum": [
+                1
+              ],
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "schema_version",
+            "primary_sources",
+            "fallback_sources"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "schema_version",
+        "canonical_question",
+        "rules",
+        "open_at_ms",
+        "source_policy",
+        "invalidation_rules",
+        "category",
+        "share_title",
+        "ambiguity_score_bp",
+        "duplicate_candidates",
+        "close_at_utc",
+        "compiler_wire_version"
+      ],
+      "type": "object"
+    }
+  }
+}

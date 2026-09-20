@@ -4,6 +4,8 @@
 //! and the validator that refuses the ones that do not. A permissive parse would accept a
 //! contract change silently, and a contract change here is a change to what a reward is based on.
 
+pub mod compiler_time;
+pub mod compiler_wire;
 pub mod coordinator;
 pub mod dispute;
 pub mod resolution;
