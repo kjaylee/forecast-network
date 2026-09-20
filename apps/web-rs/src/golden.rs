@@ -9,6 +9,31 @@ use serde_json::{json, Value};
 
 use crate::db::{self, Sqlite};
 
+/// A coordinator whose transport refuses.
+///
+/// Its providers are configured and its transport is not, which is the reference's own `no_network`
+/// shape: a path that needs no model still requires the *configuration* to be there, and a port
+/// that read an empty provider list as "nothing to ask" would answer a different question.
+pub fn refusing_coordinator() -> crate::ai::coordinator::Coordinator {
+    crate::ai::coordinator::Coordinator {
+        providers: vec![
+            crate::ai::coordinator::ProviderConfig {
+                provider: "gemini".to_string(),
+                model: "test-model".to_string(),
+                model_version: Some("tested-revision".to_string()),
+                api_key: "test-key".to_string(),
+            },
+            crate::ai::coordinator::ProviderConfig {
+                provider: "openai".to_string(),
+                model: "test-model".to_string(),
+                model_version: Some("tested-revision".to_string()),
+                api_key: "test-key".to_string(),
+            },
+        ],
+        fetch: Box::new(|_, _, _| Box::pin(async { Err(()) })),
+    }
+}
+
 pub fn block<F: std::future::Future>(future: F) -> F::Output {
     futures_lite::future::block_on(future)
 }

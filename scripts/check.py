@@ -134,6 +134,9 @@ def main() -> int:
                 # The outbox and the sweep that drains it: the exactly-once selection, the blocked
                 # forecast, the adapter hand-off, and the set-based settlement.
                 [sys.executable, "scripts/generate_outbox_golden.py", "--check"],
+                # The one place a *person* hands the watcher a page: two URL refusals that mean
+                # different things, three statuses that are three facts, and a daily bound.
+                [sys.executable, "scripts/generate_evidence_report_golden.py", "--check"],
                 # What the compiler is allowed to see: the ranking, the terms, and the byte budget
                 # that decides which candidates reach the model at all.
                 [sys.executable, "scripts/generate_candidates_golden.py", "--check"]]

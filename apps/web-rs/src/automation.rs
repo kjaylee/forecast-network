@@ -17,7 +17,7 @@ use crate::ai::early::ArtifactReader;
 use crate::db::{self, Database};
 use crate::source_watch::WatchError;
 use crate::sources::host_and_path;
-use crate::{ai, eligibility, mutate, participation_holds, point_markets, points, source_watch};
+use crate::{ai, eligibility, mutate, participation_holds, point_markets, points, scheduler, source_watch};
 use forecast_domain::lifecycle::{EarlyResolutionTrigger, Payload};
 use forecast_domain::models::ForecastSpecification;
 use serde_json::{json, Value};
@@ -708,6 +708,163 @@ impl<'a> Automation<'a> {
         }))
     }
 
+    /// `Application.report_evidence`: a forecaster reports an official announcement that may
+    /// settle an open question.
+    ///
+    /// The URL has to belong to one of the question's *published* official sources — the
+    /// specification's own list, not a model's suggestion — and a supported publisher is fetched
+    /// immediately into the same hold-before-review path the automatic watcher uses. A report never
+    /// resolves anything by itself.
+    pub async fn report_evidence(&self, user_id: &str, forecast_id: &str, url: &str) -> Result<Value, WatchError> {
+        let refused = |status: u16, code: &str, message: &str| WatchError::Refused {
+            status,
+            code: code.to_string(),
+            message: message.to_string(),
+        };
+        if self
+            .db
+            .first("SELECT id FROM users WHERE id=?", &[json!(user_id)])
+            .await?
+            .is_none()
+        {
+            return Err(refused(401, "authentication_required", "Please sign in to continue."));
+        }
+        let snapshot = mutate::load_snapshot(self.db, forecast_id)
+            .await
+            .map_err(refused_from_route)?;
+        let forecast = snapshot.base();
+        // Only a question still taking participation can take evidence for it.
+        if !matches!(forecast.state.as_str(), "OPEN" | "LOCKED") {
+            return Err(refused(
+                409,
+                "evidence_report_closed",
+                "This forecast is no longer accepting evidence reports.",
+            ));
+        }
+        if url.chars().count() > 2048 {
+            return Err(refused(400, "invalid_input", "Please check your input."));
+        }
+        let host = crate::sources::validate_public_url(url, true).map_err(|_| {
+            refused(
+                400,
+                "evidence_report_url",
+                "Report a public https page on one of this question's official sources.",
+            )
+        })?;
+        let primary = &forecast.specification.source_policy.primary_sources;
+        let publisher = primary
+            .iter()
+            .filter(|source| source.is_official)
+            .find(|source| {
+                crate::sources::validate_public_url(&source.url, true).ok().as_deref() == Some(host.as_str())
+            })
+            .map(|source| source.url.clone())
+            .ok_or_else(|| {
+                refused(
+                    400,
+                    "evidence_report_source",
+                    "Only the question's published official sources can be reported.",
+                )
+            })?;
+        scheduler::rate_limit(
+            self.db,
+            &format!("evidence-report:{user_id}"),
+            10,
+            86_400_000,
+            self.now_ms,
+        )
+        .await
+        .map_err(|code| refused(429, "rate_limited", &code))?;
+        let existing = self
+            .db
+            .first(
+                "SELECT id,status FROM evidence_reports WHERE forecast_id=? AND user_id=? AND url=?",
+                &[json!(forecast_id), json!(user_id), json!(url)],
+            )
+            .await?;
+        if let Some(row) = existing {
+            return Ok(json!({
+                "reportId": db::text(&row, "id"),
+                "status": db::text(&row, "status"),
+                "duplicate": true,
+            }));
+        }
+        let report_id = format!("er_{}", &(self.token)()[..24]);
+        let now = self.now_ms;
+        self.db
+            .execute(
+                "INSERT INTO evidence_reports(id,forecast_id,user_id,url,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?)",
+                &[json!(report_id), json!(forecast_id), json!(user_id), json!(url), json!("received"), json!(now), json!(now)],
+            )
+            .await?;
+        let mut status = "received";
+        if let Some(watch) = self.watcher() {
+            // The reported page hangs off the publisher feed the watcher would poll for this
+            // source, whether or not a keyword binding exists yet.
+            let index_url = publisher_feed_url(&publisher);
+            let index_id = format!("publisher-{}", &source_watch::hash_hex(&index_url)[..32]);
+            let registered = source_watch::register(
+                self.db,
+                source_watch::Registration {
+                    source_id: &index_id,
+                    url: &index_url,
+                    kind: "index",
+                    interval_ms: DEFAULT_INTERVAL_MS,
+                    parent_id: None,
+                    pinned: false,
+                },
+                self.now_ms,
+            )
+            .await;
+            if let Err(WatchError::Invalid(_)) = registered {
+                // A publisher that refuses registration is a page this watcher cannot follow; the
+                // report stands and an operator reads it.
+                return Ok(json!({"reportId": report_id, "status": status, "duplicate": false}));
+            }
+            registered?;
+            let lease = (self.token)();
+            let observation = source_watch::ingest_report(
+                &watch,
+                forecast_id,
+                source_watch::Report {
+                    url,
+                    index_id: &index_id,
+                    lease: &lease,
+                },
+            )
+            .await?;
+            if let Some(observation) = &observation {
+                let held = participation_holds::active(self.db, forecast_id)
+                    .await
+                    .map_err(refused_from_hold)?;
+                // Three answers from two facts: a page that predates the question is `unrelated`
+                // whatever else is true, and a page that does not is `held` only if a pause is
+                // actually in force.
+                status = if observation["predatesQuestion"] == json!(true) {
+                    "unrelated"
+                } else if held.is_some() {
+                    "held"
+                } else {
+                    "unrelated"
+                };
+                self.db
+                    .execute(
+                        "UPDATE evidence_reports SET article_id=?,observation_id=?,artifact_hash=?,status=?,updated_at=? WHERE id=?",
+                        &[
+                            json!(format!("article-{}", &source_watch::hash_hex(url)[..32])),
+                            observation["id"].clone(),
+                            observation.get("artifactHash").cloned().unwrap_or(Value::Null),
+                            json!(status),
+                            json!(self.now_ms),
+                            json!(report_id),
+                        ],
+                    )
+                    .await?;
+            }
+        }
+        Ok(json!({"reportId": report_id, "status": status, "duplicate": false}))
+    }
+
     /// `status`: the operator view.
     pub async fn status(&self) -> Result<Value, WatchError> {
         status(self.db, self.enabled).await.map_err(WatchError::Database)
@@ -1136,38 +1293,17 @@ mod orchestration_tests {
         }
     }
 
-    /// A coordinator whose transport refuses.
+    /// Reading retained bytes, over the database the case restored.
     ///
-    /// Its providers are configured and its transport is not, which is the reference's own
-    /// `no_network` shape: a review that needs no model still requires the *configuration* to be
-    /// there, and a port that read an empty provider list as "nothing to ask" would answer a
-    /// different question.
-    fn unreachable_coordinator() -> Coordinator {
-        Coordinator {
-            providers: vec![
-                crate::ai::coordinator::ProviderConfig {
-                    provider: "gemini".to_string(),
-                    model: "test-model".to_string(),
-                    model_version: Some("tested-revision".to_string()),
-                    api_key: "test-key".to_string(),
-                },
-                crate::ai::coordinator::ProviderConfig {
-                    provider: "openai".to_string(),
-                    model: "test-model".to_string(),
-                    model_version: Some("tested-revision".to_string()),
-                    api_key: "test-key".to_string(),
-                },
-            ],
-            fetch: Box::new(|_, _, _| Box::pin(async { Err(()) })),
-        }
-    }
-
+    /// The leak is deliberate: an artifact reader's future is `'static`, and a test database is
+    /// exactly the thing that *should* outlive the test.
     fn artifact_reader(db: &'static crate::db::Sqlite) -> ArtifactReader {
         Box::new(move |digest| {
             Box::pin(async move { crate::scheduler::read_artifact(db, &digest).await.map_err(|_| ()) })
         })
     }
 
+    /// The reference's collector, over the responses the vector recorded.
     fn fetcher(script: &Value) -> source_watch::Fetcher {
         let responses: Vec<(String, Value)> = script.as_object().cloned().unwrap_or_default().into_iter().collect();
         Box::new(move |url, _headers| {
@@ -1242,7 +1378,7 @@ mod orchestration_tests {
         // did not gets a transport that refuses, which is where such a case should never reach.
         let coordinator = match input.get("responses").and_then(Value::as_array) {
             Some(responses) => scripted_coordinator(responses.clone()),
-            None => unreachable_coordinator(),
+            None => crate::golden::refusing_coordinator(),
         };
         let now_ms = case["now"].as_i64().unwrap_or(0);
         let name = case["call"].as_str().expect("name");
@@ -1374,6 +1510,163 @@ mod orchestration_tests {
             let case = entry(&document, name);
             let db = static_database(&case["initial"]);
             let (result, error, tokens) = outcome(db, case);
+            assert_case(name, case, &result, &error, db);
+            tokens.assert_drained(name, "");
+        }
+    }
+}
+
+/// `report_evidence`, replayed against the reference's own recorded state.
+#[cfg(test)]
+mod evidence_report_tests {
+    use super::*;
+    use crate::golden::{assert_all_cases_known, assert_case, block, entry, load, static_database, Tokens};
+    use crate::source_watch::error_kind;
+
+    const REPLAYED: [&str; 9] = [
+        "report:url",
+        "report:source",
+        "report:held",
+        "report:duplicate",
+        "report:predates",
+        "report:ten-a-day",
+        "report:rate-limited",
+        "report:closed",
+        "report:disabled",
+    ];
+
+    /// Nothing is left out, and saying so is what keeps a case from being silently skipped.
+    const NOT_REPLAYED: [(&str, &str); 0] = [];
+
+    #[test]
+    fn the_vector_has_no_case_this_replay_silently_skips() {
+        assert_all_cases_known(&load("evidence-report-golden.json"), &REPLAYED, &NOT_REPLAYED);
+    }
+
+    /// The reference's collector: the article, and a refusal for everything else.
+    ///
+    /// Its *log* is part of what the case compares — what a report fetches is part of what it
+    /// does — so the URLs are recorded as they are asked for.
+    ///
+    /// The body comes from the *case*, not from the vector's header: a case that changes the page
+    /// changes what the collector serves, and a replay that read the header would serve the wrong
+    /// page and reach the wrong answer.
+    fn collector(
+        document: &Value,
+        case: &Value,
+    ) -> (source_watch::Fetcher, std::rc::Rc<std::cell::RefCell<Vec<String>>>) {
+        let article = document["article"].as_str().unwrap_or("").to_string();
+        let body = case["input"]["body"].as_str().unwrap_or("").to_string();
+        let asked = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+        let log = asked.clone();
+        let fetch: source_watch::Fetcher = Box::new(move |url, _headers| {
+            log.borrow_mut().push(url.clone());
+            let body = body.clone();
+            let wanted = url == article;
+            Box::pin(async move {
+                if wanted {
+                    Ok(crate::sources::TextResponse {
+                        status: 200,
+                        headers: vec![("content-type".to_string(), "text/html".to_string())],
+                        body,
+                    })
+                } else {
+                    Ok(crate::sources::TextResponse {
+                        status: 404,
+                        headers: vec![("content-type".to_string(), "text/plain".to_string())],
+                        body: String::new(),
+                    })
+                }
+            })
+        });
+        (fetch, asked)
+    }
+
+    fn outcome(
+        document: &Value,
+        db: &'static crate::db::Sqlite,
+        case: &Value,
+        asked: &std::rc::Rc<std::cell::RefCell<Vec<String>>>,
+    ) -> (Option<Value>, Option<Value>, Tokens) {
+        let tokens = Tokens::new(Tokens::recorded(case));
+        let input = &case["input"];
+        let name = case["call"].as_str().expect("name");
+        let now_ms = case["now"].as_i64().unwrap_or(0);
+        let enabled = name != "report:disabled";
+        let (fetch, log) = collector(document, case);
+        let reader: ArtifactReader = Box::new(|_digest: String| Box::pin(async move { Err(()) }));
+        let token = || tokens.next();
+        // A report never asks a model, so the coordinator is never reached; it is present because
+        // the watcher's shape requires one to be configured.
+        let coordinator = crate::golden::refusing_coordinator();
+        let automation = Automation::new(
+            db,
+            if enabled { Some(&fetch) } else { None },
+            Some(&coordinator),
+            &reader,
+            now_ms,
+            &token,
+            enabled,
+        );
+        let user_id = input["userId"].as_str().unwrap_or("");
+        let forecast_id = input["forecastId"].as_str().unwrap_or("");
+        let url = input["url"].as_str().unwrap_or("");
+        let held = || block(participation_holds::active(db, forecast_id)).ok().flatten();
+        let result = match name {
+            "report:url" | "report:source" | "report:rate-limited" | "report:closed" | "report:disabled" => {
+                block(automation.report_evidence(user_id, forecast_id, url)).map(Some)
+            }
+            "report:held" => block(automation.report_evidence(user_id, forecast_id, url)).map(|report| {
+                Some(json!({"report": report, "held": held().is_some(),
+                            "fetched": log.borrow().clone()}))
+            }),
+            "report:duplicate" => block(automation.report_evidence(user_id, forecast_id, url)).and_then(|first| {
+                block(automation.report_evidence(user_id, forecast_id, url))
+                    .map(|second| Some(json!({"first": first, "second": second, "fetched": log.borrow().clone()})))
+            }),
+            "report:predates" => block(automation.report_evidence(user_id, forecast_id, url)).map(|report| {
+                Some(json!({"report": report, "held": held(),
+                            "reviews": crate::golden::rows(db, "SELECT id FROM official_source_reviews")}))
+            }),
+            "report:ten-a-day" => {
+                let mut seen = Vec::new();
+                for index in 0..10 {
+                    let url = format!("https://www.apple.com/newsroom/2026/09/other-{index}/");
+                    match block(automation.report_evidence(user_id, forecast_id, &url)) {
+                        Ok(report) => seen.push(report),
+                        Err(error) => return (None, Some(refusal_for(&error)), tokens),
+                    }
+                }
+                Ok(Some(Value::Array(seen)))
+            }
+            other => panic!("{other} has no replay"),
+        };
+        // The collector's log is the case's own, and the calls above read it; the reference's
+        // `fetched` is compared through the composed result rather than beside it.
+        let _ = asked;
+        match result {
+            Ok(value) => (value, None, tokens),
+            Err(error) => (None, Some(refusal_for(&error)), tokens),
+        }
+    }
+
+    fn refusal_for(error: &WatchError) -> Value {
+        match error {
+            WatchError::Refused { status, code, message } => {
+                json!({"status": status, "code": code, "message": message})
+            }
+            other => json!({"code": error_kind(other), "message": other.message()}),
+        }
+    }
+
+    #[test]
+    fn the_reference_evidence_report_is_reproduced_case_for_case() {
+        let document = load("evidence-report-golden.json");
+        for name in REPLAYED {
+            let case = entry(&document, name);
+            let db = static_database(&case["initial"]);
+            let asked = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+            let (result, error, tokens) = outcome(&document, db, case, &asked);
             assert_case(name, case, &result, &error, db);
             tokens.assert_drained(name, "");
         }
