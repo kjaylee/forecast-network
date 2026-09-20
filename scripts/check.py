@@ -140,6 +140,9 @@ def main() -> int:
                 # The exceptional ADMIN path: a supplied verdict enters the record without a model,
                 # and the receipt is what makes a retry a retry rather than a second adjudication.
                 [sys.executable, "scripts/generate_adjudication_golden.py", "--check"],
+                # The two DISPUTED outcomes the sweep reaches without asking anything: a material
+                # conflict escalates, and its absence leaves the proposal standing.
+                [sys.executable, "scripts/generate_dispute_sweep_golden.py", "--check"],
                 # What the compiler is allowed to see: the ranking, the terms, and the byte budget
                 # that decides which candidates reach the model at all.
                 [sys.executable, "scripts/generate_candidates_golden.py", "--check"]]

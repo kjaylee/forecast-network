@@ -322,7 +322,8 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
             return Err(JobFailure::new("early_eligibility_review"));
         }
         let key = format!("job:{}", forecast.revision);
-        let at = now_ms;
+        // A review carries its own instant: the review's `reviewed_at_ms`, not the pass's clock.
+        let mut at = now_ms;
         let payload: Payload = match state.as_str() {
             // The early-resolution trigger is what makes a v2 lock; a v1 forecast locks without
             // one, and this port owns the v1 lifecycle.
@@ -428,8 +429,69 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                         .map(|hash| !reviewed.contains(&hash))
                         .unwrap_or(false)
                 });
-                match pending {
-                    Some(_) => return Err(JobFailure::new("dispute_review_not_ported")),
+                match pending.cloned() {
+                    Some(pending) => {
+                        // A dispute is reviewed once, under the application's own AI lease, and
+                        // the lease is released whatever the review answers — a review that was
+                        // refused must not hold the question.
+                        let owner = format!("review:{forecast_id}");
+                        let ai_token = ai_tokens();
+                        ai_lease(db, &owner, &ai_token, now_ms, daily_limit)
+                            .await
+                            .map_err(JobFailure::from)?;
+                        let started = (clock)();
+                        let outcome =
+                            crate::ai::dispute::review_dispute(coordinator, reader, &forecast, &pending, now_ms).await;
+                        release_ai(db, &owner, &ai_token).await;
+                        if workflow_deadline_passed(started, (clock)()) {
+                            return Err(JobFailure::new("ai_workflow_timeout"));
+                        }
+                        let result = outcome.map_err(|error| match error {
+                            crate::ai::coordinator::CoordinatorError::Unavailable { providers, artifacts } => {
+                                JobFailure::AiUnavailable { providers, artifacts }
+                            }
+                            crate::ai::coordinator::CoordinatorError::Rejected { code, artifacts, .. } => {
+                                JobFailure::Refused { code, artifacts }
+                            }
+                        })?;
+                        let review = result.review;
+                        at = review.reviewed_at_ms;
+                        let rows: Vec<crate::source_watch::Retained> = result
+                            .artifacts
+                            .iter()
+                            .map(|artifact| {
+                                (
+                                    artifact.hash.clone(),
+                                    artifact.kind.to_string(),
+                                    artifact.body.clone(),
+                                    "application/json".to_string(),
+                                )
+                            })
+                            .collect();
+                        extra = crate::source_watch::artifact_sql(&rows, now_ms)
+                            .map_err(|refusal| JobFailure::new(refusal.code()))?;
+                        extra.push(
+                            crate::mutate::record_artifact(&review, "dispute_review", None, now_ms)
+                                .map_err(|error| JobFailure::from(format!("{error:?}")))?,
+                        );
+                        timing_artifacts = result
+                            .artifacts
+                            .iter()
+                            .map(|artifact| {
+                                (
+                                    artifact.hash.clone(),
+                                    artifact.body.clone(),
+                                    "application/json".to_string(),
+                                )
+                            })
+                            .collect();
+                        Payload::ReviewDispute {
+                            schema_version: 1,
+                            review,
+                        }
+                    }
+                    // No dispute is waiting to be reviewed. A material conflict among the reviews
+                    // is what escalation is *for*; without one the proposal stands.
                     None if forecast.dispute_reviews.iter().any(|review| review.material_conflict) => {
                         Payload::Escalate { schema_version: 1 }
                     }
@@ -1652,5 +1714,72 @@ mod outage_tests {
             !full_outage(&[], &names(&["provider-a"])),
             "and nor is a report about nothing"
         );
+    }
+}
+
+/// The two `DISPUTED` outcomes the sweep reaches without asking anything.
+#[cfg(test)]
+mod dispute_sweep_tests {
+    use super::*;
+    use crate::golden::{
+        assert_all_cases_known, assert_case, block, entry, load, refusing_reader, static_database, Tokens,
+    };
+
+    const REPLAYED: [&str; 2] = ["dispute:escalate", "dispute:retain"];
+
+    /// The reviewed-dispute outcome is not here: the reference's fixture builds the review directly
+    /// rather than through a transport, so there is no conversation to serve. `ai-dispute-golden`
+    /// holds `review_dispute` itself; the sweep's wiring of it is transcribed without a vector, and
+    /// naming it is better than leaving its absence to be noticed.
+    const NOT_REPLAYED: [(&str, &str); 0] = [];
+
+    #[test]
+    fn the_vector_has_no_case_this_replay_silently_skips() {
+        assert_all_cases_known(&load("dispute-sweep-golden.json"), &REPLAYED, &NOT_REPLAYED);
+    }
+
+    #[test]
+    fn the_reference_dispute_sweep_is_reproduced_case_for_case() {
+        let document = load("dispute-sweep-golden.json");
+        for name in REPLAYED {
+            let case = entry(&document, name);
+            let db = static_database(&case["initial"]);
+            let now_ms = case["now"].as_i64().unwrap_or(0);
+            let tokens = Tokens::new(Tokens::recorded(case));
+            let evidence: crate::ai::resolution::EvidenceFetcher = Box::new(|_, _| Box::pin(async { Err(()) }));
+            let coordinator = crate::golden::refusing_coordinator();
+            let mut source = || tokens.next();
+            let outcome = block(run_due_jobs(
+                &Scheduler {
+                    db,
+                    coordinator: &coordinator,
+                    fetch: &evidence,
+                    now_ms,
+                    clock: &|| now_ms,
+                    daily_limit: 100,
+                    registry: None,
+                    reader: &refusing_reader(),
+                },
+                3,
+                &mut source,
+            ));
+            let forecast_id = case["input"]["forecastId"].as_str().unwrap_or("");
+            let state = block(crate::mutate::load_snapshot(db, forecast_id))
+                .ok()
+                .map(|snapshot| snapshot.base().state.clone())
+                .unwrap_or_default();
+            let (result, error) = match outcome {
+                Ok(sweep) => (
+                    Some(json!({
+                        "sweep": {"processed": sweep.processed, "failed": sweep.failed, "effects": sweep.effects},
+                        "state": state,
+                    })),
+                    None,
+                ),
+                Err(code) => (None, Some(json!({"code": code, "message": code}))),
+            };
+            assert_case(name, case, &result, &error, db);
+            tokens.assert_drained(name, "");
+        }
     }
 }
