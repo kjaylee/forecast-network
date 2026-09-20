@@ -164,6 +164,14 @@ impl Coordinator {
         seen
     }
 
+    /// `status`: what is configured, for the operator surface. It never reports a key.
+    pub fn status(&self) -> Vec<Value> {
+        self.providers
+            .iter()
+            .map(|config| json!({"provider": config.provider, "model": config.model, "configured": true}))
+            .collect()
+    }
+
     /// Ask each configured provider in turn until one answers acceptably.
     ///
     /// `task` is the `AITask` value — `"SOURCE_VERIFIER"`, not `"source_verifier"`. It is prose
