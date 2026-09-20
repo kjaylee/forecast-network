@@ -36,6 +36,10 @@ SQL_START = re.compile(r"^(SELECT|WITH|INSERT|UPDATE|DELETE)\b", re.I)
 # does not match a newline, so a literal written that way first failed to match and then mispaired
 # every quote after it. The harness reported parity while silently skipping whole modules.
 RUST_STRING = re.compile(r'"((?:[^"\\]|\\[\s\S])*)"')
+# `r"..."`, `r#"..."#`, `r##"..."##` — never SQL in this codebase, and a quote inside one
+# desynchronises the scanner above. The `r` needs a boundary of its own: without one, the
+# trailing `r` of `"September"` opens a raw string that swallows the rest of the file.
+RAW_STRING = re.compile(r'(?<![A-Za-z0-9_])r(#*)"[\s\S]*?"\1')
 # Rust format holes (`{}`, `{guard_sql}`) and Python f-string expressions both stand for a
 # value supplied at runtime, so both become the same marker and compare equal.
 HOLE = "\x00"
@@ -100,6 +104,16 @@ def rust_statements(source: str) -> list[tuple[int, str]]:
     # `'"'` is the one Rust char literal whose contents can close a string and splice
     # unrelated code into a run of adjacent literals. Blanking it is the whole fix.
     source = source.replace("'\"'", "   ")
+    # A raw string can contain a quote — `r#"...\"...\"..."#` is how this codebase writes a
+    # regex that matches one — and the scanner below does not know it is inside one. The
+    # quote then pairs with the next real literal and every statement after it is misread,
+    # silently and completely: a whole file reported zero statements while containing SQL.
+    # Raw strings here are patterns, never statements, so they are blanked to their own width.
+    source = RAW_STRING.sub(lambda match: " " * len(match.group()), source)
+    if RAW_STRING.search(source):
+        # A raw string the pattern could not close means the scan below is about to misread
+        # every literal after it. Failing here is the only way that stays visible.
+        raise ValueError("unterminated raw string; the statement scan cannot be trusted")
     statements: list[tuple[int, str]] = []
     index = 0
     while True:

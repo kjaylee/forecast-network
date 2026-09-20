@@ -588,6 +588,526 @@ pub fn as_coordinator_error(error: TranslationError) -> CoordinatorError {
         artifacts: Vec::new(),
     }
 }
+// ---------------------------------------------------------------- the service
+
+/// `140000` in the reference: the acceptance deadline is measured from the same reading.
+pub const LEASE_MS: i64 = 150_000;
+pub const DAY_MS: i64 = 86_400_000;
+pub const WORKFLOW_SECONDS: i64 = 120;
+pub const INVALID_INPUT: TranslationError =
+    TranslationError::new(400, "invalid_input", "Choose a translation language for this forecast.");
+pub const TRANSLATION_FAILED: TranslationError = TranslationError::new(
+    502,
+    "translation_failed",
+    "The translation could not be verified. The original text is unchanged.",
+);
+
+pub type BoxFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T>>>;
+/// `self.ai.translate_display`, injected so this module never reaches for a coordinator.
+pub type TranslateDisplay = Box<dyn Fn(&Value, &str) -> BoxFuture<Result<DisplayTranslationResult, CoordinatorError>>>;
+/// The reference's `self.rate_limit(scope, limit, window_ms)`.
+pub type RateLimit = dyn Fn(&str, i64, i64) -> BoxFuture<Result<(), String>>;
+
+/// One artifact as a statement, which is what the commit actually needs.
+pub fn artifact_statement(artifact: &crate::ai::coordinator::Artifact, now_ms: i64) -> (String, Vec<Value>) {
+    (
+        "INSERT OR IGNORE INTO artifacts(hash,kind,body,media_type,created_at) VALUES(?,?,?,?,?)".to_string(),
+        vec![
+            serde_json::json!(artifact.hash),
+            serde_json::json!(artifact.kind),
+            serde_json::json!(artifact.body),
+            serde_json::json!("application/json"),
+            serde_json::json!(now_ms),
+        ],
+    )
+}
+
+/// The stored document a translation is generated from, and the markers that prove the source did
+/// not move while it was being generated.
+#[derive(Debug, Clone)]
+pub struct SourceDocument {
+    pub document: Value,
+    pub editorial_hash: Option<String>,
+    pub ai_forecast: Option<String>,
+}
+
+/// `DisplayTranslations`.
+///
+/// Every clock, token and counter is injected: a translation is a long-running, rate-limited,
+/// leased operation whose interesting behaviour is entirely in how it behaves when two of them
+/// race, and that is not testable if the service can reach for a clock of its own.
+pub struct Translations<'a> {
+    pub db: &'a dyn crate::db::Database,
+    pub translate: TranslateDisplay,
+    pub now_ms: &'a dyn Fn() -> i64,
+    pub token: &'a dyn Fn() -> String,
+    pub rate_limit: &'a RateLimit,
+}
+
+impl Translations<'_> {
+    fn now(&self) -> i64 {
+        (self.now_ms)()
+    }
+
+    /// `source`: the English document to translate, from the specification and any editorial
+    /// version already approved.
+    pub async fn source(&self, forecast_id: &str) -> Result<SourceDocument, TranslationError> {
+        let row = self
+            .db
+            .first(
+                "SELECT f.snapshot,f.ai_forecast,t.body AS editorial_body,t.content_hash AS editorial_hash \
+                 FROM forecasts f LEFT JOIN forecast_translations t ON t.forecast_id=f.id AND t.language='en' \
+                 AND t.specification_hash=f.specification_hash WHERE f.id=? \
+                 AND json_extract(f.snapshot,'$.published_at_ms') IS NOT NULL",
+                &[serde_json::json!(forecast_id)],
+            )
+            .await
+            .map_err(|_| UNAVAILABLE)?;
+        let Some(row) = row else {
+            return Err(FORECAST_NOT_FOUND);
+        };
+        let snapshot = crate::db::text(&row, "snapshot").ok_or(FORECAST_NOT_FOUND)?;
+        let forecast = forecast_domain::lifecycle::Snapshot::from_json(snapshot).map_err(|_| UNAVAILABLE)?;
+        let forecast = forecast.base();
+        let specification = &forecast.specification;
+        let ai_forecast = crate::db::text(&row, "ai_forecast").map(str::to_string);
+        let rationale = ai_forecast
+            .as_deref()
+            .and_then(|text| serde_json::from_str::<Value>(text).ok())
+            .and_then(|value| value.get("rationale").cloned());
+        let mut document = serde_json::json!({
+            "schemaVersion": 1, "forecastId": forecast_id,
+            "specificationHash": forecast.specification_hash, "language": "en",
+            "title": specification.share_title, "question": specification.canonical_question,
+            "rules": specification.rules.iter().map(|rule| serde_json::json!({
+                "clauseId": rule.clause_id, "outcome": rule.outcome, "condition": rule.condition,
+            })).collect::<Vec<Value>>(),
+            "invalidationRules": specification.invalidation_rules,
+            "aiRationale": if ai_forecast.is_some() { rationale.clone().unwrap_or(Value::Null) } else { Value::Null },
+            "openAt": specification.open_at_ms, "closeAt": specification.close_at_ms,
+        });
+
+        let editorial_hash = crate::db::text(&row, "editorial_hash").map(str::to_string);
+        if let Some(editorial_body) = crate::db::text(&row, "editorial_body") {
+            let translated: Value = serde_json::from_str(editorial_body).map_err(|_| UNAVAILABLE)?;
+            // An editorial version that does not declare itself the same specification is not a
+            // version of this document; it is a document that happens to share a row.
+            if translated["specificationHash"].as_str() != Some(forecast.specification_hash.as_str())
+                || translated["language"].as_str() != Some("en")
+            {
+                return Err(UNAVAILABLE);
+            }
+            let ours: Vec<&str> = document["rules"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|rule| rule["clauseId"].as_str())
+                .collect();
+            let theirs_rules = translated["rules"].as_array().cloned().unwrap_or_default();
+            let theirs: Vec<&str> = theirs_rules
+                .iter()
+                .filter_map(|rule| rule["clauseId"].as_str())
+                .collect();
+            if ours != theirs {
+                return Err(UNAVAILABLE);
+            }
+            document["title"] = translated["title"].clone();
+            document["question"] = translated["question"].clone();
+            document["invalidationRules"] = translated["invalidationRules"].clone();
+            let replacements = theirs_rules;
+            let merged: Vec<Value> = document["rules"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default()
+                .iter()
+                .zip(replacements.iter())
+                .map(|(original, replacement)| {
+                    let mut merged = original.as_object().cloned().unwrap_or_default();
+                    merged.insert("condition".to_string(), replacement["condition"].clone());
+                    Value::Object(merged)
+                })
+                .collect();
+            document["rules"] = Value::Array(merged);
+            if rationale.is_some() && !translated["aiRationale"].is_null() {
+                document["aiRationale"] = translated["aiRationale"].clone();
+            }
+        }
+        let public: Vec<String> = texts(&document)
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect();
+        if crate::ai::text::require_english_public_text(&public).is_err() {
+            return Err(TranslationError::new(
+                503,
+                "translation_unavailable",
+                "An English source version is not available for this forecast.",
+            ));
+        }
+        if canonical(&document).len() > MAX_SOURCE_BYTES {
+            return Err(TOO_LARGE);
+        }
+        Ok(SourceDocument {
+            document,
+            editorial_hash,
+            ai_forecast,
+        })
+    }
+
+    /// `cached`: an existing translation, verified against what it claims to be of.
+    pub async fn cached(
+        &self,
+        source: &Value,
+        source_hash: &str,
+        language: &str,
+    ) -> Result<Option<Value>, TranslationError> {
+        if language == "en" {
+            let mut payload = serde_json::Map::new();
+            for key in [
+                "forecastId",
+                "specificationHash",
+                "title",
+                "question",
+                "rules",
+                "invalidationRules",
+                "aiRationale",
+            ] {
+                payload.insert(key.to_string(), source[key].clone());
+            }
+            payload.insert("sourceHash".to_string(), serde_json::json!(source_hash));
+            payload.insert("sourceLanguage".to_string(), serde_json::json!("en"));
+            payload.insert("language".to_string(), serde_json::json!("en"));
+            payload.insert("attribution".to_string(), serde_json::json!("Source text"));
+            payload.insert("translatedAt".to_string(), serde_json::json!(0));
+            return Ok(Some(envelope(&Value::Object(payload))));
+        }
+        let row = self
+            .db
+            .first(
+                "SELECT body,translation_hash FROM forecast_display_translations \
+                 WHERE forecast_id=? AND specification_hash=? AND source_hash=? AND language=? AND policy_version=?",
+                &[
+                    source["forecastId"].clone(),
+                    source["specificationHash"].clone(),
+                    serde_json::json!(source_hash),
+                    serde_json::json!(language),
+                    serde_json::json!(POLICY),
+                ],
+            )
+            .await
+            .map_err(|_| UNAVAILABLE)?;
+        let Some(row) = row else {
+            return Ok(None);
+        };
+        let Some(body) = crate::db::text(&row, "body") else {
+            return Err(UNAVAILABLE);
+        };
+        let payload: Value = serde_json::from_str(body).map_err(|_| UNAVAILABLE)?;
+        let honest = digest(TRANSLATION_PREFIX, &payload)
+            == crate::db::text(&row, "translation_hash").unwrap_or_default()
+            && payload["forecastId"] == source["forecastId"]
+            && payload["specificationHash"] == source["specificationHash"]
+            && payload["sourceHash"].as_str() == Some(source_hash)
+            && payload["language"].as_str() == Some(language)
+            && payload["sourceLanguage"].as_str() == Some("en")
+            && payload["attribution"].as_str() == Some("AI translation");
+        if !honest {
+            return Err(UNAVAILABLE);
+        }
+        Ok(Some(envelope(&payload)))
+    }
+
+    /// `get`: the current state of a translation, without generating one.
+    pub async fn get(&self, forecast_id: &str, language: &str) -> Result<Value, TranslationError> {
+        checked_language(language)?;
+        let source = self.source(forecast_id).await?;
+        let source_hash = digest(SOURCE_PREFIX, &source.document);
+        let translation = self.cached(&source.document, &source_hash, language).await?;
+        Ok(serde_json::json!({
+            "status": if translation.is_some() { "ready" } else { "missing" },
+            "source": source.document, "sourceHash": source_hash, "translation": translation,
+        }))
+    }
+}
+
+impl Translations<'_> {
+    /// `generate`: the one path that spends AI budget, and the only one that writes.
+    ///
+    /// The shape is a lease, then four counters, then a compare-and-set. The lease is what stops
+    /// two callers generating the same translation at once; the counters are what stop one caller
+    /// generating many; and the guard is what stops a translation being committed against a source
+    /// that changed while the model was thinking. Every one of those is a race that has to be lost
+    /// safely, which is why the failure paths re-read the cache rather than assuming the commit
+    /// failed because of a bug.
+    ///
+    /// The reference wraps the model call in `asyncio.timeout(WORKFLOW_SECONDS)`. This module has
+    /// no timer of its own, so that budget belongs to the injected `translate` seam — which is
+    /// where the reference's own timeout sits, around `self.ai.translate_display`. The *acceptance*
+    /// check below is not the caller's: a translation that comes back after its deadline is
+    /// refused here, whether or not the call was cut short.
+    pub async fn generate(
+        &self,
+        forecast_id: &str,
+        body: &Value,
+        fingerprint: &str,
+    ) -> Result<Value, TranslationError> {
+        let fields: BTreeSet<&str> = body
+            .as_object()
+            .map(|fields| fields.keys().map(String::as_str).collect())
+            .unwrap_or_default();
+        if fields != ["language", "specificationHash", "sourceHash"].into_iter().collect() {
+            return Err(INVALID_INPUT);
+        }
+        let language = checked_language(body["language"].as_str().unwrap_or_default())?;
+        let source = self.source(forecast_id).await?;
+        let source_hash = digest(SOURCE_PREFIX, &source.document);
+        if body["specificationHash"] != source.document["specificationHash"]
+            || body["sourceHash"].as_str() != Some(source_hash.as_str())
+        {
+            return Err(SOURCE_CHANGED);
+        }
+        if let Some(ready) = self.cached(&source.document, &source_hash, language).await? {
+            return Ok(serde_json::json!({"status": "ready", "source": source.document,
+                                        "sourceHash": source_hash, "translation": ready}));
+        }
+
+        let owner = format!("translation:{source_hash}:{language}");
+        let lease = (self.token)();
+        let started = self.now();
+        self.db
+            .execute(
+                "INSERT INTO ai_leases(owner,token,expires_at) VALUES(?,?,?) \
+                 ON CONFLICT(owner) DO UPDATE SET token=excluded.token,expires_at=excluded.expires_at \
+                 WHERE ai_leases.expires_at<=?",
+                &[
+                    serde_json::json!(owner),
+                    serde_json::json!(lease),
+                    serde_json::json!(started + LEASE_MS),
+                    serde_json::json!(started),
+                ],
+            )
+            .await
+            .map_err(|_| UNAVAILABLE)?;
+        let active = self
+            .db
+            .first("SELECT token FROM ai_leases WHERE owner=?", &[serde_json::json!(owner)])
+            .await
+            .map_err(|_| UNAVAILABLE)?;
+        if active.as_ref().and_then(|row| crate::db::text(row, "token")) != Some(lease.as_str()) {
+            return Err(IN_PROGRESS);
+        }
+
+        let outcome = self
+            .commit(
+                forecast_id,
+                language,
+                &source,
+                &source_hash,
+                &owner,
+                &lease,
+                &started,
+                fingerprint,
+            )
+            .await;
+        // The lease is released whatever happened; a caller that gave up on a slow translation
+        // must not hold the next one out.
+        let _ = self
+            .db
+            .execute(
+                "DELETE FROM ai_leases WHERE owner=? AND token=?",
+                &[serde_json::json!(owner), serde_json::json!(lease)],
+            )
+            .await;
+        outcome
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn commit(
+        &self,
+        forecast_id: &str,
+        language: &str,
+        source: &SourceDocument,
+        source_hash: &str,
+        owner: &str,
+        lease: &str,
+        started: &i64,
+        fingerprint: &str,
+    ) -> Result<Value, TranslationError> {
+        // A previous generator may have committed between the first read and our lease.
+        if let Some(ready) = self.cached(&source.document, source_hash, language).await? {
+            return Ok(serde_json::json!({"status": "ready", "source": source.document,
+                                        "sourceHash": source_hash, "translation": ready}));
+        }
+        for (scope, limit, window) in [
+            ("translation:global".to_string(), 60, DAY_MS),
+            (format!("translation:ip:{fingerprint}"), 20, DAY_MS),
+            (format!("translation:minute:{fingerprint}"), 5, 60_000),
+            ("ai:global".to_string(), 240, DAY_MS),
+        ] {
+            if (self.rate_limit)(&scope, limit, window).await.is_err() {
+                return Err(TranslationError::new(
+                    429,
+                    "translation_rate_limited",
+                    "Too many translations were requested. Try again later.",
+                ));
+            }
+        }
+
+        let result = match (self.translate)(&source.document, language).await {
+            Ok(result) => result,
+            Err(error) => return Err(self.failure(error, &[]).await),
+        };
+        // The reference cuts the call at 120 seconds and then checks the clock anyway; the second
+        // check is the one that cannot be defeated by a caller that ignored the first.
+        if self.now() - started >= WORKFLOW_SECONDS * 1000 {
+            return Err(TranslationError::new(
+                503,
+                "translation_unavailable",
+                "Translation is temporarily unavailable. Please try again later.",
+            ));
+        }
+        let translated = match validate_translation(&source.document, &result.body, language) {
+            Ok(translated) => translated,
+            Err(error) => return Err(self.failure(as_coordinator_error(error), &[]).await),
+        };
+        if result.artifacts.len() != 2 {
+            return Err(self
+                .failure(
+                    CoordinatorError::Rejected {
+                        code: "ai_rejected".to_string(),
+                        message: "Translation requires retained generation and review records".to_string(),
+                        artifacts: Vec::new(),
+                    },
+                    &[],
+                )
+                .await);
+        }
+
+        // The source is read again: what makes a translation trustworthy is that it is a
+        // translation *of* something, and the something may have moved.
+        let latest = self.source(forecast_id).await?;
+        if digest(SOURCE_PREFIX, &latest.document) != source_hash
+            || latest.editorial_hash != source.editorial_hash
+            || latest.ai_forecast != source.ai_forecast
+        {
+            return Err(TranslationError::new(
+                409,
+                "translation_source_changed",
+                "The source changed during translation. Refresh and try again.",
+            ));
+        }
+
+        let now = self.now();
+        let mut payload = translated.as_object().cloned().unwrap_or_default();
+        payload.insert("forecastId".to_string(), serde_json::json!(forecast_id));
+        payload.insert(
+            "specificationHash".to_string(),
+            source.document["specificationHash"].clone(),
+        );
+        payload.insert("sourceHash".to_string(), serde_json::json!(source_hash));
+        payload.insert("language".to_string(), serde_json::json!(language));
+        payload.insert("sourceLanguage".to_string(), serde_json::json!("en"));
+        payload.insert("attribution".to_string(), serde_json::json!("AI translation"));
+        payload.insert("translatedAt".to_string(), serde_json::json!(now));
+        let payload = Value::Object(payload);
+        let serialized = canonical(&payload);
+        if serialized.len() > MAX_TRANSLATION_BYTES {
+            return Err(self
+                .failure(
+                    CoordinatorError::Rejected {
+                        code: "ai_rejected".to_string(),
+                        message: "Translation envelope exceeds its retained limit".to_string(),
+                        artifacts: Vec::new(),
+                    },
+                    &[],
+                )
+                .await);
+        }
+
+        let guard = (self.token)();
+        let mut statements = vec![(
+            "INSERT INTO mutation_guards(token,valid) SELECT ?,CASE WHEN EXISTS( \
+             SELECT 1 FROM forecasts f WHERE f.id=? AND f.specification_hash=? \
+             AND (SELECT content_hash FROM forecast_translations WHERE forecast_id=f.id AND language='en' \
+             AND specification_hash=f.specification_hash) IS ? \
+             AND f.ai_forecast IS ? \
+             AND EXISTS(SELECT 1 FROM ai_leases WHERE owner=? AND token=? AND expires_at>?)) THEN 1 ELSE 0 END"
+                .to_string(),
+            vec![
+                serde_json::json!(guard),
+                serde_json::json!(forecast_id),
+                source.document["specificationHash"].clone(),
+                serde_json::json!(source.editorial_hash),
+                serde_json::json!(source.ai_forecast),
+                serde_json::json!(owner),
+                serde_json::json!(lease),
+                serde_json::json!(now),
+            ],
+        )];
+        for artifact in &result.artifacts {
+            statements.push(artifact_statement(artifact, now));
+        }
+        statements.push((
+            "INSERT OR IGNORE INTO forecast_display_translations(forecast_id,specification_hash,source_hash,language,\
+             policy_version,body,translation_hash,generation_hash,review_hash,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)"
+                .to_string(),
+            vec![
+                serde_json::json!(forecast_id),
+                source.document["specificationHash"].clone(),
+                serde_json::json!(source_hash),
+                serde_json::json!(language),
+                serde_json::json!(POLICY),
+                serde_json::json!(serialized),
+                serde_json::json!(digest(TRANSLATION_PREFIX, &payload)),
+                serde_json::json!(result.artifacts[0].hash),
+                serde_json::json!(result.artifacts[1].hash),
+                serde_json::json!(now),
+            ],
+        ));
+        statements.push((
+            "DELETE FROM mutation_guards WHERE token=?".to_string(),
+            vec![serde_json::json!(guard)],
+        ));
+        if self.db.batch(&statements).await.is_err() {
+            // The guard failing is the expected way this batch fails: someone else committed, or
+            // the source moved. If a translation is now present it is the one to return.
+            if let Some(accepted) = self.cached(&source.document, source_hash, language).await? {
+                return Ok(serde_json::json!({"status": "ready", "source": source.document,
+                                            "sourceHash": source_hash, "translation": accepted}));
+            }
+            return Err(TranslationError::new(
+                409,
+                "translation_source_changed",
+                "The translation could not be committed to its source. Refresh and retry.",
+            ));
+        }
+        let accepted = self.cached(&source.document, source_hash, language).await?;
+        Ok(serde_json::json!({"status": "ready", "source": source.document,
+                              "sourceHash": source_hash, "translation": accepted}))
+    }
+
+    /// Turn a coordinator refusal into the caller's, retaining whatever it carried.
+    async fn failure(&self, error: CoordinatorError, earlier: &[crate::ai::coordinator::Artifact]) -> TranslationError {
+        let mut artifacts = earlier.to_vec();
+        artifacts.extend(error.artifacts().iter().cloned());
+        if !artifacts.is_empty() {
+            let statements: Vec<(String, Vec<Value>)> = artifacts
+                .iter()
+                .map(|artifact| artifact_statement(artifact, self.now()))
+                .collect();
+            let _ = self.db.batch(&statements).await;
+        }
+        if error.code().is_none() {
+            TranslationError::new(
+                503,
+                "translation_unavailable",
+                "Translation is temporarily unavailable. Please try again later.",
+            )
+        } else {
+            TRANSLATION_FAILED
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
