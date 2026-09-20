@@ -5,3 +5,4 @@
 //! contract change silently, and a contract change here is a change to what a reward is based on.
 
 pub mod schema;
+pub mod strict;
