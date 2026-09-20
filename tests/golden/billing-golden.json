@@ -1,0 +1,1011 @@
+{
+  "calls": [
+    {
+      "call": "estimate",
+      "result": {
+        "billable": false,
+        "contributionAtCostCapCents": 85,
+        "costCapCents": 115,
+        "currency": "USD",
+        "maximumEventualContributionCents": 200,
+        "mode": "sandbox",
+        "notice": "Simulation only. No payment is requested or accepted.",
+        "priceCents": 200,
+        "requiredAllocatedAssetsCents": 315,
+        "requiredOperatorCapitalCents": 115,
+        "spendableAtPublicationCents": 0
+      }
+    },
+    {
+      "call": "summary_initial",
+      "result": {
+        "assetsCents": 0,
+        "availableCapitalCents": 0,
+        "billable": false,
+        "enabled": true,
+        "invoiceCount": 0,
+        "mode": "sandbox",
+        "principalCents": 0,
+        "remainingCostCents": 0,
+        "spentCents": 0
+      }
+    },
+    {
+      "call": "fund_capital",
+      "result": {
+        "availableCapitalCents": 1000,
+        "billable": false,
+        "mode": "sandbox"
+      }
+    },
+    {
+      "call": "fund_capital_key",
+      "result": {
+        "availableCapitalCents": 1500,
+        "billable": false,
+        "mode": "sandbox"
+      }
+    },
+    {
+      "call": "fund_capital_replay",
+      "result": {
+        "availableCapitalCents": 1500,
+        "billable": false,
+        "mode": "sandbox"
+      }
+    },
+    {
+      "call": "fund_capital_conflict",
+      "error": {
+        "code": "billing_state_conflict",
+        "message": "Idempotency key was used for a different request.",
+        "status": 409
+      }
+    },
+    {
+      "call": "quote",
+      "result": {
+        "assetsCents": 0,
+        "attempts": {},
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "UNFUNDED",
+        "phase": "QUOTED",
+        "priceCents": 200,
+        "principalCents": 0,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 0,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 0
+      }
+    },
+    {
+      "call": "quote_replay",
+      "result": {
+        "assetsCents": 0,
+        "attempts": {},
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "UNFUNDED",
+        "phase": "QUOTED",
+        "priceCents": 200,
+        "principalCents": 0,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 0,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 0
+      }
+    },
+    {
+      "call": "invoice",
+      "result": {
+        "assetsCents": 0,
+        "attempts": {},
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "UNFUNDED",
+        "phase": "QUOTED",
+        "priceCents": 200,
+        "principalCents": 0,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 0,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 0
+      }
+    },
+    {
+      "call": "summary_quoted",
+      "result": {
+        "assetsCents": 0,
+        "availableCapitalCents": 1500,
+        "billable": false,
+        "enabled": true,
+        "invoiceCount": 1,
+        "mode": "sandbox",
+        "principalCents": 0,
+        "remainingCostCents": 0,
+        "spentCents": 0
+      }
+    },
+    {
+      "call": "accept_receipt",
+      "result": {
+        "assetsCents": 315,
+        "attempts": {},
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "ACCEPTED_COMPILING",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 115,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 0
+      }
+    },
+    {
+      "call": "start_attempt",
+      "result": {
+        "assetsCents": 315,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": null,
+            "capCents": 50,
+            "state": "reserved"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "ACCEPTED_COMPILING",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 115,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 0
+      }
+    },
+    {
+      "call": "settle_attempt",
+      "result": {
+        "assetsCents": 275,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "ACCEPTED_COMPILING",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 75,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 40
+      }
+    },
+    {
+      "call": "start_attempt_2",
+      "result": {
+        "assetsCents": 275,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": null,
+            "capCents": 30,
+            "state": "reserved"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "ACCEPTED_COMPILING",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 75,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 40
+      }
+    },
+    {
+      "call": "mark_uncertain",
+      "result": {
+        "assetsCents": 275,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": null,
+            "capCents": 30,
+            "state": "uncertain"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "ACCEPTED_COMPILING",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 75,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 40
+      }
+    },
+    {
+      "call": "complete_blocked",
+      "error": {
+        "code": "billing_state_conflict",
+        "message": "Outstanding work or uncertain bills remain.",
+        "status": 409
+      }
+    },
+    {
+      "call": "settle_late",
+      "result": {
+        "assetsCents": 250,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "ACCEPTED_COMPILING",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 50,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 65
+      }
+    },
+    {
+      "call": "start_attempt_3",
+      "result": {
+        "assetsCents": 250,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": null,
+            "capCents": 10,
+            "state": "reserved"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "ACCEPTED_COMPILING",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 50,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 65
+      }
+    },
+    {
+      "call": "settle_over_cap",
+      "error": {
+        "code": "billing_state_conflict",
+        "message": "Provider cost exceeds authorized reservation.",
+        "status": 409
+      }
+    },
+    {
+      "call": "settle_attempt_3",
+      "result": {
+        "assetsCents": 240,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": 10,
+            "capCents": 10,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "ACCEPTED_COMPILING",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 40,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 75
+      }
+    },
+    {
+      "call": "publish_wrong_scope",
+      "error": {
+        "code": "billing_state_conflict",
+        "message": "Creator approval must match the immutable scope.",
+        "status": 409
+      }
+    },
+    {
+      "call": "publish",
+      "result": {
+        "assetsCents": 240,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": 10,
+            "capCents": 10,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "PUBLISHED_SERVICING",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 40,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 75
+      }
+    },
+    {
+      "call": "complete",
+      "result": {
+        "assetsCents": 240,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": 10,
+            "capCents": 10,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_FUNDED",
+        "phase": "COMPLETED_REFUND_WINDOW",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 40,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 75
+      }
+    },
+    {
+      "call": "start_refund_before_request",
+      "error": {
+        "code": "billing_state_conflict",
+        "message": "No pending refund-processing duty.",
+        "status": 409
+      }
+    },
+    {
+      "call": "request_refund",
+      "result": {
+        "assetsCents": 240,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": 10,
+            "capCents": 10,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "REFUND_PENDING",
+        "phase": "COMPLETED_REFUND_WINDOW",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 40,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 75
+      }
+    },
+    {
+      "call": "start_refund_attempt",
+      "result": {
+        "assetsCents": 240,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": 10,
+            "capCents": 10,
+            "state": "settled"
+          },
+          "sandbox:refund-1": {
+            "actualCents": null,
+            "capCents": 5,
+            "state": "reserved"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "REFUND_PENDING",
+        "phase": "COMPLETED_REFUND_WINDOW",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 40,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 75
+      }
+    },
+    {
+      "call": "settle_refund_attempt",
+      "result": {
+        "assetsCents": 235,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": 10,
+            "capCents": 10,
+            "state": "settled"
+          },
+          "sandbox:refund-1": {
+            "actualCents": 5,
+            "capCents": 5,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "REFUND_PENDING",
+        "phase": "COMPLETED_REFUND_WINDOW",
+        "priceCents": 200,
+        "principalCents": 200,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 35,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 80
+      }
+    },
+    {
+      "call": "finish_refund",
+      "result": {
+        "assetsCents": 35,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": 10,
+            "capCents": 10,
+            "state": "settled"
+          },
+          "sandbox:refund-1": {
+            "actualCents": 5,
+            "capCents": 5,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_REFUNDED",
+        "phase": "COMPLETED_REFUND_WINDOW",
+        "priceCents": 200,
+        "principalCents": 0,
+        "refundUntil": 1700000900000,
+        "remainingCostCents": 35,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 80
+      }
+    },
+    {
+      "call": "release",
+      "result": {
+        "assetsCents": 0,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": 10,
+            "capCents": 10,
+            "state": "settled"
+          },
+          "sandbox:refund-1": {
+            "actualCents": 5,
+            "capCents": 5,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_REFUNDED",
+        "phase": "CLOSED",
+        "priceCents": 200,
+        "principalCents": 0,
+        "refundUntil": 1700000900000,
+        "releasedCents": 35,
+        "remainingCostCents": 0,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 80
+      }
+    },
+    {
+      "call": "summary_final",
+      "result": {
+        "assetsCents": 0,
+        "availableCapitalCents": 1420,
+        "billable": false,
+        "enabled": true,
+        "invoiceCount": 1,
+        "mode": "sandbox",
+        "principalCents": 0,
+        "remainingCostCents": 0,
+        "spentCents": 80
+      }
+    },
+    {
+      "call": "invoice_final",
+      "result": {
+        "assetsCents": 0,
+        "attempts": {
+          "sandbox:attempt-1": {
+            "actualCents": 40,
+            "capCents": 50,
+            "state": "settled"
+          },
+          "sandbox:attempt-2": {
+            "actualCents": 25,
+            "capCents": 30,
+            "state": "settled"
+          },
+          "sandbox:attempt-3": {
+            "actualCents": 10,
+            "capCents": 10,
+            "state": "settled"
+          },
+          "sandbox:refund-1": {
+            "actualCents": 5,
+            "capCents": 5,
+            "state": "settled"
+          }
+        },
+        "billable": false,
+        "costCapCents": 115,
+        "currency": "USD",
+        "expiresAt": 1700000600000,
+        "id": "sandbox:invoice-1",
+        "maxAttempts": 5,
+        "mode": "sandbox",
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "paymentState": "SANDBOX_REFUNDED",
+        "phase": "CLOSED",
+        "priceCents": 200,
+        "principalCents": 0,
+        "refundUntil": 1700000900000,
+        "releasedCents": 35,
+        "remainingCostCents": 0,
+        "scopeHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "spentCents": 80
+      }
+    },
+    {
+      "call": "complete_after_close",
+      "error": {
+        "code": "billing_state_conflict",
+        "message": "Invoice is not active.",
+        "status": 409
+      }
+    }
+  ],
+  "description": "The sandbox billing state machine: fund, quote, accept, reserve, settle, publish, complete, refund, release — with its replays and refusals.",
+  "disabledCalls": [
+    {
+      "call": "disabled_fund",
+      "error": {
+        "code": "billing_sandbox_disabled",
+        "message": "Billing is disabled; no payment is accepted.",
+        "status": 503
+      }
+    },
+    {
+      "call": "disabled_summary",
+      "result": {
+        "assetsCents": 0,
+        "availableCapitalCents": 0,
+        "billable": false,
+        "enabled": false,
+        "invoiceCount": 0,
+        "mode": "sandbox",
+        "principalCents": 0,
+        "remainingCostCents": 0,
+        "spentCents": 0
+      }
+    }
+  ],
+  "disabledRows": {
+    "service_billing_sandbox_audit": [],
+    "service_billing_sandbox_capital": [
+      {
+        "available_cents": 0,
+        "singleton": 1,
+        "version": 0
+      }
+    ],
+    "service_billing_sandbox_invoices": [],
+    "service_billing_sandbox_receipts": []
+  },
+  "now": 1700000000000,
+  "rows": {
+    "service_billing_sandbox_audit": [
+      {
+        "action": "fund",
+        "created_at": 1700000000000,
+        "invoice_id": null,
+        "operation_key": "sandbox:key-1",
+        "request_hash": "9c114e544229c92a0a8f300bed9117cbeb9d84a345dc5eb2ac4293d2e2122f9b",
+        "result": "{\"availableCapitalCents\":1000,\"billable\":false,\"mode\":\"sandbox\"}"
+      },
+      {
+        "action": "fund",
+        "created_at": 1700000000000,
+        "invoice_id": null,
+        "operation_key": "sandbox:key-2",
+        "request_hash": "abe0430c6ad998c56a96ce6fca178970ebcecd4af66c3edfbd3ead56184a0be4",
+        "result": "{\"availableCapitalCents\":1500,\"billable\":false,\"mode\":\"sandbox\"}"
+      },
+      {
+        "action": "quote",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-3",
+        "request_hash": "6cf2d3fa5aaa1183bb00e1d99faf7615bdc50914601023c42d347cd47e7d36b4",
+        "result": "{\"assetsCents\":0,\"attempts\":{},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"UNFUNDED\",\"phase\":\"QUOTED\",\"priceCents\":200,\"principalCents\":0,\"refundUntil\":1700000900000,\"remainingCostCents\":0,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":0}"
+      },
+      {
+        "action": "accept_sandbox_receipt",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-4",
+        "request_hash": "27f2cfe8b843bd0469379fcc53e17f3d38b21f672b90f743c4cb502652524779",
+        "result": "{\"assetsCents\":315,\"attempts\":{},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"ACCEPTED_COMPILING\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":115,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":0}"
+      },
+      {
+        "action": "start_attempt",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-5",
+        "request_hash": "45759f1aed250fdd395cae7ffd5f7a9f5ef541b6e79621ad21198b7be7f792cd",
+        "result": "{\"assetsCents\":315,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":null,\"capCents\":50,\"state\":\"reserved\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"ACCEPTED_COMPILING\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":115,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":0}"
+      },
+      {
+        "action": "settle_attempt",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-6",
+        "request_hash": "13695087ac9d427ead6cbd281f64d32c4bcc8d704fd963d716ae044175100697",
+        "result": "{\"assetsCents\":275,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"ACCEPTED_COMPILING\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":75,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":40}"
+      },
+      {
+        "action": "start_attempt",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-7",
+        "request_hash": "8b0752e4621bc6a04b74819f8b50b5967dd7ea30bf8d60d1e0ca554eb8ae40b3",
+        "result": "{\"assetsCents\":275,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":null,\"capCents\":30,\"state\":\"reserved\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"ACCEPTED_COMPILING\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":75,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":40}"
+      },
+      {
+        "action": "mark_uncertain",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-8",
+        "request_hash": "8aee71bba328a5e820be4af98bfd3b736751b5e04612dbaf28ea980892d7072a",
+        "result": "{\"assetsCents\":275,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":null,\"capCents\":30,\"state\":\"uncertain\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"ACCEPTED_COMPILING\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":75,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":40}"
+      },
+      {
+        "action": "settle_attempt",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-10",
+        "request_hash": "5f31b6163471ad83bcf0c5c4d09af3e47a9fd2be7cf6eed3d74a43353f427ae6",
+        "result": "{\"assetsCents\":250,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"ACCEPTED_COMPILING\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":50,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":65}"
+      },
+      {
+        "action": "start_attempt",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-11",
+        "request_hash": "fcc9a19961015ea9ab791c3e6b25961fcad89cd20a99c53bf543a4757360c8e6",
+        "result": "{\"assetsCents\":250,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":null,\"capCents\":10,\"state\":\"reserved\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"ACCEPTED_COMPILING\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":50,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":65}"
+      },
+      {
+        "action": "settle_attempt",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-13",
+        "request_hash": "2d6dcd5f7ae095326c077f4209eeb32a52644a39201edc4cea50a268bc9e12ca",
+        "result": "{\"assetsCents\":240,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":10,\"capCents\":10,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"ACCEPTED_COMPILING\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":40,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":75}"
+      },
+      {
+        "action": "publish",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-15",
+        "request_hash": "b3417f0b71eb81ae571489d7a7026728d63927edb925b1f2af63e230524b8f07",
+        "result": "{\"assetsCents\":240,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":10,\"capCents\":10,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"PUBLISHED_SERVICING\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":40,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":75}"
+      },
+      {
+        "action": "complete",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-16",
+        "request_hash": "562bb776bd1f97682831116a696611cf2f93a57a2d19dfab986290e5bbc01677",
+        "result": "{\"assetsCents\":240,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":10,\"capCents\":10,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_FUNDED\",\"phase\":\"COMPLETED_REFUND_WINDOW\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":40,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":75}"
+      },
+      {
+        "action": "request_refund",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-18",
+        "request_hash": "a7c555a7a09048fd7da3025f33a1e1afcfc08f06d3406374be919d9f39ecb454",
+        "result": "{\"assetsCents\":240,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":10,\"capCents\":10,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"REFUND_PENDING\",\"phase\":\"COMPLETED_REFUND_WINDOW\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":40,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":75}"
+      },
+      {
+        "action": "start_refund_attempt",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-19",
+        "request_hash": "3ec1f5d417ffcceff4f666f8e39ed39509b13f90b13352ea17ce99c0b25c3ffd",
+        "result": "{\"assetsCents\":240,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":10,\"capCents\":10,\"state\":\"settled\"},\"sandbox:refund-1\":{\"actualCents\":null,\"capCents\":5,\"state\":\"reserved\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"REFUND_PENDING\",\"phase\":\"COMPLETED_REFUND_WINDOW\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":40,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":75}"
+      },
+      {
+        "action": "settle_attempt",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-20",
+        "request_hash": "bf794373e63db8f99b23a634d6139989ac6077618cdff0b60cdb1a10c1598cd4",
+        "result": "{\"assetsCents\":235,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":10,\"capCents\":10,\"state\":\"settled\"},\"sandbox:refund-1\":{\"actualCents\":5,\"capCents\":5,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"REFUND_PENDING\",\"phase\":\"COMPLETED_REFUND_WINDOW\",\"priceCents\":200,\"principalCents\":200,\"refundUntil\":1700000900000,\"remainingCostCents\":35,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":80}"
+      },
+      {
+        "action": "finish_refund",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-21",
+        "request_hash": "a7af45c00a098e782c10a06b87731c4386530390156fa5260c1f960d8b0d1c7c",
+        "result": "{\"assetsCents\":35,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":10,\"capCents\":10,\"state\":\"settled\"},\"sandbox:refund-1\":{\"actualCents\":5,\"capCents\":5,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_REFUNDED\",\"phase\":\"COMPLETED_REFUND_WINDOW\",\"priceCents\":200,\"principalCents\":0,\"refundUntil\":1700000900000,\"remainingCostCents\":35,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":80}"
+      },
+      {
+        "action": "release",
+        "created_at": 1700000000000,
+        "invoice_id": "sandbox:invoice-1",
+        "operation_key": "sandbox:key-22",
+        "request_hash": "693e61514cda4980a0bde38b8b1a709c36edf09c0c9c4d82815d043df71aae78",
+        "result": "{\"assetsCents\":0,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":10,\"capCents\":10,\"state\":\"settled\"},\"sandbox:refund-1\":{\"actualCents\":5,\"capCents\":5,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_REFUNDED\",\"phase\":\"CLOSED\",\"priceCents\":200,\"principalCents\":0,\"refundUntil\":1700000900000,\"releasedCents\":35,\"remainingCostCents\":0,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":80}"
+      }
+    ],
+    "service_billing_sandbox_capital": [
+      {
+        "available_cents": 1420,
+        "singleton": 1,
+        "version": 18
+      }
+    ],
+    "service_billing_sandbox_invoices": [
+      {
+        "body": "{\"assetsCents\":0,\"attempts\":{\"sandbox:attempt-1\":{\"actualCents\":40,\"capCents\":50,\"state\":\"settled\"},\"sandbox:attempt-2\":{\"actualCents\":25,\"capCents\":30,\"state\":\"settled\"},\"sandbox:attempt-3\":{\"actualCents\":10,\"capCents\":10,\"state\":\"settled\"},\"sandbox:refund-1\":{\"actualCents\":5,\"capCents\":5,\"state\":\"settled\"}},\"billable\":false,\"costCapCents\":115,\"currency\":\"USD\",\"expiresAt\":1700000600000,\"id\":\"sandbox:invoice-1\",\"maxAttempts\":5,\"mode\":\"sandbox\",\"ownerHash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"paymentState\":\"SANDBOX_REFUNDED\",\"phase\":\"CLOSED\",\"priceCents\":200,\"principalCents\":0,\"refundUntil\":1700000900000,\"releasedCents\":35,\"remainingCostCents\":0,\"scopeHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"spentCents\":80}",
+        "id": "sandbox:invoice-1",
+        "owner_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "scope_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "version": 15
+      }
+    ],
+    "service_billing_sandbox_receipts": [
+      {
+        "invoice_id": "sandbox:invoice-1",
+        "reference": "sandbox:receipt-1"
+      }
+    ]
+  }
+}

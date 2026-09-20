@@ -62,7 +62,10 @@ def main() -> int:
                 [sys.executable, "scripts/generate_translation_golden.py", "--check"],
                 # The market is where points are committed; a price that matches is not enough
                 # if the fill that charged for it recorded a different receipt.
-                [sys.executable, "scripts/generate_market_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_market_golden.py", "--check"],
+                # Sandbox billing is nonbillable, but it is still a state machine over two pools
+                # of capital that no sequence of events may leave owing more than it holds.
+                [sys.executable, "scripts/generate_billing_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

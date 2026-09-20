@@ -8,6 +8,7 @@ use worker::*;
 pub mod ai;
 pub mod article;
 mod auth;
+pub mod billing;
 mod db;
 mod detail;
 mod discovery;
