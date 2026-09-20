@@ -1,0 +1,687 @@
+{
+  "calls": [
+    {
+      "call": "admit:definition-bad-actor",
+      "error": {
+        "message": "authenticated approver required",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "admit_definition"
+    },
+    {
+      "call": "admit:definition-bad-feed",
+      "error": {
+        "message": "invalid feed ID",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk v2"
+      },
+      "kind": "admit_definition"
+    },
+    {
+      "call": "admit:definition",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "admit_definition",
+      "result": "9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be"
+    },
+    {
+      "call": "admit:definition-again",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "admit_definition",
+      "result": "9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be"
+    },
+    {
+      "call": "admit:profile",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "admit_profile",
+      "result": "dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d"
+    },
+    {
+      "call": "approve:start-moved",
+      "error": {
+        "message": "typed target disagrees with the published measurement interval",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "approve_binding_v2"
+    },
+    {
+      "call": "approve:end-moved",
+      "error": {
+        "message": "typed target disagrees with the published measurement interval",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "approve_binding_v2"
+    },
+    {
+      "call": "approve:definition-unadmitted",
+      "error": {
+        "message": "binding references unadmitted records",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "approve_binding_v2"
+    },
+    {
+      "call": "approve:profile-unadmitted",
+      "error": {
+        "message": "binding references unadmitted records",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "approve_binding_v2"
+    },
+    {
+      "call": "approve:event-hash",
+      "error": {
+        "message": "question event definition hash mismatch",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "approve_binding_v2"
+    },
+    {
+      "call": "approve:asset",
+      "error": {
+        "message": "binding disagrees with its admitted definition or profile",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "approve_binding_v2"
+    },
+    {
+      "call": "approve:not-current",
+      "error": {
+        "message": "binding authorization is not current",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "approve_binding_v2"
+    },
+    {
+      "call": "approve:ok",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "approve_binding_v2",
+      "result": null
+    },
+    {
+      "call": "operational:before",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "operational_bindings_v2",
+      "result": []
+    },
+    {
+      "call": "publish:no-operational-episode",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "publish_feed_v2",
+      "result": {
+        "payload": {
+          "bindings": [],
+          "calibration_cohort_id": "usdc-depeg-1d-w48-containing",
+          "channel_coverage": [
+            {
+              "binding_id": null,
+              "channel": "bridgeFailureRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "btcCrashRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "counterpartyRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "depegRisk1d",
+              "reason": "no operational episode",
+              "schema_version": 1,
+              "status": "unavailable"
+            },
+            {
+              "binding_id": null,
+              "channel": "depegRisk30d",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "depegRisk7d",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "ethCrashRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "liquidityStressRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "oracleFailureRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "reserveLossRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "solCrashRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "stableCollateralRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            }
+          ],
+          "expires_at_ms": 1800000120000,
+          "feed_id": "risk-v2",
+          "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+          "issued_at_ms": 1800000000000,
+          "key_id": "test-key",
+          "profile_set_hash": "751c8efaf15f05aad1fdee033f1ae43ba944261c44e4068c6a3b991dd908e11b",
+          "purpose": "forecast-risk-feed-v2",
+          "schema_version": 1,
+          "sequence": 1,
+          "signals": [],
+          "weight_set_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "weight_set_version": "source-calibration-v2"
+        },
+        "public_key_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_version": 1,
+        "signature_hex": "649a0cbdc65fee783744d45693898e9fe9be7b7553db4e002f21f89906c946d427b64985520b72d3aedc6b6b74a30bbd4daed8f4d5de3c65eaad296b66686ec5"
+      }
+    },
+    {
+      "call": "operational:after",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "operational_bindings_v2",
+      "result": [
+        {
+          "approval_artifact_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+          "asset": "USDC",
+          "authorization_valid_from_ms": 1800000000000,
+          "authorization_valid_until_ms": 1800180000000,
+          "binding_id": "usdc-depeg-1d-episode-1",
+          "category": "CRYPTO",
+          "channel": "depegRisk1d",
+          "definition_hash": "9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be",
+          "episode_id": "2027-01-15T10:00:00Z",
+          "forecast_id": "f_19581e27de7ced00ff1ce50b",
+          "interval": "[start,end)",
+          "mapping_kind": "containing_upper_estimate",
+          "mapping_profile_hash": "dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d",
+          "mapping_profile_id": "monotone-any-event-containment",
+          "mapping_profile_version": "containment-profile-v1",
+          "operational_valid_from_ms": 1800007200000,
+          "operational_valid_until_ms": 1800093600000,
+          "policy_horizon_ms": 86400000,
+          "question_event_definition_hash": "28c63895ca2e0715083b4fe625679883f61cc164c931518602521034c38e24a9",
+          "schema_version": 1,
+          "series_id": "usdc-depeg-1d-w48",
+          "specification_hash": "32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463",
+          "target_end_ms": 1800180000000,
+          "target_start_ms": 1800007200000,
+          "version": "canonical-risk-binding-v2"
+        }
+      ]
+    },
+    {
+      "call": "publish:no-clock-provenance",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "publish_feed_v2",
+      "result": {
+        "payload": {
+          "bindings": [],
+          "calibration_cohort_id": "usdc-depeg-1d-w48-containing",
+          "channel_coverage": [
+            {
+              "binding_id": null,
+              "channel": "bridgeFailureRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "btcCrashRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "counterpartyRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "depegRisk1d",
+              "reason": "no fresh estimate with complete clock provenance",
+              "schema_version": 1,
+              "status": "unavailable"
+            },
+            {
+              "binding_id": null,
+              "channel": "depegRisk30d",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "depegRisk7d",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "ethCrashRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "liquidityStressRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "oracleFailureRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "reserveLossRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "solCrashRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "stableCollateralRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            }
+          ],
+          "expires_at_ms": 1800007321000,
+          "feed_id": "risk-v2",
+          "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+          "issued_at_ms": 1800007201000,
+          "key_id": "test-key",
+          "profile_set_hash": "751c8efaf15f05aad1fdee033f1ae43ba944261c44e4068c6a3b991dd908e11b",
+          "purpose": "forecast-risk-feed-v2",
+          "schema_version": 1,
+          "sequence": 2,
+          "signals": [],
+          "weight_set_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "weight_set_version": "source-calibration-v2"
+        },
+        "public_key_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_version": 1,
+        "signature_hex": "c955c345cfb864277ba8c69a1025fe8962b70ed53aa395a20df5350b8cd1e0b17e72c38c7f45ffe6ca60ff0ba40df12bfb7a8709f9ad18bd04f8fc3a8b10c771"
+      }
+    },
+    {
+      "call": "stale:none-yet",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "stale_bindings_v2",
+      "result": [
+        "usdc-depeg-1d-episode-1"
+      ]
+    },
+    {
+      "call": "latest",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "latest_feed_v2",
+      "result": {
+        "payload": {
+          "bindings": [],
+          "calibration_cohort_id": "usdc-depeg-1d-w48-containing",
+          "channel_coverage": [
+            {
+              "binding_id": null,
+              "channel": "bridgeFailureRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "btcCrashRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "counterpartyRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "depegRisk1d",
+              "reason": "no fresh estimate with complete clock provenance",
+              "schema_version": 1,
+              "status": "unavailable"
+            },
+            {
+              "binding_id": null,
+              "channel": "depegRisk30d",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "depegRisk7d",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "ethCrashRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "liquidityStressRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "oracleFailureRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "reserveLossRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "solCrashRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            },
+            {
+              "binding_id": null,
+              "channel": "stableCollateralRisk",
+              "reason": "no admitted definition",
+              "schema_version": 1,
+              "status": "unsupported"
+            }
+          ],
+          "expires_at_ms": 1800007321000,
+          "feed_id": "risk-v2",
+          "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+          "issued_at_ms": 1800007201000,
+          "key_id": "test-key",
+          "profile_set_hash": "751c8efaf15f05aad1fdee033f1ae43ba944261c44e4068c6a3b991dd908e11b",
+          "purpose": "forecast-risk-feed-v2",
+          "schema_version": 1,
+          "sequence": 2,
+          "signals": [],
+          "weight_set_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "weight_set_version": "source-calibration-v2"
+        },
+        "public_key_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_version": 1,
+        "signature_hex": "c955c345cfb864277ba8c69a1025fe8962b70ed53aa395a20df5350b8cd1e0b17e72c38c7f45ffe6ca60ff0ba40df12bfb7a8709f9ad18bd04f8fc3a8b10c771"
+      }
+    },
+    {
+      "call": "revoke:bad-actor",
+      "error": {
+        "message": "revocation requires authenticated actor and bounded reason",
+        "type": "ValidationError"
+      },
+      "input": {
+        "bindingId": "usdc-depeg-1d-episode-1"
+      },
+      "kind": "revoke_binding_v2"
+    },
+    {
+      "call": "revoke:ok",
+      "input": {
+        "bindingId": "usdc-depeg-1d-episode-1"
+      },
+      "kind": "revoke_binding_v2",
+      "result": null
+    },
+    {
+      "call": "operational:after-revocation",
+      "input": {
+        "feedId": "risk-v2"
+      },
+      "kind": "operational_bindings_v2",
+      "result": []
+    }
+  ],
+  "description": "The v2 risk producer: admitted definitions and profiles, the typed-target approval gate, the operational window, the compile-time estimate that has no clock provenance, and revocation.",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+  "rows": {
+    "artifacts": [
+      {
+        "body": "{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"category\":\"CRYPTO\",\"close_at_ms\":1800180000000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}}",
+        "created_at": 1800000000000,
+        "hash": "32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463",
+        "kind": "specification",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"f0e7d2f719832c9d047f8da1192064cb1067af67884895a5836f03f8403d25a7\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"681f5954b0ac487811d8ac51122629d9a6e6835f6988104f9ab9fd4d2798ce88\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"validated_at_ms\":1800000000000}",
+        "created_at": 1800000000000,
+        "hash": "c62867034ce064d99c643ce797d42b3d414e75b7715c976d27098b74255749ba",
+        "kind": "validation",
+        "media_type": "application/json"
+      }
+    ],
+    "forecasts": [
+      {
+        "ai_forecast": null,
+        "category": "CRYPTO",
+        "challenge_until": null,
+        "close_at": 1800180000000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_2c624232cdd221771294dfbb",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_19581e27de7ced00ff1ce50b",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish-risk-v2",
+        "normalized_question": "during [2027-01-15t10:00:00z, 2027-01-17t10:00:00z), will usdc/usd close strictly below usd 0.9900 on both kraken and bitstamp in any same completed 5-minute candle? submissions close exactly 2027-01-17t10:00:00z.",
+        "open_at": 1800000000000,
+        "question": "During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"81c47d0ae4e88ee2a30e1481d149cf3299dc5e1f5a08681b9484cb3f04ca3206\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"latest_event\":{\"artifact_hash\":\"c62867034ce064d99c643ce797d42b3d414e75b7715c976d27098b74255749ba\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"f22ea3805f4a4577a7276568a95dc9f4d39808bc3e7acd144cc9a9dcc4ddf320\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"state_hash\":\"0fce5e4da4f37e482c414c36fcb13530793bb29d0e331dd09333e1cea7d5a88e\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"category\":\"CRYPTO\",\"close_at_ms\":1800180000000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"f0e7d2f719832c9d047f8da1192064cb1067af67884895a5836f03f8403d25a7\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"681f5954b0ac487811d8ac51122629d9a6e6835f6988104f9ab9fd4d2798ce88\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463",
+        "state": "OPEN",
+        "title": "During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.",
+        "updated_at": 1800000000000
+      }
+    ],
+    "mutation_guards": [],
+    "risk_feed_binding_revocations_v2": [
+      {
+        "binding_id": "usdc-depeg-1d-episode-1",
+        "reason": "operator withdrew the mapped question",
+        "revoked_at": 1800007201000,
+        "revoked_by": "authenticated-admin"
+      }
+    ],
+    "risk_feed_bindings_v2": [
+      {
+        "approved_at": 1800000000000,
+        "approved_by": "authenticated-admin",
+        "binding_id": "usdc-depeg-1d-episode-1",
+        "binding_json": "{\"approval_artifact_hash\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"asset\":\"USDC\",\"authorization_valid_from_ms\":1800000000000,\"authorization_valid_until_ms\":1800180000000,\"binding_id\":\"usdc-depeg-1d-episode-1\",\"category\":\"CRYPTO\",\"channel\":\"depegRisk1d\",\"definition_hash\":\"9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be\",\"episode_id\":\"2027-01-15T10:00:00Z\",\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"interval\":\"[start,end)\",\"mapping_kind\":\"containing_upper_estimate\",\"mapping_profile_hash\":\"dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d\",\"mapping_profile_id\":\"monotone-any-event-containment\",\"mapping_profile_version\":\"containment-profile-v1\",\"operational_valid_from_ms\":1800007200000,\"operational_valid_until_ms\":1800093600000,\"policy_horizon_ms\":86400000,\"question_event_definition_hash\":\"28c63895ca2e0715083b4fe625679883f61cc164c931518602521034c38e24a9\",\"schema_version\":1,\"series_id\":\"usdc-depeg-1d-w48\",\"specification_hash\":\"32f5da8e7ca1c1c1d2a69ac7333d02bd8d9305eda8dc0667de9aef3282e5a463\",\"target_end_ms\":1800180000000,\"target_start_ms\":1800007200000,\"version\":\"canonical-risk-binding-v2\"}",
+        "feed_id": "risk-v2",
+        "forecast_id": "f_19581e27de7ced00ff1ce50b"
+      }
+    ],
+    "risk_feed_definitions_v2": [
+      {
+        "approved_at": 1800000000000,
+        "approved_by": "authenticated-admin",
+        "channel": "depegRisk1d",
+        "definition_hash": "9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be",
+        "definition_json": "{\"asset\":\"USDC\",\"baseline_policy\":\"absolute threshold; no fixed-start baseline\",\"calibration_cohort_id\":\"usdc-depeg-1d-w48-containing\",\"channel\":\"depegRisk1d\",\"clock_skew_max_ms\":5000,\"definition_id\":\"usdc-depeg-1d\",\"definition_version\":\"canonical-risk-definition-v2.1\",\"inference_freshness_max_ms\":7200000,\"interval_rule\":\"[start,end)\",\"invalid_data_policy\":\"INVALID, never NO\",\"mapping_kind\":\"containing_upper_estimate\",\"mapping_profile_id\":\"monotone-any-event-containment\",\"mapping_profile_version\":\"containment-profile-v1\",\"policy_horizon_ms\":86400000,\"predicate\":\"any completed 5-minute candle closes strictly below threshold on both primary sources\",\"sampling_grid_ms\":300000,\"schema_version\":1,\"source_freshness_max_ms\":120000,\"source_policy\":\"Kraken and Bitstamp OHLC; both required; missing data is INVALID\",\"threshold\":\"0.9900\",\"units\":\"USD\",\"witness_semantics\":\"candle start timestamp inside [start,end)\"}",
+        "feed_id": "risk-v2"
+      }
+    ],
+    "risk_feed_heads": [
+      {
+        "feed_id": "risk-v2",
+        "sequence": 2
+      }
+    ],
+    "risk_feed_profiles_v2": [
+      {
+        "approved_at": 1800000000000,
+        "approved_by": "authenticated-admin",
+        "feed_id": "risk-v2",
+        "profile_hash": "dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d",
+        "profile_json": "{\"clock_skew_max_ms\":5000,\"mapping_kind\":\"containing_upper_estimate\",\"max_forecast_age_ms\":7200000,\"max_policy_lag_ms\":0,\"predicate_class\":\"monotone_any_event\",\"profile_id\":\"monotone-any-event-containment\",\"profile_version\":\"containment-profile-v1\",\"review_reference\":\"risk-feed-window-v2 plan, section B\",\"schema_version\":1,\"source_freshness_max_ms\":120000}"
+      }
+    ],
+    "risk_feed_publications_v2": [
+      {
+        "created_at": 1800000000000,
+        "envelope_json": "{\"payload\":{\"bindings\":[],\"calibration_cohort_id\":\"usdc-depeg-1d-w48-containing\",\"channel_coverage\":[{\"binding_id\":null,\"channel\":\"bridgeFailureRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"btcCrashRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"counterpartyRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"depegRisk1d\",\"reason\":\"no operational episode\",\"schema_version\":1,\"status\":\"unavailable\"},{\"binding_id\":null,\"channel\":\"depegRisk30d\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"depegRisk7d\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"ethCrashRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"liquidityStressRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"oracleFailureRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"reserveLossRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"solCrashRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"stableCollateralRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"}],\"expires_at_ms\":1800000120000,\"feed_id\":\"risk-v2\",\"genesis_hash\":\"EtWTRABZaYq6iMfeYKouRu166VU2xqa1\",\"issued_at_ms\":1800000000000,\"key_id\":\"test-key\",\"profile_set_hash\":\"751c8efaf15f05aad1fdee033f1ae43ba944261c44e4068c6a3b991dd908e11b\",\"purpose\":\"forecast-risk-feed-v2\",\"schema_version\":1,\"sequence\":1,\"signals\":[],\"weight_set_hash\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"weight_set_version\":\"source-calibration-v2\"},\"public_key_hex\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"schema_version\":1,\"signature_hex\":\"649a0cbdc65fee783744d45693898e9fe9be7b7553db4e002f21f89906c946d427b64985520b72d3aedc6b6b74a30bbd4daed8f4d5de3c65eaad296b66686ec5\"}",
+        "feed_id": "risk-v2",
+        "payload_hash": "544e17fbf82326cc0e67e7e0d52c790b2a5411993c47556fb10e6f5b1e156414",
+        "sequence": 1
+      },
+      {
+        "created_at": 1800007201000,
+        "envelope_json": "{\"payload\":{\"bindings\":[],\"calibration_cohort_id\":\"usdc-depeg-1d-w48-containing\",\"channel_coverage\":[{\"binding_id\":null,\"channel\":\"bridgeFailureRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"btcCrashRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"counterpartyRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"depegRisk1d\",\"reason\":\"no fresh estimate with complete clock provenance\",\"schema_version\":1,\"status\":\"unavailable\"},{\"binding_id\":null,\"channel\":\"depegRisk30d\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"depegRisk7d\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"ethCrashRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"liquidityStressRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"oracleFailureRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"reserveLossRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"solCrashRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"},{\"binding_id\":null,\"channel\":\"stableCollateralRisk\",\"reason\":\"no admitted definition\",\"schema_version\":1,\"status\":\"unsupported\"}],\"expires_at_ms\":1800007321000,\"feed_id\":\"risk-v2\",\"genesis_hash\":\"EtWTRABZaYq6iMfeYKouRu166VU2xqa1\",\"issued_at_ms\":1800007201000,\"key_id\":\"test-key\",\"profile_set_hash\":\"751c8efaf15f05aad1fdee033f1ae43ba944261c44e4068c6a3b991dd908e11b\",\"purpose\":\"forecast-risk-feed-v2\",\"schema_version\":1,\"sequence\":2,\"signals\":[],\"weight_set_hash\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"weight_set_version\":\"source-calibration-v2\"},\"public_key_hex\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"schema_version\":1,\"signature_hex\":\"c955c345cfb864277ba8c69a1025fe8962b70ed53aa395a20df5350b8cd1e0b17e72c38c7f45ffe6ca60ff0ba40df12bfb7a8709f9ad18bd04f8fc3a8b10c771\"}",
+        "feed_id": "risk-v2",
+        "payload_hash": "dacee6fceb40dfbd66e9920dbc9c201f415547ccd0cb5532a1858f44e26d4c30",
+        "sequence": 2
+      }
+    ],
+    "users": [
+      {
+        "created_at": 1800000000000,
+        "display_name": "테스터",
+        "handle": "f_4e07408562be",
+        "id": "u_4e07408562bedb8b60ce05c1",
+        "recovery_hash": "7444c5ccee4aba92f325831bd6df61ececb73bb98b0df02ee6032633a4e43c96"
+      },
+      {
+        "created_at": 1800000000000,
+        "display_name": "다른 사용자",
+        "handle": "f_e7f6c011776e",
+        "id": "u_e7f6c011776e8db7cd330b54",
+        "recovery_hash": "0ec2e8eb334b6f181d147a055a970b6e391d1e6872dae8924342378ebc1c1aaf"
+      }
+    ]
+  },
+  "signed": [
+    "666f7265636173742d7269736b2d666565642d76323a7369676e61747572653a7b2262696e64696e6773223a5b5d2c2263616c6962726174696f6e5f636f686f72745f6964223a22757364632d64657065672d31642d7734382d636f6e7461696e696e67222c226368616e6e656c5f636f766572616765223a5b7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a226272696467654661696c7572655269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2262746343726173685269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a22636f756e74657270617274795269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2264657065675269736b3164222c22726561736f6e223a226e6f206f7065726174696f6e616c20657069736f6465222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e617661696c61626c65227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2264657065675269736b333064222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2264657065675269736b3764222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2265746843726173685269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a226c69717569646974795374726573735269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a226f7261636c654661696c7572655269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a22726573657276654c6f73735269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a22736f6c43726173685269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a22737461626c65436f6c6c61746572616c5269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d5d2c22657870697265735f61745f6d73223a313830303030303132303030302c22666565645f6964223a227269736b2d7632222c2267656e657369735f68617368223a22457457545241425a61597136694d6665594b6f75527531363656553278716131222c226973737565645f61745f6d73223a313830303030303030303030302c226b65795f6964223a22746573742d6b6579222c2270726f66696c655f7365745f68617368223a2237353163386566616631356630356161643166646565303333663161653433626139343432363163343465343036386336613362393931646439303865313162222c22707572706f7365223a22666f7265636173742d7269736b2d666565642d7632222c22736368656d615f76657273696f6e223a312c2273657175656e6365223a312c227369676e616c73223a5b5d2c227765696768745f7365745f68617368223a2264646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464222c227765696768745f7365745f76657273696f6e223a22736f757263652d63616c6962726174696f6e2d7632227d",
+    "666f7265636173742d7269736b2d666565642d76323a7369676e61747572653a7b2262696e64696e6773223a5b5d2c2263616c6962726174696f6e5f636f686f72745f6964223a22757364632d64657065672d31642d7734382d636f6e7461696e696e67222c226368616e6e656c5f636f766572616765223a5b7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a226272696467654661696c7572655269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2262746343726173685269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a22636f756e74657270617274795269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2264657065675269736b3164222c22726561736f6e223a226e6f20667265736820657374696d617465207769746820636f6d706c65746520636c6f636b2070726f76656e616e6365222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e617661696c61626c65227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2264657065675269736b333064222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2264657065675269736b3764222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a2265746843726173685269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a226c69717569646974795374726573735269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a226f7261636c654661696c7572655269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a22726573657276654c6f73735269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a22736f6c43726173685269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d2c7b2262696e64696e675f6964223a6e756c6c2c226368616e6e656c223a22737461626c65436f6c6c61746572616c5269736b222c22726561736f6e223a226e6f2061646d697474656420646566696e6974696f6e222c22736368656d615f76657273696f6e223a312c22737461747573223a22756e737570706f72746564227d5d2c22657870697265735f61745f6d73223a313830303030373332313030302c22666565645f6964223a227269736b2d7632222c2267656e657369735f68617368223a22457457545241425a61597136694d6665594b6f75527531363656553278716131222c226973737565645f61745f6d73223a313830303030373230313030302c226b65795f6964223a22746573742d6b6579222c2270726f66696c655f7365745f68617368223a2237353163386566616631356630356161643166646565303333663161653433626139343432363163343465343036386336613362393931646439303865313162222c22707572706f7365223a22666f7265636173742d7269736b2d666565642d7632222c22736368656d615f76657273696f6e223a312c2273657175656e6365223a322c227369676e616c73223a5b5d2c227765696768745f7365745f68617368223a2264646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464222c227765696768745f7365745f76657273696f6e223a22736f757263652d63616c6962726174696f6e2d7632227d"
+  ]
+}

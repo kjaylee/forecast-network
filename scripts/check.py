@@ -97,7 +97,14 @@ def main() -> int:
                 [sys.executable, "scripts/generate_reputation_golden.py", "--check"],
                 # The publication lifecycle itself, including the bytes the signer was handed —
                 # the signature is over a specific text, not over the outcome.
-                [sys.executable, "scripts/generate_risk_feed_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_risk_feed_golden.py", "--check"],
+                # v2 carries *typed* targets, so the failure this guards is not an error but a
+                # feed that signs a probability about a window the question never asked about.
+                [sys.executable, "scripts/generate_risk_feed_v2_golden.py", "--check"],
+                # Recurring episodes publish and bind *before* their window opens, through the
+                # ordinary seed path — so the cadence arithmetic and the retry backoff are the
+                # whole of what can go quietly wrong.
+                [sys.executable, "scripts/generate_risk_feed_series_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

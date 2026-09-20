@@ -32,6 +32,8 @@ pub mod registry_chain;
 mod reputation;
 pub mod resolution_timing;
 pub mod risk_feed;
+pub mod risk_feed_series;
+pub mod risk_feed_v2;
 pub mod risk_ops;
 mod routes;
 pub mod scheduler;
