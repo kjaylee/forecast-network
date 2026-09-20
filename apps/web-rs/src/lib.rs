@@ -25,6 +25,7 @@ mod reputation;
 pub mod resolution_timing;
 pub mod risk_ops;
 mod routes;
+pub mod source_watch;
 pub mod sources;
 mod writes;
 
