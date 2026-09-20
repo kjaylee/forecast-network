@@ -6,3 +6,4 @@
 
 pub mod schema;
 pub mod strict;
+pub mod text;

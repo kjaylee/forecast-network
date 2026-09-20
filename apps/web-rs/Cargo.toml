@@ -25,6 +25,7 @@ num-bigint = "0.4"
 num-traits = "0.2"
 getrandom = { version = "0.2", features = ["js"] }
 base64 = "0.22"
+regex = "1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 rusqlite = { version = "0.32", features = ["bundled"] }
