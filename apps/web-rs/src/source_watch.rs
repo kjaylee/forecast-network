@@ -957,17 +957,27 @@ async fn record_review_failure(
 
 /// Register a reported article under its watched publisher, fetch it now, and queue review for
 /// this forecast regardless of keyword relevance.
+/// What was reported: the page, the feed it was reported under, and the lease this caller took.
+pub struct Report<'a> {
+    pub url: &'a str,
+    pub index_id: &'a str,
+    pub lease: &'a str,
+}
+
 pub async fn ingest_report(
-    db: &dyn Database,
-    fetch: &Fetcher,
-    host: &dyn ForecastSource,
-    hold: Option<&dyn Hold>,
+    watch: &Watch<'_>,
     forecast_id: &str,
-    url: &str,
-    index_id: &str,
-    lease: &str,
-    now_ms: i64,
+    report: Report<'_>,
 ) -> Result<Option<Value>, WatchError> {
+    let Watch {
+        db,
+        fetch,
+        host,
+        hold,
+        now_ms,
+        ..
+    } = *watch;
+    let (url, index_id, lease) = (report.url, report.index_id, report.lease);
     let article_id = format!("article-{}", &hash_hex(url)[..32]);
     register(
         db,
