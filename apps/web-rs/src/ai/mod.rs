@@ -10,6 +10,7 @@ pub mod compiler_time;
 pub mod compiler_wire;
 pub mod coordinator;
 pub mod dispute;
+pub mod early;
 pub mod resolution;
 pub mod schema;
 pub mod strict;

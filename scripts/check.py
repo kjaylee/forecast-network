@@ -54,7 +54,10 @@ def main() -> int:
                 # The compiler wire decides the deadline every published question commits to.
                 [sys.executable, "scripts/generate_compiler_golden.py", "--check"],
                 # The front door end to end: four calls, one collection, ten artifacts a case.
-                [sys.executable, "scripts/generate_compile_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_compile_golden.py", "--check"],
+                # The early-resolution path: the only way a positive result is reached without a
+                # deadline passing, so its refusals matter as much as its acceptances.
+                [sys.executable, "scripts/generate_early_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

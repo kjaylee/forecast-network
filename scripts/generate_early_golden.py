@@ -196,7 +196,10 @@ async def build() -> dict:
     return {
         "description": "The early-resolution path: a watched article qualified against retained bytes, "
                        "the resolution it proposes, and the publication freshness review.",
+        "providers": [{"provider": "gemini", "model": "test-model", "apiKey": "test-key"},
+                      {"provider": "openai", "model": "test-model", "apiKey": "test-key"}],
         "observation": observation(),
+        "observationBody": BODY,
         "observationCases": [accepted, unrelated, disagreement, unverified, not_qualified],
         "proposal": await proposal_case(trigger),
         "freshnessCases": [

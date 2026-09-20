@@ -339,6 +339,7 @@
     "observedAt": 2000,
     "url": "https://www.apple.com/newsroom/2026/09/apple-unveils-iphone-duo/"
   },
+  "observationBody": "<main>Apple officially announces Product X. The exact published official announcement and required specifications are confirmed.</main>",
   "observationCases": [
     {
       "forecast": {
@@ -3037,5 +3038,17 @@
         "type": "object"
       }
     ]
-  }
+  },
+  "providers": [
+    {
+      "apiKey": "test-key",
+      "model": "test-model",
+      "provider": "gemini"
+    },
+    {
+      "apiKey": "test-key",
+      "model": "test-model",
+      "provider": "openai"
+    }
+  ]
 }

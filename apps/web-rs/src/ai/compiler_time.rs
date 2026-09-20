@@ -84,7 +84,7 @@ fn bare_time() -> &'static Regex {
 ///
 /// Returning `None` where the reference raises `ValueError` is what makes an impossible date
 /// (`2026-02-30`) a `compiler_deadline_invalid` rather than a silent roll-forward.
-fn civil_ms(year: i64, month: i64, day: i64, hour: i64, minute: i64, second: i64) -> Option<i64> {
+pub(crate) fn civil_ms(year: i64, month: i64, day: i64, hour: i64, minute: i64, second: i64) -> Option<i64> {
     if !(1..=9999).contains(&year) || !(1..=12).contains(&month) || !(0..=23).contains(&hour) {
         return None;
     }
@@ -529,6 +529,62 @@ pub fn normalize_compiler_output(
     }
     normalized.insert("close_at_ms".to_string(), json!(instant));
     Ok(Value::Object(normalized))
+}
+
+/// `datetime.fromtimestamp(ms / 1000, utc).date().isoformat()`.
+pub fn date_of(instant_ms: i64) -> String {
+    let (year, month, day) = civil_parts(instant_ms);
+    format!("{year:04}-{month:02}-{day:02}")
+}
+
+/// `datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp() * 1000`.
+///
+/// Used for a publication instant the article parser read, which is always either a `Z`-suffixed
+/// instant or an offset one; anything it cannot read is no instant at all rather than a guess.
+pub fn parse_utc_instant(value: &str) -> Option<i64> {
+    let normalized = value.replace('Z', "+00:00");
+    let (body, offset) = if normalized.len() > 6
+        && (normalized.as_bytes()[normalized.len() - 6] == b'+' || normalized.as_bytes()[normalized.len() - 6] == b'-')
+    {
+        let sign = if normalized.as_bytes()[normalized.len() - 6] == b'-' {
+            -1
+        } else {
+            1
+        };
+        let tail = &normalized[normalized.len() - 5..];
+        let hours = tail.get(..2)?.parse::<i64>().ok()?;
+        let minutes = tail.get(3..5)?.parse::<i64>().ok()?;
+        if hours >= 24 || minutes >= 60 {
+            return None;
+        }
+        (
+            &normalized[..normalized.len() - 6],
+            sign * (hours * 3600 + minutes * 60),
+        )
+    } else {
+        (normalized.as_str(), 0)
+    };
+    let (date, time) = body.split_once(['T', 't'])?;
+    let mut fields = date.split('-');
+    let year = fields.next()?.parse::<i64>().ok()?;
+    let month = fields.next()?.parse::<i64>().ok()?;
+    let day = fields.next()?.parse::<i64>().ok()?;
+    if fields.next().is_some() {
+        return None;
+    }
+    let mut parts = time.split(':');
+    let hour = parts.next()?.parse::<i64>().ok()?;
+    let minute = parts.next()?.parse::<i64>().ok()?;
+    let seconds = parts.next().unwrap_or("0");
+    let (second, fraction) = seconds.split_once('.').unwrap_or((seconds, ""));
+    let second = second.parse::<i64>().ok()?;
+    let millis = if fraction.is_empty() {
+        0
+    } else {
+        let places = fraction.len().min(6);
+        fraction[..places].parse::<i64>().ok()? * 10i64.pow(3 - places.min(3) as u32)
+    };
+    Some(civil_ms(year, month, day, hour, minute, second)? + millis - offset * 1000)
 }
 
 #[cfg(test)]
