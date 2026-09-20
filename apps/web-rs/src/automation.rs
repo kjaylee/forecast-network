@@ -1473,6 +1473,7 @@ mod orchestration_tests {
                     clock: &|| now_ms,
                     daily_limit: 100,
                     registry: None,
+                    reader: &crate::golden::refusing_reader(),
                 };
                 let limit = input["limit"].as_i64().unwrap_or(2);
                 let mut cron = Cron {

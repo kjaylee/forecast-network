@@ -216,6 +216,9 @@ pub struct Job<'a> {
     /// `self.now_ms`. A *callable*, because `_bounded_ai` measures its acceptance deadline against
     /// it: the cap is 240 seconds of wall clock, not of the pass's captured instant.
     pub clock: &'a dyn Fn() -> i64,
+    /// Reading retained bytes. A dispute review re-reads the evidence it was filed against, so the
+    /// reader travels with the job rather than being invented where it is used.
+    pub reader: &'a crate::ai::early::ArtifactReader,
 }
 
 /// What a failed attempt carries that a bare code does not.
@@ -293,6 +296,7 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
         token,
         gate,
         clock,
+        reader,
     } = job;
     for _ in 0..MAX_TRANSITIONS_PER_LEASE {
         let snapshot = load(db, forecast_id).await.map_err(JobFailure::from)?;
@@ -432,7 +436,25 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                     None => Payload::RetainProposal { schema_version: 1 },
                 }
             }
-            "PAUSED" => return Err(JobFailure::new("provider_recovery_not_ported")),
+            // Recovery must be demonstrated by a successful task, not by a scheduled timer or by a
+            // provider merely remaining configured.
+            "PAUSED" => {
+                return recover_job(Recovery {
+                    db,
+                    coordinator,
+                    fetch,
+                    snapshot: &snapshot,
+                    job_token,
+                    now_ms,
+                    ai_tokens: &mut *ai_tokens,
+                    daily_limit,
+                    token,
+                    gate,
+                    clock,
+                    reader,
+                })
+                .await;
+            }
             _ => return Ok(()),
         };
         crate::mutate::mutate(
@@ -465,6 +487,264 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
     Ok(())
 }
 
+/// Whether an AI failure is an *outage*: every configured provider unreachable, and at least one
+/// configured.
+///
+/// The reference's own line is `if providers and set(unavailable) == set(providers)`, and both
+/// halves matter. Set equality is what tells "the provider is down" from "one of several is down"
+/// — the second is a blip the coordinator can route around, and pausing for it would stop a
+/// question nobody has a problem answering. The non-empty half matters because an application with
+/// no providers configured has nothing to be unavailable.
+pub fn full_outage(configured: &[String], unavailable: &[String]) -> bool {
+    if configured.is_empty() {
+        return false;
+    }
+    let mut expected: Vec<&String> = configured.iter().collect();
+    expected.sort();
+    expected.dedup();
+    let mut reported: Vec<&String> = unavailable.iter().collect();
+    reported.sort();
+    reported.dedup();
+    reported == expected
+}
+
+/// What `_recover_job` needs. Named rather than positional, for the reason `Job` is.
+struct Recovery<'a> {
+    db: &'a dyn Database,
+    coordinator: &'a Coordinator,
+    fetch: &'a EvidenceFetcher,
+    snapshot: &'a Snapshot,
+    job_token: &'a str,
+    now_ms: i64,
+    ai_tokens: &'a mut dyn FnMut() -> String,
+    daily_limit: i64,
+    token: &'a dyn Fn() -> String,
+    gate: Option<&'a dyn crate::mutate::FinalizationGate>,
+    clock: &'a dyn Fn() -> i64,
+    reader: &'a crate::ai::early::ArtifactReader,
+}
+
+/// The work the paused task was doing, re-attempted. Named, because eight positional arguments
+/// of which three are strings is a call whose order nobody can check by reading it.
+struct Work<'a> {
+    db: &'a dyn Database,
+    coordinator: &'a Coordinator,
+    fetch: &'a EvidenceFetcher,
+    reader: &'a crate::ai::early::ArtifactReader,
+    forecast: &'a forecast_domain::lifecycle::Forecast,
+    previous: &'a str,
+    now_ms: i64,
+    clock: &'a dyn Fn() -> i64,
+}
+type Recovered = (Payload, i64, String, Value, Vec<crate::ai::coordinator::Artifact>);
+
+async fn recover_work(work: Work<'_>) -> Result<Recovered, JobFailure> {
+    let Work {
+        db,
+        coordinator,
+        fetch,
+        reader,
+        forecast,
+        previous,
+        now_ms,
+        clock,
+    } = work;
+    if previous == "RESOLVING" {
+        let started = (clock)();
+        let timing = timing_status(db, &forecast.forecast_id)
+            .await
+            .map_err(|_| JobFailure::new("resolution_timing_unavailable"))?;
+        let indeterminate = timing["reason"] == json!("publication_time_unknown");
+        let determined = timing["determination"].as_str();
+        let result = propose_resolution(coordinator, fetch, forecast, now_ms, indeterminate, determined)
+            .await
+            .map_err(|error| match error {
+                crate::ai::coordinator::CoordinatorError::Unavailable { providers, artifacts } => {
+                    JobFailure::AiUnavailable { providers, artifacts }
+                }
+                crate::ai::coordinator::CoordinatorError::Rejected { code, artifacts, .. } => {
+                    JobFailure::Refused { code, artifacts }
+                }
+            })?;
+        if workflow_deadline_passed(started, (clock)()) {
+            return Err(JobFailure::new("ai_workflow_timeout"));
+        }
+        let resolution = result.resolution;
+        let provider = resolution.judge.provider.clone();
+        let at = resolution.proposed_at_ms;
+        let record = serde_json::to_value(&resolution).unwrap_or(Value::Null);
+        return Ok((
+            Payload::ProposeResolution {
+                schema_version: 1,
+                resolution: forecast_domain::lifecycle::AnyResolution::Standard(resolution),
+            },
+            at,
+            provider,
+            record,
+            result.artifacts,
+        ));
+    }
+    let reviewed: Vec<String> = forecast
+        .dispute_reviews
+        .iter()
+        .map(|review| review.dispute_hash.clone())
+        .collect();
+    let pending = forecast
+        .disputes
+        .iter()
+        .find(|dispute| {
+            dispute
+                .dispute_hash()
+                .map(|hash| !reviewed.contains(&hash))
+                .unwrap_or(false)
+        })
+        .cloned()
+        .ok_or_else(|| JobFailure::new("dispute_review_not_ported"))?;
+    let started = (clock)();
+    let result = crate::ai::dispute::review_dispute(coordinator, reader, forecast, &pending, now_ms)
+        .await
+        .map_err(|error| match error {
+            crate::ai::coordinator::CoordinatorError::Unavailable { providers, artifacts } => {
+                JobFailure::AiUnavailable { providers, artifacts }
+            }
+            crate::ai::coordinator::CoordinatorError::Rejected { code, artifacts, .. } => {
+                JobFailure::Refused { code, artifacts }
+            }
+        })?;
+    if workflow_deadline_passed(started, (clock)()) {
+        return Err(JobFailure::new("ai_workflow_timeout"));
+    }
+    let review = result.review;
+    let provider = review.independent_judge.provider.clone();
+    let at = review.reviewed_at_ms;
+    let record = serde_json::to_value(&review).unwrap_or(Value::Null);
+    Ok((
+        Payload::ReviewDispute {
+            schema_version: 1,
+            review,
+        },
+        at,
+        provider,
+        record,
+        result.artifacts,
+    ))
+}
+
+/// `_recover_job`: a paused question resumes only on a *successful* task.
+///
+/// Two commands, and the order matters: the pause is lifted, and only then is the work that failed
+/// re-attempted. A port that did them the other way round would have to lift the pause to record
+/// an attempt, which is the opposite of "recovery is demonstrated".
+async fn recover_job(recovery: Recovery<'_>) -> Result<(), JobFailure> {
+    let Recovery {
+        db,
+        coordinator,
+        fetch,
+        snapshot,
+        job_token,
+        now_ms,
+        ai_tokens,
+        daily_limit,
+        token,
+        gate,
+        clock,
+        reader,
+    } = recovery;
+    let forecast = snapshot.base().clone();
+    let Some(pause) = forecast.pause.as_ref() else {
+        return Ok(());
+    };
+    let previous = pause.previous_state.clone();
+    // Only tasks that caused an outage in this application are recovered. A hypothetical
+    // administrative pause needs explicit operator handling.
+    if !matches!(previous.as_str(), "RESOLVING" | "DISPUTED") {
+        return Ok(());
+    }
+    let owner = format!("recovery:{}", forecast.forecast_id);
+    let ai_token = ai_tokens();
+    ai_lease(db, &owner, &ai_token, now_ms, daily_limit)
+        .await
+        .map_err(JobFailure::from)?;
+    let outcome = recover_work(Work {
+        db,
+        coordinator,
+        fetch,
+        reader,
+        forecast: &forecast,
+        previous: &previous,
+        now_ms,
+        clock,
+    })
+    .await;
+    release_ai(db, &owner, &ai_token).await;
+    let (payload, at, provider, record, artifacts) = outcome?;
+    let resume = crate::mutate::mutate(
+        db,
+        crate::mutate::Mutation {
+            snapshot,
+            payload: Payload::ResumeAfterProviderRecovery {
+                schema_version: 1,
+                recovered_provider: provider,
+            },
+            key: format!("job:resume:{}", forecast.revision),
+            now_ms: at,
+            extra: Vec::new(),
+            job_token: Some(job_token.to_string()),
+            timing_artifacts: Vec::new(),
+        },
+        now_ms,
+        token,
+        gate,
+    )
+    .await
+    .map_err(|error| JobFailure::from(format!("{error:?}")))?;
+    let rows: Vec<crate::source_watch::Retained> = artifacts
+        .iter()
+        .map(|artifact| {
+            (
+                artifact.hash.clone(),
+                artifact.kind.to_string(),
+                artifact.body.clone(),
+                "application/json".to_string(),
+            )
+        })
+        .collect();
+    let mut extra =
+        crate::source_watch::artifact_sql(&rows, now_ms).map_err(|refusal| JobFailure::new(refusal.code()))?;
+    extra.push(
+        crate::mutate::record_artifact(&record, "provider_recovery_result", None, now_ms)
+            .map_err(|error| JobFailure::from(format!("{error:?}")))?,
+    );
+    let timing_artifacts = artifacts
+        .iter()
+        .map(|artifact| {
+            (
+                artifact.hash.clone(),
+                artifact.body.clone(),
+                "application/json".to_string(),
+            )
+        })
+        .collect();
+    crate::mutate::mutate(
+        db,
+        crate::mutate::Mutation {
+            snapshot: &resume,
+            payload,
+            key: format!("job:recovered:{}", resume.base().revision),
+            now_ms: at,
+            extra,
+            job_token: Some(job_token.to_string()),
+            timing_artifacts,
+        },
+        now_ms,
+        token,
+        gate,
+    )
+    .await
+    .map_err(|error| JobFailure::from(format!("{error:?}")))?;
+    Ok(())
+}
+
 /// `run_due_jobs`: claim what is due under a lease, advance it, and record what happened.
 ///
 /// Every failure here is *recorded*, not raised: a forecast that cannot advance has to go back into
@@ -483,6 +763,7 @@ pub async fn run_due_jobs(
         clock,
         daily_limit,
         registry,
+        reader,
     } = *scheduler;
     let adapter_configured = registry.is_some();
     let limit = limit.clamp(1, 50);
@@ -540,6 +821,7 @@ pub async fn run_due_jobs(
             token: &guard_token,
             gate: registry,
             clock,
+            reader,
         })
         .await;
         match outcome {
@@ -578,13 +860,7 @@ pub async fn run_due_jobs(
                 // recorded rather than retried against the same wall.
                 if matches!(failure, JobFailure::AiUnavailable { .. }) {
                     let configured = coordinator.configured_providers();
-                    let mut unavailable: Vec<String> = failure.providers().to_vec();
-                    unavailable.sort();
-                    unavailable.dedup();
-                    let mut expected: Vec<String> = configured.clone();
-                    expected.sort();
-                    expected.dedup();
-                    if !expected.is_empty() && unavailable == expected {
+                    if full_outage(&configured, failure.providers()) {
                         let snapshot = load(db, &forecast_id).await.map_err(|error| error.to_string())?;
                         let forecast = snapshot.base().clone();
                         if matches!(
@@ -597,8 +873,8 @@ pub async fn run_due_jobs(
                                     snapshot: &snapshot,
                                     payload: Payload::PauseForProviderOutage {
                                         schema_version: 1,
-                                        configured_providers: configured,
-                                        unavailable_providers: expected,
+                                        configured_providers: configured.clone(),
+                                        unavailable_providers: configured.clone(),
                                         reason:
                                             "Resolution is paused because all configured AI providers are unavailable."
                                                 .to_string(),
@@ -695,6 +971,8 @@ pub struct Scheduler<'a> {
     /// not an absence: without an adapter a resolution commitment row is left where it is and a
     /// finalize is a purely local decision.
     pub registry: Option<&'a dyn crate::mutate::FinalizationGate>,
+    /// Reading retained bytes, for the dispute review a recovery may have to run.
+    pub reader: &'a crate::ai::early::ArtifactReader,
 }
 
 impl Scheduler<'_> {
@@ -888,6 +1166,7 @@ mod tests {
                 clock: &|| close_at,
                 daily_limit: 100,
                 registry: None,
+                reader: &crate::golden::refusing_reader(),
             },
             5,
             &mut tokens,
@@ -925,6 +1204,7 @@ mod tests {
             token: &crate::mutate::random_token,
             gate: None,
             clock: &|| 0,
+            reader: &crate::golden::refusing_reader(),
         }));
         // The lease carries several transitions and reports success only if all of them succeed,
         // so this ends at the first thing needing a provider. What matters is that the lock
@@ -969,6 +1249,7 @@ mod tests {
                 clock: &|| close_at + 1,
                 daily_limit: 100,
                 registry: None,
+                reader: &crate::golden::refusing_reader(),
             },
             5,
             &mut tokens,
@@ -1019,6 +1300,7 @@ mod tests {
                 clock: &|| until,
                 daily_limit: 100,
                 registry: None,
+                reader: &crate::golden::refusing_reader(),
             },
             5,
             &mut tokens,
@@ -1042,6 +1324,7 @@ mod tests {
                 clock: &|| until,
                 daily_limit: 100,
                 registry: None,
+                reader: &crate::golden::refusing_reader(),
             },
             5,
             &mut tokens,
@@ -1218,6 +1501,7 @@ mod outbox_tests {
                 clock: &|| now_ms,
                 daily_limit: 100,
                 registry,
+                reader: &crate::golden::refusing_reader(),
             },
             limit,
             &mut source,
@@ -1314,5 +1598,59 @@ mod outbox_tests {
                 tokens,
             ),
         }
+    }
+}
+
+#[cfg(test)]
+mod outage_tests {
+    use super::*;
+
+    fn names(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| (*value).to_string()).collect()
+    }
+
+    /// `if providers and set(unavailable) == set(providers)`.
+    ///
+    /// Both halves are pinned here because both are load-bearing and neither is obvious: a
+    /// *partial* outage is a blip the coordinator routes around, and an application with no
+    /// providers configured has nothing to be unavailable.
+    #[test]
+    fn only_a_complete_outage_pauses_a_question() {
+        let all = names(&["provider-a", "provider-b", "independent-provider"]);
+        assert!(full_outage(&all, &all), "every provider unreachable is an outage");
+        assert!(
+            full_outage(&all, &names(&["provider-a", "provider-b", "independent-provider"])),
+            "the comparison is over sets, not over order"
+        );
+        assert!(
+            full_outage(
+                &all,
+                &names(&["independent-provider", "provider-a", "provider-b", "provider-a"])
+            ),
+            "and not over repeats"
+        );
+        assert!(
+            !full_outage(&all, &names(&["provider-a"])),
+            "one of three is not an outage"
+        );
+        assert!(
+            !full_outage(&all, &names(&["provider-a", "provider-b"])),
+            "two of three is not an outage either"
+        );
+        assert!(
+            !full_outage(
+                &all,
+                &names(&["provider-a", "provider-b", "independent-provider", "provider-d"])
+            ),
+            "a provider nobody configured is not a configured provider"
+        );
+        assert!(
+            !full_outage(&[], &[]),
+            "nothing configured is nothing to be unavailable"
+        );
+        assert!(
+            !full_outage(&[], &names(&["provider-a"])),
+            "and nor is a report about nothing"
+        );
     }
 }

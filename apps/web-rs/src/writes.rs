@@ -963,6 +963,7 @@ mod adjudication_tests {
                             clock: &|| now_ms,
                             daily_limit: 100,
                             registry: None,
+                            reader: &crate::golden::refusing_reader(),
                         },
                         5,
                         &mut || tokens.next(),
