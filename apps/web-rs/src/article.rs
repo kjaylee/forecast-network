@@ -6,14 +6,10 @@
 //! bare calendar day never can. A port that called `2026-09-15` an instant would place
 //! evidence it cannot place.
 //!
-//! The caller, `article_content`, is not ported: it needs Python's `HTMLParser`, which is
-//! not an HTML5 parser and does not recover from malformed markup the way a browser does.
-//! Reproducing it means reproducing that state machine, and `html.unescape`'s several
-//! thousand named references, neither of which Rust's `regex` crate can express — `regex`
-//! has no lookbehind, and both `locatestarttagend_tolerant` and `attrfind_tolerant` need it.
-//!
-//! These two are the part of the answer that does not depend on the tokenizer, and they are
-//! held to vectors exported from Python by the tests below.
+//! `article_content` above them ties the two to the tokenizer in `html_parse`, which is
+//! Python's `HTMLParser` — not an HTML5 parser, and not one that recovers from malformed
+//! markup the way a browser does. All of it is held to vectors exported from Python by the
+//! tests below, and to a fuzz corpus that found the two divergences this port started with.
 
 use serde_json::Value;
 
@@ -205,6 +201,135 @@ pub fn jsonld_publication(scripts: &[String]) -> Publication {
     }
 }
 
+const MAX_JSONLD_SCRIPTS: usize = 8;
+const MAX_JSONLD_BYTES: usize = 65536;
+const HIDDEN: [&str; 6] = ["script", "style", "noscript", "nav", "footer", "header"];
+
+/// `_Article`: the observer, not the parser. It decides what counts as the article, where a
+/// publication time is stated, and which scripts hold structured data.
+#[derive(Default)]
+struct Article {
+    links: Vec<String>,
+    parts: Vec<String>,
+    main_parts: Vec<String>,
+    hidden: usize,
+    main: usize,
+    publication_date: Option<String>,
+    jsonld: Vec<String>,
+    jsonld_active: bool,
+    jsonld_parts: Vec<String>,
+    jsonld_count: usize,
+    jsonld_bytes: usize,
+}
+
+impl Article {
+    fn start(&mut self, tag: &crate::html_parse::Tag) {
+        // A later duplicate wins, which is what `dict(attrs)` does.
+        let value = |name: &str| -> Option<String> {
+            tag.attrs
+                .iter()
+                .rev()
+                .find(|(key, _)| key == name)
+                .and_then(|(_, value)| value.clone())
+        };
+        if tag.name == "script"
+            && (value("type")
+                .unwrap_or_default()
+                .to_lowercase()
+                .split(';')
+                .next()
+                .unwrap_or("")
+                .trim()
+                == "application/ld+json")
+        {
+            self.jsonld_count += 1;
+            self.jsonld_active = self.jsonld_count <= MAX_JSONLD_SCRIPTS && self.jsonld_bytes < MAX_JSONLD_BYTES;
+            self.jsonld_parts.clear();
+        }
+        if HIDDEN.contains(&tag.name.as_str()) {
+            self.hidden += 1;
+        }
+        if tag.name == "main" || tag.name == "article" {
+            self.main += 1;
+        }
+        if (tag.name == "a" || tag.name == "link") && value("href").is_some() {
+            self.links.push(value("href").unwrap_or_default());
+        }
+        let key = value("property").or_else(|| value("name"));
+        if tag.name == "meta"
+            && key
+                .as_deref()
+                .is_some_and(|k| ["article:published_time", "date", "datePublished"].contains(&k))
+        {
+            self.publication_date = value("content");
+        }
+        if tag.name == "time" && self.publication_date.is_none() {
+            self.publication_date = value("datetime");
+        }
+    }
+
+    fn end(&mut self, tag: &str) {
+        if tag == "script" {
+            if self.jsonld_active {
+                self.jsonld.push(self.jsonld_parts.concat());
+            }
+            self.jsonld_active = false;
+            self.jsonld_parts.clear();
+        }
+        if HIDDEN.contains(&tag) {
+            self.hidden = self.hidden.saturating_sub(1);
+        }
+        if tag == "main" || tag == "article" {
+            self.main = self.main.saturating_sub(1);
+        }
+    }
+
+    fn data(&mut self, text: &str) {
+        if self.jsonld_active {
+            self.jsonld_bytes += text.len();
+            if self.jsonld_bytes <= MAX_JSONLD_BYTES {
+                self.jsonld_parts.push(text.to_string());
+            } else {
+                self.jsonld_active = false;
+                self.jsonld_parts.clear();
+            }
+        }
+        if self.hidden == 0 {
+            self.parts.push(text.to_string());
+            if self.main > 0 {
+                self.main_parts.push(text.to_string());
+            }
+        }
+    }
+}
+
+/// `article_content`: the article text, and what the page says about when it was published.
+///
+/// Errs where the reference raises. A page with a marked section it cannot read is a page the
+/// reference refuses to describe, and describing it anyway would put text into the timing
+/// decision that the reference would have failed the poll over.
+pub fn article_content(body: &str) -> Result<(String, Publication), crate::html_parse::ParseError> {
+    let mut article = Article::default();
+    for event in crate::html_parse::tokenize(body)? {
+        match event {
+            crate::html_parse::Event::Start(tag) => article.start(&tag),
+            crate::html_parse::Event::End(tag) => article.end(&tag),
+            crate::html_parse::Event::Data(text) => article.data(&text),
+        }
+    }
+    let chosen = if article.main_parts.is_empty() {
+        &article.parts
+    } else {
+        &article.main_parts
+    };
+    let text = chosen.join(" ").split_whitespace().collect::<Vec<_>>().join(" ");
+    let publication = match &article.publication_date {
+        Some(raw) => publication_date(Some(&Value::String(raw.clone()))),
+        None => jsonld_publication(&article.jsonld),
+    };
+    Ok((text, publication))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -313,18 +438,78 @@ mod tests {
         }
     }
 
+    /// Exported from the Python parser by the same one-off that produced the corpus above:
+    /// 20,000 generated documents agreed before this 2,000-case subset was kept. It carries
+    /// the cases the reference raises on, because a port that recovers where it raises is
+    /// producing text the reference would have failed the poll over.
+    fn parse_golden() -> serde_json::Value {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/article-parse-golden.json");
+        serde_json::from_str(
+            &std::fs::read_to_string(&path).unwrap_or_else(|error| panic!("{} is missing: {error}", path.display())),
+        )
+        .expect("golden JSON")
+    }
+
     #[test]
-    fn the_article_text_vectors_are_waiting_for_the_tokenizer() {
-        // Recorded so the gap is visible rather than implied: these are the cases the port
-        // still owes, and none can be answered without Python's HTMLParser.
+    fn the_reference_article_parsing_is_reproduced_including_its_refusals() {
+        let golden = parse_golden();
+        let cases = golden["cases"].as_array().expect("cases");
+        assert!(cases.len() > 1000, "the corpus must actually be there");
+        let mut wrong = Vec::new();
+        for case in cases {
+            let html = case["html"].as_str().expect("html");
+            let refused = case
+                .get("refused")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false);
+            match (article_content(html), refused) {
+                (Err(_), true) => {}
+                (Ok(_), true) => wrong.push(format!("{html:?}: Python refused, the port answered")),
+                (Err(error), false) => wrong.push(format!("{html:?}: the port refused ({error:?})")),
+                (Ok((text, publication)), false) => {
+                    let want = (
+                        case["text"].as_str().expect("text"),
+                        case["date"].as_str(),
+                        case["precision"].as_str().expect("precision"),
+                    );
+                    if text != want.0 || publication.0.as_deref() != want.1 || publication.1 != want.2 {
+                        wrong.push(format!("{html:?}: got ({text:?}, {publication:?}), expected {want:?}"));
+                    }
+                }
+            }
+            if wrong.len() >= 8 {
+                break;
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "article parsing disagrees with Python:\n{}",
+            wrong.join("\n")
+        );
+    }
+
+    #[test]
+    fn the_reference_article_text_is_reproduced() {
         let golden = golden();
         let cases = golden["cases"].as_array().expect("cases");
+        assert!(cases.len() > 30, "the corpus must actually be there");
+        let mut wrong = Vec::new();
+        for case in cases {
+            let html = case["html"].as_str().expect("html");
+            let name = case["name"].as_str().unwrap_or("?");
+            let (text, publication) = article_content(html).expect("the corpus has no refused page");
+            let want_text = case["text"].as_str().expect("text");
+            if text != want_text || publication != expected(case) {
+                wrong.push(format!(
+                    "{name}: got ({text:?}, {publication:?}), expected ({want_text:?}, {:?})",
+                    expected(case)
+                ));
+            }
+        }
         assert!(
-            cases.len() > 30,
-            "the article cases must be there for the port that needs them"
+            wrong.is_empty(),
+            "article_content disagrees with Python:\n{}",
+            wrong.join("\n")
         );
-        assert!(cases
-            .iter()
-            .all(|case| case["html"].is_string() && case["text"].is_string()));
     }
 }
