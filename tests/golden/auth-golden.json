@@ -1,0 +1,687 @@
+{
+  "calls": [
+    {
+      "call": "register:0",
+      "input": {
+        "displayName": "  Ada Lovelace  "
+      },
+      "result": {
+        "recoveryCode": "token100000000000000000000000000",
+        "sessionToken": "token200000000000000000000000000",
+        "user": {
+          "createdAt": 1700000000000,
+          "displayName": "Ada Lovelace",
+          "handle": "f_token3000000",
+          "id": "u_token3000000000000000000"
+        }
+      }
+    },
+    {
+      "call": "register:1",
+      "error": {
+        "code": "invalid_input",
+        "message": "Please check your input.",
+        "status": 400
+      },
+      "input": {
+        "displayName": null
+      }
+    },
+    {
+      "call": "register:2",
+      "error": {
+        "code": "invalid_input",
+        "message": "Please check your input.",
+        "status": 400
+      },
+      "input": {
+        "displayName": 7
+      }
+    },
+    {
+      "call": "register:3",
+      "error": {
+        "code": "invalid_input",
+        "message": "Please check your input.",
+        "status": 400
+      },
+      "input": {
+        "displayName": ""
+      }
+    },
+    {
+      "call": "register:4",
+      "error": {
+        "code": "invalid_input",
+        "message": "Please check your input.",
+        "status": 400
+      },
+      "input": {
+        "displayName": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+    },
+    {
+      "call": "register:5",
+      "error": {
+        "code": "invalid_input",
+        "message": "Please check your input.",
+        "status": 400
+      },
+      "input": {
+        "displayName": "bad\nname"
+      }
+    },
+    {
+      "call": "register:6",
+      "error": {
+        "code": "invalid_input",
+        "message": "Please check your input.",
+        "status": 400
+      },
+      "input": {
+        "displayName": "   "
+      }
+    },
+    {
+      "call": "register:7",
+      "error": {
+        "code": "invalid_input",
+        "message": "Please check your input.",
+        "status": 400
+      },
+      "input": {
+        "displayName": true
+      }
+    },
+    {
+      "call": "login:code",
+      "input": {
+        "recoveryCode": "token100000000000000000000000000"
+      },
+      "result": {
+        "sessionToken": "token400000000000000000000000000",
+        "user": {
+          "createdAt": 1700000000000,
+          "displayName": "Ada Lovelace",
+          "handle": "f_token3000000",
+          "id": "u_token3000000000000000000"
+        }
+      }
+    },
+    {
+      "call": "login:short",
+      "error": {
+        "code": "invalid_recovery_code",
+        "message": "Enter an old Forecast recovery code, never a wallet recovery phrase.",
+        "status": 401
+      },
+      "input": {
+        "recoveryCode": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+      }
+    },
+    {
+      "call": "login:long",
+      "error": {
+        "code": "invalid_recovery_code",
+        "message": "Enter an old Forecast recovery code, never a wallet recovery phrase.",
+        "status": 401
+      },
+      "input": {
+        "recoveryCode": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+      }
+    },
+    {
+      "call": "login:unknown",
+      "error": {
+        "code": "invalid_recovery_code",
+        "message": "Check your recovery code and try again.",
+        "status": 401
+      },
+      "input": {
+        "recoveryCode": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+      }
+    },
+    {
+      "call": "login:not-a-string",
+      "error": {
+        "code": "invalid_recovery_code",
+        "message": "Enter an old Forecast recovery code, never a wallet recovery phrase.",
+        "status": 401
+      },
+      "input": {
+        "recoveryCode": null
+      }
+    },
+    {
+      "call": "login:phrase",
+      "error": {
+        "code": "invalid_recovery_code",
+        "message": "Enter an old Forecast recovery code, never a wallet recovery phrase.",
+        "status": 401
+      },
+      "input": {
+        "recoveryCode": "abandon abandon abandon abandon abandon abandon abandon abandon"
+      }
+    },
+    {
+      "call": "login:context-short",
+      "error": {
+        "code": "wallet_context_required",
+        "message": "Prepare sign-in again before restoring your profile.",
+        "status": 409
+      },
+      "input": {
+        "contextToken": "short",
+        "recoveryCode": "token100000000000000000000000000"
+      }
+    },
+    {
+      "call": "login:context-not-a-string",
+      "error": {
+        "code": "wallet_context_required",
+        "message": "Prepare sign-in again before restoring your profile.",
+        "status": 409
+      },
+      "input": {
+        "contextToken": 7,
+        "recoveryCode": "token100000000000000000000000000"
+      }
+    },
+    {
+      "call": "login:context-missing",
+      "error": {
+        "code": "wallet_context_required",
+        "message": "Prepare sign-in again before restoring your profile.",
+        "status": 409
+      },
+      "input": {
+        "contextToken": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+        "recoveryCode": "token100000000000000000000000000"
+      }
+    },
+    {
+      "call": "login:context-revoked",
+      "error": {
+        "code": "wallet_context_required",
+        "message": "Prepare sign-in again before restoring your profile.",
+        "status": 409
+      },
+      "input": {
+        "contextToken": "contextrevoked000000000000000000",
+        "recoveryCode": "token100000000000000000000000000"
+      }
+    },
+    {
+      "call": "login:context-expired",
+      "error": {
+        "code": "wallet_context_required",
+        "message": "Prepare sign-in again before restoring your profile.",
+        "status": 409
+      },
+      "input": {
+        "contextToken": "contextexpired000000000000000000",
+        "recoveryCode": "token100000000000000000000000000"
+      }
+    },
+    {
+      "call": "login:context",
+      "input": {
+        "contextToken": "contextgood000000000000000000000",
+        "recoveryCode": "token100000000000000000000000000"
+      },
+      "result": {
+        "sessionToken": "token600000000000000000000000000",
+        "user": {
+          "createdAt": 1700000000000,
+          "displayName": "Ada Lovelace",
+          "handle": "f_token3000000",
+          "id": "u_token3000000000000000000"
+        }
+      }
+    },
+    {
+      "call": "authenticate:plain",
+      "input": {
+        "sessionToken": "token200000000000000000000000000"
+      },
+      "result": {
+        "createdAt": 1700000000000,
+        "displayName": "Ada Lovelace",
+        "handle": "f_token3000000",
+        "id": "u_token3000000000000000000"
+      }
+    },
+    {
+      "call": "authenticate:bound",
+      "input": {
+        "contextToken": "contextgood000000000000000000000",
+        "sessionToken": "token600000000000000000000000000"
+      },
+      "result": {
+        "createdAt": 1700000000000,
+        "displayName": "Ada Lovelace",
+        "handle": "f_token3000000",
+        "id": "u_token3000000000000000000"
+      }
+    },
+    {
+      "call": "authenticate:bound-without-context",
+      "input": {
+        "sessionToken": "token600000000000000000000000000"
+      },
+      "result": null
+    },
+    {
+      "call": "authenticate:plain-with-context",
+      "input": {
+        "contextToken": "contextgood000000000000000000000",
+        "sessionToken": "token200000000000000000000000000"
+      },
+      "result": {
+        "createdAt": 1700000000000,
+        "displayName": "Ada Lovelace",
+        "handle": "f_token3000000",
+        "id": "u_token3000000000000000000"
+      }
+    },
+    {
+      "call": "authenticate:none",
+      "input": {
+        "sessionToken": null
+      },
+      "result": null
+    },
+    {
+      "call": "authenticate:empty",
+      "input": {
+        "sessionToken": ""
+      },
+      "result": null
+    },
+    {
+      "call": "authenticate:long",
+      "input": {
+        "sessionToken": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "result": null
+    },
+    {
+      "call": "authenticate:context-long",
+      "input": {
+        "contextToken": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+        "sessionToken": "token200000000000000000000000000"
+      },
+      "result": null
+    },
+    {
+      "call": "authenticate:unknown",
+      "input": {
+        "sessionToken": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+      },
+      "result": null
+    },
+    {
+      "call": "authenticate:stale-epoch",
+      "input": {
+        "contextToken": "contextgood000000000000000000000",
+        "sessionToken": "token600000000000000000000000000"
+      },
+      "result": null
+    },
+    {
+      "call": "authenticate:converted",
+      "input": {
+        "sessionToken": "token200000000000000000000000000"
+      },
+      "result": null
+    },
+    {
+      "call": "login:converted-context",
+      "error": {
+        "code": "invalid_recovery_code",
+        "message": "Check your recovery code and try again.",
+        "status": 401
+      },
+      "input": {
+        "contextToken": "contextconverted0000000000000000",
+        "recoveryCode": "token100000000000000000000000000"
+      }
+    },
+    {
+      "call": "login:converted",
+      "error": {
+        "code": "invalid_recovery_code",
+        "message": "Check your recovery code and try again.",
+        "status": 401
+      },
+      "input": {
+        "recoveryCode": "token100000000000000000000000000"
+      }
+    },
+    {
+      "call": "register:after-conversion",
+      "input": {
+        "displayName": "Someone Else"
+      },
+      "result": {
+        "recoveryCode": "token800000000000000000000000000",
+        "sessionToken": "token900000000000000000000000000",
+        "user": {
+          "createdAt": 1700000000000,
+          "displayName": "Someone Else",
+          "handle": "f_token1000000",
+          "id": "u_token1000000000000000000"
+        }
+      }
+    },
+    {
+      "call": "authenticate:converted-bound",
+      "input": {
+        "contextToken": "contextgood000000000000000000000",
+        "sessionToken": "token600000000000000000000000000"
+      },
+      "result": null
+    },
+    {
+      "call": "authenticate:converted-bound-restored",
+      "input": {
+        "contextToken": "contextgood000000000000000000000",
+        "sessionToken": "token600000000000000000000000000"
+      },
+      "result": {
+        "createdAt": 1700000000000,
+        "displayName": "Ada Lovelace",
+        "handle": "f_token3000000",
+        "id": "u_token3000000000000000000"
+      }
+    },
+    {
+      "call": "logout:bound",
+      "input": {
+        "contextToken": "contextgood000000000000000000000",
+        "sessionToken": "token600000000000000000000000000"
+      },
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "call": "logout:plain",
+      "input": {
+        "sessionToken": "token200000000000000000000000000"
+      },
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "call": "logout:none",
+      "input": {
+        "sessionToken": null
+      },
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "call": "logout:unknown",
+      "input": {
+        "contextToken": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+        "sessionToken": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+      },
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "call": "logout:twice",
+      "input": {
+        "contextToken": "contextgood000000000000000000000",
+        "sessionToken": "token600000000000000000000000000"
+      },
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "description": "The authentication service: registration, recovery-code login with and without a prepared wallet context, session authentication across both branches, logout, and the conversion that closes the recovery path.",
+  "names": [
+    {
+      "input": "  Grace  ",
+      "result": "Grace"
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": ""
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": " "
+    },
+    {
+      "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "result": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "input": "two words",
+      "result": "two words"
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": "tab\there"
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": "line\nbreak"
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": "nul\u0000byte"
+    },
+    {
+      "input": "  éé  ",
+      "result": "éé"
+    },
+    {
+      "input": " separator",
+      "result": "separator"
+    },
+    {
+      "input": " Ada ",
+      "result": "Ada"
+    },
+    {
+      "input": "　Ada",
+      "result": "Ada"
+    },
+    {
+      "input": "\u000bAda",
+      "result": "Ada"
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": 7
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": null
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": true
+    },
+    {
+      "input": "  中文  ",
+      "result": "中文"
+    },
+    {
+      "input": "\u001cseparator",
+      "result": "separator"
+    },
+    {
+      "input": "\u001cAda\u001d",
+      "result": "Ada"
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": "\u001f"
+    },
+    {
+      "error": {
+        "code": "invalid_input",
+        "status": 400
+      },
+      "input": "\u001c\u001d\u001e\u001f"
+    }
+  ],
+  "now": 1700000000000,
+  "projections": [
+    {
+      "public": {
+        "createdAt": 1700000000000,
+        "displayName": "Ada Lovelace",
+        "handle": "f_token3000000",
+        "id": "u_token3000000000000000000"
+      },
+      "row": {
+        "created_at": 1700000000000,
+        "display_name": "Ada Lovelace",
+        "handle": "f_token3000000",
+        "id": "u_token3000000000000000000"
+      }
+    },
+    {
+      "public": {
+        "createdAt": 1700000000000,
+        "displayName": "Someone Else",
+        "handle": "f_token1000000",
+        "id": "u_token1000000000000000000"
+      },
+      "row": {
+        "created_at": 1700000000000,
+        "display_name": "Someone Else",
+        "handle": "f_token1000000",
+        "id": "u_token1000000000000000000"
+      }
+    }
+  ],
+  "rows": {
+    "sessions": [
+      {
+        "context_epoch": null,
+        "context_hash": null,
+        "created_at": 1700000000000,
+        "expires_at": 1702592000000,
+        "token_hash": "1d7ac1d6ff0654deb5368f1b00c2b2bb01fa34a74c642c037a798dd16e7696e7",
+        "user_id": "u_token3000000000000000000"
+      },
+      {
+        "context_epoch": null,
+        "context_hash": null,
+        "created_at": 1700000000000,
+        "expires_at": 1702592000000,
+        "token_hash": "265d0babce4eedd4ba039ffba1b33858ff0c722461ddb48585a4fac8ead4aa40",
+        "user_id": "u_token1000000000000000000"
+      }
+    ],
+    "users": [
+      {
+        "created_at": 1700000000000,
+        "display_name": "Ada Lovelace",
+        "handle": "f_token3000000",
+        "id": "u_token3000000000000000000",
+        "recovery_hash": "7f2027d5d4698cc147011628374ae1b944105cda42d0e5a75c2670d42e0dc507"
+      },
+      {
+        "created_at": 1700000000000,
+        "display_name": "Someone Else",
+        "handle": "f_token1000000",
+        "id": "u_token1000000000000000000",
+        "recovery_hash": "fb06a4997b74e70810f9db687cf68e53842c51d9b4dc69c3dd63351182b7c550"
+      }
+    ],
+    "wallet_identities": [
+      {
+        "address": "Wa11et11111111111111111111111111111111111111",
+        "converted_at": 1700000000000,
+        "created_at": 1699999999500,
+        "status": "active",
+        "user_id": "u_token3000000000000000000"
+      }
+    ],
+    "wallet_login_challenges": [],
+    "wallet_login_contexts": [
+      {
+        "active_session_hash": null,
+        "created_at": 1699999999000,
+        "epoch": 1,
+        "expires_at": 1700000600000,
+        "latest_challenge_id": null,
+        "revoked_at": 1700000000000,
+        "token_hash": "db0a4ad7a7d151bb697b5d1b13b8e3352b2d1d508aa530e9677f9874e97a2378"
+      },
+      {
+        "active_session_hash": null,
+        "created_at": 1699999999000,
+        "epoch": 1,
+        "expires_at": 1699999999999,
+        "latest_challenge_id": null,
+        "revoked_at": null,
+        "token_hash": "f5ce896580e96213992f17a7a46df1436a4f4cd8c9cf44362a6ca107998d564e"
+      },
+      {
+        "active_session_hash": null,
+        "created_at": 1699999999000,
+        "epoch": 3,
+        "expires_at": 1700000600000,
+        "latest_challenge_id": null,
+        "revoked_at": 1700000000000,
+        "token_hash": "5f07688e680f51f65ddd3b4286ffeb1cc2419187d96b707d2b86a78394f2c0ef"
+      },
+      {
+        "active_session_hash": null,
+        "created_at": 1699999999000,
+        "epoch": 1,
+        "expires_at": 1700000600000,
+        "latest_challenge_id": null,
+        "revoked_at": null,
+        "token_hash": "84e4334d87c1db310762c9982f84c283977b1b0bd8bd6eae702506cef7211971"
+      }
+    ]
+  },
+  "sessionLifetimeMs": 2592000000
+}

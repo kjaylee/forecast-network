@@ -1,0 +1,10 @@
+/Volumes/workspace/forecast/target/wasm32-unknown-unknown/debug/deps/solana_system_interface-e19c8b9396e94d94.d: /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/lib.rs /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/error.rs /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/instruction.rs /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/wasm.rs
+
+/Volumes/workspace/forecast/target/wasm32-unknown-unknown/debug/deps/libsolana_system_interface-e19c8b9396e94d94.rlib: /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/lib.rs /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/error.rs /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/instruction.rs /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/wasm.rs
+
+/Volumes/workspace/forecast/target/wasm32-unknown-unknown/debug/deps/libsolana_system_interface-e19c8b9396e94d94.rmeta: /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/lib.rs /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/error.rs /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/instruction.rs /Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/wasm.rs
+
+/Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/lib.rs:
+/Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/error.rs:
+/Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/instruction.rs:
+/Users/kjaylee/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-system-interface-1.0.0/src/wasm.rs:

@@ -77,7 +77,11 @@ def main() -> int:
                 [sys.executable, "scripts/generate_seeker_golden.py", "--check"],
                 # The wallet codecs decide whether a sign-in is genuine: more permissive than
                 # the reference is a security bug, not a compatibility one.
-                [sys.executable, "scripts/generate_wallet_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_wallet_golden.py", "--check"],
+                # Authentication is two statements that look like one. The session guard has two
+                # branches with different meanings, and login has to tell a wrong code from a
+                # lost race from an outage — all three are 401-shaped or 409-shaped otherwise.
+                [sys.executable, "scripts/generate_auth_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:
