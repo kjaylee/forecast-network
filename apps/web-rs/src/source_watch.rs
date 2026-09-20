@@ -26,6 +26,10 @@ pub const MAX_ARTIFACT_BYTES: usize = 524_288;
 const DAY_MS: i64 = 86_400_000;
 pub const AI_SCOPE: &str = "official-watch-ai";
 
+/// Retained evidence: content hash, kind, body, media type.
+pub type Retained = (String, String, String, String);
+pub type BoxedFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
+
 /// The transport, boxed so the watch can hold one without becoming generic over it. It takes
 /// the target and the headers the caller wants, and returns what came back.
 pub type Fetcher = Box<dyn Fn(String, Vec<(String, String)>) -> FetchFuture>;
@@ -306,10 +310,7 @@ async fn queue_known(
 
 /// The forecast lookup the watch needs, kept as a trait so the poller cannot settle anything.
 pub trait ForecastSource {
-    fn load_forecast<'a>(
-        &'a self,
-        forecast_id: &'a str,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Value, WatchError>> + 'a>>;
+    fn load_forecast<'a>(&'a self, forecast_id: &'a str) -> BoxedFuture<'a, Result<Value, WatchError>>;
 }
 
 /// Queue an observation for review, and hold participation while it is looked at.
@@ -363,11 +364,7 @@ pub async fn enqueue(
 /// Holding participation. A separate trait because a poller that could settle a forecast or
 /// credit points would be a second authority on the outcome.
 pub trait Hold {
-    fn hold<'a>(
-        &'a self,
-        forecast_id: &'a str,
-        observation: &'a Value,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), WatchError>> + 'a>>;
+    fn hold<'a>(&'a self, forecast_id: &'a str, observation: &'a Value) -> BoxedFuture<'a, Result<(), WatchError>>;
 }
 
 /// Cheap candidates for the compile gate. The caller must still reject or hold.
@@ -655,6 +652,306 @@ async fn poll_done(
         ],
     )
     .await?;
+    Ok(())
+}
+
+/// Reviewing what a source published. Async and injected, because the decision is a model's
+/// and the poller is not allowed to make it.
+pub trait Reviewer {
+    /// Decide, and say what was retained while deciding.
+    fn review<'a>(
+        &'a self,
+        forecast: &'a Value,
+        observation: &'a Value,
+    ) -> BoxedFuture<'a, Result<(Value, Vec<Retained>), WatchError>>;
+
+    /// Act on a review that accepted the observation.
+    fn accept<'a>(&'a self, forecast_id: &'a str, review: &'a Value) -> BoxedFuture<'a, Result<(), WatchError>>;
+}
+
+/// Dismissing a review that a model found nothing in. Optional, because not every caller
+/// chooses to act on a dismissal.
+pub trait Dismisser {
+    fn dismiss<'a>(&'a self, forecast_id: &'a str, review: &'a Value) -> BoxedFuture<'a, Result<(), WatchError>>;
+}
+
+/// Everything the job loop reaches for. Named rather than positional: a call with five
+/// collaborators and a limit is not readable as a call.
+pub struct Watch<'a> {
+    pub db: &'a dyn Database,
+    pub fetch: &'a Fetcher,
+    pub host: &'a dyn ForecastSource,
+    pub hold: Option<&'a dyn Hold>,
+    pub reviewer: Option<&'a dyn Reviewer>,
+    pub dismisser: Option<&'a dyn Dismisser>,
+    pub now_ms: i64,
+    pub token: &'a str,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Summary {
+    pub polled: i64,
+    pub reviewed: i64,
+    pub failed: i64,
+    pub unchanged: i64,
+}
+
+/// One pass of the job loop: poll what is due, then review what was queued.
+pub async fn run(watch: &Watch<'_>, limit: i64) -> Result<Summary, WatchError> {
+    if !(1..=6).contains(&limit) {
+        return Err(WatchError::Invalid("Source job bound must be between one and six"));
+    }
+    let mut summary = Summary::default();
+    let sources = watch
+        .db
+        .all(
+            "SELECT * FROM official_watch_sources WHERE enabled=1 AND next_poll<=? AND lease_until<=? ORDER BY next_poll,id LIMIT ?",
+            &[json!(watch.now_ms), json!(watch.now_ms), json!(limit)],
+        )
+        .await?;
+    for source in sources {
+        let lease = format!(
+            "{}-{}",
+            watch.token,
+            source.get("id").and_then(Value::as_str).unwrap_or("")
+        );
+        let claimed = watch
+            .db
+            .execute(
+                "UPDATE official_watch_sources SET lease_token=?,lease_until=? WHERE id=? AND enabled=1 AND next_poll<=? AND lease_until<=? RETURNING id",
+                &[
+                    json!(lease),
+                    json!(watch.now_ms + LEASE_MS),
+                    source.get("id").cloned().unwrap_or(Value::Null),
+                    json!(watch.now_ms),
+                    json!(watch.now_ms),
+                ],
+            )
+            .await;
+        let claimed = claimed.map(|rows| !rows.is_empty()).unwrap_or(false);
+        if !claimed {
+            continue;
+        }
+        let mut leased = source.clone();
+        leased.insert("lease_token".to_string(), json!(lease));
+        let outcome = poll(watch.db, watch.fetch, watch.host, watch.hold, &leased, watch.now_ms).await;
+        match &outcome {
+            Ok("unchanged") => summary.unchanged += 1,
+            Ok(_) => summary.polled += 1,
+            Err(error) => {
+                summary.failed += 1;
+                let failures = int(&source, "failure_count").unwrap_or(0);
+                let interval = int(&source, "interval_ms").unwrap_or(0);
+                let backoff = interval * 2i64.pow(failures.clamp(0, 4) as u32);
+                watch
+                    .db
+                    .execute(
+                        "UPDATE official_watch_sources SET failure_count=failure_count+1,last_error=?,next_poll=? WHERE id=? AND lease_token=?",
+                        &[
+                            json!(error_kind(error)),
+                            json!(watch.now_ms + backoff.min(3_600_000)),
+                            source.get("id").cloned().unwrap_or(Value::Null),
+                            json!(lease),
+                        ],
+                    )
+                    .await?;
+            }
+        }
+        watch
+            .db
+            .execute(
+                "UPDATE official_watch_sources SET lease_token=NULL,lease_until=0 WHERE id=? AND lease_token=?",
+                &[source.get("id").cloned().unwrap_or(Value::Null), json!(lease)],
+            )
+            .await?;
+    }
+
+    let jobs = watch
+        .db
+        .all(
+            "SELECT * FROM official_source_reviews WHERE state IN ('pending','reviewed') AND next_attempt<=? AND lease_until<=? ORDER BY next_attempt,id LIMIT ?",
+            &[json!(watch.now_ms), json!(watch.now_ms), json!(limit)],
+        )
+        .await?;
+    for job in jobs {
+        let job_id = job.get("id").cloned().unwrap_or(Value::Null);
+        let lease = format!("{}-review-{}", watch.token, job_id.as_str().unwrap_or(""));
+        let claimed = watch
+            .db
+            .execute(
+                "UPDATE official_source_reviews SET lease_token=?,lease_until=?,attempts=attempts+1 WHERE id=? AND state IN ('pending','reviewed') AND next_attempt<=? AND lease_until<=? RETURNING id",
+                &[json!(lease), json!(watch.now_ms + LEASE_MS), job_id.clone(), json!(watch.now_ms), json!(watch.now_ms)],
+            )
+            .await
+            .map(|rows| !rows.is_empty())
+            .unwrap_or(false);
+        if !claimed {
+            continue;
+        }
+        let outcome = review_one(watch, &job, &lease).await;
+        match outcome {
+            Ok(true) => summary.reviewed += 1,
+            Ok(false) => {}
+            Err(error) => {
+                summary.failed += 1;
+                record_review_failure(watch, &job, &lease, &error).await?;
+            }
+        }
+        watch
+            .db
+            .execute(
+                "UPDATE official_source_reviews SET lease_token=NULL,lease_until=0 WHERE id=? AND lease_token=?",
+                &[job_id, json!(lease)],
+            )
+            .await?;
+    }
+    Ok(summary)
+}
+
+async fn review_one(watch: &Watch<'_>, job: &Row, lease: &str) -> Result<bool, WatchError> {
+    let observation_id = text(job, "observation_id").unwrap_or("");
+    let row = watch
+        .db
+        .first(
+            "SELECT body FROM official_source_observations WHERE id=?",
+            &[json!(observation_id)],
+        )
+        .await?
+        .ok_or(WatchError::Missing("Retained observation"))?;
+    let observation: Value = serde_json::from_str(text(&row, "body").unwrap_or("")).unwrap_or(Value::Null);
+    let forecast_id = text(job, "forecast_id").unwrap_or("");
+    let forecast = watch.host.load_forecast(forecast_id).await?;
+    if forecast["specificationHash"] != job.get("specification_hash").cloned().unwrap_or(Value::Null) {
+        return Err(WatchError::Invalid("Published specification changed"));
+    }
+    // The hold, again, before the model is asked: the review loop re-holds because a review
+    // queued long ago may be running after the forecast moved.
+    if let Some(hold) = watch.hold {
+        hold.hold(forecast_id, &observation).await?;
+    }
+    let existing = text(job, "result").map(str::to_string);
+    let (result, artifacts) = match existing {
+        Some(stored) => (
+            serde_json::from_str::<Value>(&stored).unwrap_or(Value::Null),
+            Vec::new(),
+        ),
+        None => {
+            let bucket = watch.now_ms / DAY_MS;
+            watch
+                .db
+                .execute(
+                    "INSERT OR IGNORE INTO rate_limits(scope,bucket,count,expires_at) VALUES('official-watch-ai',?,0,?)",
+                    &[json!(bucket), json!((bucket + 2) * DAY_MS)],
+                )
+                .await?;
+            // The budget holds across concurrent workers, because it is a row the database
+            // updates under its own condition rather than a number this process counted.
+            let budget = watch
+                .db
+                .execute(
+                    "UPDATE rate_limits SET count=count+3 WHERE scope='official-watch-ai' AND bucket=? AND count<=69 RETURNING count",
+                    &[json!(bucket)],
+                )
+                .await?;
+            if budget.is_empty() {
+                return Err(WatchError::BudgetExhausted);
+            }
+            let Some(reviewer) = watch.reviewer else {
+                return Err(WatchError::Missing("Reviewer"));
+            };
+            let (result, artifacts) = reviewer.review(&forecast, &observation).await?;
+            (result, artifacts)
+        }
+    };
+    if !result["accepted"].is_boolean() || compact(&result).len() > 65_536 {
+        return Err(WatchError::Invalid("Invalid bounded source review result"));
+    }
+    let mut statements = artifact_sql(&artifacts, watch.now_ms)?;
+    statements.push((
+        "UPDATE official_source_reviews SET state='reviewed',result=? WHERE id=? AND lease_token=? AND lease_until>?"
+            .to_string(),
+        vec![
+            json!(compact(&result)),
+            job.get("id").cloned().unwrap_or(Value::Null),
+            json!(lease),
+            json!(watch.now_ms),
+        ],
+    ));
+    watch.db.batch(&statements).await?;
+    // The lease is the authority: a review whose lease expired is not acted on, whatever the
+    // model said.
+    let owned = watch
+        .db
+        .first(
+            "SELECT id FROM official_source_reviews WHERE id=? AND lease_token=? AND lease_until>?",
+            &[
+                job.get("id").cloned().unwrap_or(Value::Null),
+                json!(lease),
+                json!(watch.now_ms),
+            ],
+        )
+        .await?;
+    if owned.is_none() {
+        return Err(WatchError::Invalid("Source review lease expired"));
+    }
+    let mut acted = result.clone();
+    acted["observation"] = observation.clone();
+    if result["accepted"] == json!(true) {
+        if let Some(reviewer) = watch.reviewer {
+            reviewer.accept(forecast_id, &acted).await?;
+        }
+    } else if result["accepted"] == json!(false) && result["dismissible"] == json!(true) {
+        if let Some(dismisser) = watch.dismisser {
+            dismisser.dismiss(forecast_id, &acted).await?;
+        }
+    }
+    watch
+        .db
+        .execute(
+            "UPDATE official_source_reviews SET state='complete',result=?,last_error=NULL WHERE id=? AND lease_token=? AND lease_until>?",
+            &[json!(compact(&result)), job.get("id").cloned().unwrap_or(Value::Null), json!(lease), json!(watch.now_ms)],
+        )
+        .await?;
+    Ok(true)
+}
+
+async fn record_review_failure(
+    watch: &Watch<'_>,
+    job: &Row,
+    lease: &str,
+    error: &WatchError,
+) -> Result<(), WatchError> {
+    let job_id = job.get("id").cloned().unwrap_or(Value::Null);
+    if matches!(error, WatchError::BudgetExhausted) {
+        let day = watch.now_ms / DAY_MS;
+        watch
+            .db
+            .execute(
+                "UPDATE official_source_reviews SET attempts=attempts-1,next_attempt=?,last_error='daily_budget' WHERE id=? AND lease_token=?",
+                &[json!((day + 1) * DAY_MS), job_id, json!(lease)],
+            )
+            .await?;
+        return Ok(());
+    }
+    let attempts = int(job, "attempts").unwrap_or(0);
+    let state = if attempts + 1 >= MAX_ATTEMPTS {
+        "exhausted"
+    } else {
+        "pending"
+    };
+    watch
+        .db
+        .execute(
+            "UPDATE official_source_reviews SET state=?,last_error=?,next_attempt=? WHERE id=? AND lease_token=?",
+            &[
+                json!(state),
+                json!(error_kind(error)),
+                json!(watch.now_ms + 60_000 * 2i64.pow(attempts.clamp(0, 10) as u32)),
+                job_id,
+                json!(lease),
+            ],
+        )
+        .await?;
     Ok(())
 }
 
@@ -1119,6 +1416,87 @@ mod tests {
         assert!(children
             .iter()
             .all(|row| text(row, "id").unwrap().starts_with("article-")));
+    }
+
+    #[test]
+    fn the_daily_review_budget_holds_across_workers() {
+        // The budget is a row the database updates under its own condition, not a number this
+        // process counted, so two workers cannot both find room for the same third review.
+        let db = Sqlite::from_migrations();
+        parents(&db, "f", "o1");
+        let day = 100 / 86_400_000;
+        block(db.execute(
+            &format!("INSERT INTO rate_limits(scope,bucket,count,expires_at) VALUES('official-watch-ai',{day},70,0)"),
+            &[],
+        ))
+        .unwrap();
+        block(db.execute(
+            &format!(
+                "INSERT INTO official_source_reviews(id,observation_id,forecast_id,specification_hash,\
+                 content_hash,policy,next_attempt) VALUES('job','o1','f','{SPEC}',\
+                 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd','{POLICY}',0)"
+            ),
+            &[],
+        ))
+        .unwrap();
+        let host = Source { forecast: forecast() };
+        let fetch: Fetcher = Box::new(|_target, _headers| Box::pin(async { Err(()) }));
+        let watch = Watch {
+            db: &db,
+            fetch: &fetch,
+            host: &host,
+            hold: None,
+            reviewer: None,
+            dismisser: None,
+            now_ms: 100,
+            token: "t",
+        };
+        let summary = block(run(&watch, 2)).unwrap();
+        assert_eq!(summary.reviewed, 0);
+        // Two failures: the source fetch refused as well, because this transport always does.
+        // What this test is about is the review, and the state it is left in.
+        assert_eq!(summary.failed, 2);
+        let row = block(db.first(
+            "SELECT state, attempts, last_error, next_attempt FROM official_source_reviews WHERE id='job'",
+            &[],
+        ))
+        .unwrap()
+        .unwrap();
+        assert_eq!(text(&row, "last_error"), Some("daily_budget"));
+        assert_eq!(
+            int(&row, "attempts"),
+            Some(0),
+            "a budget refusal does not consume an attempt"
+        );
+        assert_eq!(
+            int(&row, "next_attempt"),
+            Some((day + 1) * 86_400_000),
+            "it waits for tomorrow"
+        );
+        assert_eq!(text(&row, "state"), Some("pending"));
+    }
+
+    #[test]
+    fn a_job_bound_outside_the_reference_range_is_refused() {
+        let db = Sqlite::from_migrations();
+        let host = Source { forecast: forecast() };
+        let fetch: Fetcher = Box::new(|_t, _h| Box::pin(async { Err(()) }));
+        let watch = Watch {
+            db: &db,
+            fetch: &fetch,
+            host: &host,
+            hold: None,
+            reviewer: None,
+            dismisser: None,
+            now_ms: 1,
+            token: "t",
+        };
+        for limit in [0, 7] {
+            assert!(
+                matches!(block(run(&watch, limit)), Err(WatchError::Invalid(_))),
+                "limit {limit}"
+            );
+        }
     }
 
     #[test]
