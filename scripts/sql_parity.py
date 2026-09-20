@@ -59,6 +59,12 @@ DIVERGENCES = {
         "reports no affected-row count. The statement it confirms is the reference's own: a WHERE "
         "clause that refuses the update leaves the row unchanged, and the reserve is refused. "
         "Two extra reads, the same outcome, and nothing invented to make the check possible.",
+    "FROMregistry_deliveryWHEREforecast_id=?ANDrevision=?":
+        "The delivery lease and its confirmation are read back from the row, for the same reason: "
+        "this `Database` reports no affected-row count, so `sync` confirms it holds the lease by "
+        "reading the token back, and `_deliver` confirms a delivery the same way. Both statements "
+        "are the reference's own, and both write only under the reference's own WHERE clause — "
+        "the reads observe the result rather than deciding it.",
     "SELECTu.idFROMsessionssJOINusersuONu.id=":
         "`auth::user_id` reads only the id, where Python's `authenticate` builds a whole public "
         "user. The session guard is identical; the projection is narrower because the caller is.",

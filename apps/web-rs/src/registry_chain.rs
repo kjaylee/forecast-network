@@ -27,7 +27,7 @@ use forecast_domain::lifecycle::{
 use forecast_domain::models::UserForecast;
 use forecast_domain::{canonical_bytes, content_hash};
 
-use crate::db::{int, text, Database};
+use crate::db::{int, text, Database, Row};
 use crate::dispute_wire as wire;
 use crate::eligibility::{receipt_status, POLICY_VERSION};
 use crate::registry::{identity_hash, DEVNET_GENESIS};
@@ -178,6 +178,7 @@ pub struct SolanaRegistry<'a> {
     pub program_id: Vec<u8>,
     pub relayer: Vec<u8>,
     pub now_ms: &'a dyn Fn() -> i64,
+    pub random_token: &'a dyn Fn() -> String,
 }
 
 impl SolanaRegistry<'_> {
@@ -187,6 +188,7 @@ impl SolanaRegistry<'_> {
         program_id: &[u8],
         relayer: &[u8],
         now_ms: &'a dyn Fn() -> i64,
+        random_token: &'a dyn Fn() -> String,
     ) -> Outcome<SolanaRegistry<'a>> {
         if program_id.len() != 32 || relayer.len() != 32 || solana::zeroed(program_id) || solana::zeroed(relayer) {
             return Err(RegistryError::new("invalid_registry_configuration"));
@@ -197,6 +199,7 @@ impl SolanaRegistry<'_> {
             program_id: program_id.to_vec(),
             relayer: relayer.to_vec(),
             now_ms,
+            random_token,
         })
     }
 
@@ -983,6 +986,329 @@ impl SolanaRegistry<'_> {
     }
 }
 
+impl SolanaRegistry<'_> {
+    /// `_deliver`: one intent, either confirmed against the chain or sent.
+    ///
+    /// The order is the design. An account that already carries this revision is *proof* — the
+    /// confirmation is written and nothing is sent. An account one revision behind is a reason to
+    /// send. Anything else is a chain we do not recognise, and the intent is refused rather than
+    /// pushed at it.
+    #[allow(clippy::too_many_lines)]
+    pub async fn deliver(&self, row: &Row, token: &str) -> Outcome<bool> {
+        let snapshot = Snapshot::from_json(text(row, "snapshot").unwrap_or_default())
+            .map_err(|_| RegistryError::new("local_intent_mismatch"))?;
+        let forecast = snapshot.base();
+        let material = self.material(&snapshot).await?;
+        let state_index = material["state"].as_i64().unwrap_or(0);
+        if (state_index == 10 || state_index == 11)
+            && self
+                .db
+                .first(
+                    "SELECT 1 FROM forecast_resolution_blockers WHERE forecast_id=?",
+                    &[json!(forecast.forecast_id)],
+                )
+                .await
+                .map_err(|_| RegistryError::new("registry_unavailable"))?
+                .is_some()
+        {
+            return Err(RegistryError::new("resolution_eligibility_blocked"));
+        }
+        let event_hash = material["event_hash"]
+            .as_array()
+            .map(|_| hex_of(&material["event_hash"]))
+            .unwrap_or_default();
+        if text(row, "event_hash") != Some(event_hash.as_str()) {
+            return Err(RegistryError::new("local_intent_mismatch"));
+        }
+        let id_hash = identity_hash("forecast", &forecast.forecast_id);
+        let creator_hash = identity_hash("creator", &forecast.creator_id);
+        let address = solana::forecast_address(&self.program_id, &id_hash)
+            .map_err(|_| RegistryError::new("registry_unavailable"))?
+            .0;
+        let account = self.transport.account(&address).await?;
+        let prior = self
+            .db
+            .first(
+                "SELECT MAX(confirmed_slot) AS slot FROM registry_delivery WHERE forecast_id=? AND status='confirmed'",
+                &[json!(forecast.forecast_id)],
+            )
+            .await
+            .map_err(|_| RegistryError::new("registry_unavailable"))?;
+        let minimum_slot = prior.as_ref().and_then(|row| int(row, "slot")).unwrap_or(0);
+        if minimum_slot > 0 && account.as_ref().map(|value| value.slot).unwrap_or(0) < minimum_slot {
+            self.release(row, token, "chain_observation_stale", self.now() + 30_000, false)
+                .await?;
+            return Ok(false);
+        }
+        let register = forecast
+            .latest_event
+            .as_ref()
+            .is_some_and(|event| event.command_name == "publish");
+        if let Some(account) = account.as_ref() {
+            self.checked_account(account, &address)?;
+            let state =
+                solana::decode_forecast(&account.data).map_err(|_| RegistryError::new("chain_account_unverified"))?;
+            let identity_ok = state.forecast_id_hash == id_hash
+                && state.creator_hash == creator_hash
+                && wire::to_hex(&state.specification_hash) == forecast.specification_hash
+                && state.open_at_ms == forecast.specification.open_at_ms
+                && state.close_at_ms == forecast.specification.close_at_ms;
+            if !identity_ok {
+                return Err(RegistryError::new("chain_identity_mismatch"));
+            }
+            if state.revision == forecast.revision {
+                let expected_pause = match forecast.pause.as_ref() {
+                    Some(pause) => lifecycle_index(&pause.previous_state),
+                    None => 0,
+                };
+                if state.paused_from != expected_pause {
+                    return Err(RegistryError::new("chain_pause_mismatch"));
+                }
+                if material
+                    .as_object()
+                    .cloned()
+                    .unwrap_or_default()
+                    .iter()
+                    .any(|(key, value)| {
+                        key != "previous_event_hash" && material_matches(key, &state, value) == Some(false)
+                    })
+                {
+                    return Err(RegistryError::new("chain_commitment_mismatch"));
+                }
+                // The finalized account is the proof; an unknown transaction is not. A signature
+                // the provider cannot confirm is simply left unrecorded.
+                let mut signature = None;
+                if let Some(known) = text(row, "signature") {
+                    if self.transport.signature_finalized(known).await.unwrap_or(false) {
+                        signature = Some(known.to_string());
+                    }
+                }
+                self.db
+                    .execute(
+                        "UPDATE registry_delivery SET status='confirmed',confirmed_slot=?,signature=?,\
+                         lease_token=NULL,lease_until=0,error_code=NULL WHERE forecast_id=? AND revision=? AND lease_token=?",
+                        &[
+                            json!(account.slot),
+                            json!(signature),
+                            json!(forecast.forecast_id),
+                            json!(forecast.revision),
+                            json!(token),
+                        ],
+                    )
+                    .await
+                    .map_err(|_| RegistryError::new("registry_unavailable"))?;
+                return Ok(self.delivery_status(forecast, token).await? == Some("confirmed".to_string()));
+            }
+            let previous = material["previous_event_hash"]
+                .as_array()
+                .map(|_| hex_of(&material["previous_event_hash"]))
+                .unwrap_or_default();
+            if state.revision != forecast.revision - 1 || wire::to_hex(&state.event_hash) != previous {
+                return Err(RegistryError::new("chain_revision_mismatch"));
+            }
+            if state_index == 10 && self.now() < state.chain_finalize_not_before_ms {
+                self.release(
+                    row,
+                    token,
+                    "chain_challenge_pending",
+                    state.chain_finalize_not_before_ms,
+                    false,
+                )
+                .await?;
+                return Ok(false);
+            }
+        } else if !register {
+            return Err(RegistryError::new("chain_predecessor_missing"));
+        }
+        if let Some(known) = text(row, "signature") {
+            let submitted = int(row, "submitted_at").unwrap_or(0);
+            let unconfirmed =
+                !self.transport.signature_finalized(known).await.unwrap_or(false) && self.now() < submitted + 600_000;
+            if unconfirmed {
+                self.release(row, token, "transaction_pending", self.now() + 30_000, false)
+                    .await?;
+                return Ok(false);
+            }
+        }
+
+        let data = if register {
+            solana::encode_register(solana::RegisterParts {
+                forecast_id_hash: &id_hash,
+                creator_hash: &creator_hash,
+                specification_hash: &hex_to_array(&forecast.specification_hash),
+                open_at_ms: forecast.specification.open_at_ms,
+                close_at_ms: forecast.specification.close_at_ms,
+                revision: material["revision"].as_i64().unwrap_or(0),
+                occurred_at_ms: material["occurred_at_ms"].as_i64().unwrap_or(0),
+                event_hash: &bytes_of(&material["event_hash"]),
+                snapshot_hash: &bytes_of(&material["snapshot_hash"]),
+            })
+            .map_err(|_| RegistryError::new("history_command_unrecoverable"))?
+        } else {
+            // The arrays are owned here and borrowed by the encoder, rather than leaked into a
+            // static the encoder would outlive.
+            let previous = bytes_of(&material["previous_event_hash"]);
+            let event = bytes_of(&material["event_hash"]);
+            let snapshot_hash = bytes_of(&material["snapshot_hash"]);
+            let resolution = bytes_of(&material["resolution_hash"]);
+            let dispute = bytes_of(&material["dispute_hash"]);
+            let reputation = bytes_of(&material["reputation_hash"]);
+            let trigger = bytes_of(&material["trigger_hash"]);
+            solana::encode_advance(&solana::AdvanceFields {
+                revision: material["revision"].as_i64().unwrap_or(0),
+                occurred_at_ms: material["occurred_at_ms"].as_i64().unwrap_or(0),
+                previous_event_hash: &previous,
+                event_hash: &event,
+                snapshot_hash: &snapshot_hash,
+                state: material["state"].as_i64().unwrap_or(0),
+                outcome: material["outcome"].as_i64().unwrap_or(0),
+                resolution_hash: &resolution,
+                dispute_hash: &dispute,
+                reputation_hash: &reputation,
+                trigger_hash: &trigger,
+                challenge_until_ms: material["challenge_until_ms"].as_i64().unwrap_or(0),
+                pending_disputes: material["pending_disputes"].as_i64().unwrap_or(0),
+                material_disputes: material["material_disputes"].as_i64().unwrap_or(0),
+            })
+            .map_err(|_| RegistryError::new("history_command_unrecoverable"))?
+        };
+        let signature = self.transport.send(&data, &address, register).await?;
+        self.db
+            .execute(
+                "UPDATE registry_delivery SET status='submitted',signature=?,submitted_at=?,retry_at=?,\
+                 lease_token=NULL,lease_until=0,error_code=NULL WHERE forecast_id=? AND revision=? AND lease_token=?",
+                &[
+                    json!(signature),
+                    json!(self.now()),
+                    json!(self.now() + 5_000),
+                    json!(forecast.forecast_id),
+                    json!(forecast.revision),
+                    json!(token),
+                ],
+            )
+            .await
+            .map_err(|_| RegistryError::new("registry_unavailable"))?;
+        Ok(false)
+    }
+
+    /// The delivery row's status under this lease, which is how a write with no affected-row count
+    /// is confirmed.
+    async fn delivery_status(&self, forecast: &Forecast, token: &str) -> Outcome<Option<String>> {
+        let row = self
+            .db
+            .first(
+                "SELECT status,lease_token FROM registry_delivery WHERE forecast_id=? AND revision=?",
+                &[json!(forecast.forecast_id), json!(forecast.revision)],
+            )
+            .await
+            .map_err(|_| RegistryError::new("registry_unavailable"))?;
+        let _ = token;
+        Ok(row.as_ref().and_then(|row| text(row, "status")).map(str::to_string))
+    }
+
+    /// `_release`: give the lease back with the reason it was not confirmed.
+    pub async fn release(&self, row: &Row, token: &str, error: &str, retry_at: i64, blocked: bool) -> Outcome<()> {
+        let status = if blocked {
+            "blocked"
+        } else {
+            text(row, "status").unwrap_or("pending")
+        };
+        self.db
+            .execute(
+                "UPDATE registry_delivery SET status=?,error_code=?,retry_at=?,\
+                 lease_token=NULL,lease_until=0 WHERE forecast_id=? AND revision=? AND lease_token=?",
+                &[
+                    json!(status),
+                    json!(error),
+                    json!(retry_at),
+                    json!(text(row, "forecast_id")),
+                    json!(int(row, "revision")),
+                    json!(token),
+                ],
+            )
+            .await
+            .map_err(|_| RegistryError::new("registry_unavailable"))?;
+        Ok(())
+    }
+
+    /// `sync`: one bounded pass over the intents that are due.
+    pub async fn sync(&self, limit: i64) -> Outcome<Value> {
+        if !(1..=32).contains(&limit) {
+            return Err(RegistryError::new("invalid_batch_limit"));
+        }
+        self.configuration().await?;
+        let rows = self
+            .db
+            .all(
+                "SELECT i.*,d.status,d.signature,d.submitted_at,d.attempts FROM registry_intents i \
+                 JOIN registry_delivery d USING(forecast_id,revision) JOIN registry_forecasts r ON r.forecast_id=i.forecast_id \
+                 WHERE r.enabled=1 AND d.status IN ('pending','submitted') \
+                 AND d.retry_at<=? AND d.lease_until<=? AND NOT EXISTS (SELECT 1 FROM registry_delivery p \
+                 WHERE p.forecast_id=d.forecast_id AND p.revision<d.revision AND p.status!='confirmed') \
+                 ORDER BY i.created_at,i.forecast_id,i.revision LIMIT ?",
+                &[json!(self.now()), json!(self.now()), json!(limit)],
+            )
+            .await
+            .map_err(|_| RegistryError::new("registry_unavailable"))?;
+        let mut confirmed = 0i64;
+        let mut considered = 0i64;
+        for row in &rows {
+            let token = (self.random_token)();
+            self.db
+                .execute(
+                    "UPDATE registry_delivery SET lease_token=?,lease_until=?,attempts=attempts+1 \
+                     WHERE forecast_id=? AND revision=? AND lease_until<=? AND status IN ('pending','submitted')",
+                    &[
+                        json!(token),
+                        json!(self.now() + LEASE_MS),
+                        json!(text(row, "forecast_id")),
+                        json!(int(row, "revision")),
+                        json!(self.now()),
+                    ],
+                )
+                .await
+                .map_err(|_| RegistryError::new("registry_unavailable"))?;
+            // The lease is confirmed by reading it back: this `Database` reports no affected-row
+            // count, and a lost lease means another worker is already delivering this intent.
+            let held = self
+                .db
+                .first(
+                    "SELECT lease_token FROM registry_delivery WHERE forecast_id=? AND revision=?",
+                    &[json!(text(row, "forecast_id")), json!(int(row, "revision"))],
+                )
+                .await
+                .map_err(|_| RegistryError::new("registry_unavailable"))?;
+            if held.as_ref().and_then(|held| text(held, "lease_token")) != Some(token.as_str()) {
+                continue;
+            }
+            considered += 1;
+            match self.deliver(row, &token).await {
+                Ok(true) => confirmed += 1,
+                Ok(false) => {}
+                Err(error) => {
+                    self.release(row, &token, &error.code, 0, true).await?;
+                }
+            }
+        }
+        let _ = &rows;
+        Ok(json!({"considered": considered, "confirmed": confirmed}))
+    }
+}
+
+fn bytes_of(value: &Value) -> [u8; 32] {
+    let mut out = [0u8; 32];
+    if let Some(items) = value.as_array() {
+        for (index, byte) in items.iter().take(32).enumerate() {
+            out[index] = byte.as_u64().unwrap_or(0) as u8;
+        }
+    }
+    out
+}
+
+fn hex_of(value: &Value) -> String {
+    wire::to_hex(&bytes_of(value))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1151,7 +1477,8 @@ mod tests {
         );
         let now = Mutex::new(1_000_000i64);
         let clock = || *now.lock().unwrap();
-        let registry = SolanaRegistry::new(&db, &fake, &PROGRAM, &RELAYER, &clock).expect("a registry");
+        let token = || "token".to_string();
+        let registry = SolanaRegistry::new(&db, &fake, &PROGRAM, &RELAYER, &clock, &token).expect("a registry");
 
         let material = block(registry.material(&snapshot)).expect("material");
         // Within a minute of our own clock, because the chain's time is not allowed to run ahead
@@ -1202,7 +1529,8 @@ mod tests {
         };
         let clock = || 0i64;
         let db = Sqlite::from_migrations();
-        let registry = SolanaRegistry::new(&db, &fake, &PROGRAM, &RELAYER, &clock).expect("a registry");
+        let token = || "token".to_string();
+        let registry = SolanaRegistry::new(&db, &fake, &PROGRAM, &RELAYER, &clock, &token).expect("a registry");
         let good = RegistryAccount {
             address: vec![1u8; 32],
             owner: PROGRAM.to_vec(),
