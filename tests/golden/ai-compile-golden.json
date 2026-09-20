@@ -2124,6 +2124,171 @@
       ]
     },
     {
+      "evaluated_at_ms": 2500,
+      "expect": {
+        "aiForecast": {
+          "artifactHash": "0c80743f56b6be16f244adbb4b135593b2acd9fb3bfa637fa0cd631e7658752d",
+          "asOf": 2500,
+          "model": "test-model",
+          "modelVersion": "gemini-tested-revision",
+          "probability": 62.0,
+          "provider": "gemini",
+          "rationale": "Available source context suggests 62%, with launch uncertainty.",
+          "specificationHash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9"
+        },
+        "artifacts": [
+          {
+            "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+            "hash": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+            "kind": "source"
+          },
+          {
+            "body": "{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"ad0094988f4d43a985f364d44b4fba93b1839a3b8bad493fdfb5841fd87680c8\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false}",
+            "hash": "8c981fad6aec6a399539703257c73bc411a7034cbd045c51430d5839904598e2",
+            "kind": "source-collection"
+          },
+          {
+            "body": "{\"collection\":{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"ad0094988f4d43a985f364d44b4fba93b1839a3b8bad493fdfb5841fd87680c8\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false},\"evaluated_at_ms\":2500,\"snapshots\":[{\"collected_at_ms\":2000,\"collector\":null,\"content_sha256\":\"1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"evidence_id\":\"evidence-1b518559163111905b566219d6d8f8ba\",\"schema_version\":1,\"snapshot_uri\":\"urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"specification_hash\":\"b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9\",\"version\":\"risk-prediction-sources-v1\"}",
+            "hash": "a6bde946571c2a10d132a2fd162fceff459c47113f70ac7992157f14cf4c5c8f",
+            "kind": "risk-prediction-sources"
+          },
+          {
+            "body": "{\"input\":{\"as_of_ms\":2500,\"as_of_utc\":\"1970-01-01T00:00:02.500Z\",\"policy\":\"Estimate the probability of the published YES clause ultimately being satisfied, given only the supplied source context and knowledge you actually have as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish facts supported by the retained source documents from prior or historical knowledge. Do not assert a product is currently the latest version, a company currently does something, or any other current fact unless the retained source documents support it. If source context lacks current information, explicitly acknowledge that uncertainty instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale acknowledging important uncertainty. Never invent web research, crowd forecasts or observations. No betting, payouts or investment advice.\",\"schema_version\":1,\"source_documents\":[{\"text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"url\":\"https://www.apple.com/newsroom/\"}],\"source_provenance_hash\":\"a6bde946571c2a10d132a2fd162fceff459c47113f70ac7992157f14cf4c5c8f\",\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"rationale\":\"Available source context suggests 62%, with launch uncertainty.\",\"yesProbabilityBp\":6200},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"AI_FORECAST\"}",
+            "hash": "db8253b277090ad0f5d599ec50a456ae021ca5ccf311502e7487847ffcdc40d6",
+            "kind": "ai-decision"
+          },
+          {
+            "body": "{\"as_of_ms\":2500,\"decision_artifact_hash\":\"db8253b277090ad0f5d599ec50a456ae021ca5ccf311502e7487847ffcdc40d6\",\"kind\":\"ai_forecast\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"rationale\":\"Available source context suggests 62%, with launch uncertainty.\",\"schema_version\":1,\"source_provenance_hash\":\"a6bde946571c2a10d132a2fd162fceff459c47113f70ac7992157f14cf4c5c8f\",\"specification_hash\":\"b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9\",\"yes_probability_bp\":6200}",
+            "hash": "0c80743f56b6be16f244adbb4b135593b2acd9fb3bfa637fa0cd631e7658752d",
+            "kind": "ai-forecast"
+          }
+        ]
+      },
+      "name": "refresh-prediction",
+      "now_ms": 2000,
+      "payloads": [
+        {
+          "as_of_ms": 2500,
+          "as_of_utc": "1970-01-01T00:00:02.500Z",
+          "policy": "Estimate the probability of the published YES clause ultimately being satisfied, given only the supplied source context and knowledge you actually have as of as_of_utc (the current evaluation date, not your training cutoff). Distinguish facts supported by the retained source documents from prior or historical knowledge. Do not assert a product is currently the latest version, a company currently does something, or any other current fact unless the retained source documents support it. If source context lacks current information, explicitly acknowledge that uncertainty instead of presenting stale model knowledge as current. This is a fallible forecast, not a resolution or evidence of the future. Use integer yesProbabilityBp 0..10000 and a concise rationale acknowledging important uncertainty. Never invent web research, crowd forecasts or observations. No betting, payouts or investment advice.",
+          "schema_version": 1,
+          "source_documents": [
+            {
+              "text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "source_provenance_hash": "a6bde946571c2a10d132a2fd162fceff459c47113f70ac7992157f14cf4c5c8f",
+          "specification": {
+            "ambiguity_score_bp": 500,
+            "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+            "category": "TECHNOLOGY",
+            "close_at_ms": 400000,
+            "duplicate_candidates": [],
+            "invalidation_rules": [
+              "Apply INVALID if the named product has multiple incompatible identities."
+            ],
+            "open_at_ms": 1000,
+            "rules": [
+              {
+                "clause_id": "yes-rule",
+                "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "YES",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "no-rule",
+                "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+                "outcome": "NO",
+                "schema_version": 1
+              },
+              {
+                "clause_id": "invalid-rule",
+                "condition": "The named company or product cannot be uniquely identified.",
+                "outcome": "INVALID",
+                "schema_version": 1
+              }
+            ],
+            "schema_version": 1,
+            "share_title": "Will Acme announce Product X?",
+            "source_policy": {
+              "fallback_sources": [],
+              "primary_sources": [
+                {
+                  "is_official": true,
+                  "name": "Apple Newsroom",
+                  "schema_version": 1,
+                  "source_id": "apple-news",
+                  "url": "https://www.apple.com/newsroom/"
+                }
+              ],
+              "schema_version": 1
+            }
+          }
+        }
+      ],
+      "responses": [
+        {
+          "rationale": "Available source context suggests 62%, with launch uncertainty.",
+          "yesProbabilityBp": 6200
+        }
+      ],
+      "sources": [
+        {
+          "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+          "contentType": "text/html",
+          "status": 200,
+          "url": "https://www.apple.com/newsroom/"
+        }
+      ],
+      "specification": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 400000,
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 1000,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Apple Newsroom",
+              "schema_version": 1,
+              "source_id": "apple-news",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "schema_version": 1
+        }
+      }
+    },
+    {
       "candidates": [],
       "distinct_measurement_windows": false,
       "expect": {

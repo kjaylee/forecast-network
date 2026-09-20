@@ -30,7 +30,7 @@ from forecast_domain.lifecycle import create_forecast  # noqa: E402
 from forecast_domain.serialization import to_dict  # noqa: E402
 from tests import model_fixtures as model  # noqa: E402
 from tests.test_web_ai import (BODY, NOW, Transport, compile_outputs, compiler_wire,  # noqa: E402
-                              coordinator, measurement_compile_outputs)
+                              coordinator, measurement_compile_outputs, specification)
 
 GOLDEN = ROOT / "tests/golden/ai-compile-golden.json"
 QUESTION = "Will Apple announce Product X before the stated deadline?"
@@ -94,6 +94,24 @@ async def case(name: str, candidates: list, *, similarity_bp: int = 8000,
     }
 
 
+async def refresh_case() -> dict:
+    """A fresh estimate for an open forecast: the clock is read again after the fetch."""
+    outputs = [compile_outputs()[3]]
+    transport = Transport(outputs)
+    transport.source_body = BODY
+    spec = specification()
+    evaluated_at = 2500
+    result = await coordinator(transport).refresh_prediction(spec, NOW + 1000, lambda: evaluated_at)
+    return {"name": "refresh-prediction", "specification": to_dict(spec),
+            "now_ms": NOW + 1000, "evaluated_at_ms": evaluated_at,
+            "sources": [{"url": url, "status": 200, "contentType": "text/html", "body": BODY}
+                        for url in transport.source_calls],
+            "responses": outputs, "payloads": payloads_of(transport),
+            "expect": {"aiForecast": result.ai_forecast,
+                       "artifacts": [{"kind": item.kind, "hash": item.content_hash, "body": item.body}
+                                     for item in result.artifacts]}}
+
+
 async def build() -> dict:
     return {
         "description": "compile_question end to end: the compiler call, source collection, the "
@@ -108,6 +126,7 @@ async def build() -> dict:
                   await case("materially-equal-candidate", [candidate(0), candidate(1)], similarity_bp=9000),
                   # A declared measurement interval: the question names one explicit half-open
                   # window and every criterion must carry it back unchanged.
+                  await refresh_case(),
                   await case("measurement-window", [],
                              outputs=measurement_compile_outputs(),
                              question=f"During {WINDOW}, will Apple officially announce Product X?")],

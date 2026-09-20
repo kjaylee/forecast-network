@@ -551,6 +551,72 @@ pub async fn estimate_probability(
     })
 }
 
+/// `refresh_prediction`: a fresh estimate for an open forecast, never a new specification.
+///
+/// The clock is read again after the sources are fetched, because the interesting failure is that
+/// the deadline moved while the collection was in flight: an estimate computed against a
+/// specification that has since closed is an estimate for a question nobody can answer any more.
+pub async fn refresh_prediction(
+    coordinator: &Coordinator,
+    fetch: &EvidenceFetcher,
+    specification: &ForecastSpecification,
+    now_ms: i64,
+    clock: &dyn Fn() -> i64,
+) -> Result<PredictionResult, CoordinatorError> {
+    if !(specification.open_at_ms <= now_ms && now_ms < specification.close_at_ms) {
+        return Err(refused(
+            "ai_rejected",
+            "Only an open forecast can receive a fresh estimate",
+        ));
+    }
+    let specification_value = serde_json::to_value(specification).unwrap_or(Value::Null);
+    let collection = collect_sources(fetch, &specification_value, now_ms).await?;
+    let evaluated_at = clock();
+    if !(now_ms <= evaluated_at && evaluated_at < specification.close_at_ms) {
+        return Err(carrying(
+            refused(
+                "ai_rejected",
+                "Forecast clock or deadline changed during source collection",
+            ),
+            &collection.artifacts,
+        ));
+    }
+    let sources = artifact(
+        "risk-prediction-sources",
+        &json!({
+            "version": "risk-prediction-sources-v1",
+            "specification_hash": specification.specification_hash().unwrap_or_default(),
+            "evaluated_at_ms": evaluated_at, "collection": collection.context,
+            "snapshots": collection.snapshots,
+        }),
+    )
+    .map_err(|_| refused("ai_rejected", "Prediction sources could not be retained"))?;
+
+    let documents: Vec<Value> = collection
+        .sources
+        .iter()
+        .map(|item| json!({"url": item.url, "text": item.excerpt}))
+        .collect();
+    let estimate = estimate_probability(
+        coordinator,
+        specification,
+        &documents,
+        evaluated_at,
+        None,
+        Some(&sources.hash),
+    )
+    .await
+    .map_err(|error| carrying(error, &[collection.artifacts.clone(), vec![sources.clone()]].concat()))?;
+
+    let mut artifacts = collection.artifacts;
+    artifacts.push(sources);
+    artifacts.extend(estimate.artifacts);
+    Ok(PredictionResult {
+        artifacts,
+        ai_forecast: estimate.ai_forecast,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -590,6 +656,10 @@ mod tests {
         let document = golden();
         for case in document["cases"].as_array().expect("cases") {
             let name = case["name"].as_str().unwrap();
+            if name == "refresh-prediction" {
+                // A fresh estimate for an open forecast, not a compilation; the test below.
+                continue;
+            }
             let sources = case["sources"].as_array().expect("sources").clone();
             let fetch: EvidenceFetcher = Box::new(move |url, _headers| {
                 let served = sources
@@ -726,6 +796,115 @@ mod tests {
                     "{name} artifact {index} bytes"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn the_reference_prediction_refresh_is_reproduced_call_for_call() {
+        // An estimate for a forecast already published: the sources are fetched again, the clock
+        // is read again, and the provenance record binds both.
+        let document = golden();
+        let case = document["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["name"] == "refresh-prediction")
+            .expect("the refresh case");
+        let sources = case["sources"].as_array().expect("sources").clone();
+        let fetch: EvidenceFetcher = Box::new(move |url, _headers| {
+            let served = sources
+                .iter()
+                .find(|item| item["url"].as_str() == Some(url.as_str()))
+                .cloned();
+            Box::pin(async move {
+                let served = served.ok_or(())?;
+                Ok(TextResponse {
+                    status: served["status"].as_u64().unwrap_or(200) as u16,
+                    headers: vec![(
+                        "content-type".to_string(),
+                        served["contentType"].as_str().unwrap_or("text/html").to_string(),
+                    )],
+                    body: served["body"].as_str().unwrap_or("").to_string(),
+                })
+            })
+        });
+        let answers = Arc::new(Mutex::new(case["responses"].as_array().unwrap().clone()));
+        let taken = answers.clone();
+        let asked = Arc::new(Mutex::new(Vec::new()));
+        let requests = asked.clone();
+        let json: JsonFetcher = Box::new(move |url, _headers, body| {
+            requests.lock().unwrap().push(body.clone());
+            let answer = taken.lock().unwrap().remove(0);
+            let text = answer.to_string();
+            Box::pin(async move {
+                if url.contains("generativelanguage") {
+                    Ok(json!({
+                        "candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": text}]}}],
+                        "modelVersion": "gemini-tested-revision",
+                    }))
+                } else {
+                    Ok(json!({"response": answer}))
+                }
+            })
+        });
+        let providers = document["providers"]
+            .as_array()
+            .expect("providers")
+            .iter()
+            .map(|config| {
+                ProviderConfig::new(
+                    config["provider"].as_str().unwrap(),
+                    config["model"].as_str().unwrap(),
+                    config["apiKey"].as_str().unwrap(),
+                    None,
+                )
+                .expect("provider")
+            })
+            .collect();
+        let coordinator = Coordinator { providers, fetch: json };
+        let specification: ForecastSpecification =
+            serde_json::from_value(case["specification"].clone()).expect("the golden specification");
+        let evaluated_at = case["evaluated_at_ms"].as_i64().unwrap();
+        let result = block(refresh_prediction(
+            &coordinator,
+            &fetch,
+            &specification,
+            case["now_ms"].as_i64().unwrap(),
+            &|| evaluated_at,
+        ))
+        .expect("the reference refresh succeeds");
+
+        let asked = asked.lock().unwrap();
+        for (index, payload) in case["payloads"].as_array().unwrap().iter().enumerate() {
+            assert_eq!(
+                &payload_of(&asked[index]),
+                payload,
+                "call {index} did not ask what the reference asked"
+            );
+        }
+        assert_eq!(result.ai_forecast, case["expect"]["aiForecast"], "the estimate differs");
+        let expected = case["expect"]["artifacts"].as_array().unwrap();
+        assert_eq!(
+            result.artifacts.len(),
+            expected.len(),
+            "a different number of artifacts"
+        );
+        for (index, item) in expected.iter().enumerate() {
+            assert_eq!(
+                result.artifacts[index].kind,
+                item["kind"].as_str().unwrap(),
+                "artifact {index} kind"
+            );
+            assert_eq!(
+                result.artifacts[index].hash,
+                item["hash"].as_str().unwrap(),
+                "artifact {index} hash"
+            );
+            assert_eq!(
+                result.artifacts[index].body,
+                item["body"].as_str().unwrap(),
+                "artifact {index} bytes"
+            );
         }
     }
 }
