@@ -173,7 +173,7 @@ pub async fn add_comment(
     if let Some(row) = prior(session, user_id, &key, &request).await? {
         return Ok(api_response(prior_result(&row)?, 200, false)?);
     }
-    load_snapshot(session, forecast_id).await?;
+    load_snapshot(&crate::db::D1(session), forecast_id).await?;
     rate_limit(session, context.now_ms, &format!("comment:{user_id}"), 30, HOUR_MS).await?;
     let now = context.now_ms;
     let cid = format!("c_{}", &random_token()[..24]);
@@ -202,7 +202,7 @@ pub async fn add_comment(
 
 pub async fn record_share(context: &Context<'_>, forecast_id: &str, user_id: Option<&str>) -> Handler {
     let session = context.session;
-    load_snapshot(session, forecast_id).await?;
+    load_snapshot(&crate::db::D1(session), forecast_id).await?;
     if let Some(user_id) = user_id {
         user_row(session, user_id).await?;
         let bucket = context.now_ms.div_euclid(DAY_MS);
@@ -459,7 +459,7 @@ pub async fn submit_forecast(
             "Participation is on hold while newly available evidence is reviewed.",
         ));
     }
-    let snapshot = load_snapshot(session, forecast_id).await?;
+    let snapshot = load_snapshot(&crate::db::D1(session), forecast_id).await?;
     let forecast = snapshot.base();
     if forecast.revision != revision {
         return Err(crate::mutate::conflict());
@@ -522,7 +522,7 @@ pub async fn submit_forecast(
         extra,
         job_token: None,
     };
-    match mutate(session, mutation, now).await {
+    match mutate(&crate::db::D1(session), mutation, now).await {
         Ok(_) => submission_response(context, user_id, forecast_id, response).await,
         Err(error) => {
             // A transport error can arrive after the D1 batch committed; the durable receipt wins.

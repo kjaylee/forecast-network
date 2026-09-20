@@ -9,7 +9,7 @@ use worker::*;
 use forecast_domain::lifecycle::{apply_command, Command, LifecycleError, Payload, Snapshot, TransitionResult};
 use forecast_domain::{canonical_bytes, content_hash};
 
-use crate::db::{batch, first, text};
+use crate::db::{text, Database};
 use crate::routes::RouteError;
 
 pub const MAX_ARTIFACT_BYTES: usize = 262_144;
@@ -149,23 +149,17 @@ pub fn conflict() -> RouteError {
     )
 }
 
-pub async fn load_snapshot(
-    session: &D1DatabaseSession,
-    forecast_id: &str,
-) -> std::result::Result<Snapshot, RouteError> {
-    let row = first(
-        session,
-        "SELECT snapshot FROM forecasts WHERE id=?",
-        &[json!(forecast_id)],
-    )
-    .await?;
+pub async fn load_snapshot(db: &dyn Database, forecast_id: &str) -> std::result::Result<Snapshot, RouteError> {
+    let row = db
+        .first("SELECT snapshot FROM forecasts WHERE id=?", &[json!(forecast_id)])
+        .await?;
     let row = row.ok_or(RouteError::NotFound("forecast_not_found", "Forecast not found."))?;
     Snapshot::from_json(text(&row, "snapshot").unwrap_or("")).map_err(|e| RouteError::Worker(e.to_string().into()))
 }
 
 /// Apply and persist; returns the new snapshot. Constraint failures are classified like Python.
 pub async fn mutate(
-    session: &D1DatabaseSession,
+    db: &dyn Database,
     mutation: Mutation<'_>,
     clock_now_ms: i64,
 ) -> std::result::Result<Snapshot, RouteError> {
@@ -198,8 +192,7 @@ pub async fn mutate(
         Payload::ProposeResolution { .. } | Payload::AdjudicateResolution { .. } | Payload::Finalize { .. }
     ) {
         if let Some(resolution) = result.forecast.base().resolution.as_ref() {
-            let database = crate::db::D1(session);
-            crate::resolution_timing::check(&database, forecast, resolution, mutation.now_ms, &[]).await?;
+            crate::resolution_timing::check(db, forecast, resolution, mutation.now_ms, &[]).await?;
         }
     }
     let changed = &result.forecast;
@@ -255,7 +248,7 @@ pub async fn mutate(
         "DELETE FROM mutation_guards WHERE token=?".to_string(),
         vec![json!(guard)],
     ));
-    if let Err(error) = batch(session, statements).await {
+    if let Err(error) = db.batch(&statements).await {
         let message = error.to_string();
         if message.contains("resolution_timing_closure_mismatch") {
             // A closure has to be the conclusion of the review it names; the schema refuses
@@ -280,7 +273,7 @@ pub async fn mutate(
                 "Receipt timing and known-result evidence must be reviewed before resolution or rewards.",
             ));
         }
-        let current = load_snapshot(session, &forecast.forecast_id).await?;
+        let current = load_snapshot(db, &forecast.forecast_id).await?;
         if current.base().revision != forecast.revision || mutation.job_token.is_some() {
             return Err(conflict());
         }
