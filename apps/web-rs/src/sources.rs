@@ -312,10 +312,23 @@ fn join_url(base: &str, location: &str) -> String {
 struct SplitUrl {
     scheme: String,
     host: Option<String>,
+    /// The path, with its leading `/` and without the query or fragment — what `urlsplit` reports,
+    /// which the publisher-feed mapping matches on.
+    path: String,
     has_userinfo: bool,
     has_fragment: bool,
     /// `Some(n)` when a port is written, and `None` when it is absent or not a number.
     port: Option<PortPart>,
+}
+
+/// `(urlsplit(url).hostname, urlsplit(url).path)`, or `None` when the URL does not split at all.
+///
+/// The publisher-feed mapping is the one caller that needs the path: a newsroom root is not a
+/// crawlable index and its *feed* is, and the two are told apart by the path rather than by the
+/// host alone.
+pub fn host_and_path(url: &str) -> Option<(String, String)> {
+    let split = split_url(url)?;
+    split.host.map(|host| (host, split.path))
 }
 
 enum PortPart {
@@ -363,18 +376,24 @@ fn split_url(url: &str) -> Option<SplitUrl> {
         has_fragment = true;
         without_fragment = &after_scheme[..at];
     }
-    let authority = match without_fragment.strip_prefix("//") {
-        Some(rest) => rest.split(['/', '?']).next().unwrap_or("").to_string(),
+    let (authority, after_authority) = match without_fragment.strip_prefix("//") {
+        Some(rest) => {
+            let end = rest.find(['/', '?']).unwrap_or(rest.len());
+            (rest[..end].to_string(), rest[end..].to_string())
+        }
         None => {
             return Some(SplitUrl {
                 scheme,
                 host: None,
+                path: without_fragment.split('?').next().unwrap_or("").to_string(),
                 has_userinfo: false,
                 has_fragment,
                 port: None,
             })
         }
     };
+    // The path keeps its leading `/` and drops the query, which is what `urlsplit` reports.
+    let path = after_authority.split('?').next().unwrap_or("").to_string();
     let has_userinfo = authority.contains('@');
     let hostinfo = match authority.rfind('@') {
         Some(at) => &authority[at + 1..],
@@ -407,6 +426,7 @@ fn split_url(url: &str) -> Option<SplitUrl> {
         } else {
             Some(host.to_lowercase())
         },
+        path,
         has_userinfo,
         has_fragment,
         port,

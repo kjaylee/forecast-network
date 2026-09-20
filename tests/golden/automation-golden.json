@@ -1,0 +1,269 @@
+{
+  "cases": [
+    {
+      "call": "families",
+      "question": "Will the next iPhone be a foldable design?",
+      "result": [
+        "foldable",
+        "folding"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "이 회사는 폴더블 노트북을 출시할까?",
+      "result": [
+        "foldable",
+        "folding"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "새로 접는 노트북이 나올까?",
+      "result": [
+        "foldable",
+        "folding"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "Will Apple release an M6 MacBook Pro?",
+      "result": [
+        "M6"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "Will Windows 12 ship before the deadline?",
+      "result": [
+        "Windows 12"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "윈도우 12가 출시될까?",
+      "result": [
+        "Windows 12"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "Will the next Google phone launch?",
+      "result": []
+    },
+    {
+      "call": "families",
+      "question": "Will NVIDIA announce a new GPU?",
+      "result": [
+        "nvidia"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "Will SpaceX launch Starship again?",
+      "result": [
+        "spacex"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "Will NASA confirm the landing?",
+      "result": [
+        "nasa"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "Will a Windows update break printing?",
+      "result": [
+        "windows"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "Will the STRASSE project break ground?",
+      "result": []
+    },
+    {
+      "call": "families",
+      "question": "Will the next iPhone ship with a Straße name?",
+      "result": [
+        "iphone"
+      ]
+    },
+    {
+      "call": "families",
+      "question": "İstanbul will host the summit",
+      "result": []
+    },
+    {
+      "call": "families",
+      "question": "Will nothing at all happen before the deadline?",
+      "result": []
+    },
+    {
+      "call": "families",
+      "question": "FOLDING is not folding?",
+      "result": [
+        "foldable",
+        "folding"
+      ]
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://www.apple.com/newsroom/rss-feed.rss",
+      "url": "https://www.apple.com/newsroom/"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://www.apple.com/newsroom/rss-feed.rss",
+      "url": "https://www.apple.com/newsroom"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://apple.com/newsroom/rss-feed.rss",
+      "url": "https://apple.com/newsroom/"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://news.microsoft.com/source/feed/",
+      "url": "https://news.microsoft.com/"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://news.microsoft.com/source/feed/",
+      "url": "https://news.microsoft.com/source/"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://news.microsoft.com/source/feed/",
+      "url": "https://news.microsoft.com/source"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://www.apple.com/newsroom/2026/09/product-x/",
+      "url": "https://www.apple.com/newsroom/2026/09/product-x/"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://www.apple.com/support/",
+      "url": "https://www.apple.com/support/"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://example.test/newsroom/",
+      "url": "https://example.test/newsroom/"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "not a url",
+      "url": "not a url"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://news.microsoft.com/source/feed/",
+      "url": "https://NEWS.MICROSOFT.COM/source/"
+    },
+    {
+      "call": "publisher_feed_url",
+      "result": "https://www.apple.com/newsroom/rss-feed.rss",
+      "url": "https://www.apple.com/newsroom/?page=2"
+    }
+  ],
+  "description": "The automation layer's portable half: the family hints, the publisher-root → feed mapping, and the operator status view.",
+  "specification": {
+    "ambiguity_score_bp": 500,
+    "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+    "category": "TECHNOLOGY",
+    "close_at_ms": 400000,
+    "duplicate_candidates": [],
+    "invalidation_rules": [
+      "Apply INVALID if the named product has multiple incompatible identities."
+    ],
+    "open_at_ms": 1000,
+    "rules": [
+      {
+        "clause_id": "yes-rule",
+        "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+        "outcome": "YES",
+        "schema_version": 1
+      },
+      {
+        "clause_id": "no-rule",
+        "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+        "outcome": "NO",
+        "schema_version": 1
+      },
+      {
+        "clause_id": "invalid-rule",
+        "condition": "The named company or product cannot be uniquely identified.",
+        "outcome": "INVALID",
+        "schema_version": 1
+      }
+    ],
+    "schema_version": 1,
+    "share_title": "Will Acme announce Product X?",
+    "source_policy": {
+      "fallback_sources": [],
+      "primary_sources": [
+        {
+          "is_official": true,
+          "name": "Apple Newsroom",
+          "schema_version": 1,
+          "source_id": "apple-news",
+          "url": "https://www.apple.com/newsroom/"
+        }
+      ],
+      "schema_version": 1
+    }
+  },
+  "statuses": {
+    "collector": {
+      "earlyResolution": "official_monotonic_positive_only",
+      "enabled": true,
+      "policy": "official-source-watch-v1",
+      "reviews": {
+        "complete": 1,
+        "exhausted": 1,
+        "pending": 1,
+        "reviewed": 2
+      },
+      "sources": 5
+    },
+    "collector-disabled": {
+      "earlyResolution": "official_monotonic_positive_only",
+      "enabled": false,
+      "policy": "official-source-watch-v1",
+      "reviews": {
+        "complete": 1,
+        "exhausted": 1,
+        "pending": 1,
+        "reviewed": 2
+      },
+      "sources": 5
+    },
+    "disabled": {
+      "earlyResolution": "official_monotonic_positive_only",
+      "enabled": false,
+      "policy": "official-source-watch-v1",
+      "reviews": {
+        "complete": 1,
+        "exhausted": 1,
+        "pending": 1,
+        "reviewed": 2
+      },
+      "sources": 5
+    },
+    "no-collector": {
+      "earlyResolution": "official_monotonic_positive_only",
+      "enabled": false,
+      "policy": "official-source-watch-v1",
+      "reviews": {
+        "complete": 1,
+        "exhausted": 1,
+        "pending": 1,
+        "reviewed": 2
+      },
+      "sources": 5
+    }
+  }
+}

@@ -10,6 +10,7 @@ pub mod analytics;
 pub mod article;
 pub mod attestation;
 pub mod auth;
+pub mod automation;
 pub mod billing;
 mod db;
 mod detail;
