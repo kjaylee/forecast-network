@@ -455,6 +455,46 @@ pub fn workflow_timeout() -> (u16, &'static str, &'static str) {
     )
 }
 
+/// `_wait_for_chain`: re-arm a deferred forecast for the moment the chain says it may finalize.
+///
+/// Scheduled at the *recorded* deadline rather than on the ordinary failure backoff, because the
+/// deadline is when the answer changes: every poll before it earns the same refusal, and a
+/// backoff-driven retry would spend the lease to be told so. `prepare_finalization` has just written
+/// that deadline, so this reads what the chain said rather than deciding it here.
+///
+/// A missing or already-past deadline falls back to a short retry, which keeps a forecast moving
+/// when the recorded state is not what this expects — a forecast whose row was never written would
+/// otherwise wait forever.
+/// Nothing calls this yet either: `_wait_for_chain` answers a `ChainDeadlineNotReached` that
+/// `registry_chain` raises, and the chain-write path is the write phase this Worker still forwards.
+#[allow(dead_code)]
+pub const CHAIN_RETRY_MS: i64 = 300_000;
+
+#[allow(dead_code)]
+pub async fn wait_for_chain(db: &dyn Database, forecast_id: &str, token: &str, now_ms: i64) -> Result<(), String> {
+    let row = db
+        .first(
+            "SELECT chain_deadline FROM registry_forecasts WHERE forecast_id=?",
+            &[json!(forecast_id)],
+        )
+        .await
+        .map_err(|error| error.to_string())?;
+    let deadline = row.as_ref().and_then(|row| int(row, "chain_deadline"));
+    let ready_at = match deadline {
+        Some(deadline) if deadline > now_ms => deadline,
+        _ => now_ms + CHAIN_RETRY_MS,
+    };
+    // Guarded by the job token, so a lease that has already moved on is not re-armed by the
+    // worker that lost it.
+    db.execute(
+        "UPDATE forecasts SET retry_at=? WHERE id=? AND job_token=?",
+        &[json!(ready_at), json!(forecast_id), json!(token)],
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -690,5 +730,70 @@ mod tests {
         ] {
             assert_ne!(reason_for(code), fallback, "{code}");
         }
+    }
+}
+
+#[cfg(test)]
+mod chain_tests {
+    use super::*;
+    use crate::db::Sqlite;
+
+    fn block<F: std::future::Future>(future: F) -> F::Output {
+        futures_lite::future::block_on(future)
+    }
+
+    /// The three cases the rule names: a deadline in the future is waited for, a past one is a
+    /// short retry, and a missing row is a short retry — the last of which is what keeps a
+    /// forecast moving when its registry row was never written.
+    #[test]
+    fn a_deferred_forecast_is_rearmed_at_the_chain_deadline() {
+        let db = Sqlite::from_migrations();
+        let now = 1_800_000_000_000i64;
+        db.run(
+            "INSERT INTO users(id,display_name,handle,recovery_hash,created_at) VALUES('u','U','u','r',1)",
+            &[],
+        )
+        .expect("user");
+        db.run(
+            concat!(
+                "INSERT INTO forecasts(id,creator_id,draft_id,snapshot,revision,state,category,title,question,",
+                "normalized_question,specification_hash,open_at,close_at,created_at,updated_at,mutation_key) ",
+                "VALUES('f','u','d','{}',1,'OPEN','CRYPTO','t','q','q',?,0,?,1,1,'k')",
+            ),
+            &[json!("a".repeat(64)), json!(now + 1_000_000)],
+        )
+        .expect("forecast");
+        // The lease the guard checks: the reference passes the token the row holds.
+        db.run("UPDATE forecasts SET job_token='token' WHERE id='f'", &[])
+            .expect("lease");
+        let retry_at = |db: &Sqlite| {
+            block(db.execute("SELECT retry_at FROM forecasts WHERE id='f'", &[]))
+                .expect("forecast")
+                .first()
+                .and_then(|row| int(row, "retry_at"))
+        };
+        // No registry row at all: the short retry.
+        block(wait_for_chain(&db, "f", "token", now)).expect("wait");
+        assert_eq!(retry_at(&db), Some(now + CHAIN_RETRY_MS));
+
+        // A deadline in the future: waited for, and the token is what admits the write.
+        db.run(
+            concat!(
+                "INSERT INTO registry_forecasts(forecast_id,enabled,confirmed_revision,confirmed_state,",
+                "chain_deadline,chain_time,observed_at) VALUES('f',1,1,'OPEN',?,0,0)",
+            ),
+            &[json!(now + 600_000)],
+        )
+        .expect("registry row");
+        block(wait_for_chain(&db, "f", "token", now)).expect("wait");
+        assert_eq!(retry_at(&db), Some(now + 600_000));
+
+        // A deadline that has passed, and a token that no longer holds the lease.
+        db.run("UPDATE registry_forecasts SET chain_deadline=?", &[json!(now - 1)])
+            .expect("past deadline");
+        block(wait_for_chain(&db, "f", "other", now)).expect("wait");
+        assert_eq!(retry_at(&db), Some(now + 600_000), "a lost lease is not re-armed");
+        block(wait_for_chain(&db, "f", "token", now)).expect("wait");
+        assert_eq!(retry_at(&db), Some(now + CHAIN_RETRY_MS));
     }
 }
