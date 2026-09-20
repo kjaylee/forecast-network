@@ -1,0 +1,871 @@
+{
+  "before": {
+    "audit_head_hash": "fb8d14b0e9a048b5311a698a59a978a50e8c0c3c02c784de44fd2c4988bd0f36",
+    "challenge_started_at_ms": null,
+    "challenge_until_ms": null,
+    "created_at_ms": 1000,
+    "creator_id": "creator-ai",
+    "dispute_reviews": [],
+    "disputes": [],
+    "finalized_outcome": null,
+    "finalized_resolution_hash": null,
+    "forecast_id": "forecast-ai",
+    "latest_event": {
+      "artifact_hash": null,
+      "command_id": "command-4-begin_resolution",
+      "command_name": "begin_resolution",
+      "effects": [],
+      "forecast_id": "forecast-ai",
+      "new_state": "RESOLVING",
+      "occurred_at_ms": 400000,
+      "old_state": "LOCKED",
+      "previous_event_hash": "14ee25e92fd1079b81d488ae29e74d8dffe8c3172993d90289f933334452f12e",
+      "revision": 4,
+      "schema_version": 1,
+      "specification_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+      "state_hash": "3458a1baf39b6f6ff702b97ec5c6e5003ab07909d857c5f16b3b791ea9bd632b"
+    },
+    "pause": null,
+    "published_at_ms": 1000,
+    "resolution": null,
+    "revision": 4,
+    "schema_version": 1,
+    "specification": {
+      "ambiguity_score_bp": 500,
+      "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+      "category": "TECHNOLOGY",
+      "close_at_ms": 400000,
+      "duplicate_candidates": [],
+      "invalidation_rules": [
+        "Apply INVALID if the named product has multiple incompatible identities."
+      ],
+      "open_at_ms": 1000,
+      "rules": [
+        {
+          "clause_id": "yes-rule",
+          "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+          "outcome": "YES",
+          "schema_version": 1
+        },
+        {
+          "clause_id": "no-rule",
+          "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+          "outcome": "NO",
+          "schema_version": 1
+        },
+        {
+          "clause_id": "invalid-rule",
+          "condition": "The named company or product cannot be uniquely identified.",
+          "outcome": "INVALID",
+          "schema_version": 1
+        }
+      ],
+      "schema_version": 1,
+      "share_title": "Will Acme announce Product X?",
+      "source_policy": {
+        "fallback_sources": [],
+        "primary_sources": [
+          {
+            "is_official": true,
+            "name": "Apple Newsroom",
+            "schema_version": 1,
+            "source_id": "apple-news",
+            "url": "https://www.apple.com/newsroom/"
+          }
+        ],
+        "schema_version": 1
+      }
+    },
+    "specification_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+    "state": "RESOLVING",
+    "updated_at_ms": 400000,
+    "validation_assessment": {
+      "ambiguity_judge": {
+        "created_at_ms": 1000,
+        "input_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+        "model": "test-model",
+        "model_version": "gemini-tested-revision",
+        "output_hash": "1647ab557577f6dbe18b8e3722950f920b18fde3dc41cad769789f2aa38f2528",
+        "policy_version": "forecast-ai-policy-v4-timeless-titles",
+        "provider": "gemini",
+        "schema_version": 1,
+        "task": "AMBIGUITY_JUDGE"
+      },
+      "ambiguity_limit_bp": 1000,
+      "ambiguity_passed": true,
+      "compiler": {
+        "created_at_ms": 1000,
+        "input_hash": "b147194c33c15ece76b74723460dc091294bf79aceaf94778cceff86b536ca24",
+        "model": "test-model",
+        "model_version": "gemini-tested-revision",
+        "output_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+        "policy_version": "forecast-ai-policy-v4-timeless-titles",
+        "provider": "gemini",
+        "schema_version": 1,
+        "task": "MARKET_COMPILER"
+      },
+      "deterministic_check_version": "public-official-hosts-v2",
+      "deterministic_passed": true,
+      "duplicate_check_completed": true,
+      "duplicate_detector": {
+        "created_at_ms": 1000,
+        "input_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+        "model": "test-model",
+        "model_version": "gemini-tested-revision",
+        "output_hash": "d415dd6e7862c8262b29d5185a7b8715add8606e05e1098c0838040210606f13",
+        "policy_version": "forecast-ai-policy-v4-timeless-titles",
+        "provider": "gemini",
+        "schema_version": 1,
+        "task": "DUPLICATE_DETECTOR"
+      },
+      "duplicate_similarity_threshold_bp": 8500,
+      "explanation": "Objective and source-verifiable criteria; faithful English translation.\nDuplicate check: All candidates assessed.",
+      "objectively_resolvable": true,
+      "schema_version": 1,
+      "specification_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9",
+      "validated_at_ms": 1000
+    }
+  },
+  "description": "AiCoordinator.propose_resolution: evidence collection, source verification, the judge and the counter-judge, committing a CLEAR YES at 9,400 bp.",
+  "determined_outcome": null,
+  "expect": {
+    "artifacts": [
+      {
+        "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+        "hash": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+        "kind": "source"
+      },
+      {
+        "body": "{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false}",
+        "hash": "ee70b72bd17628e84964ec3a1732b3e90e80de01202fee128f096eab614db383",
+        "kind": "source-collection"
+      },
+      {
+        "body": "{\"input\":{\"policy\":\"Verify exact source identity, usable substantive document rather than access-denied/captcha/error page, publication context, relevance to immutable specification and no evidence of fabricated or unavailable content. Never interpret a missing statement on a generic landing page as proof of a negative outcome.\",\"retained_text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"schema_version\":1,\"snapshot\":{\"collected_at_ms\":400000,\"collector\":null,\"content_sha256\":\"1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"evidence_id\":\"evidence-1b518559163111905b566219d6d8f8ba\",\"schema_version\":1,\"snapshot_uri\":\"urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"},\"source_collection\":{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false},\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1},\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"explanation\":\"Official retained source with substantive evidence.\",\"verified\":true},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"SOURCE_VERIFIER\"}",
+        "hash": "8579055a61a5ca48557e847af1810f9c8c9acce0c128e2180c844a2cfbe6f088",
+        "kind": "ai-decision"
+      },
+      {
+        "body": "{\"input\":{\"evidence\":[{\"retained_text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"snapshot\":{\"collected_at_ms\":400000,\"collector\":null,\"content_sha256\":\"1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"evidence_id\":\"evidence-1b518559163111905b566219d6d8f8ba\",\"schema_version\":1,\"snapshot_uri\":\"urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}}],\"policy\":\"Judge only immutable clauses from retained evidence. Cite matching clause IDs. Do not change dates or definitions. For a negative outcome require evidence of complete coverage of the specified time interval, not absence on a homepage. An incomplete archive, missing required source, unavailable document or lack of a statement on a page is NOT proof of NO; return UNRESOLVED for missing coverage. The successfully fetched subset must satisfy every required evidentiary clause; fallback collection must not silently waive a primary-source-only condition. Choose UNRESOLVED for insufficient or conflicting evidence, never guess. Choose INVALID when the retained evidence is authentic but cannot establish the outcome, in particular when its publication time cannot be placed relative to participation. INVALID credits nothing and returns every commitment, so it is the correct answer for a question the evidence cannot answer, and it is not a guess. CLEAR requires no conflicts and null conflict_explanation.\",\"schema_version\":1,\"source_collection\":{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false},\"source_verifications\":[{\"evidence_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"explanation\":\"Official retained source with substantive evidence.\",\"schema_version\":1,\"source_id\":\"apple-news\",\"verified\":true,\"verifier\":{\"created_at_ms\":400000,\"input_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"5539dc29c82ef04eb14e8369b401449bb8d511eec85a17c7bd203a215f750669\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"SOURCE_VERIFIER\"}}],\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"confidence_bp\":9400,\"conflict_explanation\":null,\"conflict_status\":\"CLEAR\",\"proposed_outcome\":\"YES\",\"reason_summary\":\"Official evidence satisfies the unchanged YES clause.\",\"rule_conflicts\":[],\"rule_matches\":[\"yes-rule\"]},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"RESOLUTION_JUDGE\"}",
+        "hash": "f48a000d3d4294f0432a7fbcd711a26600da3efbb292f0d62f6a681019fac6fd",
+        "kind": "ai-decision"
+      },
+      {
+        "body": "{\"input\":{\"evidence\":[{\"retained_text\":\"Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context\",\"snapshot\":{\"collected_at_ms\":400000,\"collector\":null,\"content_sha256\":\"1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"evidence_id\":\"evidence-1b518559163111905b566219d6d8f8ba\",\"schema_version\":1,\"snapshot_uri\":\"urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}}],\"judge_decision\":{\"confidence_bp\":9400,\"conflict_explanation\":null,\"conflict_status\":\"CLEAR\",\"proposed_outcome\":\"YES\",\"reason_summary\":\"Official evidence satisfies the unchanged YES clause.\",\"rule_conflicts\":[],\"rule_matches\":[\"yes-rule\"]},\"policy\":\"Independently challenge the preceding judge using only the immutable specification and retained evidence. agrees=true only if its exact outcome, matching clauses, confidence and explanation are all supportable. Incomplete evidence, ambiguity, failure to prove a negative or material alternative interpretation must set agrees=false. An INVALID outcome is supportable when the evidence is authentic but cannot establish the outcome, in particular when its publication time cannot be placed relative to participation; do not set agrees=false merely because the evidence is incomplete, since that is the case INVALID exists for. Challenge it if the evidence does in fact establish YES or NO, or if it cites the wrong clause.\",\"schema_version\":1,\"source_collection\":{\"kind\":\"source_collection\",\"policy\":\"primary-first-v1\",\"retained_sources\":[{\"evidence_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"source_id\":\"apple-news\"}],\"schema_version\":1,\"unavailable_sources\":[],\"unfetched_fallback_source_ids\":[],\"used_fallback\":false},\"source_verifications\":[{\"evidence_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"explanation\":\"Official retained source with substantive evidence.\",\"schema_version\":1,\"source_id\":\"apple-news\",\"verified\":true,\"verifier\":{\"created_at_ms\":400000,\"input_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"5539dc29c82ef04eb14e8369b401449bb8d511eec85a17c7bd203a215f750669\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"SOURCE_VERIFIER\"}}],\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Apple announce Product X by 1970-01-01T00:06:40Z?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":400000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}},\"kind\":\"provider_decision\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output\":{\"agrees\":true,\"explanation\":\"Independent challenge of the exact judge decision.\"},\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"preceding_provider_failures\":[],\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"COUNTER_JUDGE\"}",
+        "hash": "edc5d201ec626533cca9fc9484358b203bfcc6ef27317eb0d4fd3bd59ea999dc",
+        "kind": "ai-decision"
+      },
+      {
+        "body": "{\"confidence_bp\":9400,\"conflict_explanation\":null,\"conflict_status\":\"CLEAR\",\"counter_judge\":{\"created_at_ms\":400000,\"input_hash\":\"ea08df1ebd5efc8409b7484b2a330d71a5302f2dc54feeefb92e4502e93334eb\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"478a5c408c8f062ef030e30b809310d025a6c63fe84cdb5dd9b53900706a9ba6\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"COUNTER_JUDGE\"},\"counter_judge_agrees\":true,\"evidence\":[{\"collected_at_ms\":400000,\"collector\":null,\"content_sha256\":\"1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"evidence_id\":\"evidence-1b518559163111905b566219d6d8f8ba\",\"schema_version\":1,\"snapshot_uri\":\"urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141\",\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"forecast_id\":\"forecast-ai\",\"judge\":{\"created_at_ms\":400000,\"input_hash\":\"a0336771be7c7e2f2dfb67f534e97acd99c12626c736b92b789a421eb8e3acf1\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"e6a87b21a51e1d6d364843892ea2bdc83284cb92e8b8cc542c80fbd3cc8ebfb1\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"RESOLUTION_JUDGE\"},\"proposed_at_ms\":400000,\"proposed_outcome\":\"YES\",\"reason_summary\":\"Official evidence satisfies the unchanged YES clause.\",\"rule_conflicts\":[],\"rule_matches\":[\"yes-rule\"],\"schema_version\":1,\"source_verifications\":[{\"evidence_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"explanation\":\"Official retained source with substantive evidence.\",\"schema_version\":1,\"source_id\":\"apple-news\",\"verified\":true,\"verifier\":{\"created_at_ms\":400000,\"input_hash\":\"2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5\",\"model\":\"test-model\",\"model_version\":\"gemini-tested-revision\",\"output_hash\":\"5539dc29c82ef04eb14e8369b401449bb8d511eec85a17c7bd203a215f750669\",\"policy_version\":\"forecast-ai-policy-v4-timeless-titles\",\"provider\":\"gemini\",\"schema_version\":1,\"task\":\"SOURCE_VERIFIER\"}}],\"specification_hash\":\"b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9\"}",
+        "hash": "0119c5f5155d35fb4f7c7477c11b4a4bed71469fe77415bb55c30e94c49552de",
+        "kind": "resolution"
+      }
+    ],
+    "payloads": [
+      {
+        "policy": "Verify exact source identity, usable substantive document rather than access-denied/captcha/error page, publication context, relevance to immutable specification and no evidence of fabricated or unavailable content. Never interpret a missing statement on a generic landing page as proof of a negative outcome.",
+        "retained_text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+        "schema_version": 1,
+        "snapshot": {
+          "collected_at_ms": 400000,
+          "collector": null,
+          "content_sha256": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+          "evidence_id": "evidence-1b518559163111905b566219d6d8f8ba",
+          "schema_version": 1,
+          "snapshot_uri": "urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+          "source_id": "apple-news",
+          "url": "https://www.apple.com/newsroom/"
+        },
+        "source_collection": {
+          "kind": "source_collection",
+          "policy": "primary-first-v1",
+          "retained_sources": [
+            {
+              "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+              "source_id": "apple-news"
+            }
+          ],
+          "schema_version": 1,
+          "unavailable_sources": [],
+          "unfetched_fallback_source_ids": [],
+          "used_fallback": false
+        },
+        "source_policy": {
+          "fallback_sources": [],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Apple Newsroom",
+              "schema_version": 1,
+              "source_id": "apple-news",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "schema_version": 1
+        },
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 400000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        }
+      },
+      {
+        "evidence": [
+          {
+            "retained_text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+            "snapshot": {
+              "collected_at_ms": 400000,
+              "collector": null,
+              "content_sha256": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+              "evidence_id": "evidence-1b518559163111905b566219d6d8f8ba",
+              "schema_version": 1,
+              "snapshot_uri": "urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+              "source_id": "apple-news",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          }
+        ],
+        "policy": "Judge only immutable clauses from retained evidence. Cite matching clause IDs. Do not change dates or definitions. For a negative outcome require evidence of complete coverage of the specified time interval, not absence on a homepage. An incomplete archive, missing required source, unavailable document or lack of a statement on a page is NOT proof of NO; return UNRESOLVED for missing coverage. The successfully fetched subset must satisfy every required evidentiary clause; fallback collection must not silently waive a primary-source-only condition. Choose UNRESOLVED for insufficient or conflicting evidence, never guess. Choose INVALID when the retained evidence is authentic but cannot establish the outcome, in particular when its publication time cannot be placed relative to participation. INVALID credits nothing and returns every commitment, so it is the correct answer for a question the evidence cannot answer, and it is not a guess. CLEAR requires no conflicts and null conflict_explanation.",
+        "schema_version": 1,
+        "source_collection": {
+          "kind": "source_collection",
+          "policy": "primary-first-v1",
+          "retained_sources": [
+            {
+              "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+              "source_id": "apple-news"
+            }
+          ],
+          "schema_version": 1,
+          "unavailable_sources": [],
+          "unfetched_fallback_source_ids": [],
+          "used_fallback": false
+        },
+        "source_verifications": [
+          {
+            "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+            "explanation": "Official retained source with substantive evidence.",
+            "schema_version": 1,
+            "source_id": "apple-news",
+            "verified": true,
+            "verifier": {
+              "created_at_ms": 400000,
+              "input_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+              "model": "test-model",
+              "model_version": "gemini-tested-revision",
+              "output_hash": "5539dc29c82ef04eb14e8369b401449bb8d511eec85a17c7bd203a215f750669",
+              "policy_version": "forecast-ai-policy-v4-timeless-titles",
+              "provider": "gemini",
+              "schema_version": 1,
+              "task": "SOURCE_VERIFIER"
+            }
+          }
+        ],
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 400000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        }
+      },
+      {
+        "evidence": [
+          {
+            "retained_text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+            "snapshot": {
+              "collected_at_ms": 400000,
+              "collector": null,
+              "content_sha256": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+              "evidence_id": "evidence-1b518559163111905b566219d6d8f8ba",
+              "schema_version": 1,
+              "snapshot_uri": "urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+              "source_id": "apple-news",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          }
+        ],
+        "judge_decision": {
+          "confidence_bp": 9400,
+          "conflict_explanation": null,
+          "conflict_status": "CLEAR",
+          "proposed_outcome": "YES",
+          "reason_summary": "Official evidence satisfies the unchanged YES clause.",
+          "rule_conflicts": [],
+          "rule_matches": [
+            "yes-rule"
+          ]
+        },
+        "policy": "Independently challenge the preceding judge using only the immutable specification and retained evidence. agrees=true only if its exact outcome, matching clauses, confidence and explanation are all supportable. Incomplete evidence, ambiguity, failure to prove a negative or material alternative interpretation must set agrees=false. An INVALID outcome is supportable when the evidence is authentic but cannot establish the outcome, in particular when its publication time cannot be placed relative to participation; do not set agrees=false merely because the evidence is incomplete, since that is the case INVALID exists for. Challenge it if the evidence does in fact establish YES or NO, or if it cites the wrong clause.",
+        "schema_version": 1,
+        "source_collection": {
+          "kind": "source_collection",
+          "policy": "primary-first-v1",
+          "retained_sources": [
+            {
+              "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+              "source_id": "apple-news"
+            }
+          ],
+          "schema_version": 1,
+          "unavailable_sources": [],
+          "unfetched_fallback_source_ids": [],
+          "used_fallback": false
+        },
+        "source_verifications": [
+          {
+            "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+            "explanation": "Official retained source with substantive evidence.",
+            "schema_version": 1,
+            "source_id": "apple-news",
+            "verified": true,
+            "verifier": {
+              "created_at_ms": 400000,
+              "input_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+              "model": "test-model",
+              "model_version": "gemini-tested-revision",
+              "output_hash": "5539dc29c82ef04eb14e8369b401449bb8d511eec85a17c7bd203a215f750669",
+              "policy_version": "forecast-ai-policy-v4-timeless-titles",
+              "provider": "gemini",
+              "schema_version": 1,
+              "task": "SOURCE_VERIFIER"
+            }
+          }
+        ],
+        "specification": {
+          "ambiguity_score_bp": 500,
+          "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+          "category": "TECHNOLOGY",
+          "close_at_ms": 400000,
+          "duplicate_candidates": [],
+          "invalidation_rules": [
+            "Apply INVALID if the named product has multiple incompatible identities."
+          ],
+          "open_at_ms": 1000,
+          "rules": [
+            {
+              "clause_id": "yes-rule",
+              "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "YES",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "no-rule",
+              "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+              "outcome": "NO",
+              "schema_version": 1
+            },
+            {
+              "clause_id": "invalid-rule",
+              "condition": "The named company or product cannot be uniquely identified.",
+              "outcome": "INVALID",
+              "schema_version": 1
+            }
+          ],
+          "schema_version": 1,
+          "share_title": "Will Acme announce Product X?",
+          "source_policy": {
+            "fallback_sources": [],
+            "primary_sources": [
+              {
+                "is_official": true,
+                "name": "Apple Newsroom",
+                "schema_version": 1,
+                "source_id": "apple-news",
+                "url": "https://www.apple.com/newsroom/"
+              }
+            ],
+            "schema_version": 1
+          }
+        }
+      }
+    ],
+    "resolution": {
+      "confidence_bp": 9400,
+      "conflict_explanation": null,
+      "conflict_status": "CLEAR",
+      "counter_judge": {
+        "created_at_ms": 400000,
+        "input_hash": "ea08df1ebd5efc8409b7484b2a330d71a5302f2dc54feeefb92e4502e93334eb",
+        "model": "test-model",
+        "model_version": "gemini-tested-revision",
+        "output_hash": "478a5c408c8f062ef030e30b809310d025a6c63fe84cdb5dd9b53900706a9ba6",
+        "policy_version": "forecast-ai-policy-v4-timeless-titles",
+        "provider": "gemini",
+        "schema_version": 1,
+        "task": "COUNTER_JUDGE"
+      },
+      "counter_judge_agrees": true,
+      "evidence": [
+        {
+          "collected_at_ms": 400000,
+          "collector": null,
+          "content_sha256": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+          "evidence_id": "evidence-1b518559163111905b566219d6d8f8ba",
+          "schema_version": 1,
+          "snapshot_uri": "urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+          "source_id": "apple-news",
+          "url": "https://www.apple.com/newsroom/"
+        }
+      ],
+      "forecast_id": "forecast-ai",
+      "judge": {
+        "created_at_ms": 400000,
+        "input_hash": "a0336771be7c7e2f2dfb67f534e97acd99c12626c736b92b789a421eb8e3acf1",
+        "model": "test-model",
+        "model_version": "gemini-tested-revision",
+        "output_hash": "e6a87b21a51e1d6d364843892ea2bdc83284cb92e8b8cc542c80fbd3cc8ebfb1",
+        "policy_version": "forecast-ai-policy-v4-timeless-titles",
+        "provider": "gemini",
+        "schema_version": 1,
+        "task": "RESOLUTION_JUDGE"
+      },
+      "proposed_at_ms": 400000,
+      "proposed_outcome": "YES",
+      "reason_summary": "Official evidence satisfies the unchanged YES clause.",
+      "rule_conflicts": [],
+      "rule_matches": [
+        "yes-rule"
+      ],
+      "schema_version": 1,
+      "source_verifications": [
+        {
+          "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+          "explanation": "Official retained source with substantive evidence.",
+          "schema_version": 1,
+          "source_id": "apple-news",
+          "verified": true,
+          "verifier": {
+            "created_at_ms": 400000,
+            "input_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "5539dc29c82ef04eb14e8369b401449bb8d511eec85a17c7bd203a215f750669",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "SOURCE_VERIFIER"
+          }
+        }
+      ],
+      "specification_hash": "b85ae15989545bc85dc0b7c1da78e49757a08f7653565b06878ae256ae1a6fb9"
+    }
+  },
+  "now_ms": 400000,
+  "payloads": [
+    {
+      "policy": "Verify exact source identity, usable substantive document rather than access-denied/captcha/error page, publication context, relevance to immutable specification and no evidence of fabricated or unavailable content. Never interpret a missing statement on a generic landing page as proof of a negative outcome.",
+      "retained_text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+      "schema_version": 1,
+      "snapshot": {
+        "collected_at_ms": 400000,
+        "collector": null,
+        "content_sha256": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+        "evidence_id": "evidence-1b518559163111905b566219d6d8f8ba",
+        "schema_version": 1,
+        "snapshot_uri": "urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+        "source_id": "apple-news",
+        "url": "https://www.apple.com/newsroom/"
+      },
+      "source_collection": {
+        "kind": "source_collection",
+        "policy": "primary-first-v1",
+        "retained_sources": [
+          {
+            "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+            "source_id": "apple-news"
+          }
+        ],
+        "schema_version": 1,
+        "unavailable_sources": [],
+        "unfetched_fallback_source_ids": [],
+        "used_fallback": false
+      },
+      "source_policy": {
+        "fallback_sources": [],
+        "primary_sources": [
+          {
+            "is_official": true,
+            "name": "Apple Newsroom",
+            "schema_version": 1,
+            "source_id": "apple-news",
+            "url": "https://www.apple.com/newsroom/"
+          }
+        ],
+        "schema_version": 1
+      },
+      "specification": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 400000,
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 1000,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Apple Newsroom",
+              "schema_version": 1,
+              "source_id": "apple-news",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "schema_version": 1
+        }
+      }
+    },
+    {
+      "evidence": [
+        {
+          "retained_text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+          "snapshot": {
+            "collected_at_ms": 400000,
+            "collector": null,
+            "content_sha256": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+            "evidence_id": "evidence-1b518559163111905b566219d6d8f8ba",
+            "schema_version": 1,
+            "snapshot_uri": "urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+            "source_id": "apple-news",
+            "url": "https://www.apple.com/newsroom/"
+          }
+        }
+      ],
+      "policy": "Judge only immutable clauses from retained evidence. Cite matching clause IDs. Do not change dates or definitions. For a negative outcome require evidence of complete coverage of the specified time interval, not absence on a homepage. An incomplete archive, missing required source, unavailable document or lack of a statement on a page is NOT proof of NO; return UNRESOLVED for missing coverage. The successfully fetched subset must satisfy every required evidentiary clause; fallback collection must not silently waive a primary-source-only condition. Choose UNRESOLVED for insufficient or conflicting evidence, never guess. Choose INVALID when the retained evidence is authentic but cannot establish the outcome, in particular when its publication time cannot be placed relative to participation. INVALID credits nothing and returns every commitment, so it is the correct answer for a question the evidence cannot answer, and it is not a guess. CLEAR requires no conflicts and null conflict_explanation.",
+      "schema_version": 1,
+      "source_collection": {
+        "kind": "source_collection",
+        "policy": "primary-first-v1",
+        "retained_sources": [
+          {
+            "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+            "source_id": "apple-news"
+          }
+        ],
+        "schema_version": 1,
+        "unavailable_sources": [],
+        "unfetched_fallback_source_ids": [],
+        "used_fallback": false
+      },
+      "source_verifications": [
+        {
+          "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+          "explanation": "Official retained source with substantive evidence.",
+          "schema_version": 1,
+          "source_id": "apple-news",
+          "verified": true,
+          "verifier": {
+            "created_at_ms": 400000,
+            "input_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "5539dc29c82ef04eb14e8369b401449bb8d511eec85a17c7bd203a215f750669",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "SOURCE_VERIFIER"
+          }
+        }
+      ],
+      "specification": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 400000,
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 1000,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Apple Newsroom",
+              "schema_version": 1,
+              "source_id": "apple-news",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "schema_version": 1
+        }
+      }
+    },
+    {
+      "evidence": [
+        {
+          "retained_text": "Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context",
+          "snapshot": {
+            "collected_at_ms": 400000,
+            "collector": null,
+            "content_sha256": "1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+            "evidence_id": "evidence-1b518559163111905b566219d6d8f8ba",
+            "schema_version": 1,
+            "snapshot_uri": "urn:sha256:1b518559163111905b566219d6d8f8bac4da9fe0a37d3b3c1304a9435360d141",
+            "source_id": "apple-news",
+            "url": "https://www.apple.com/newsroom/"
+          }
+        }
+      ],
+      "judge_decision": {
+        "confidence_bp": 9400,
+        "conflict_explanation": null,
+        "conflict_status": "CLEAR",
+        "proposed_outcome": "YES",
+        "reason_summary": "Official evidence satisfies the unchanged YES clause.",
+        "rule_conflicts": [],
+        "rule_matches": [
+          "yes-rule"
+        ]
+      },
+      "policy": "Independently challenge the preceding judge using only the immutable specification and retained evidence. agrees=true only if its exact outcome, matching clauses, confidence and explanation are all supportable. Incomplete evidence, ambiguity, failure to prove a negative or material alternative interpretation must set agrees=false. An INVALID outcome is supportable when the evidence is authentic but cannot establish the outcome, in particular when its publication time cannot be placed relative to participation; do not set agrees=false merely because the evidence is incomplete, since that is the case INVALID exists for. Challenge it if the evidence does in fact establish YES or NO, or if it cites the wrong clause.",
+      "schema_version": 1,
+      "source_collection": {
+        "kind": "source_collection",
+        "policy": "primary-first-v1",
+        "retained_sources": [
+          {
+            "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+            "source_id": "apple-news"
+          }
+        ],
+        "schema_version": 1,
+        "unavailable_sources": [],
+        "unfetched_fallback_source_ids": [],
+        "used_fallback": false
+      },
+      "source_verifications": [
+        {
+          "evidence_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+          "explanation": "Official retained source with substantive evidence.",
+          "schema_version": 1,
+          "source_id": "apple-news",
+          "verified": true,
+          "verifier": {
+            "created_at_ms": 400000,
+            "input_hash": "2ef374877476fbd71b8fddeee3a98868227598f22d4376ff78fd0dd0fd6602b5",
+            "model": "test-model",
+            "model_version": "gemini-tested-revision",
+            "output_hash": "5539dc29c82ef04eb14e8369b401449bb8d511eec85a17c7bd203a215f750669",
+            "policy_version": "forecast-ai-policy-v4-timeless-titles",
+            "provider": "gemini",
+            "schema_version": 1,
+            "task": "SOURCE_VERIFIER"
+          }
+        }
+      ],
+      "specification": {
+        "ambiguity_score_bp": 500,
+        "canonical_question": "Will Apple announce Product X by 1970-01-01T00:06:40Z?",
+        "category": "TECHNOLOGY",
+        "close_at_ms": 400000,
+        "duplicate_candidates": [],
+        "invalidation_rules": [
+          "Apply INVALID if the named product has multiple incompatible identities."
+        ],
+        "open_at_ms": 1000,
+        "rules": [
+          {
+            "clause_id": "yes-rule",
+            "condition": "An official announcement dated before closing names Product X. Deadline: 1970-01-01T00:06:40Z.",
+            "outcome": "YES",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "no-rule",
+            "condition": "No qualifying announcement exists at closing. Deadline: 1970-01-01T00:06:40Z.",
+            "outcome": "NO",
+            "schema_version": 1
+          },
+          {
+            "clause_id": "invalid-rule",
+            "condition": "The named company or product cannot be uniquely identified.",
+            "outcome": "INVALID",
+            "schema_version": 1
+          }
+        ],
+        "schema_version": 1,
+        "share_title": "Will Acme announce Product X?",
+        "source_policy": {
+          "fallback_sources": [],
+          "primary_sources": [
+            {
+              "is_official": true,
+              "name": "Apple Newsroom",
+              "schema_version": 1,
+              "source_id": "apple-news",
+              "url": "https://www.apple.com/newsroom/"
+            }
+          ],
+          "schema_version": 1
+        }
+      }
+    }
+  ],
+  "providers": [
+    {
+      "apiKey": "test-key",
+      "model": "test-model",
+      "provider": "gemini"
+    }
+  ],
+  "publication_time_unknown": false,
+  "responses": [
+    {
+      "explanation": "Official retained source with substantive evidence.",
+      "verified": true
+    },
+    {
+      "confidence_bp": 9400,
+      "conflict_explanation": null,
+      "conflict_status": "CLEAR",
+      "proposed_outcome": "YES",
+      "reason_summary": "Official evidence satisfies the unchanged YES clause.",
+      "rule_conflicts": [],
+      "rule_matches": [
+        "yes-rule"
+      ]
+    },
+    {
+      "agrees": true,
+      "explanation": "Independent challenge of the exact judge decision."
+    }
+  ],
+  "sources": [
+    {
+      "body": "<html><body>Apple Newsroom. Official Product X announcement, published before the deadline. source context source context source context source context source context source context source context source context source context source context </body></html>",
+      "contentType": "text/html",
+      "status": 200,
+      "url": "https://www.apple.com/newsroom/"
+    }
+  ]
+}

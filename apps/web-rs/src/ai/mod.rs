@@ -5,6 +5,7 @@
 //! contract change silently, and a contract change here is a change to what a reward is based on.
 
 pub mod coordinator;
+pub mod dispute;
 pub mod resolution;
 pub mod schema;
 pub mod strict;

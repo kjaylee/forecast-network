@@ -165,6 +165,12 @@ impl Coordinator {
     }
 
     /// Ask each configured provider in turn until one answers acceptably.
+    ///
+    /// `task` is the `AITask` value — `"SOURCE_VERIFIER"`, not `"source_verifier"`. It is prose
+    /// to the model ("You are the SOURCE_VERIFIER of Forecast Network"), a lowercase name only in
+    /// the OpenAI schema field the reference lowers, and an enum the domain validates wherever it
+    /// is recorded. The one exception is the display-translation pseudo-task, which the reference
+    /// passes as a plain string and therefore lowercase.
     pub async fn call(
         &self,
         task: &str,
@@ -287,7 +293,7 @@ impl Coordinator {
             strict_json(&raw).map_err(|error| retained(config, task, payload, &raw, error.code, error.message))?;
         validate_output(&Value::Object(output.clone()), schema, 0)
             .map_err(|error: SchemaError| retained(config, task, payload, &raw, error.code, error.message))?;
-        if task != "market_compiler" {
+        if task != "MARKET_COMPILER" {
             // Only the public prose fields; the rest is structurally typed.
             let prose: Vec<String> = ["explanation", "reason_summary", "rationale", "conflict_explanation"]
                 .iter()
@@ -344,7 +350,13 @@ fn retained(
         raw_text = raw_text.replace(&config.api_key, "[redacted]");
     }
     let bytes = raw_text.as_bytes();
-    let kept = String::from_utf8_lossy(&bytes[..bytes.len().min(MAX_RAW_RETAINED)]).to_string();
+    // Truncating at a byte boundary can cut a character in half. The reference decodes the cut
+    // bytes with `errors="ignore"`, which drops the incomplete tail rather than replacing it, so
+    // a half-written character leaves nothing behind.
+    let cut = &bytes[..bytes.len().min(MAX_RAW_RETAINED)];
+    let kept = std::str::from_utf8(cut)
+        .map(str::to_string)
+        .unwrap_or_else(|error| String::from_utf8_lossy(&cut[..error.valid_up_to()]).to_string());
     let rejection = json!({
         "schema_version": 1, "kind": "provider_rejection", "task": task,
         "provider": config.provider, "model": config.model, "policy_version": POLICY_VERSION,
@@ -445,7 +457,7 @@ pub fn gemini_compiler_schema(schema: &Value) -> Value {
 }
 
 fn limit(task: &str, display_language: Option<&str>) -> i64 {
-    if task == "market_compiler" || display_language.is_some() {
+    if task == "MARKET_COMPILER" || display_language.is_some() {
         8192
     } else {
         4096
@@ -479,7 +491,7 @@ fn request(
         }
         "gemini" => {
             headers.push(("x-goog-api-key".to_string(), config.api_key.clone()));
-            let shown = if task == "market_compiler" {
+            let shown = if task == "MARKET_COMPILER" {
                 gemini_compiler_schema(schema)
             } else {
                 schema.clone()
@@ -630,7 +642,7 @@ mod tests {
     fn a_valid_answer_is_retained_with_the_version_the_provider_reported() {
         let (fetcher, seen) = fetch_returning(gemini_reply(r#"{"verified": true, "explanation": "Because."}"#));
         let decision = block(coordinator(fetcher).call(
-            "source_verifier",
+            "SOURCE_VERIFIER",
             &json!({"a": 1}),
             &super::super::schema::schemas::source(),
             None,
@@ -657,7 +669,7 @@ mod tests {
     fn an_answer_that_breaks_the_contract_is_refused_and_the_raw_output_kept() {
         let (fetcher, _) = fetch_returning(gemini_reply(r#"{"verified": true}"#));
         let error = block(coordinator(fetcher).call(
-            "source_verifier",
+            "SOURCE_VERIFIER",
             &json!({"a": 1}),
             &super::super::schema::schemas::source(),
             None,
@@ -679,7 +691,7 @@ mod tests {
         // was sent.
         let (fetcher, _) = fetch_returning(gemini_reply("the key is key and the answer is wrong"));
         let error = block(coordinator(fetcher).call(
-            "source_verifier",
+            "SOURCE_VERIFIER",
             &json!({"a": 1}),
             &super::super::schema::schemas::source(),
             None,
@@ -705,7 +717,7 @@ mod tests {
         });
         let (fetcher, _) = fetch_returning(response);
         let error = block(coordinator(fetcher).call(
-            "source_verifier",
+            "SOURCE_VERIFIER",
             &json!({"a": 1}),
             &super::super::schema::schemas::source(),
             None,
@@ -721,7 +733,7 @@ mod tests {
             "candidates": [{"content": {"parts": [{"text": r#"{"verified": true, "explanation": "Because."}"#}]}, "finishReason": "STOP"}],
         }));
         let decision = block(coordinator(fetcher).call(
-            "source_verifier",
+            "SOURCE_VERIFIER",
             &json!({"a": 1}),
             &super::super::schema::schemas::source(),
             None,
@@ -735,7 +747,7 @@ mod tests {
     fn a_language_override_is_only_for_display_translation() {
         let (fetcher, _) = fetch_returning(gemini_reply("{}"));
         let coordinator = coordinator(fetcher);
-        let error = block(coordinator.call("source_verifier", &json!({}), &json!({}), None, Some("ko"))).unwrap_err();
+        let error = block(coordinator.call("SOURCE_VERIFIER", &json!({}), &json!({}), None, Some("ko"))).unwrap_err();
         assert!(error.message().contains("display translation"), "{}", error.message());
     }
 

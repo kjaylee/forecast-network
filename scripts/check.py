@@ -46,7 +46,11 @@ def main() -> int:
                 [sys.executable, "scripts/sql_parity.py", "--check"],
                 # The article parser decides whether evidence can be placed relative to
                 # participation, which decides whether a reward may be credited.
-                [sys.executable, "scripts/generate_article_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_article_golden.py", "--check"],
+                # The two AI pipelines whose hashes the lifecycle commits. A port that reaches
+                # the same verdict through a different conversation has not been ported.
+                [sys.executable, "scripts/generate_resolution_golden.py", "--check"],
+                [sys.executable, "scripts/generate_dispute_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:
