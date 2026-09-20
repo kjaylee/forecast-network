@@ -42,6 +42,7 @@ mod routes;
 pub mod scheduler;
 pub mod seeker;
 pub mod solana;
+pub mod solana_rpc;
 pub mod source_watch;
 pub mod sources;
 pub mod translations;

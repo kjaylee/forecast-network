@@ -286,6 +286,57 @@ pub fn compile_message(
     })
 }
 
+/// `assemble_transaction`: the wire transaction, signatures in the message's own signer order.
+///
+/// Every check here is a check on the *message* the port just compiled, which is why they are
+/// refusals rather than debug assertions: a message whose signer list is not its account list's
+/// prefix is a message the runtime would reject, and a signature map that is missing one signer or
+/// carrying an extra is a transaction that cannot be assembled at all. Signing with a zero key is
+/// refused too — a slot filled with zeroes is a slot nobody signed.
+pub fn assemble_transaction(message: &CompiledMessage, signatures: &[([u8; 32], [u8; 64])]) -> Result<Vec<u8>, String> {
+    require(
+        message.data.len() >= 3
+            && !message.signer_keys.is_empty()
+            && message.signer_keys.len() < 128
+            && message.data[0] as usize == message.signer_keys.len()
+            && message.account_keys.len() >= message.signer_keys.len()
+            && message.account_keys[..message.signer_keys.len()] == message.signer_keys[..],
+        "invalid signer ordering",
+    )?;
+    let mut distinct: Vec<[u8; 32]> = message.signer_keys.clone();
+    distinct.sort();
+    distinct.dedup();
+    require(distinct.len() == message.signer_keys.len(), "invalid signer ordering")?;
+    let mut encoded_keys = shortvec(message.account_keys.len() as i64)?;
+    for key in &message.account_keys {
+        encoded_keys.extend(raw(key, 32, "message account", false)?);
+    }
+    require(
+        message.data[3..3 + encoded_keys.len()] == encoded_keys[..],
+        "compiled message account metadata mismatch",
+    )?;
+    // The reference compares the signature map's *keys* with the signer list as a set, so a
+    // signature for the wrong account is a refusal rather than something silently dropped, and the
+    // wire is emitted in the message's own order rather than the caller's.
+    require(
+        signatures.len() == message.signer_keys.len(),
+        "missing or extraneous signature",
+    )?;
+    let mut wire = shortvec(message.signer_keys.len() as i64)?;
+    for key in &message.signer_keys {
+        let Some((_, signature)) = signatures.iter().find(|(signed, _)| signed == key) else {
+            return Err("missing or extraneous signature".to_string());
+        };
+        wire.extend(raw(signature, 64, "signature", true)?);
+    }
+    wire.extend_from_slice(&message.data);
+    require(
+        wire.len() <= MAX_TRANSACTION_BYTES,
+        "transaction exceeds Solana packet size",
+    )?;
+    Ok(wire)
+}
+
 // ---------------------------------------------------------------- the publication side
 
 pub const CONFIG_RESERVED: &[u8; 8] = b"FNCONF01";
