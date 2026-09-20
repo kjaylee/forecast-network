@@ -6,6 +6,7 @@
 //! refuse. Everything else in this module is bounded reading of what that boundary allowed.
 
 use serde_json::{json, Value};
+use sha2::Digest;
 use worker::Url;
 
 use crate::html_parse::{tokenize, Event};
@@ -70,17 +71,209 @@ pub enum SourceRejected {
     NotPublic,
     IpAddress,
     Unregistered,
+    HostChanged,
+    RedirectLimit,
+    /// `Published evidence source returned HTTP {status}`
+    HttpStatus(u16),
+    InvalidLength,
+    NotText,
+    UnsupportedMedia,
+    EmptyOrTooLarge,
+    Insufficient,
+    NoResponse,
 }
 
 impl SourceRejected {
     /// The message the Python Worker raises with, kept for the error the caller reports.
-    pub fn message(&self) -> &'static str {
+    pub fn message(&self) -> String {
         match self {
-            SourceRejected::Malformed => "Source URL is malformed",
-            SourceRejected::NotPublic => "Source requires public HTTPS without credentials or custom ports",
-            SourceRejected::IpAddress => "IP source addresses are not permitted",
-            SourceRejected::Unregistered => "Source host is not in the approved authoritative-source registry",
+            SourceRejected::Malformed => "Source URL is malformed".to_string(),
+            SourceRejected::NotPublic => "Source requires public HTTPS without credentials or custom ports".to_string(),
+            SourceRejected::IpAddress => "IP source addresses are not permitted".to_string(),
+            SourceRejected::Unregistered => {
+                "Source host is not in the approved authoritative-source registry".to_string()
+            }
+            SourceRejected::HostChanged => "Evidence redirect or URL changed its published source host".to_string(),
+            SourceRejected::RedirectLimit => "Source exceeded the safe redirect limit".to_string(),
+            SourceRejected::HttpStatus(status) => {
+                format!("Published evidence source returned HTTP {status}")
+            }
+            SourceRejected::InvalidLength => "Evidence has an invalid content length".to_string(),
+            SourceRejected::NotText => "Evidence transport must return retained UTF-8 text".to_string(),
+            SourceRejected::UnsupportedMedia => "Evidence response is not a supported text document".to_string(),
+            SourceRejected::EmptyOrTooLarge => {
+                "Evidence is empty or exceeds the retained-source byte limit".to_string()
+            }
+            SourceRejected::Insufficient => "Evidence document contains insufficient readable content".to_string(),
+            SourceRejected::NoResponse => "No complete evidence response".to_string(),
         }
+    }
+}
+
+/// A source that is temporarily unreachable is told apart from one that is refused, because the
+/// caller retries the first and records the second.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SourceError {
+    Rejected(SourceRejected),
+    Unavailable,
+}
+
+impl SourceError {
+    pub fn message(&self) -> String {
+        match self {
+            SourceError::Rejected(rejected) => rejected.message(),
+            SourceError::Unavailable => "Evidence source is temporarily unavailable".to_string(),
+        }
+    }
+}
+
+impl From<SourceRejected> for SourceError {
+    fn from(rejected: SourceRejected) -> Self {
+        SourceError::Rejected(rejected)
+    }
+}
+
+/// What the transport returned, before any policy has been applied to it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TextResponse {
+    pub status: u16,
+    pub headers: Vec<(String, String)>,
+    pub body: String,
+}
+
+impl TextResponse {
+    fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .iter()
+            .rev()
+            .find(|(key, _)| key.eq_ignore_ascii_case(name))
+            .map(|(_, value)| value.as_str())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CollectedSource {
+    pub evidence_id: String,
+    pub source_id: String,
+    pub url: String,
+    pub content_sha256: String,
+    pub snapshot_uri: String,
+    pub collected_at_ms: i64,
+    pub artifact_kind: &'static str,
+    pub artifact_body: String,
+    pub media_type: String,
+    pub excerpt: String,
+}
+
+const SUPPORTED_MEDIA: [&str; 5] = [
+    "text/html",
+    "text/plain",
+    "application/json",
+    "application/xml",
+    "text/xml",
+];
+const REDIRECT_STATUSES: [u16; 5] = [301, 302, 303, 307, 308];
+const UNAVAILABLE_STATUSES: [u16; 5] = [429, 500, 502, 503, 504];
+
+/// `SourceCollector.collect`, with the transport injected so the policy can be tested without a
+/// network and so the worker can supply its own.
+pub async fn collect<F, Fut>(
+    fetch: F,
+    source_id: &str,
+    source_url: &str,
+    official: bool,
+    start: Option<&str>,
+    now_ms: i64,
+) -> Result<CollectedSource, SourceError>
+where
+    F: Fn(String) -> Fut,
+    Fut: std::future::Future<Output = Result<TextResponse, ()>>,
+{
+    let expected_host = validate_public_url(source_url, official)?;
+    let mut current = start.unwrap_or(source_url).to_string();
+    for attempt in 0..=MAX_SOURCE_REDIRECTS {
+        if validate_public_url(&current, official)? != expected_host {
+            return Err(SourceRejected::HostChanged.into());
+        }
+        let Ok(response) = fetch(current.clone()).await else {
+            return Err(SourceError::Unavailable);
+        };
+        if REDIRECT_STATUSES.contains(&response.status) {
+            let Some(location) = response.header("location") else {
+                return Err(SourceRejected::RedirectLimit.into());
+            };
+            if attempt == MAX_SOURCE_REDIRECTS {
+                return Err(SourceRejected::RedirectLimit.into());
+            }
+            current = join_url(&current, location);
+            continue;
+        }
+        if UNAVAILABLE_STATUSES.contains(&response.status) {
+            return Err(SourceError::Unavailable);
+        }
+        if response.status != 200 {
+            return Err(SourceRejected::HttpStatus(response.status).into());
+        }
+        if let Some(length) = response.header("content-length") {
+            // `SourceRejected` is a `ValueError`, so the reference's own out-of-range raise is
+            // caught by its own `except ValueError` and re-raised as an invalid length. The
+            // message for an over-large length is therefore unreachable there, and a port that
+            // reported it would describe a case the reference never reports.
+            let acceptable = length
+                .trim()
+                .parse::<i64>()
+                .map(|value| (0..=MAX_SOURCE_BYTES as i64).contains(&value))
+                .unwrap_or(false);
+            if !acceptable {
+                return Err(SourceRejected::InvalidLength.into());
+            }
+        }
+        let raw = response.body.as_bytes();
+        let media_type = response
+            .header("content-type")
+            .unwrap_or("")
+            .split(';')
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        if !SUPPORTED_MEDIA.contains(&media_type.as_str()) {
+            return Err(SourceRejected::UnsupportedMedia.into());
+        }
+        if raw.iter().all(u8::is_ascii_whitespace) || raw.len() > MAX_SOURCE_BYTES {
+            return Err(SourceRejected::EmptyOrTooLarge.into());
+        }
+        let excerpt = if media_type == "application/json" {
+            market_json_excerpt(&response.body, &current)
+        } else {
+            evidence_excerpt(&response.body)
+        };
+        if excerpt.len() < 40 {
+            return Err(SourceRejected::Insufficient.into());
+        }
+        let digest = hex::encode(sha2::Sha256::digest(raw));
+        return Ok(CollectedSource {
+            evidence_id: format!("evidence-{}", &digest[..32]),
+            source_id: source_id.to_string(),
+            url: current,
+            content_sha256: digest.clone(),
+            snapshot_uri: format!("urn:sha256:{digest}"),
+            collected_at_ms: now_ms,
+            artifact_kind: "source",
+            artifact_body: response.body,
+            media_type,
+            excerpt,
+        });
+    }
+    Err(SourceRejected::NoResponse.into())
+}
+
+/// `urljoin`, for the redirect case only: the reference resolves a relative Location against the
+/// URL that produced it.
+fn join_url(base: &str, location: &str) -> String {
+    match Url::parse(base).and_then(|url| url.join(location)) {
+        Ok(joined) => joined.to_string(),
+        Err(_) => location.to_string(),
     }
 }
 
@@ -523,6 +716,8 @@ fn is_word_byte(byte: u8) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::RefCell;
+    use std::future::ready;
     use std::path::PathBuf;
 
     /// Exported from the Python source policy by the same one-off that produced the corpus
@@ -534,6 +729,97 @@ mod tests {
             &std::fs::read_to_string(&path).unwrap_or_else(|error| panic!("{} is missing: {error}", path.display())),
         )
         .expect("golden JSON")
+    }
+
+    #[test]
+    fn the_collector_decides_the_same_as_python() {
+        // 4,000 generated scenarios agreed before this 600-case subset was kept.
+        let text = std::fs::read_to_string(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/source-collector-golden.json"),
+        )
+        .expect("corpus");
+        let corpus: Value = serde_json::from_str(&text).expect("json");
+        let mut wrong = Vec::new();
+        for case in corpus["cases"].as_array().expect("cases") {
+            let scenario = &case[0];
+            let expected = &case[1];
+            let source_id = scenario[0].as_str().expect("source_id");
+            let source_url = scenario[1].as_str().expect("source_url");
+            let official = scenario[2].as_bool().expect("official");
+            let start = scenario[3].as_str();
+            let steps = scenario[4].as_array().expect("steps");
+            let calls = RefCell::new(Vec::<String>::new());
+            let fetch = |target: String| {
+                let index = {
+                    let mut seen = calls.borrow_mut();
+                    let index = seen.len().min(steps.len() - 1);
+                    seen.push(target);
+                    index
+                };
+                let step = &steps[index];
+                let mut headers = vec![(
+                    "content-type".to_string(),
+                    step["media"].as_str().unwrap_or("").to_string(),
+                )];
+                if let Some(location) = step["location"].as_str() {
+                    headers.push(("location".to_string(), location.to_string()));
+                }
+                if let Some(length) = step["length"].as_str() {
+                    headers.push(("content-length".to_string(), length.to_string()));
+                }
+                ready(Ok(TextResponse {
+                    status: step["status"].as_u64().unwrap_or(0) as u16,
+                    headers,
+                    body: step["body"].as_str().unwrap_or("").to_string(),
+                }))
+            };
+            let outcome = futures_lite::future::block_on(collect(
+                fetch,
+                source_id,
+                source_url,
+                official,
+                start,
+                1_700_000_000_000,
+            ));
+            let kind = expected["kind"].as_str().expect("kind");
+            let reported = match &outcome {
+                Ok(collected) => format!(
+                    "ok|{}|{}|{}",
+                    collected.url, collected.content_sha256, collected.media_type
+                ),
+                Err(error @ SourceError::Unavailable) => format!("unavailable|{}", error.message()),
+                Err(SourceError::Rejected(rejected)) => format!("rejected|{}", rejected.message()),
+            };
+            let want = match kind {
+                "ok" => format!(
+                    "ok|{}|{}|{}",
+                    expected["url"].as_str().unwrap(),
+                    expected["digest"].as_str().unwrap(),
+                    expected["media"].as_str().unwrap()
+                ),
+                other => format!("{other}|{}", expected["message"].as_str().unwrap()),
+            };
+            if reported != want && wrong.len() < 10 {
+                wrong.push(format!("{source_url} start={start:?}: got {reported}, expected {want}"));
+            }
+            let seen = calls.borrow();
+            let want_calls: Vec<String> = expected["calls"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_str().unwrap().to_string())
+                .collect();
+            if *seen != want_calls && wrong.len() < 10 {
+                wrong.push(format!(
+                    "{source_url}: fetch sequence {seen:?}, expected {want_calls:?}"
+                ));
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "the collector disagrees with Python:\n{}",
+            wrong.join("\n")
+        );
     }
 
     #[test]
