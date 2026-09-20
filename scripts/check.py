@@ -81,7 +81,11 @@ def main() -> int:
                 # Authentication is two statements that look like one. The session guard has two
                 # branches with different meanings, and login has to tell a wrong code from a
                 # lost race from an outage — all three are 401-shaped or 409-shaped otherwise.
-                [sys.executable, "scripts/generate_auth_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_auth_golden.py", "--check"],
+                # Wallet sign-in is where a signature creates an account and replaces a recovery
+                # credential, and the message it signs is the authorization — so the vector keeps
+                # the verifier's call log, not just the outcomes.
+                [sys.executable, "scripts/generate_wallet_login_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

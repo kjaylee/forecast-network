@@ -39,6 +39,7 @@ pub mod solana;
 pub mod source_watch;
 pub mod sources;
 pub mod translations;
+pub mod wallet_login;
 pub mod wallets;
 mod writes;
 

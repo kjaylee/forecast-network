@@ -38,7 +38,7 @@ pub struct WalletError {
 }
 
 impl WalletError {
-    const fn new(status: u16, code: &'static str, message: &'static str) -> Self {
+    pub(crate) const fn new(status: u16, code: &'static str, message: &'static str) -> Self {
         Self { status, code, message }
     }
 }

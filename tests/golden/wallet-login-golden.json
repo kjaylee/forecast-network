@@ -1,0 +1,1642 @@
+{
+  "calls": [
+    {
+      "call": "context:new",
+      "input": {
+        "contextToken": null
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl100000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "context:reuse",
+      "input": {
+        "contextToken": "wl100000000000000000000000000000"
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl100000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "context:empty",
+      "input": {
+        "contextToken": ""
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl200000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "context:short",
+      "error": {
+        "code": "wallet_context_required",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "contextToken": "short"
+      },
+      "kind": "context"
+    },
+    {
+      "call": "context:not-a-string",
+      "error": {
+        "code": "wallet_context_required",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "contextToken": 7
+      },
+      "kind": "context"
+    },
+    {
+      "call": "context:unknown",
+      "input": {
+        "contextToken": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl300000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "context:after-revocation",
+      "input": {
+        "contextToken": "wl100000000000000000000000000000"
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl400000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "cancel:short",
+      "error": {
+        "code": "wallet_context_required",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "contextToken": "short"
+      },
+      "kind": "cancel"
+    },
+    {
+      "call": "cancel:none",
+      "error": {
+        "code": "wallet_context_required",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "contextToken": null
+      },
+      "kind": "cancel"
+    },
+    {
+      "call": "cancel:live",
+      "input": {
+        "contextToken": "wl200000000000000000000000000000"
+      },
+      "kind": "cancel",
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "call": "context:after-cancel",
+      "input": {
+        "contextToken": "wl200000000000000000000000000000"
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl500000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "challenge:not-an-object",
+      "error": {
+        "code": "wallet_challenge_invalid",
+        "message": "Choose your wallet and sign-in action.",
+        "status": 400
+      },
+      "input": {
+        "body": "not-a-body",
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:missing-key",
+      "error": {
+        "code": "wallet_challenge_invalid",
+        "message": "Choose your wallet and sign-in action.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "mode": "login"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:extra-key",
+      "error": {
+        "code": "wallet_challenge_invalid",
+        "message": "Choose your wallet and sign-in action.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "expectedUserId": null,
+          "extra": 1,
+          "mode": "login"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:bad-mode",
+      "error": {
+        "code": "wallet_challenge_invalid",
+        "message": "Choose a valid sign-in action.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "expectedUserId": null,
+          "mode": "signup"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:mode-not-a-string",
+      "error": {
+        "code": "wallet_challenge_invalid",
+        "message": "Choose a valid sign-in action.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "expectedUserId": null,
+          "mode": 7
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:login-with-expected",
+      "error": {
+        "code": "wallet_challenge_invalid",
+        "message": "Use migration to keep an existing guest profile.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "expectedUserId": "u_someone",
+          "mode": "login"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:not-an-address",
+      "error": {
+        "code": "wallet_address_invalid",
+        "message": "Enter a valid Solana wallet address.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "0OIl",
+          "expectedUserId": null,
+          "mode": "login"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:small-order",
+      "error": {
+        "code": "wallet_address_invalid",
+        "message": "Use a valid, non-small-order Ed25519 wallet public key.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "11111111111111111111111111111111",
+          "expectedUserId": null,
+          "mode": "login"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:migrate-without-session",
+      "error": {
+        "code": "account_changed",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+          "expectedUserId": "u_wl8000000000000000000000",
+          "mode": "migrate"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:migrate-wrong-user",
+      "error": {
+        "code": "account_changed",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+          "expectedUserId": "u_someone",
+          "mode": "migrate"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": "wl700000000000000000000000000000"
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "challenge:migrate-expected-not-a-string",
+      "error": {
+        "code": "account_changed",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+          "expectedUserId": 7,
+          "mode": "migrate"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": "wl700000000000000000000000000000"
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "login:new:challenge",
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "expectedUserId": null,
+          "mode": "login"
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge",
+      "result": {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "challengeId": "wl_wl100000000000000000000000000000",
+        "expiresAt": 1700000300000,
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 556a0ef9af05168bf0d10fb8f3c8994377003a6b1f3990e5b95bad03452af899\nChallenge: wl_wl100000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login"
+      }
+    },
+    {
+      "call": "login:new:verify",
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "challengeId": "wl_wl100000000000000000000000000000",
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl400000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify",
+      "result": {
+        "points": {
+          "atomicScale": 1000000,
+          "available": 1500,
+          "committed": 0,
+          "entries": [
+            {
+              "amount": 500,
+              "at": 1700000000000,
+              "availableAfter": 1500,
+              "availableDelta": 500,
+              "committedAfter": 0,
+              "committedDelta": 0,
+              "forecastId": null,
+              "id": "award:wallet:u_wl9000000000000000000000",
+              "kind": "wallet_grant",
+              "returned": null,
+              "stake": 0
+            },
+            {
+              "amount": 1000,
+              "at": 1700000000000,
+              "availableAfter": 1000,
+              "availableDelta": 1000,
+              "committedAfter": 0,
+              "committedDelta": 0,
+              "forecastId": null,
+              "id": "award:profile:u_wl9000000000000000000000",
+              "kind": "profile_grant",
+              "returned": null,
+              "stake": 0
+            }
+          ],
+          "fractionAtomic": "0",
+          "onboarding": {
+            "profile": {
+              "awardedAt": 1700000000000,
+              "completed": true,
+              "reward": 1000
+            },
+            "wallet": {
+              "awardedAt": 1700000000000,
+              "completed": true,
+              "eligible": false,
+              "linked": true,
+              "reason": "awarded",
+              "reward": 500
+            }
+          },
+          "policy": {
+            "invalidReturnMultiplier": 1,
+            "maxStake": 1000,
+            "minStake": 0,
+            "practiceAllowed": true,
+            "profileGrant": 1000,
+            "purchasable": false,
+            "redeemable": false,
+            "reputationWeighted": false,
+            "transferable": false,
+            "version": "participation-points-v1",
+            "walletGrant": 500,
+            "winReturnMultiplier": 2
+          },
+          "total": 1500,
+          "userId": "u_wl9000000000000000000000"
+        },
+        "sessionToken": "wl120000000000000000000000000000",
+        "user": {
+          "createdAt": 1700000000000,
+          "displayName": "Forecaster 6x5SYnLr",
+          "handle": "f_wl9000000000",
+          "id": "u_wl9000000000000000000000"
+        },
+        "wallet": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "chain": "solana:devnet",
+          "linkedAt": 1700000000000
+        }
+      }
+    },
+    {
+      "call": "verify:context",
+      "input": {
+        "contextToken": null
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl150000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "verify:challenge",
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "expectedUserId": null,
+          "mode": "login"
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge",
+      "result": {
+        "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+        "chain": "solana:devnet",
+        "challengeId": "wl_wl170000000000000000000000000000",
+        "expiresAt": 1700000300000,
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 77f46a59f40431a710fd9fb102d229b86c316641a29014644dde480371dedf66\nChallenge: wl_wl170000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login"
+      }
+    },
+    {
+      "call": "verify:not-an-object",
+      "error": {
+        "code": "wallet_challenge_invalid",
+        "message": "A challenge, wallet address, and signature are required.",
+        "status": 400
+      },
+      "input": {
+        "body": "not-a-body",
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "verify:missing-key",
+      "error": {
+        "code": "wallet_challenge_invalid",
+        "message": "A challenge, wallet address, and signature are required.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "challengeId": "wl_wl170000000000000000000000000000"
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "verify:extra-key",
+      "error": {
+        "code": "wallet_challenge_invalid",
+        "message": "A challenge, wallet address, and signature are required.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "challengeId": "wl_wl170000000000000000000000000000",
+          "extra": 1,
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "verify:bad-id",
+      "error": {
+        "code": "wallet_login_changed",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "challengeId": "wl_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "verify:id-not-a-string",
+      "error": {
+        "code": "wallet_login_changed",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "challengeId": 7,
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "verify:wrong-address",
+      "error": {
+        "code": "wallet_login_changed",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "challengeId": "wl_wl170000000000000000000000000000",
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "verify:signature-not-base64",
+      "error": {
+        "code": "wallet_signature_invalid",
+        "message": "The wallet returned an invalid signature.",
+        "status": 400
+      },
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "challengeId": "wl_wl170000000000000000000000000000",
+          "signature": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "verify:bad-signature",
+      "error": {
+        "code": "wallet_signature_invalid",
+        "message": "The signature does not match this wallet and sign-in request.",
+        "status": 401
+      },
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "challengeId": "wl_wl170000000000000000000000000000",
+          "signature": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg=="
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "verify:other-context",
+      "input": {
+        "contextToken": null
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl190000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "verify:wrong-context",
+      "error": {
+        "code": "wallet_login_changed",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "challengeId": "wl_wl170000000000000000000000000000",
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl190000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "returning:challenge",
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "expectedUserId": null,
+          "mode": "login"
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge",
+      "result": {
+        "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+        "chain": "solana:devnet",
+        "challengeId": "wl_wl210000000000000000000000000000",
+        "expiresAt": 1700000300000,
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 8645a65aef4c1db4aad43a8e7f28af2997aa085d1503f9cbe6694805223deb41\nChallenge: wl_wl210000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login"
+      }
+    },
+    {
+      "call": "returning:verify",
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "challengeId": "wl_wl210000000000000000000000000000",
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify",
+      "result": {
+        "points": {
+          "atomicScale": 1000000,
+          "available": 1500,
+          "committed": 0,
+          "entries": [
+            {
+              "amount": 500,
+              "at": 1700000000000,
+              "availableAfter": 1500,
+              "availableDelta": 500,
+              "committedAfter": 0,
+              "committedDelta": 0,
+              "forecastId": null,
+              "id": "award:wallet:u_wl2000000000000000000000",
+              "kind": "wallet_grant",
+              "returned": null,
+              "stake": 0
+            },
+            {
+              "amount": 1000,
+              "at": 1700000000000,
+              "availableAfter": 1000,
+              "availableDelta": 1000,
+              "committedAfter": 0,
+              "committedDelta": 0,
+              "forecastId": null,
+              "id": "award:profile:u_wl2000000000000000000000",
+              "kind": "profile_grant",
+              "returned": null,
+              "stake": 0
+            }
+          ],
+          "fractionAtomic": "0",
+          "onboarding": {
+            "profile": {
+              "awardedAt": 1700000000000,
+              "completed": true,
+              "reward": 1000
+            },
+            "wallet": {
+              "awardedAt": 1700000000000,
+              "completed": true,
+              "eligible": false,
+              "linked": true,
+              "reason": "awarded",
+              "reward": 500
+            }
+          },
+          "policy": {
+            "invalidReturnMultiplier": 1,
+            "maxStake": 1000,
+            "minStake": 0,
+            "practiceAllowed": true,
+            "profileGrant": 1000,
+            "purchasable": false,
+            "redeemable": false,
+            "reputationWeighted": false,
+            "transferable": false,
+            "version": "participation-points-v1",
+            "walletGrant": 500,
+            "winReturnMultiplier": 2
+          },
+          "total": 1500,
+          "userId": "u_wl2000000000000000000000"
+        },
+        "sessionToken": "wl230000000000000000000000000000",
+        "user": {
+          "createdAt": 1700000000000,
+          "displayName": "Forecaster 586Z7H2v",
+          "handle": "f_wl2000000000",
+          "id": "u_wl2000000000000000000000"
+        },
+        "wallet": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "chain": "solana:devnet",
+          "linkedAt": 1700000000000
+        }
+      }
+    },
+    {
+      "call": "verify:replay",
+      "error": {
+        "code": "wallet_login_changed",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+          "challengeId": "wl_wl170000000000000000000000000000",
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl150000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "migrate:context",
+      "input": {
+        "contextToken": null
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl260000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "migrate:challenge",
+      "input": {
+        "body": {
+          "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+          "displayName": "Named Migrator",
+          "expectedUserId": "u_wl8000000000000000000000",
+          "mode": "migrate"
+        },
+        "contextToken": "wl260000000000000000000000000000",
+        "sessionToken": "wl700000000000000000000000000000"
+      },
+      "kind": "challenge",
+      "result": {
+        "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+        "chain": "solana:devnet",
+        "challengeId": "wl_wl270000000000000000000000000000",
+        "expiresAt": 1700000300000,
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: migrate\nProfile commitment: 780a77e8f3593a2421e146346dc07aeb2233d3c84ffb8a02226702c31c6f355f\nExisting profile: u_wl8000000000000000000000\nChallenge: wl_wl270000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "migrate"
+      }
+    },
+    {
+      "call": "migrate:verify",
+      "input": {
+        "body": {
+          "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+          "challengeId": "wl_wl270000000000000000000000000000",
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl260000000000000000000000000000",
+        "sessionToken": "wl700000000000000000000000000000"
+      },
+      "kind": "verify",
+      "result": {
+        "points": {
+          "atomicScale": 1000000,
+          "available": 1500,
+          "committed": 0,
+          "entries": [
+            {
+              "amount": 500,
+              "at": 1700000000000,
+              "availableAfter": 1500,
+              "availableDelta": 500,
+              "committedAfter": 0,
+              "committedDelta": 0,
+              "forecastId": null,
+              "id": "award:wallet:u_wl8000000000000000000000",
+              "kind": "wallet_grant",
+              "returned": null,
+              "stake": 0
+            },
+            {
+              "amount": 1000,
+              "at": 1700000000000,
+              "availableAfter": 1000,
+              "availableDelta": 1000,
+              "committedAfter": 0,
+              "committedDelta": 0,
+              "forecastId": null,
+              "id": "award:profile:u_wl8000000000000000000000",
+              "kind": "profile_grant",
+              "returned": null,
+              "stake": 0
+            }
+          ],
+          "fractionAtomic": "0",
+          "onboarding": {
+            "profile": {
+              "awardedAt": 1700000000000,
+              "completed": true,
+              "reward": 1000
+            },
+            "wallet": {
+              "awardedAt": 1700000000000,
+              "completed": true,
+              "eligible": false,
+              "linked": true,
+              "reason": "awarded",
+              "reward": 500
+            }
+          },
+          "policy": {
+            "invalidReturnMultiplier": 1,
+            "maxStake": 1000,
+            "minStake": 0,
+            "practiceAllowed": true,
+            "profileGrant": 1000,
+            "purchasable": false,
+            "redeemable": false,
+            "reputationWeighted": false,
+            "transferable": false,
+            "version": "participation-points-v1",
+            "walletGrant": 500,
+            "winReturnMultiplier": 2
+          },
+          "total": 1500,
+          "userId": "u_wl8000000000000000000000"
+        },
+        "sessionToken": "wl290000000000000000000000000000",
+        "user": {
+          "createdAt": 1700000000000,
+          "displayName": "Guest Migrator",
+          "handle": "f_wl8000000000",
+          "id": "u_wl8000000000000000000000"
+        },
+        "wallet": {
+          "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+          "chain": "solana:devnet",
+          "linkedAt": 1700000000000
+        }
+      }
+    },
+    {
+      "call": "migrate:guest-code",
+      "error": {
+        "code": "invalid_recovery_code",
+        "message": "Check your recovery code and try again.",
+        "status": 401
+      },
+      "input": {
+        "recoveryCode": "wl600000000000000000000000000000"
+      },
+      "kind": "login"
+    },
+    {
+      "call": "expired:context",
+      "input": {
+        "contextToken": null
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl320000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "expired:challenge",
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "expectedUserId": null,
+          "mode": "login"
+        },
+        "contextToken": "wl320000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge",
+      "result": {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "challengeId": "wl_wl330000000000000000000000000000",
+        "expiresAt": 1700000300000,
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: c5f438ab4c89529e57b46cceb19e6b1fc7d7f6752a1b33b86ec79c1e1dd5b3ca\nChallenge: wl_wl330000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login"
+      }
+    },
+    {
+      "call": "expired:verify",
+      "error": {
+        "code": "wallet_challenge_expired",
+        "message": "The signature request expired. Start wallet sign-in again.",
+        "status": 410
+      },
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "challengeId": "wl_wl330000000000000000000000000000",
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl320000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify"
+    },
+    {
+      "call": "retired:context",
+      "input": {
+        "contextToken": null
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl350000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "retired:identity:challenge",
+      "error": {
+        "code": "wallet_identity_retired",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "CiDwVBFgWV9E5MvXWoLgnEgn2hK7rJikbvfWavzAQz3",
+          "expectedUserId": null,
+          "mode": "login"
+        },
+        "contextToken": "wl350000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "retired:history:challenge",
+      "error": {
+        "code": "wallet_identity_retired",
+        "message": "This sign-in request changed or was canceled. Start wallet sign-in again.",
+        "status": 409
+      },
+      "input": {
+        "body": {
+          "address": "Ea7xtAAqsG7dT5vCQwGK18NUMSJFwavDDphEfaF3Nfe1",
+          "expectedUserId": null,
+          "mode": "login"
+        },
+        "contextToken": "wl350000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge"
+    },
+    {
+      "call": "retired:cancel",
+      "input": {
+        "contextToken": "wl350000000000000000000000000000"
+      },
+      "kind": "cancel",
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "creations": 2,
+  "description": "Wallet sign-in: browser-bound contexts, the exact signed message, the guarded identity conversion, the migrate path, and every refusal between them.",
+  "escapedCalls": [
+    {
+      "call": "escaped:context",
+      "input": {
+        "contextToken": null
+      },
+      "kind": "context",
+      "result": {
+        "contextToken": "wl100000000000000000000000000000",
+        "expiresAt": 1702592000000
+      }
+    },
+    {
+      "call": "escaped:challenge",
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "expectedUserId": null,
+          "mode": "login"
+        },
+        "contextToken": "wl100000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "challenge",
+      "result": {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "challengeId": "wl_wl300000000000000000000000000000",
+        "expiresAt": 1700000300000,
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: éxample.test\nURI: https://éxample.test/auth/wallet\nOrigin: https://éxample.test\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 6fbcb0c9880cbcf35a40d3995209a598a4b41b69d48caaf0af62fe2fec4efb34\nChallenge: wl_wl300000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login"
+      }
+    },
+    {
+      "call": "escaped:verify",
+      "input": {
+        "body": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "challengeId": "wl_wl300000000000000000000000000000",
+          "signature": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="
+        },
+        "contextToken": "wl100000000000000000000000000000",
+        "sessionToken": null
+      },
+      "kind": "verify",
+      "result": {
+        "points": {
+          "atomicScale": 1000000,
+          "available": 1500,
+          "committed": 0,
+          "entries": [
+            {
+              "amount": 500,
+              "at": 1700000000000,
+              "availableAfter": 1500,
+              "availableDelta": 500,
+              "committedAfter": 0,
+              "committedDelta": 0,
+              "forecastId": null,
+              "id": "award:wallet:u_wl2000000000000000000000",
+              "kind": "wallet_grant",
+              "returned": null,
+              "stake": 0
+            },
+            {
+              "amount": 1000,
+              "at": 1700000000000,
+              "availableAfter": 1000,
+              "availableDelta": 1000,
+              "committedAfter": 0,
+              "committedDelta": 0,
+              "forecastId": null,
+              "id": "award:profile:u_wl2000000000000000000000",
+              "kind": "profile_grant",
+              "returned": null,
+              "stake": 0
+            }
+          ],
+          "fractionAtomic": "0",
+          "onboarding": {
+            "profile": {
+              "awardedAt": 1700000000000,
+              "completed": true,
+              "reward": 1000
+            },
+            "wallet": {
+              "awardedAt": 1700000000000,
+              "completed": true,
+              "eligible": false,
+              "linked": true,
+              "reason": "awarded",
+              "reward": 500
+            }
+          },
+          "policy": {
+            "invalidReturnMultiplier": 1,
+            "maxStake": 1000,
+            "minStake": 0,
+            "practiceAllowed": true,
+            "profileGrant": 1000,
+            "purchasable": false,
+            "redeemable": false,
+            "reputationWeighted": false,
+            "transferable": false,
+            "version": "participation-points-v1",
+            "walletGrant": 500,
+            "winReturnMultiplier": 2
+          },
+          "total": 1500,
+          "userId": "u_wl2000000000000000000000"
+        },
+        "sessionToken": "wl500000000000000000000000000000",
+        "user": {
+          "createdAt": 1700000000000,
+          "displayName": "Forecaster 6x5SYnLr",
+          "handle": "f_wl2000000000",
+          "id": "u_wl2000000000000000000000"
+        },
+        "wallet": {
+          "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+          "chain": "solana:devnet",
+          "linkedAt": 1700000000000
+        }
+      }
+    }
+  ],
+  "escapedOrigin": "https://éxample.test",
+  "escapedRows": {
+    "sessions": [
+      {
+        "context_epoch": 1,
+        "context_hash": "659914591fc2d74aa645ba976ef07022a04d30069bc7bcc4db92991584b8ae38",
+        "created_at": 1700000000000,
+        "expires_at": 1702592000000,
+        "token_hash": "b3621c7ab40f8b09f26e6e847abae4d947b69529995c43464f876b866a5fd3cc",
+        "user_id": "u_wl2000000000000000000000"
+      }
+    ],
+    "users": [
+      {
+        "created_at": 1700000000000,
+        "display_name": "Forecaster 6x5SYnLr",
+        "handle": "f_wl2000000000",
+        "id": "u_wl2000000000000000000000",
+        "recovery_hash": "disabled-wallet:u_wl2000000000000000000000"
+      }
+    ],
+    "wallet_audit": [],
+    "wallet_challenges": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "created_at": 1700000000000,
+        "expires_at": 1700000300000,
+        "id": "wl_wl300000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: éxample.test\nURI: https://éxample.test/auth/wallet\nOrigin: https://éxample.test\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 6fbcb0c9880cbcf35a40d3995209a598a4b41b69d48caaf0af62fe2fec4efb34\nChallenge: wl_wl300000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "origin": "https://éxample.test",
+        "purpose": "link_forecast_profile",
+        "revoked_at": null,
+        "used_at": 1700000000000,
+        "user_id": "u_wl2000000000000000000000"
+      }
+    ],
+    "wallet_identities": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "converted_at": 1700000000000,
+        "created_at": 1700000000000,
+        "status": "active",
+        "user_id": "u_wl2000000000000000000000"
+      }
+    ],
+    "wallet_links": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "generation": "wl_wl300000000000000000000000000000",
+        "linked_at": 1700000000000,
+        "revision": 1,
+        "user_id": "u_wl2000000000000000000000"
+      }
+    ],
+    "wallet_login_audit": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "body": "{\"address\":\"6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\",\"chain\":\"solana:devnet\",\"challengeId\":\"wl_wl300000000000000000000000000000\",\"kind\":\"wallet_signed_in\",\"messageSha256\":\"97d77a5c3a22b938c77714dda063e0446e1b12e53e527cfed2417788255d0309\",\"mode\":\"login\",\"origin\":\"https://\\u00e9xample.test\",\"proofRoles\":[\"sign_in_forecast_profile\",\"link_forecast_profile\"],\"purpose\":\"sign_in_and_link_forecast_profile\",\"schemaVersion\":1,\"signatureSha256\":\"7c8975e1e60a5c8337f28edf8c33c3b180360b7279644a9bc1af3c51e6220bf5\",\"signatureVerified\":true,\"userId\":\"u_wl2000000000000000000000\",\"verification\":\"ed25519_sign_message\",\"verifiedAt\":1700000000000}",
+        "challenge_id": "wl_wl300000000000000000000000000000",
+        "created_at": 1700000000000,
+        "id": "wl700000000000000000000000000000",
+        "user_id": "u_wl2000000000000000000000"
+      }
+    ],
+    "wallet_login_challenges": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "context_epoch": 1,
+        "context_hash": "659914591fc2d74aa645ba976ef07022a04d30069bc7bcc4db92991584b8ae38",
+        "created_at": 1700000000000,
+        "display_name": "Forecaster 6x5SYnLr",
+        "expires_at": 1700000300000,
+        "id": "wl_wl300000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: éxample.test\nURI: https://éxample.test/auth/wallet\nOrigin: https://éxample.test\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 6fbcb0c9880cbcf35a40d3995209a598a4b41b69d48caaf0af62fe2fec4efb34\nChallenge: wl_wl300000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login",
+        "origin": "https://éxample.test",
+        "purpose": "sign_in_and_link_forecast_profile",
+        "revoked_at": null,
+        "source_session_hash": null,
+        "target_user_id": "u_wl2000000000000000000000",
+        "used_at": 1700000000000
+      }
+    ],
+    "wallet_login_contexts": [
+      {
+        "active_session_hash": "b3621c7ab40f8b09f26e6e847abae4d947b69529995c43464f876b866a5fd3cc",
+        "created_at": 1700000000000,
+        "epoch": 1,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": "wl_wl300000000000000000000000000000",
+        "revoked_at": null,
+        "token_hash": "659914591fc2d74aa645ba976ef07022a04d30069bc7bcc4db92991584b8ae38"
+      }
+    ]
+  },
+  "escapedVerified": [
+    {
+      "key": "5866666666666666666666666666666666666666666666666666666666666666",
+      "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: éxample.test\nURI: https://éxample.test/auth/wallet\nOrigin: https://éxample.test\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 6fbcb0c9880cbcf35a40d3995209a598a4b41b69d48caaf0af62fe2fec4efb34\nChallenge: wl_wl300000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+      "signature": "01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101",
+      "valid": true
+    }
+  ],
+  "now": 1700000000000,
+  "origin": "https://forecast.eastsea.xyz",
+  "rows": {
+    "sessions": [
+      {
+        "context_epoch": 1,
+        "context_hash": "4c6f1a55b278550b9c22858f2e31f23c2570604e17d4b672ee3b3b73068027d4",
+        "created_at": 1700000000000,
+        "expires_at": 1702592000000,
+        "token_hash": "852bfb50d97162579e4c1e106c862f0a8fa9ce58e3b653e0aef8494e986ecf8c",
+        "user_id": "u_wl9000000000000000000000"
+      },
+      {
+        "context_epoch": 1,
+        "context_hash": "2031bbbbc24bcdd1f1c6cc0657dcea56d95510700adfad5fdb8ad77ce93f68ea",
+        "created_at": 1700000000000,
+        "expires_at": 1702592000000,
+        "token_hash": "e1e39222332dbaba82ec6e713d24fdece91f9702d047edc996487858dfb1bc2d",
+        "user_id": "u_wl2000000000000000000000"
+      },
+      {
+        "context_epoch": 1,
+        "context_hash": "b17d8676a34524344720ce1ea682f9622eab217a547fb7d62896c9f72b352f7e",
+        "created_at": 1700000000000,
+        "expires_at": 1702592000000,
+        "token_hash": "0722a7c40e1c8fc43e6f41afa6387f88726471301131560a521b87a4e3563329",
+        "user_id": "u_wl8000000000000000000000"
+      }
+    ],
+    "users": [
+      {
+        "created_at": 1700000000000,
+        "display_name": "Guest Migrator",
+        "handle": "f_wl8000000000",
+        "id": "u_wl8000000000000000000000",
+        "recovery_hash": "disabled-wallet:u_wl8000000000000000000000"
+      },
+      {
+        "created_at": 1700000000000,
+        "display_name": "Forecaster 6x5SYnLr",
+        "handle": "f_wl9000000000",
+        "id": "u_wl9000000000000000000000",
+        "recovery_hash": "disabled-wallet:u_wl9000000000000000000000"
+      },
+      {
+        "created_at": 1700000000000,
+        "display_name": "Forecaster 586Z7H2v",
+        "handle": "f_wl2000000000",
+        "id": "u_wl2000000000000000000000",
+        "recovery_hash": "disabled-wallet:u_wl2000000000000000000000"
+      }
+    ],
+    "wallet_audit": [
+      {
+        "address": "Ea7xtAAqsG7dT5vCQwGK18NUMSJFwavDDphEfaF3Nfe1",
+        "body": "{}",
+        "challenge_id": null,
+        "created_at": 1700000000000,
+        "id": "wa_retired",
+        "kind": "wallet_unlinked",
+        "user_id": "u_wl9000000000000000000000"
+      }
+    ],
+    "wallet_challenges": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "created_at": 1700000000000,
+        "expires_at": 1700000300000,
+        "id": "wl_wl100000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 556a0ef9af05168bf0d10fb8f3c8994377003a6b1f3990e5b95bad03452af899\nChallenge: wl_wl100000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "origin": "https://forecast.eastsea.xyz",
+        "purpose": "link_forecast_profile",
+        "revoked_at": null,
+        "used_at": 1700000000000,
+        "user_id": "u_wl9000000000000000000000"
+      },
+      {
+        "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+        "chain": "solana:devnet",
+        "created_at": 1700000000000,
+        "expires_at": 1700000300000,
+        "id": "wl_wl210000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 8645a65aef4c1db4aad43a8e7f28af2997aa085d1503f9cbe6694805223deb41\nChallenge: wl_wl210000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "origin": "https://forecast.eastsea.xyz",
+        "purpose": "link_forecast_profile",
+        "revoked_at": null,
+        "used_at": 1700000000000,
+        "user_id": "u_wl2000000000000000000000"
+      },
+      {
+        "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+        "chain": "solana:devnet",
+        "created_at": 1700000000000,
+        "expires_at": 1700000300000,
+        "id": "wl_wl270000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: migrate\nProfile commitment: 780a77e8f3593a2421e146346dc07aeb2233d3c84ffb8a02226702c31c6f355f\nExisting profile: u_wl8000000000000000000000\nChallenge: wl_wl270000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "origin": "https://forecast.eastsea.xyz",
+        "purpose": "link_forecast_profile",
+        "revoked_at": null,
+        "used_at": 1700000000000,
+        "user_id": "u_wl8000000000000000000000"
+      }
+    ],
+    "wallet_identities": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "converted_at": 1700000000000,
+        "created_at": 1700000000000,
+        "status": "active",
+        "user_id": "u_wl9000000000000000000000"
+      },
+      {
+        "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+        "converted_at": 1700000000000,
+        "created_at": 1700000000000,
+        "status": "active",
+        "user_id": "u_wl2000000000000000000000"
+      },
+      {
+        "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+        "converted_at": 1700000000000,
+        "created_at": 1700000000000,
+        "status": "active",
+        "user_id": "u_wl8000000000000000000000"
+      },
+      {
+        "address": "CiDwVBFgWV9E5MvXWoLgnEgn2hK7rJikbvfWavzAQz3",
+        "converted_at": null,
+        "created_at": 1700000000000,
+        "status": "tombstone",
+        "user_id": "u_wl9000000000000000000000"
+      }
+    ],
+    "wallet_links": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "generation": "wl_wl100000000000000000000000000000",
+        "linked_at": 1700000000000,
+        "revision": 1,
+        "user_id": "u_wl9000000000000000000000"
+      },
+      {
+        "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+        "chain": "solana:devnet",
+        "generation": "wl_wl210000000000000000000000000000",
+        "linked_at": 1700000000000,
+        "revision": 1,
+        "user_id": "u_wl2000000000000000000000"
+      },
+      {
+        "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+        "chain": "solana:devnet",
+        "generation": "wl_wl270000000000000000000000000000",
+        "linked_at": 1700000000000,
+        "revision": 1,
+        "user_id": "u_wl8000000000000000000000"
+      }
+    ],
+    "wallet_login_audit": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "body": "{\"address\":\"6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\",\"chain\":\"solana:devnet\",\"challengeId\":\"wl_wl100000000000000000000000000000\",\"kind\":\"wallet_signed_in\",\"messageSha256\":\"d070a9e810b868b509bc3c54948b8f40aa8cdab07a4f118c1fc45a71d3363c18\",\"mode\":\"login\",\"origin\":\"https://forecast.eastsea.xyz\",\"proofRoles\":[\"sign_in_forecast_profile\",\"link_forecast_profile\"],\"purpose\":\"sign_in_and_link_forecast_profile\",\"schemaVersion\":1,\"signatureSha256\":\"7c8975e1e60a5c8337f28edf8c33c3b180360b7279644a9bc1af3c51e6220bf5\",\"signatureVerified\":true,\"userId\":\"u_wl9000000000000000000000\",\"verification\":\"ed25519_sign_message\",\"verifiedAt\":1700000000000}",
+        "challenge_id": "wl_wl100000000000000000000000000000",
+        "created_at": 1700000000000,
+        "id": "wl140000000000000000000000000000",
+        "user_id": "u_wl9000000000000000000000"
+      },
+      {
+        "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+        "body": "{\"address\":\"586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5\",\"chain\":\"solana:devnet\",\"challengeId\":\"wl_wl210000000000000000000000000000\",\"kind\":\"wallet_signed_in\",\"messageSha256\":\"546a865142c01357c87a586e96b088b1bf1366a6c7c2172d31664d5fb1c4d21d\",\"mode\":\"login\",\"origin\":\"https://forecast.eastsea.xyz\",\"proofRoles\":[\"sign_in_forecast_profile\",\"link_forecast_profile\"],\"purpose\":\"sign_in_and_link_forecast_profile\",\"schemaVersion\":1,\"signatureSha256\":\"7c8975e1e60a5c8337f28edf8c33c3b180360b7279644a9bc1af3c51e6220bf5\",\"signatureVerified\":true,\"userId\":\"u_wl2000000000000000000000\",\"verification\":\"ed25519_sign_message\",\"verifiedAt\":1700000000000}",
+        "challenge_id": "wl_wl210000000000000000000000000000",
+        "created_at": 1700000000000,
+        "id": "wl250000000000000000000000000000",
+        "user_id": "u_wl2000000000000000000000"
+      },
+      {
+        "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+        "body": "{\"address\":\"FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z\",\"chain\":\"solana:devnet\",\"challengeId\":\"wl_wl270000000000000000000000000000\",\"kind\":\"wallet_signed_in\",\"messageSha256\":\"a947bbc75760df8e20582b534676388727ac9de20ec441161dfc2ae950cb5c75\",\"mode\":\"migrate\",\"origin\":\"https://forecast.eastsea.xyz\",\"proofRoles\":[\"sign_in_forecast_profile\",\"link_forecast_profile\"],\"purpose\":\"sign_in_and_link_forecast_profile\",\"schemaVersion\":1,\"signatureSha256\":\"7c8975e1e60a5c8337f28edf8c33c3b180360b7279644a9bc1af3c51e6220bf5\",\"signatureVerified\":true,\"userId\":\"u_wl8000000000000000000000\",\"verification\":\"ed25519_sign_message\",\"verifiedAt\":1700000000000}",
+        "challenge_id": "wl_wl270000000000000000000000000000",
+        "created_at": 1700000000000,
+        "id": "wl310000000000000000000000000000",
+        "user_id": "u_wl8000000000000000000000"
+      }
+    ],
+    "wallet_login_challenges": [
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "context_epoch": 1,
+        "context_hash": "4c6f1a55b278550b9c22858f2e31f23c2570604e17d4b672ee3b3b73068027d4",
+        "created_at": 1700000000000,
+        "display_name": "Forecaster 6x5SYnLr",
+        "expires_at": 1700000300000,
+        "id": "wl_wl100000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 556a0ef9af05168bf0d10fb8f3c8994377003a6b1f3990e5b95bad03452af899\nChallenge: wl_wl100000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login",
+        "origin": "https://forecast.eastsea.xyz",
+        "purpose": "sign_in_and_link_forecast_profile",
+        "revoked_at": null,
+        "source_session_hash": null,
+        "target_user_id": "u_wl9000000000000000000000",
+        "used_at": 1700000000000
+      },
+      {
+        "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+        "chain": "solana:devnet",
+        "context_epoch": 1,
+        "context_hash": "2031bbbbc24bcdd1f1c6cc0657dcea56d95510700adfad5fdb8ad77ce93f68ea",
+        "created_at": 1700000000000,
+        "display_name": "Forecaster 586Z7H2v",
+        "expires_at": 1700000300000,
+        "id": "wl_wl170000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 77f46a59f40431a710fd9fb102d229b86c316641a29014644dde480371dedf66\nChallenge: wl_wl170000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login",
+        "origin": "https://forecast.eastsea.xyz",
+        "purpose": "sign_in_and_link_forecast_profile",
+        "revoked_at": 1700000000000,
+        "source_session_hash": null,
+        "target_user_id": "u_wl1600000000000000000000",
+        "used_at": null
+      },
+      {
+        "address": "586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5",
+        "chain": "solana:devnet",
+        "context_epoch": 1,
+        "context_hash": "2031bbbbc24bcdd1f1c6cc0657dcea56d95510700adfad5fdb8ad77ce93f68ea",
+        "created_at": 1700000000000,
+        "display_name": "Forecaster 586Z7H2v",
+        "expires_at": 1700000300000,
+        "id": "wl_wl210000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 8645a65aef4c1db4aad43a8e7f28af2997aa085d1503f9cbe6694805223deb41\nChallenge: wl_wl210000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login",
+        "origin": "https://forecast.eastsea.xyz",
+        "purpose": "sign_in_and_link_forecast_profile",
+        "revoked_at": null,
+        "source_session_hash": null,
+        "target_user_id": "u_wl2000000000000000000000",
+        "used_at": 1700000000000
+      },
+      {
+        "address": "FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z",
+        "chain": "solana:devnet",
+        "context_epoch": 1,
+        "context_hash": "b17d8676a34524344720ce1ea682f9622eab217a547fb7d62896c9f72b352f7e",
+        "created_at": 1700000000000,
+        "display_name": "Named Migrator",
+        "expires_at": 1700000300000,
+        "id": "wl_wl270000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: migrate\nProfile commitment: 780a77e8f3593a2421e146346dc07aeb2233d3c84ffb8a02226702c31c6f355f\nExisting profile: u_wl8000000000000000000000\nChallenge: wl_wl270000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "migrate",
+        "origin": "https://forecast.eastsea.xyz",
+        "purpose": "sign_in_and_link_forecast_profile",
+        "revoked_at": null,
+        "source_session_hash": "3fe51b48382c06d78451b7b87c96fe10292af2720689cea9922bba8ba2543f42",
+        "target_user_id": "u_wl8000000000000000000000",
+        "used_at": 1700000000000
+      },
+      {
+        "address": "6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH",
+        "chain": "solana:devnet",
+        "context_epoch": 1,
+        "context_hash": "38f01c8f95f4ec5103b963c7511a8f4b14528200a1627c5d51c4c2bf83747c21",
+        "created_at": 1700000000000,
+        "display_name": "Forecaster 6x5SYnLr",
+        "expires_at": 1700000300000,
+        "id": "wl_wl330000000000000000000000000000",
+        "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: c5f438ab4c89529e57b46cceb19e6b1fc7d7f6752a1b33b86ec79c1e1dd5b3ca\nChallenge: wl_wl330000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+        "mode": "login",
+        "origin": "https://forecast.eastsea.xyz",
+        "purpose": "sign_in_and_link_forecast_profile",
+        "revoked_at": null,
+        "source_session_hash": null,
+        "target_user_id": "u_wl9000000000000000000000",
+        "used_at": null
+      }
+    ],
+    "wallet_login_contexts": [
+      {
+        "active_session_hash": null,
+        "created_at": 1700000000000,
+        "epoch": 1,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": null,
+        "revoked_at": 1700000000000,
+        "token_hash": "659914591fc2d74aa645ba976ef07022a04d30069bc7bcc4db92991584b8ae38"
+      },
+      {
+        "active_session_hash": null,
+        "created_at": 1700000000000,
+        "epoch": 2,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": null,
+        "revoked_at": 1700000000000,
+        "token_hash": "e0f25a0536a1d25a71936b8892245849fd7b62a020d5748955586063e1072ced"
+      },
+      {
+        "active_session_hash": null,
+        "created_at": 1700000000000,
+        "epoch": 1,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": null,
+        "revoked_at": null,
+        "token_hash": "49e872959163f7749ba74b0d8614c4abe7fd2f9a98b9757509885d237bd91330"
+      },
+      {
+        "active_session_hash": "852bfb50d97162579e4c1e106c862f0a8fa9ce58e3b653e0aef8494e986ecf8c",
+        "created_at": 1700000000000,
+        "epoch": 1,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": "wl_wl100000000000000000000000000000",
+        "revoked_at": null,
+        "token_hash": "4c6f1a55b278550b9c22858f2e31f23c2570604e17d4b672ee3b3b73068027d4"
+      },
+      {
+        "active_session_hash": null,
+        "created_at": 1700000000000,
+        "epoch": 1,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": null,
+        "revoked_at": null,
+        "token_hash": "d387c6ddf6b92d82cedc7d21e9053515b0b2145426b75d2e4e21325cc11d5f7c"
+      },
+      {
+        "active_session_hash": "e1e39222332dbaba82ec6e713d24fdece91f9702d047edc996487858dfb1bc2d",
+        "created_at": 1700000000000,
+        "epoch": 1,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": "wl_wl210000000000000000000000000000",
+        "revoked_at": null,
+        "token_hash": "2031bbbbc24bcdd1f1c6cc0657dcea56d95510700adfad5fdb8ad77ce93f68ea"
+      },
+      {
+        "active_session_hash": null,
+        "created_at": 1700000000000,
+        "epoch": 1,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": null,
+        "revoked_at": null,
+        "token_hash": "63a6aac379134853c787cafa1b8b71ff06b2f1598692b214ef894cec7e4239df"
+      },
+      {
+        "active_session_hash": "0722a7c40e1c8fc43e6f41afa6387f88726471301131560a521b87a4e3563329",
+        "created_at": 1700000000000,
+        "epoch": 1,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": "wl_wl270000000000000000000000000000",
+        "revoked_at": null,
+        "token_hash": "b17d8676a34524344720ce1ea682f9622eab217a547fb7d62896c9f72b352f7e"
+      },
+      {
+        "active_session_hash": null,
+        "created_at": 1700000000000,
+        "epoch": 1,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": "wl_wl330000000000000000000000000000",
+        "revoked_at": null,
+        "token_hash": "38f01c8f95f4ec5103b963c7511a8f4b14528200a1627c5d51c4c2bf83747c21"
+      },
+      {
+        "active_session_hash": null,
+        "created_at": 1700000000000,
+        "epoch": 2,
+        "expires_at": 1702592000000,
+        "latest_challenge_id": null,
+        "revoked_at": 1700000000000,
+        "token_hash": "5f7a201b9a33f70830ffde40fd4cc3fef77bb6181996b9d440b296f26ced254d"
+      }
+    ]
+  },
+  "verified": [
+    {
+      "key": "5866666666666666666666666666666666666666666666666666666666666666",
+      "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 6x5SYnLroiN7WYq8NQYU9KHcH4YjpBbwpUfVu3EB7ieH\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 556a0ef9af05168bf0d10fb8f3c8994377003a6b1f3990e5b95bad03452af899\nChallenge: wl_wl100000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+      "signature": "01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101",
+      "valid": true
+    },
+    {
+      "key": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+      "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 77f46a59f40431a710fd9fb102d229b86c316641a29014644dde480371dedf66\nChallenge: wl_wl170000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+      "signature": "02020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202",
+      "valid": false
+    },
+    {
+      "key": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+      "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: 586Z7H2vpX9qNhN2T4e9Utugie3ogjbxzGaMtM3E6HR5\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: login\nProfile commitment: 8645a65aef4c1db4aad43a8e7f28af2997aa085d1503f9cbe6694805223deb41\nChallenge: wl_wl210000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+      "signature": "01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101",
+      "valid": true
+    },
+    {
+      "key": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+      "message": "Forecast Network wallet sign-in\nSign in to the profile associated with this wallet, creating and linking one if needed.\nThis signature verifies wallet ownership only. It does not authorize a transaction or transfer.\nDomain: forecast.eastsea.xyz\nURI: https://forecast.eastsea.xyz/auth/wallet\nOrigin: https://forecast.eastsea.xyz\nAddress: FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z\nChain: solana:devnet\nPurpose ID: sign_in_and_link_forecast_profile\nProof roles: sign_in_forecast_profile, link_forecast_profile\nMode: migrate\nProfile commitment: 780a77e8f3593a2421e146346dc07aeb2233d3c84ffb8a02226702c31c6f355f\nExisting profile: u_wl8000000000000000000000\nChallenge: wl_wl270000000000000000000000000000\nIssued at: 1700000000000\nExpires at: 1700000300000\n",
+      "signature": "01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101",
+      "valid": true
+    }
+  ]
+}

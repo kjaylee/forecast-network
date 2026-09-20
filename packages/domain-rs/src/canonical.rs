@@ -36,6 +36,47 @@ pub fn canonical_bytes<T: Serialize + ?Sized>(value: &T) -> Result<Vec<u8>> {
     serde_json::to_vec(&value).map_err(|error| ValidationError::new(error.to_string()))
 }
 
+/// `json.dumps(value, sort_keys=True, separators=(",", ":"))` with Python's **default**
+/// `ensure_ascii=True` — the sibling of [`canonical_bytes`], not a replacement for it.
+///
+/// Python's default escapes every non-ASCII character as `\uXXXX`, using a surrogate pair above
+/// the BMP; `serde_json` writes the character's UTF-8 bytes. The reference uses *both*, and the
+/// difference is one keyword argument there and a load-bearing distinction here:
+///
+///   * A **commitment** (`forecast_domain.serialization.canonical_bytes`, and the `sort_keys`
+///     calls that pass `ensure_ascii=False`) drops the escapes, so one text has one byte string
+///     and one hash no matter how it is written.
+///   * An **audit body** — `wallet_login`, `resolution_timing`, `markets._hash`,
+///     `participation_holds` — keeps the escapes, so the stored record is ASCII and a non-ASCII
+///     profile name cannot change the row's bytes.
+///
+/// Picking the wrong one is invisible until the first non-ASCII value, and then it is a different
+/// digest for the same event rather than a visible failure.
+pub fn python_json_bytes<T: Serialize + ?Sized>(value: &T) -> Result<Vec<u8>> {
+    Ok(escape_non_ascii(&canonical_bytes(value)?))
+}
+
+/// `ensure_ascii=True` over already-valid JSON text.
+///
+/// Every structural character of JSON is ASCII and `canonical_bytes` has already escaped the
+/// control characters, so a character outside ASCII can only be inside a string literal — which is
+/// why this can walk the text rather than parse it.
+fn escape_non_ascii(bytes: &[u8]) -> Vec<u8> {
+    let text = String::from_utf8_lossy(bytes);
+    let mut out = String::with_capacity(text.len());
+    for character in text.chars() {
+        if (character as u32) < 0x80 {
+            out.push(character);
+            continue;
+        }
+        let mut units = [0u16; 2];
+        for unit in character.encode_utf16(&mut units) {
+            out.push_str(&format!("\\u{unit:04x}"));
+        }
+    }
+    out.into_bytes()
+}
+
 /// `sha256(prefix + canonical_bytes)` as lowercase hex.
 pub fn content_hash<T: Serialize + ?Sized>(value: &T) -> Result<String> {
     let mut hasher = Sha256::new();

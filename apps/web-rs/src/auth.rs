@@ -142,7 +142,7 @@ fn unavailable() -> AuthError {
 ///
 /// 192 bits of entropy is the floor; the alphabet is url-safe because the value is handed to a
 /// person as a recovery code and to a browser as a cookie.
-fn shaped(value: &str) -> bool {
+pub(crate) fn shaped(value: &str) -> bool {
     (32..=256).contains(&value.len())
         && value
             .chars()
@@ -211,7 +211,7 @@ impl Authentication<'_> {
 
     /// `token`. A generator that cannot supply 192 bits is a configuration fault rather than a
     /// request fault, so it is an outage and not a rejected input.
-    fn token(&self) -> Result<String, AuthError> {
+    pub(crate) fn token(&self) -> Result<String, AuthError> {
         let value = (self.random_token)();
         if !shaped(&value) {
             return Err(AuthError::new(
