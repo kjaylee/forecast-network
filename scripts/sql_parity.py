@@ -59,6 +59,13 @@ DIVERGENCES = {
         "reports no affected-row count. The statement it confirms is the reference's own: a WHERE "
         "clause that refuses the update leaves the row unchanged, and the reserve is refused. "
         "Two extra reads, the same outcome, and nothing invented to make the check possible.",
+    "SELECTrevisionFROMseeker_verificationsWHEREuser_id=?":
+        "`verify` confirms the invalidation by reading the revision back, for the same reason: "
+        "this `Database` reports no affected-row count. The UPDATE is the reference's own and "
+        "runs only under the reference's own WHERE clause, so the read observes whether it took.",
+    "SELECTaddress,genesis_mint,refreshed_atFROMseeker_verificationsWHEREuser_id=?":
+        "`verify` confirms the upsert the same way, and for the same reason. A write with no "
+        "reported count is confirmed by reading what it should have written.",
     "FROMregistry_deliveryWHEREforecast_id=?ANDrevision=?":
         "The delivery lease and its confirmation are read back from the row, for the same reason: "
         "this `Database` reports no affected-row count, so `sync` confirms it holds the lease by "

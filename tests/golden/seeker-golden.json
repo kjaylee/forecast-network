@@ -1,0 +1,278 @@
+{
+  "atomic": [
+    {
+      "name": "skr:sum",
+      "result": 2000000
+    },
+    {
+      "name": "skr:other-mint",
+      "result": 0
+    },
+    {
+      "name": "skr:malformed",
+      "result": 7
+    },
+    {
+      "name": "skr:empty",
+      "result": 0
+    }
+  ],
+  "candidates": [
+    {
+      "name": "candidate:many",
+      "result": [
+        "SGTmint",
+        "SGTother"
+      ]
+    },
+    {
+      "name": "candidate:empty",
+      "result": []
+    },
+    {
+      "name": "candidate:no-unit",
+      "result": []
+    },
+    {
+      "name": "candidate:decimals",
+      "result": []
+    },
+    {
+      "name": "candidate:duplicate",
+      "result": [
+        "SGTmint"
+      ]
+    },
+    {
+      "name": "candidate:malformed",
+      "result": []
+    }
+  ],
+  "constants": {
+    "sgtGroup": "GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te",
+    "skrDecimals": 6,
+    "skrMint": "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3"
+  },
+  "description": "The Seeker parsers: what a jsonParsed RPC reply has to look like before anything is read out of it, and the display arithmetic.",
+  "displays": [
+    {
+      "atomic": 0,
+      "display": "0"
+    },
+    {
+      "atomic": 1,
+      "display": "0.000001"
+    },
+    {
+      "atomic": 999999,
+      "display": "0.999999"
+    },
+    {
+      "atomic": 1000000,
+      "display": "1"
+    },
+    {
+      "atomic": 1500000,
+      "display": "1.5"
+    },
+    {
+      "atomic": 123456789,
+      "display": "123.456789"
+    },
+    {
+      "atomic": 1000000000000,
+      "display": "1000000"
+    },
+    {
+      "atomic": 1000010,
+      "display": "1.00001"
+    }
+  ],
+  "members": [
+    {
+      "name": "member:found",
+      "result": [
+        "SGTmint",
+        3
+      ]
+    },
+    {
+      "name": "member:first",
+      "result": [
+        "third",
+        3
+      ]
+    },
+    {
+      "name": "member:wrong-group",
+      "result": null
+    },
+    {
+      "name": "member:mint-mismatch",
+      "result": null
+    },
+    {
+      "name": "member:none",
+      "result": null
+    },
+    {
+      "name": "member:no-number",
+      "result": [
+        "m",
+        null
+      ]
+    },
+    {
+      "name": "member:missing-extension",
+      "result": null
+    }
+  ],
+  "mintAccounts": [
+    {
+      "name": "mint:ok",
+      "result": 3
+    },
+    {
+      "error": "Incomplete mint accounts",
+      "name": "mint:count"
+    },
+    {
+      "error": "Incomplete mint account",
+      "name": "mint:supply-not-decimal"
+    },
+    {
+      "error": "Incomplete mint account",
+      "name": "mint:supply-not-a-string"
+    },
+    {
+      "error": "Incomplete mint account",
+      "name": "mint:decimals-not-an-int"
+    },
+    {
+      "error": "Incomplete mint account",
+      "name": "mint:extensions-not-a-list"
+    },
+    {
+      "error": "Incomplete mint extension",
+      "name": "mint:extension-not-a-dict"
+    },
+    {
+      "error": "Incomplete mint extension",
+      "name": "mint:extension-unnamed"
+    },
+    {
+      "error": "Incomplete token group member",
+      "name": "mint:member-state-incomplete"
+    },
+    {
+      "name": "mint:member-number-not-an-int",
+      "result": [
+        "m",
+        null
+      ]
+    }
+  ],
+  "parsed": [
+    {
+      "name": "well-formed",
+      "parsed": {},
+      "value": {
+        "account": {
+          "data": {
+            "parsed": {
+              "info": {
+                "mint": "SGTmint",
+                "tokenAmount": {
+                  "amount": "1",
+                  "decimals": 0,
+                  "uiAmountString": "1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "missing-data",
+      "parsed": {},
+      "value": {}
+    },
+    {
+      "name": "not-a-dict",
+      "parsed": {},
+      "value": {
+        "data": null
+      }
+    },
+    {
+      "name": "info-not-a-dict",
+      "parsed": {},
+      "value": {
+        "data": {
+          "parsed": {
+            "info": 7
+          }
+        }
+      }
+    }
+  ],
+  "projections": [
+    {
+      "name": "absent",
+      "projection": null,
+      "row": null
+    },
+    {
+      "name": "present",
+      "projection": {
+        "memberNumber": 3,
+        "refreshedAt": 20,
+        "skr": "1.5",
+        "verified": true,
+        "verifiedAt": 10
+      },
+      "row": {
+        "member_number": 3,
+        "refreshed_at": 20,
+        "skr_atomic": 1500000,
+        "verified_at": 10
+      }
+    },
+    {
+      "name": "empty-row",
+      "projection": null,
+      "row": {}
+    }
+  ],
+  "tokenAccounts": [
+    {
+      "name": "token:ok",
+      "result": 5
+    },
+    {
+      "error": "Incomplete RPC response",
+      "name": "token:not-a-list"
+    },
+    {
+      "error": "Incomplete RPC response",
+      "name": "token:no-value"
+    },
+    {
+      "error": "Incomplete token account",
+      "name": "token:amount-not-a-string"
+    },
+    {
+      "error": "Incomplete token account",
+      "name": "token:decimals-not-an-int"
+    },
+    {
+      "error": "Incomplete token account",
+      "name": "token:non-ascii-amount"
+    },
+    {
+      "error": "Incomplete token account",
+      "name": "token:missing-amount"
+    }
+  ]
+}

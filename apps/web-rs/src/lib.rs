@@ -34,6 +34,7 @@ pub mod resolution_timing;
 pub mod risk_ops;
 mod routes;
 pub mod scheduler;
+pub mod seeker;
 pub mod solana;
 pub mod source_watch;
 pub mod sources;

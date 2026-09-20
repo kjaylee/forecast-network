@@ -71,7 +71,10 @@ def main() -> int:
                 [sys.executable, "scripts/generate_analytics_golden.py", "--check"],
                 # The Solana wire codecs: a port one byte out produces a rejected transaction,
                 # or a different valid instruction.
-                [sys.executable, "scripts/generate_solana_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_solana_golden.py", "--check"],
+                # The Seeker parsers read someone else's RPC reply, so leniency is the one
+                # failure mode: it would report a verified Seeker the reference did not.
+                [sys.executable, "scripts/generate_seeker_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:
