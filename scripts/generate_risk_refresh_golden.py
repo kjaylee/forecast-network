@@ -112,6 +112,12 @@ async def build() -> dict:
         calls.append({"call": name, "kind": "refresh_bound_prediction_v2", "input": {"bindingId": target},
                       "result": result})
 
+    # The state the first call sees, recorded *before* it runs. The rows below are the final
+    # state, and a port that restored those would be replaying a refresh against an estimate the
+    # refresh itself wrote — which is how this vector first caught its own fixture.
+    initial = {table: [dict(row) for row in await db.all(f"SELECT * FROM {table} ORDER BY rowid")]
+               for table in TABLES}
+
     # The producer's fixture sets the clock to the operational start; currency needs the binding
     # inside its *authorization* window, which opened with the question.
     case.now = case.start + 1000
@@ -146,6 +152,7 @@ async def build() -> dict:
                        "stale-estimate rule — over the v2 producer's own approved binding.",
         "genesis": GENESIS,
         "clockArtifacts": {"estimate": estimate.body, "sources": sources.body},
+        "initial": initial,
         "calls": calls,
         "rows": rows,
     }

@@ -284,7 +284,10 @@ async fn prepare(
     {
         return Err(conflict());
     }
-    let serialized = String::from_utf8(canonical_bytes(&estimate).unwrap_or_default()).unwrap_or_default();
+    // `compact`, not `canonical_bytes`: the estimate is a stored summary, and `canonical_bytes`
+    // enforces the *commitment* rule of integers only — a probability of `1.8` would serialize to
+    // nothing at all. The reference's `json.dumps(..., allow_nan=False)` allows every finite float.
+    let serialized = crate::source_watch::compact(&estimate);
     let guard = format!("risk-refresh:{token}");
     let condition =
         format!("SELECT 1 FROM ({current}) f WHERE f.revision=? AND f.ai_forecast IS ? AND f.binding_json=?");
@@ -414,6 +417,171 @@ mod tests {
                 .is_empty(),
             "a clock needs both the estimate and the source bundle"
         );
+    }
+
+    /// The successful refresh, replayed end to end: the currency query, the await, the re-check,
+    /// the guard batch, and the clock artifact it retains.
+    ///
+    /// The estimate comes out of the vector rather than from a live model, because a refresh is
+    /// about what happens *around* the AI call — and the vector's estimate is the one the reference
+    /// actually wrote, `artifactHash` and all.
+    #[test]
+    fn the_reference_refresh_is_reproduced() {
+        let document = golden();
+        let db = Sqlite::from_migrations();
+        restore(&db, &document);
+        let binding_id = document["calls"][3]["input"]["bindingId"].as_str().unwrap().to_string();
+        let expected = &document["calls"][3]["result"];
+        // Owned, so the seam that returns it is `'static` like the future it produces.
+        let answer = std::rc::Rc::new(expected["aiForecast"].clone());
+        let retained = std::rc::Rc::new(
+            document["rows"]["artifacts"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|row| matches!(row["kind"].as_str(), Some("ai-forecast" | "risk-prediction-sources")))
+                .map(|row| Artifact {
+                    hash: row["hash"].as_str().unwrap_or("").to_string(),
+                    // The two kinds are the vector's own literals, so the `'static` the artifact
+                    // type asks for is satisfiable without leaking.
+                    kind: match row["kind"].as_str() {
+                        Some("ai-forecast") => "ai-forecast",
+                        _ => "risk-prediction-sources",
+                    },
+                    body: row["body"].as_str().unwrap_or("").to_string(),
+                })
+                .collect::<Vec<Artifact>>(),
+        );
+        let now = answer["asOf"].as_i64().unwrap();
+        let clock = move || now;
+        // The guard checks the lease *inside the batch*, so the seam has to take one the way the
+        // reference's `_ai_lease` does — a token with no row behind it refuses every refresh, which
+        // is the guard doing its job.
+        let lease = || -> BoxFuture<Result<String, ()>> {
+            let token = "lease-token".to_string();
+            db.run(
+                "INSERT INTO ai_leases(owner,token,expires_at) VALUES(?,?,?)",
+                &[
+                    json!("risk-prediction:f_19581e27de7ced00ff1ce50b"),
+                    json!(token),
+                    json!(now + 300_000),
+                ],
+            )
+            .expect("the lease");
+            Box::pin(async move { Ok(token) })
+        };
+        let release = |_token: String| -> BoxFuture<Result<(), ()>> { Box::pin(async { Ok(()) }) };
+        // The artifacts the reference retained alongside this estimate are read back from the store
+        // it wrote them to, so the clock the port derives is the clock that was recorded.
+        let refresh_prediction = move |_specification: ForecastSpecification,
+                                       _started: i64|
+              -> BoxFuture<Result<(Value, Vec<Artifact>), RefreshFailure>> {
+            let answer = std::rc::Rc::clone(&answer);
+            let retained = std::rc::Rc::clone(&retained);
+            Box::pin(async move { Ok(((*answer).clone(), (*retained).clone())) })
+        };
+        // The reference's `_artifact_sql` is the application's, so the test supplies *its* output
+        // rather than a stub of it: the rows the refresh wrote, which are the difference between
+        // the state it started from and the state it left. A stub that inserted only the two
+        // artifacts the seam was handed would compare a different store for no reason.
+        let before: Vec<String> = document["initial"]["artifacts"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|row| row["hash"].as_str().map(str::to_string))
+            .collect();
+        let written: Vec<Value> = document["rows"]["artifacts"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|row| {
+                row["hash"]
+                    .as_str()
+                    .is_some_and(|hash| !before.iter().any(|seen| seen == hash))
+                    && row["kind"] != json!("risk-prediction-clock")
+            })
+            .collect();
+        let artifact_sql =
+            move |_artifacts: &[Artifact], _at: i64| -> Result<Vec<(String, Vec<Value>)>, RefreshError> {
+                Ok(written
+                    .iter()
+                    .map(|row| {
+                        (
+                            "INSERT OR IGNORE INTO artifacts(hash,kind,body,media_type,created_at) VALUES(?,?,?,?,?)"
+                                .to_string(),
+                            vec![
+                                row["hash"].clone(),
+                                row["kind"].clone(),
+                                row["body"].clone(),
+                                row["media_type"].clone(),
+                                row["created_at"].clone(),
+                            ],
+                        )
+                    })
+                    .collect())
+            };
+        let produced = block(refresh(
+            &db,
+            &binding_id,
+            CURRENT_V2,
+            true,
+            &refresh_prediction,
+            &artifact_sql,
+            &clock,
+            &lease,
+            &release,
+        ));
+        assert!(
+            produced.is_ok(),
+            "the reference's own refresh was refused: {produced:?}"
+        );
+        assert_eq!(produced.unwrap()["aiForecast"], expected["aiForecast"]);
+        // And the store it wrote: the artifacts, the forecast's summary, and the clock. Only the
+        // tables *this* call writes are compared — the vector goes on to revoke the binding, and a
+        // replay of one call cannot be held to the state a later one left.
+        for table in ["artifacts", "forecasts", "risk_prediction_clocks_v2"] {
+            let (rows, _) = db
+                .run(&format!("SELECT * FROM {table} ORDER BY rowid"), &[])
+                .expect("rows");
+            assert_eq!(json!(rows), document["rows"][table], "{table}: different rows");
+        }
+        // The clock is the point of the v2 design: the estimate artifact is never edited, and the
+        // clock records when the source was captured against when the evaluation finished.
+        let (clocks, _) = db.run("SELECT * FROM risk_prediction_clocks_v2", &[]).expect("clocks");
+        assert_eq!(clocks.len(), 1, "one refresh retains exactly one clock");
+        // The rows the reference wrote through its own artifact writer are the ones the refresh
+        // reported, so a port that wrote a different set is caught above rather than here.
+    }
+
+    /// The tables the currency query reads, in dependency order: `forecasts.creator_id` references
+    /// `users`, so restoring the query's tables alone fails a foreign key.
+    ///
+    /// The rows come from `initial`, not `rows`: the latter is the state *after* the sequence, and
+    /// restoring it would replay a refresh against an estimate the refresh itself wrote.
+    fn restore(db: &Sqlite, document: &Value) {
+        for table in [
+            "users",
+            "artifacts",
+            "forecasts",
+            "risk_feed_definitions_v2",
+            "risk_feed_profiles_v2",
+            "risk_feed_bindings_v2",
+        ] {
+            for row in document["initial"][table].as_array().cloned().unwrap_or_default() {
+                let fields = row.as_object().expect("a fixture row");
+                let columns: Vec<&str> = fields.keys().map(String::as_str).collect();
+                let placeholders = vec!["?"; columns.len()].join(",");
+                let params: Vec<Value> = columns.iter().map(|name| fields[*name].clone()).collect();
+                db.run(
+                    &format!("INSERT INTO {table}({}) VALUES({placeholders})", columns.join(",")),
+                    &params,
+                )
+                .unwrap_or_else(|error| panic!("{table}: {error}"));
+            }
+        }
     }
 
     /// The currency query, for the reasons that are reachable without the AI seam: an unknown

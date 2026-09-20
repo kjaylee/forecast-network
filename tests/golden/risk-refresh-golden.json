@@ -149,6 +149,81 @@
   },
   "description": "The bound-prediction refresh: the currency query, the clock roles, and the stale-estimate rule — over the v2 producer's own approved binding.",
   "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+  "initial": {
+    "artifacts": [
+      {
+        "body": "{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"category\":\"CRYPTO\",\"close_at_ms\":1800180000000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}}",
+        "created_at": 1800000000000,
+        "hash": "c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624",
+        "kind": "specification",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7922b5ee0e01653056f200d4d661480deea87d0a865908b48c6c5ee26a71b773\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"5d44dd9dd74eb63290d43b49088e259b26116a0142a976e8e52c21255bbfdd36\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"validated_at_ms\":1800000000000}",
+        "created_at": 1800000000000,
+        "hash": "0be47caeb7bf3e8180570420959798293eeac3089372e7af55ba39381095388b",
+        "kind": "validation",
+        "media_type": "application/json"
+      }
+    ],
+    "forecasts": [
+      {
+        "ai_forecast": null,
+        "category": "CRYPTO",
+        "challenge_until": null,
+        "close_at": 1800180000000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_2c624232cdd221771294dfbb",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_19581e27de7ced00ff1ce50b",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish-risk-v2",
+        "normalized_question": "during [2027-01-15t10:00:00z, 2027-01-17t10:00:00z), will usdc/usd close strictly below usd 0.9900 on both kraken and bitstamp in any same completed 5-minute candle? submissions close exactly 2027-01-17t10:00:00z.",
+        "open_at": 1800000000000,
+        "question": "During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"1dfa16fc904aa884ca8778c2f5596defbfcbc7ef8e0b9065ee60790ef80ff1c8\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"latest_event\":{\"artifact_hash\":\"0be47caeb7bf3e8180570420959798293eeac3089372e7af55ba39381095388b\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"a391715d6f70d3f9ff12f2a9264bc28a8c07944591f7294e3dace0c5e7ef0e96\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"state_hash\":\"6ce41686cca0ca954f903c70fc67c087640e04962f9e8a6a1348536c33b87e10\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"category\":\"CRYPTO\",\"close_at_ms\":1800180000000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.\",\"source_policy\":{\"fallback_sources\":[],\"primary_sources\":[{\"is_official\":true,\"name\":\"Apple Newsroom\",\"schema_version\":1,\"source_id\":\"apple-news\",\"url\":\"https://www.apple.com/newsroom/\"}],\"schema_version\":1}},\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7922b5ee0e01653056f200d4d661480deea87d0a865908b48c6c5ee26a71b773\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"5d44dd9dd74eb63290d43b49088e259b26116a0142a976e8e52c21255bbfdd36\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624",
+        "state": "OPEN",
+        "title": "During [2027-01-15T10:00:00Z, 2027-01-17T10:00:00Z), will USDC/USD close strictly below USD 0.9900 on both Kraken and Bitstamp in any same completed 5-minute candle? Submissions close exactly 2027-01-17T10:00:00Z.",
+        "updated_at": 1800000000000
+      }
+    ],
+    "risk_feed_binding_revocations_v2": [],
+    "risk_feed_bindings_v2": [
+      {
+        "approved_at": 1800000000000,
+        "approved_by": "authenticated-admin",
+        "binding_id": "usdc-depeg-1d-episode-1",
+        "binding_json": "{\"approval_artifact_hash\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"asset\":\"USDC\",\"authorization_valid_from_ms\":1800000000000,\"authorization_valid_until_ms\":1800180000000,\"binding_id\":\"usdc-depeg-1d-episode-1\",\"category\":\"CRYPTO\",\"channel\":\"depegRisk1d\",\"definition_hash\":\"9249e6305422f67aa862e0aa47be50a88b40ff057abf509bfd5fe0c4c4bec3be\",\"episode_id\":\"2027-01-15T10:00:00Z\",\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"interval\":\"[start,end)\",\"mapping_kind\":\"containing_upper_estimate\",\"mapping_profile_hash\":\"dea3415390a05d8d5ae03169441ab17c2c3cd27af21886e8f493488ee8ae0b6d\",\"mapping_profile_id\":\"monotone-any-event-containment\",\"mapping_profile_version\":\"containment-profile-v1\",\"operational_valid_from_ms\":1800007200000,\"operational_valid_until_ms\":1800093600000,\"policy_horizon_ms\":86400000,\"question_event_definition_hash\":\"c0c707e5c3781879cece6e03e8ba3667604737d47bfffe181e2ae9fd452a5625\",\"schema_version\":1,\"series_id\":\"usdc-depeg-1d-w48\",\"specification_hash\":\"c9e54acb8f60a1382730fedfad906a655c09b565cbdf86d655ae8e462cc94624\",\"target_end_ms\":1800180000000,\"target_start_ms\":1800007200000,\"version\":\"canonical-risk-binding-v2\"}",
+        "feed_id": "risk-v2",
+        "forecast_id": "f_19581e27de7ced00ff1ce50b"
+      }
+    ],
+    "risk_prediction_clocks_v2": [],
+    "users": [
+      {
+        "created_at": 1800000000000,
+        "display_name": "테스터",
+        "handle": "f_4e07408562be",
+        "id": "u_4e07408562bedb8b60ce05c1",
+        "recovery_hash": "7444c5ccee4aba92f325831bd6df61ececb73bb98b0df02ee6032633a4e43c96"
+      },
+      {
+        "created_at": 1800000000000,
+        "display_name": "다른 사용자",
+        "handle": "f_e7f6c011776e",
+        "id": "u_e7f6c011776e8db7cd330b54",
+        "recovery_hash": "0ec2e8eb334b6f181d147a055a970b6e391d1e6872dae8924342378ebc1c1aaf"
+      }
+    ]
+  },
   "rows": {
     "artifacts": [
       {
