@@ -13,6 +13,7 @@ pub mod billing;
 mod db;
 mod detail;
 mod discovery;
+pub mod dispute_intake;
 pub mod dispute_wire;
 mod eligibility;
 mod forecasts;
