@@ -127,7 +127,9 @@ pub fn reason_for(code: &str) -> String {
         "resolution_timing_determined" => "The publication-time review is closed and determines INVALID. Only that result can be finalized, so the next attempt proposes it.".to_string(),
         "resolution_domain_rejected" => "The AI resolution was refused by the immutable domain checks, most often because it did not cite the clause matching its own outcome. The retained judge output names what it proposed.".to_string(),
         "ai_workflow_timeout" => "Resolution is on hold because the AI review timed out. Another review will follow the retry schedule and daily limit.".to_string(),
-        "ai_daily_limit" => "Resolution is on hold because the daily AI limit was reached. Review will resume after the limit resets.".to_string(),
+        // The reference branches on the *status* here (429), which covers both the daily AI
+        // budget and the request-rate limit.
+        "ai_daily_limit" | "rate_limited" => "Resolution is on hold because the daily AI limit was reached. Review will resume after the limit resets.".to_string(),
         _ => "Resolution is on hold because evidence or independent review is insufficient. No result will be finalized before another review.".to_string(),
     }
 }
@@ -200,15 +202,85 @@ pub struct Job<'a> {
     pub forecast_id: &'a str,
     pub job_token: &'a str,
     pub now_ms: i64,
-    pub ai_token: &'a str,
+    /// The AI lease's token *source*, not a token: the reference mints one inside `_advance_job`,
+    /// and only once it has decided this attempt needs a model at all. A token taken before that
+    /// decision is a token the next caller cannot have.
+    pub ai_tokens: &'a mut dyn FnMut() -> String,
     pub daily_limit: i64,
     /// `self.random_token`. A command's guard token comes from the application, as the reference
     /// takes it, rather than from this module's own source.
     pub token: &'a dyn Fn() -> String,
+    /// The chain adapter, when one is configured. `None` is a real configuration: without it a
+    /// finalize is a purely local decision.
+    pub gate: Option<&'a dyn crate::mutate::FinalizationGate>,
+    /// `self.now_ms`. A *callable*, because `_bounded_ai` measures its acceptance deadline against
+    /// it: the cap is 240 seconds of wall clock, not of the pass's captured instant.
+    pub clock: &'a dyn Fn() -> i64,
+}
+
+/// What a failed attempt carries that a bare code does not.
+///
+/// The reference's exceptions are not a code. An AI refusal carries the artifacts it produced
+/// before refusing, so a later reviewer can see what it proposed rather than only that it was
+/// refused; and an outage carries *which* providers were unreachable, which is the difference
+/// between one provider being down and all of them being down — and only the second is worth
+/// pausing a question for. A port that reduced all of this to a string would lose exactly the
+/// things the caller below branches on.
+#[derive(Debug, Clone)]
+pub enum JobFailure {
+    /// `AIUnavailable`.
+    AiUnavailable {
+        providers: Vec<String>,
+        artifacts: Vec<crate::ai::coordinator::Artifact>,
+    },
+    /// `AIRejected`, and everything this layer raises itself.
+    Refused {
+        code: String,
+        artifacts: Vec<crate::ai::coordinator::Artifact>,
+    },
+}
+
+impl From<String> for JobFailure {
+    fn from(code: String) -> Self {
+        JobFailure::Refused {
+            code,
+            artifacts: Vec::new(),
+        }
+    }
+}
+
+impl JobFailure {
+    fn new(code: &str) -> Self {
+        JobFailure::Refused {
+            code: code.to_string(),
+            artifacts: Vec::new(),
+        }
+    }
+
+    /// The name the operator's reason is chosen by, and the one the deferral is recognised by.
+    pub fn code(&self) -> &str {
+        match self {
+            JobFailure::AiUnavailable { .. } => "ai_unavailable",
+            JobFailure::Refused { code, .. } => code,
+        }
+    }
+
+    fn artifacts(&self) -> &[crate::ai::coordinator::Artifact] {
+        match self {
+            JobFailure::AiUnavailable { artifacts, .. } | JobFailure::Refused { artifacts, .. } => artifacts,
+        }
+    }
+
+    fn providers(&self) -> &[String] {
+        match self {
+            JobFailure::AiUnavailable { providers, .. } => providers,
+            JobFailure::Refused { .. } => &[],
+        }
+    }
 }
 
 /// One lease's worth of transitions, at most six, stopping when the state stops changing.
-pub async fn advance_job(job: Job<'_>) -> Result<(), String> {
+pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
     let Job {
         db,
         coordinator,
@@ -216,12 +288,14 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), String> {
         forecast_id,
         job_token,
         now_ms,
-        ai_token,
+        ai_tokens,
         daily_limit,
         token,
+        gate,
+        clock,
     } = job;
     for _ in 0..MAX_TRANSITIONS_PER_LEASE {
-        let snapshot = load(db, forecast_id).await?;
+        let snapshot = load(db, forecast_id).await.map_err(JobFailure::from)?;
         let forecast = snapshot.base().clone();
         let state = forecast.state.clone();
         if state == "RESOLVING" {
@@ -234,10 +308,10 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), String> {
                 &[json!(forecast_id)],
             )
             .await
-            .map_err(|error| error.to_string())?
+            .map_err(|error| JobFailure::from(error.to_string()))?
             .is_some();
         if blocked {
-            return Err("early_eligibility_review".to_string());
+            return Err(JobFailure::new("early_eligibility_review"));
         }
         let key = format!("job:{}", forecast.revision);
         let at = now_ms;
@@ -251,20 +325,39 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), String> {
             "LOCKED" => Payload::BeginResolution { schema_version: 1 },
             "RESOLVING" => {
                 let owner = format!("resolution:{forecast_id}");
-                ai_lease(db, &owner, ai_token, now_ms, daily_limit).await?;
+                let ai_token = ai_tokens();
+                ai_lease(db, &owner, &ai_token, now_ms, daily_limit)
+                    .await
+                    .map_err(JobFailure::from)?;
                 // Whether the evidence can be placed relative to participation is something this
                 // layer knows and the judge cannot see. Without telling it, the judge keeps
                 // answering YES or NO, the timing gate keeps refusing, and the forecast retries
                 // forever — which is what happened to two of them.
                 let timing = timing_status(db, forecast_id)
                     .await
-                    .map_err(|_| "resolution_timing_unavailable".to_string())?;
+                    .map_err(|_| JobFailure::new("resolution_timing_unavailable"))?;
                 let indeterminate = timing["reason"] == json!("publication_time_unknown");
                 let determined = timing["determination"].as_str();
+                // `_bounded_ai`: the complete workflow finishes before its durable lease, and no
+                // result arriving after the cap is accepted. This port cannot cancel the call the
+                // way `asyncio.timeout` does — the runtime has no cancellation to offer — so what
+                // it reproduces is the *acceptance* rule rather than the interruption: the work may
+                // run long, and its answer is discarded rather than used.
+                let started = (clock)();
                 let outcome =
                     propose_resolution(coordinator, fetch, &forecast, now_ms, indeterminate, determined).await;
-                release_ai(db, &owner, ai_token).await;
-                let result = outcome.map_err(|error| error.code().unwrap_or("ai_unavailable").to_string())?;
+                release_ai(db, &owner, &ai_token).await;
+                if workflow_deadline_passed(started, (clock)()) {
+                    return Err(JobFailure::new("ai_workflow_timeout"));
+                }
+                let result = outcome.map_err(|error| match error {
+                    crate::ai::coordinator::CoordinatorError::Unavailable { providers, artifacts } => {
+                        JobFailure::AiUnavailable { providers, artifacts }
+                    }
+                    crate::ai::coordinator::CoordinatorError::Rejected { code, artifacts, .. } => {
+                        JobFailure::Refused { code, artifacts }
+                    }
+                })?;
                 let resolution = result.resolution;
                 if let Ok(retained) = serde_json::to_value(&resolution) {
                     if let Ok(artifact) = crate::ai::coordinator::artifact("resolution", &retained) {
@@ -300,14 +393,14 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), String> {
                         .unwrap_or(false)
                 });
                 match pending {
-                    Some(_) => return Err("dispute_review_not_ported".to_string()),
+                    Some(_) => return Err(JobFailure::new("dispute_review_not_ported")),
                     None if forecast.dispute_reviews.iter().any(|review| review.material_conflict) => {
                         Payload::Escalate { schema_version: 1 }
                     }
                     None => Payload::RetainProposal { schema_version: 1 },
                 }
             }
-            "PAUSED" => return Err("provider_recovery_not_ported".to_string()),
+            "PAUSED" => return Err(JobFailure::new("provider_recovery_not_ported")),
             _ => return Ok(()),
         };
         crate::mutate::mutate(
@@ -322,34 +415,43 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), String> {
             },
             now_ms,
             token,
+            gate,
         )
         .await
-        .map_err(|error| match error {
-            crate::routes::RouteError::Failed(_, code, _) => code.to_string(),
-            crate::routes::RouteError::Worker(error) => format!("worker_error: {error}"),
-            crate::routes::RouteError::Invalid => "invalid".to_string(),
-            crate::routes::RouteError::Input => "input".to_string(),
-            crate::routes::RouteError::NotFound(code, _) => format!("not_found: {code}"),
-            crate::routes::RouteError::Unauthorized(code, _) => format!("unauthorized: {code}"),
+        .map_err(|error| {
+            JobFailure::from(match error {
+                crate::routes::RouteError::Failed(_, code, _) => code.to_string(),
+                crate::routes::RouteError::Worker(error) => format!("worker_error: {error}"),
+                crate::routes::RouteError::Invalid => "invalid".to_string(),
+                crate::routes::RouteError::Input => "input".to_string(),
+                crate::routes::RouteError::NotFound(code, _) => format!("not_found: {code}"),
+                crate::routes::RouteError::Unauthorized(code, _) => format!("unauthorized: {code}"),
+            })
         })?;
     }
     Ok(())
 }
 
 /// `run_due_jobs`: claim what is due under a lease, advance it, and record what happened.
-#[allow(clippy::too_many_arguments)]
+///
+/// Every failure here is *recorded*, not raised: a forecast that cannot advance has to go back into
+/// the queue with a reason an operator can read, and a pass that stopped at the first refusal would
+/// leave every other due question untried.
 pub async fn run_due_jobs(
-    db: &dyn Database,
-    coordinator: &Coordinator,
-    fetch: &EvidenceFetcher,
-    now_ms: i64,
+    scheduler: &Scheduler<'_>,
     limit: i64,
     tokens: &mut dyn FnMut() -> String,
-    daily_limit: i64,
-    // `adapter_configured` is `self.registry is not None`: whether anything is there to commit a
-    // resolution to.
-    adapter_configured: bool,
 ) -> Result<Sweep, String> {
+    let Scheduler {
+        db,
+        coordinator,
+        fetch,
+        now_ms,
+        clock,
+        daily_limit,
+        registry,
+    } = *scheduler;
+    let adapter_configured = registry.is_some();
     let limit = limit.clamp(1, 50);
     let rows = db
         .all(
@@ -386,7 +488,13 @@ pub async fn run_due_jobs(
         if held.as_ref().and_then(|row| text(row, "job_token")) != Some(token.as_str()) {
             continue;
         }
-        let ai_token = tokens();
+        // The job's lease token and the command guard token both come from the application's one
+        // source, as the reference's do — and the guard source has to be an `Fn` while the lease
+        // source is an `FnMut`. A `RefCell` lets the two accessors share it without the borrow
+        // checker having to know they are never live at the same instant.
+        let source = std::cell::RefCell::new(&mut *tokens);
+        let mut ai_tokens = || source.borrow_mut()();
+        let guard_token = || source.borrow_mut()();
         let outcome = advance_job(Job {
             db,
             coordinator,
@@ -394,12 +502,11 @@ pub async fn run_due_jobs(
             forecast_id: &forecast_id,
             job_token: &token,
             now_ms,
-            ai_token: &ai_token,
+            ai_tokens: &mut ai_tokens,
             daily_limit,
-            // The lease source is an `FnMut` and the guard source has to be an `Fn`, and the guard
-            // is inserted and deleted inside one batch — it never reaches a row. So this module
-            // keeps its own source here rather than unravelling the lease's.
-            token: &crate::mutate::random_token,
+            token: &guard_token,
+            gate: registry,
+            clock,
         })
         .await;
         match outcome {
@@ -412,9 +519,72 @@ pub async fn run_due_jobs(
                 .await
                 .map_err(|error| error.to_string())?;
             }
-            Err(code) => {
+            Err(failure) if failure.code() == "chain_finalization_deferred" => {
+                // Not a failure. The chain agrees with us and refuses only on its own clock, so
+                // the local side is ahead of it rather than broken. Recording that as an error
+                // counted the forecast as one nothing can clear, and grew a retry backoff against
+                // a wall that time alone moves.
+                //
+                // The lease is still released below: the reference releases it in a `finally`, so
+                // a deferral does not leave the row claimed by a worker that has moved on.
+                wait_for_chain(db, &forecast_id, &token, now_ms)
+                    .await
+                    .map_err(|error| error.to_string())?;
+            }
+            Err(failure) => {
                 sweep.failed += 1;
-                let reason = reason_for(&code);
+                // The artifacts a refusal produced are kept even though the work failed: they are
+                // what a later reviewer reads to see *what* was proposed.
+                if !failure.artifacts().is_empty() {
+                    retain_rejected(db, failure.artifacts())
+                        .await
+                        .map_err(|error| error.to_string())?;
+                }
+                // Every configured provider being unreachable is an outage rather than a
+                // retryable refusal, and a question waiting on one is paused with the reason
+                // recorded rather than retried against the same wall.
+                if matches!(failure, JobFailure::AiUnavailable { .. }) {
+                    let configured = coordinator.configured_providers();
+                    let mut unavailable: Vec<String> = failure.providers().to_vec();
+                    unavailable.sort();
+                    unavailable.dedup();
+                    let mut expected: Vec<String> = configured.clone();
+                    expected.sort();
+                    expected.dedup();
+                    if !expected.is_empty() && unavailable == expected {
+                        let snapshot = load(db, &forecast_id).await.map_err(|error| error.to_string())?;
+                        let forecast = snapshot.base().clone();
+                        if matches!(
+                            forecast.state.as_str(),
+                            "RESOLVING" | "PROPOSED" | "CHALLENGE" | "DISPUTED" | "ESCALATED"
+                        ) {
+                            crate::mutate::mutate(
+                                db,
+                                crate::mutate::Mutation {
+                                    snapshot: &snapshot,
+                                    payload: Payload::PauseForProviderOutage {
+                                        schema_version: 1,
+                                        configured_providers: configured,
+                                        unavailable_providers: expected,
+                                        reason:
+                                            "Resolution is paused because all configured AI providers are unavailable."
+                                                .to_string(),
+                                    },
+                                    key: format!("job:pause:{}", forecast.revision),
+                                    now_ms,
+                                    extra: Vec::new(),
+                                    job_token: Some(token.clone()),
+                                },
+                                now_ms,
+                                &crate::mutate::random_token,
+                                registry,
+                            )
+                            .await
+                            .map_err(|error| format!("{error:?}"))?;
+                        }
+                    }
+                }
+                let reason = reason_for(failure.code());
                 // The backoff is bounded, and it grows from the count the database holds rather
                 // than from anything this process remembers.
                 db.execute(
@@ -484,25 +654,18 @@ pub struct Scheduler<'a> {
     pub coordinator: &'a Coordinator,
     pub fetch: &'a EvidenceFetcher,
     pub now_ms: i64,
+    /// `self.now_ms`, for the acceptance deadline rather than for the pass's instant.
+    pub clock: &'a dyn Fn() -> i64,
     pub daily_limit: i64,
-    /// Whether a chain adapter is configured. `None` in the reference is a real configuration, not
-    /// an absence: without an adapter a resolution commitment row is left where it is.
-    pub adapter_configured: bool,
+    /// The chain adapter, when one is configured. `None` in the reference is a real configuration,
+    /// not an absence: without an adapter a resolution commitment row is left where it is and a
+    /// finalize is a purely local decision.
+    pub registry: Option<&'a dyn crate::mutate::FinalizationGate>,
 }
 
 impl Scheduler<'_> {
     pub async fn run(&self, limit: i64, tokens: &mut dyn FnMut() -> String) -> Result<Sweep, String> {
-        run_due_jobs(
-            self.db,
-            self.coordinator,
-            self.fetch,
-            self.now_ms,
-            limit,
-            tokens,
-            self.daily_limit,
-            self.adapter_configured,
-        )
-        .await
+        run_due_jobs(self, limit, tokens).await
     }
 }
 
@@ -683,14 +846,17 @@ mod tests {
             format!("t{counter}")
         };
         let sweep = block(run_due_jobs(
-            &db,
-            &coordinator,
-            &fetch,
-            close_at - 1,
+            &Scheduler {
+                db: &db,
+                coordinator: &coordinator,
+                fetch: &fetch,
+                now_ms: close_at - 1,
+                clock: &|| close_at,
+                daily_limit: 100,
+                registry: None,
+            },
             5,
             &mut tokens,
-            100,
-            true,
         ))
         .unwrap();
         assert_eq!(sweep, Sweep::default(), "a forecast before its close is not due");
@@ -720,9 +886,11 @@ mod tests {
             forecast_id: &id,
             job_token: "t1",
             now_ms: close_at + 1,
-            ai_token: "ai1",
+            ai_tokens: &mut || "ai1".to_string(),
             daily_limit: 100,
             token: &crate::mutate::random_token,
+            gate: None,
+            clock: &|| 0,
         }));
         // The lease carries several transitions and reports success only if all of them succeed,
         // so this ends at the first thing needing a provider. What matters is that the lock
@@ -759,14 +927,17 @@ mod tests {
             format!("t{counter}")
         };
         let sweep = block(run_due_jobs(
-            &db,
-            &coordinator,
-            &fetch,
-            close_at + 1,
+            &Scheduler {
+                db: &db,
+                coordinator: &coordinator,
+                fetch: &fetch,
+                now_ms: close_at + 1,
+                clock: &|| close_at + 1,
+                daily_limit: 100,
+                registry: None,
+            },
             5,
             &mut tokens,
-            100,
-            true,
         ))
         .unwrap();
         assert_eq!(
@@ -806,14 +977,17 @@ mod tests {
         // Inside the window the row is not even selected: the query only has a CHALLENGE branch
         // for one whose window has closed. Nothing is attempted, which is the point.
         let inside = block(run_due_jobs(
-            &db,
-            &coordinator,
-            &fetch,
-            until - 1,
+            &Scheduler {
+                db: &db,
+                coordinator: &coordinator,
+                fetch: &fetch,
+                now_ms: until - 1,
+                clock: &|| until,
+                daily_limit: 100,
+                registry: None,
+            },
             5,
             &mut tokens,
-            100,
-            true,
         ))
         .unwrap();
         assert_eq!(inside, Sweep::default());
@@ -826,14 +1000,17 @@ mod tests {
 
         // Past it, the same row is due and finalizing it needs no provider.
         let past = block(run_due_jobs(
-            &db,
-            &coordinator,
-            &fetch,
-            until + 1,
+            &Scheduler {
+                db: &db,
+                coordinator: &coordinator,
+                fetch: &fetch,
+                now_ms: until + 1,
+                clock: &|| until,
+                daily_limit: 100,
+                registry: None,
+            },
             5,
             &mut tokens,
-            100,
-            true,
         ))
         .unwrap();
         assert_eq!(past.processed, 1);
@@ -935,7 +1112,7 @@ mod outbox_tests {
     use super::*;
     use crate::golden::{assert_all_cases_known, assert_case, block, entry, load, static_database, Tokens};
 
-    const REPLAYED: [&str; 16] = [
+    const REPLAYED: [&str; 18] = [
         "settlement:valid",
         "settlement:empty-id",
         "settlement:control-char",
@@ -952,6 +1129,8 @@ mod outbox_tests {
         "sweep:before-deadline",
         "sweep:finalize",
         "sweep:cleanup",
+        "sweep:blocked",
+        "sweep:chain-deferred",
     ];
 
     /// `settlement:wrong-type` passes Python's `True` where the statement wants an instant. This
@@ -968,7 +1147,26 @@ mod outbox_tests {
         assert_all_cases_known(&load("outbox-golden.json"), &REPLAYED, &NOT_REPLAYED);
     }
 
-    fn sweep(db: &crate::db::Sqlite, case: &Value, tokens: &Tokens) -> Result<Value, String> {
+    /// A gate that always defers, standing in for the chain.
+    ///
+    /// The *decision* is not what this case tests: `prepare_finalization` is held to
+    /// `solana-rpc-golden` and it reads a chain the vector does not carry. What is tested here is
+    /// what the sweep does with the answer — that a deferral is not a failure, and that the
+    /// question is re-armed for the instant the chain named rather than for the failure backoff.
+    struct Deferring;
+
+    impl crate::mutate::FinalizationGate for Deferring {
+        fn prepare<'a>(&'a self, _forecast_id: &'a str) -> crate::mutate::GateFuture<'a> {
+            Box::pin(async { crate::mutate::Finalization::Deferred })
+        }
+    }
+
+    fn sweep(
+        db: &crate::db::Sqlite,
+        case: &Value,
+        tokens: &Tokens,
+        registry: Option<&dyn crate::mutate::FinalizationGate>,
+    ) -> Result<Value, String> {
         let coordinator = Coordinator {
             providers: Vec::new(),
             fetch: Box::new(|_, _, _| Box::pin(async { Err(()) })),
@@ -978,14 +1176,17 @@ mod outbox_tests {
         let limit = 3;
         let mut source = || tokens.next();
         block(run_due_jobs(
-            db,
-            &coordinator,
-            &fetch,
-            now_ms,
+            &Scheduler {
+                db,
+                coordinator: &coordinator,
+                fetch: &fetch,
+                now_ms,
+                clock: &|| now_ms,
+                daily_limit: 100,
+                registry,
+            },
             limit,
             &mut source,
-            100,
-            false,
         ))
         .map(|sweep| json!({"processed": sweep.processed, "failed": sweep.failed, "effects": sweep.effects}))
     }
@@ -1007,8 +1208,12 @@ mod outbox_tests {
                     Err(error) => Err(json!({"status": error.status, "code": error.code, "message": error.message})),
                 }
             }
-            "sweep:before-deadline" | "sweep:finalize" | "sweep:cleanup" => {
-                sweep(db, case, &tokens).map_err(|code| json!({"code": code, "message": code}))
+            "sweep:chain-deferred" => {
+                let gate = Deferring;
+                sweep(db, case, &tokens, Some(&gate)).map_err(|code| json!({"code": code, "message": code}))
+            }
+            "sweep:before-deadline" | "sweep:finalize" | "sweep:cleanup" | "sweep:blocked" => {
+                sweep(db, case, &tokens, None).map_err(|code| json!({"code": code, "message": code}))
             }
             "outbox:commitment" => {
                 // Twice: a commitment row is handed to the adapter rather than delivered, so the

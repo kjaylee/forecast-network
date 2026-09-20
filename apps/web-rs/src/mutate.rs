@@ -160,12 +160,63 @@ pub async fn load_snapshot(db: &dyn Database, forecast_id: &str) -> std::result:
 }
 
 /// Apply and persist; returns the new snapshot. Constraint failures are classified like Python.
+/// What the chain gate answered.
+///
+/// Three answers rather than a boolean and an error, because the reference's caller branches on
+/// three: ready, "the chain's clock has not arrived" — a schedule — and "the chain refused".
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Finalization {
+    Ready,
+    /// `ChainDeadlineNotReached`: the chain agrees about the record and refuses only on its own
+    /// clock. Every other refusal is a fault, and telling them apart is the whole reason this is
+    /// an enum.
+    Deferred,
+    Refused(&'static str),
+}
+
+pub type GateFuture<'a> = std::pin::Pin<Box<dyn std::future::Future<Output = Finalization> + 'a>>;
+
+/// The chain gate `_mutate` consults before it will finalize.
+///
+/// A trait rather than the registry itself, so a caller with no chain adapter passes `None` and
+/// the finalize is a purely local decision — which is a real configuration, not an absence.
+pub trait FinalizationGate {
+    fn prepare<'a>(&'a self, forecast_id: &'a str) -> GateFuture<'a>;
+}
+
 pub async fn mutate(
     db: &dyn Database,
     mutation: Mutation<'_>,
     clock_now_ms: i64,
     token: &dyn Fn() -> String,
+    gate: Option<&dyn FinalizationGate>,
 ) -> std::result::Result<Snapshot, RouteError> {
+    // A finalize is not a local decision once a chain adapter is configured: the chain's own
+    // record has to have reached the window, and only its clock can say so.
+    let mut clock_now_ms = clock_now_ms;
+    if let (Some(gate), true) = (gate, matches!(&mutation.payload, Payload::Finalize { .. })) {
+        let forecast_id = mutation.snapshot.base().forecast_id.clone();
+        match gate.prepare(&forecast_id).await {
+            Finalization::Deferred => {
+                // Reported apart from the refusal below so the scheduler can wait for the deadline
+                // instead of recording an error against it.
+                return Err(RouteError::Failed(
+                    409,
+                    "chain_finalization_deferred",
+                    "The verified Devnet record will not finalize before its own deadline.",
+                ));
+            }
+            Finalization::Refused(code) => {
+                return Err(RouteError::Failed(502, code, "The chain refused this finalization."))
+            }
+            Finalization::Ready => {}
+        }
+        // The scheduler's captured time precedes the awaited chain read. Commit after that
+        // attestation, without moving aggregate time back.
+        clock_now_ms = clock_now_ms
+            .max(mutation.snapshot.base().updated_at_ms)
+            .max(mutation.now_ms);
+    }
     let forecast = mutation.snapshot.base();
     let v2 = matches!(
         &mutation.payload,

@@ -1,4 +1,6 @@
 tmp/
+# Rust build output. `cargo build` from anywhere in the tree writes here.
+target/
 .omx/
 __pycache__/
 *.py[cod]

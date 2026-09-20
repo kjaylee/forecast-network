@@ -181,6 +181,26 @@ pub struct SolanaRegistry<'a> {
     pub random_token: &'a dyn Fn() -> String,
 }
 
+/// The chain gate, as `_mutate` wants it. The three answers come straight from the error: a
+/// *deadline* is the deferral, a missing deadline is a refusal, and everything else is ready.
+impl crate::mutate::FinalizationGate for SolanaRegistry<'_> {
+    fn prepare<'a>(&'a self, forecast_id: &'a str) -> crate::mutate::GateFuture<'a> {
+        Box::pin(async move {
+            match self.prepare_finalization(forecast_id).await {
+                Ok(true) => crate::mutate::Finalization::Ready,
+                Ok(false) => crate::mutate::Finalization::Refused("chain_finalization_pending"),
+                Err(error) if error.not_before_ms.is_some() => crate::mutate::Finalization::Deferred,
+                Err(error) => crate::mutate::Finalization::Refused(match error.code.as_str() {
+                    "registry_unavailable" => "registry_unavailable",
+                    "registry_not_configured" => "registry_not_configured",
+                    "invalid_local_event" => "invalid_local_event",
+                    _ => "chain_finalization_failed",
+                }),
+            }
+        })
+    }
+}
+
 impl SolanaRegistry<'_> {
     pub fn new<'a>(
         db: &'a dyn Database,

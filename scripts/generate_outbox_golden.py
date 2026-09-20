@@ -236,9 +236,58 @@ async def build() -> dict:
                               forecastId=forecast["id"], compare=["result"]))
     case.connection.close()
 
+    # --- the sweep's failure handling: three ways an attempt can end without advancing.
+    #
+    # A blocked question is a *refusal*: the evidence review is still open, so the pass records the
+    # mapped reason and grows the bounded backoff like any other failure.
+    case = await fixture()
+    forecast = await case.challenge(vote=False)
+    case.now = forecast.challenge_until_ms + 1
+    await case.db.execute(
+        "INSERT OR IGNORE INTO artifacts(hash,kind,body,media_type,created_at) VALUES(?,'early-resolution-trigger','{}','application/json',?)",
+        ("b" * 64, case.now))
+    await case.db.execute(
+        "INSERT INTO forecast_timing_reviews(forecast_id,specification_hash,trigger_hash,event_at,event_time_basis,created_at) "
+        "VALUES(?,(SELECT specification_hash FROM forecasts WHERE id=?),?,0,'observed_upper_bound',?)",
+        (forecast.forecast_id, forecast.forecast_id, "b" * 64, case.now))
+    cases.append(await record(case, lambda c: c.app.run_due_jobs(), "sweep:blocked",
+                              forecastId=forecast.forecast_id, compare=["result"]))
+    case.connection.close()
+
+    # A chain that has not reached its own deadline is a *schedule*, not a fault: the pass must not
+    # count it as a failure, and must re-arm the question for the instant the chain named rather
+    # than for the failure backoff. This is the difference the whole `not_before_ms` distinction
+    # exists for, and it is the only case here whose outcome the local record cannot explain.
+    from forecast_application.service import Application  # noqa: E402
+
+    from tests.test_solana_registry import RegistryTests  # noqa: E402
+
+    case = await fixture()
+    forecast = await case.challenge(vote=False)
+    registry, transport = RegistryTests.registry(case)
+    await registry.enable(forecast.forecast_id)
+    case.now = forecast.challenge_until_ms + 1000
+    chain_deadline = case.now + 86_400_000
+    await RegistryTests.chain_account(case, registry, transport, forecast, deadline=chain_deadline)
+    transport.chain_time = case.now
+    # Read the chain once before the case, so the state the sweep starts from is a state the
+    # reference actually produced rather than one this fixture assembled. It raises the deferral,
+    # which is the answer the case then drives.
+    try:
+        await registry.prepare_finalization(forecast.forecast_id)
+    except Exception:  # noqa: BLE001 - the deferral is the point
+        pass
+    chained = Application(case.db, case.ai, now_ms=lambda: case.now, token_hash=case.token_hash,
+                          random_token=case.random_token, registry=registry)
+    cases.append(await record(case, lambda c: chained.run_due_jobs(), "sweep:chain-deferred",
+                              forecastId=forecast.forecast_id, chainDeadline=chain_deadline,
+                              compare=["result"]))
+    case.connection.close()
+
     return {
         "description": "The outbox and the sweep that drains it: the exactly-once selection, the "
-                       "blocked forecast, the adapter hand-off, and the set-based settlement.",
+                       "blocked forecast, the adapter hand-off, the set-based settlement, and the "
+                       "three ways an attempt can end without advancing.",
         "maxBalance": MAX_BALANCE,
         "cases": cases,
     }

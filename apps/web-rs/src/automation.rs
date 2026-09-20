@@ -492,7 +492,7 @@ impl<'a> Automation<'a> {
                 extra,
                 job_token: None,
             };
-            mutate::mutate(self.db, mutation, self.now_ms, self.token)
+            mutate::mutate(self.db, mutation, self.now_ms, self.token, None)
                 .await
                 .map_err(refused_from_route)?;
             // The first community report that surfaced this exact retained evidence earns the
@@ -519,7 +519,7 @@ impl<'a> Automation<'a> {
                 extra,
                 job_token: None,
             };
-            mutate::mutate(self.db, mutation, self.now_ms, self.token)
+            mutate::mutate(self.db, mutation, self.now_ms, self.token, None)
                 .await
                 .map_err(refused_from_route)?;
         }
@@ -1330,8 +1330,9 @@ mod orchestration_tests {
                     coordinator: &coordinator,
                     fetch: &evidence,
                     now_ms,
+                    clock: &|| now_ms,
                     daily_limit: 100,
-                    adapter_configured: false,
+                    registry: None,
                 };
                 let limit = input["limit"].as_i64().unwrap_or(2);
                 let mut cron = Cron {
