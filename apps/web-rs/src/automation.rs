@@ -48,7 +48,7 @@ pub fn families(specification: &ForecastSpecification) -> Vec<&'static str> {
 /// `ﬁ`→`fi`), and the reference asks for `casefold`. Rust's `to_lowercase` is a *lowercasing*, so
 /// the two full-fold cases that reach ASCII letters are applied here explicitly rather than assumed
 /// away.
-fn casefold(value: &str) -> String {
+pub(crate) fn casefold(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     for character in value.chars() {
         match character {

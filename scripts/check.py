@@ -126,7 +126,10 @@ def main() -> int:
                 [sys.executable, "scripts/generate_points_golden.py", "--check"],
                 # The profile card: one snapshot read, three metric divisions, and a publication the
                 # public lookup verifies against the hash it is stored under.
-                [sys.executable, "scripts/generate_profile_card_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_profile_card_golden.py", "--check"],
+                # What the compiler is allowed to see: the ranking, the terms, and the byte budget
+                # that decides which candidates reach the model at all.
+                [sys.executable, "scripts/generate_candidates_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

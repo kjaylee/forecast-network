@@ -233,6 +233,47 @@ pub fn assert_candidate_context(candidates: &[Forecast], expected: &str) -> Resu
 }
 
 #[cfg(test)]
+mod candidate_tests {
+    use super::*;
+    use crate::db::Sqlite;
+
+    fn block<F: std::future::Future>(future: F) -> F::Output {
+        futures_lite::future::block_on(future)
+    }
+
+    /// The selection, replayed against the corpus the vector ranked rather than one rebuilt here:
+    /// the ordering is the property, and a fixture that published its own questions would be
+    /// ranking a different corpus.
+    #[test]
+    fn the_reference_candidate_selection_is_reproduced_query_for_query() {
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/candidates-golden.json");
+        let document: Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).expect("candidates golden")).expect("json");
+        let db = Sqlite::from_migrations();
+        for table in ["users", "forecasts"] {
+            for row in document["rows"][table].as_array().cloned().unwrap_or_default() {
+                let fields = row.as_object().expect("a fixture row");
+                let columns: Vec<&str> = fields.keys().map(String::as_str).collect();
+                let placeholders = vec!["?"; columns.len()].join(",");
+                let params: Vec<Value> = columns.iter().map(|name| fields[*name].clone()).collect();
+                db.run(
+                    &format!("INSERT INTO {table}({}) VALUES({placeholders})", columns.join(",")),
+                    &params,
+                )
+                .unwrap_or_else(|error| panic!("{table}: {error}"));
+            }
+        }
+        for entry in document["calls"].as_array().expect("calls") {
+            let question = entry["input"]["question"].as_str().unwrap();
+            let ranked = block(candidate_forecasts(&db, question)).expect("the selection");
+            let identifiers: Vec<Value> = ranked.iter().map(|forecast| json!(forecast.forecast_id)).collect();
+            assert_eq!(json!(identifiers), entry["result"], "{question:?}: a different corpus");
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -292,4 +333,130 @@ mod tests {
         let error = assert_candidate_context(&both, changed["expected"].as_str().unwrap()).unwrap_err();
         assert_eq!(error.code(), Some(changed["code"].as_str().unwrap()));
     }
+}
+
+// ---------------------------------------------------------------- candidate selection
+
+/// The words a question's terms are drawn from, and the ones that carry no signal.
+const STOPWORDS: [&str; 8] = ["will", "the", "before", "after", "this", "that", "with", "and"];
+
+/// `_candidate_forecasts`: rank across the corpus, then fetch only a bounded UTF-8 context.
+///
+/// Three orderings decide what the model is even allowed to see. The lexical shortlist ranks exact
+/// normalized matches first, then term matches, then recency, then id — so a port that reordered
+/// the `ORDER BY` would hand the compiler a different corpus. The byte budget is applied *twice*:
+/// once against an estimate (`spec_bytes + 320`, which reserves the wrapper keys and commas) and
+/// again against the encoded form, because the first pass avoids fetching hundreds of snapshots the
+/// second pass would discard anyway. And the reserve of 2 accounts for the enclosing `[]`.
+pub async fn candidate_forecasts(db: &dyn crate::db::Database, question: &str) -> Result<Vec<Forecast>, worker::Error> {
+    use crate::db::{int, text};
+    let normalized = crate::automation::casefold(question)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    // The reference's own alternation: ASCII words of three or more, or Hangul of two or more. A
+    // `regex`-crate pattern cannot express the two scripts in one character class, so the scan is
+    // explicit.
+    let mut words: Vec<String> = Vec::new();
+    let mut ascii = String::new();
+    let mut hangul = String::new();
+    let flush = |ascii: &mut String, hangul: &mut String, words: &mut Vec<String>| {
+        if ascii.chars().count() >= 3 {
+            words.push(ascii.clone());
+        }
+        if hangul.chars().count() >= 2 {
+            words.push(hangul.clone());
+        }
+        ascii.clear();
+        hangul.clear();
+    };
+    for character in normalized.chars() {
+        if character.is_ascii_lowercase() || character.is_ascii_digit() {
+            hangul.clear();
+            ascii.push(character);
+        } else if ('\u{ac00}'..='\u{d7a3}').contains(&character) {
+            ascii.clear();
+            hangul.push(character);
+        } else {
+            flush(&mut ascii, &mut hangul, &mut words);
+        }
+    }
+    flush(&mut ascii, &mut hangul, &mut words);
+    let mut terms: Vec<String> = words
+        .into_iter()
+        .filter(|word| !STOPWORDS.contains(&word.as_str()))
+        .collect();
+    terms.sort();
+    terms.dedup();
+    // `key=lambda word: (-len(word), word)`: longest first, then alphabetical.
+    terms.sort_by(|a, b| b.chars().count().cmp(&a.chars().count()).then(a.cmp(b)));
+    terms.truncate(10);
+
+    let mut ranking = "CASE WHEN normalized_question=? THEN 1000 ELSE 0 END".to_string();
+    let mut params: Vec<Value> = vec![json!(normalized)];
+    for term in &terms {
+        ranking.push_str("+CASE WHEN normalized_question LIKE ? THEN 1 ELSE 0 END");
+        params.push(json!(format!("%{term}%")));
+    }
+    let rows = db
+        .all(
+            &format!(
+                "SELECT id,length(CAST(json_extract(snapshot,'$.specification') AS BLOB)) AS spec_bytes \
+                 FROM forecasts ORDER BY ({ranking}) DESC,created_at DESC,id LIMIT 400"
+            ),
+            &params,
+        )
+        .await?;
+    let mut chosen: Vec<String> = Vec::new();
+    let mut reserved: usize = 2;
+    for row in &rows {
+        // Reserve wrapper keys and IDs and commas in addition to the full criteria.
+        let size = int(row, "spec_bytes").unwrap_or(0).max(0) as usize + 320;
+        if reserved + size > MAX_CANDIDATE_CONTEXT_BYTES {
+            continue;
+        }
+        chosen.push(text(row, "id").unwrap_or("").to_string());
+        reserved += size;
+        if chosen.len() == MAX_CANDIDATES {
+            break;
+        }
+    }
+    if chosen.is_empty() {
+        return Ok(Vec::new());
+    }
+    let placeholders = vec!["?"; chosen.len()].join(",");
+    let records = db
+        .all(
+            &format!("SELECT id,snapshot FROM forecasts WHERE id IN ({placeholders})"),
+            &chosen.iter().map(|id| json!(id)).collect::<Vec<_>>(),
+        )
+        .await?;
+    let by_id: std::collections::BTreeMap<String, Forecast> = records
+        .iter()
+        .filter_map(|row| {
+            let id = text(row, "id")?.to_string();
+            Forecast::from_json(text(row, "snapshot")?)
+                .ok()
+                .map(|forecast| (id, forecast))
+        })
+        .collect();
+    let mut result: Vec<Forecast> = Vec::new();
+    let mut size: usize = 2;
+    for identifier in &chosen {
+        let Some(forecast) = by_id.get(identifier) else {
+            continue;
+        };
+        let encoded = crate::source_watch::compact(&json!({
+            "forecast_id": forecast.forecast_id,
+            "specification_hash": forecast.specification_hash,
+            "specification": serde_json::to_value(&forecast.specification).unwrap_or(Value::Null),
+        }));
+        // The reference's `size + len(encoded) + 1 <= MAX`, with the `+ 1` folded in: the
+        // separator between two entries is part of the budget.
+        if size + encoded.len() < MAX_CANDIDATE_CONTEXT_BYTES {
+            result.push(forecast.clone());
+            size += encoded.len() + 1;
+        }
+    }
+    Ok(result)
 }

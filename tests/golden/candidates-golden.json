@@ -1,0 +1,297 @@
+{
+  "calls": [
+    {
+      "call": "candidates",
+      "input": {
+        "question": "Will Acme officially announce Product X before the deadline?"
+      },
+      "result": [
+        "f_19581e27de7ced00ff1ce50b",
+        "f_6b51d431df5d7f141cbececc",
+        "f_e629fa6598d732768f7c726b",
+        "f_4ec9599fc203d176a301536c",
+        "f_6f4b6612125fb3a0daecd279",
+        "f_c2356069e9d1e79ca9243781"
+      ]
+    },
+    {
+      "call": "candidates",
+      "input": {
+        "question": "Will Acme announce something before the deadline?"
+      },
+      "result": [
+        "f_19581e27de7ced00ff1ce50b",
+        "f_6b51d431df5d7f141cbececc",
+        "f_e629fa6598d732768f7c726b",
+        "f_4ec9599fc203d176a301536c",
+        "f_6f4b6612125fb3a0daecd279",
+        "f_c2356069e9d1e79ca9243781"
+      ]
+    },
+    {
+      "call": "candidates",
+      "input": {
+        "question": "product"
+      },
+      "result": [
+        "f_19581e27de7ced00ff1ce50b",
+        "f_6b51d431df5d7f141cbececc",
+        "f_e629fa6598d732768f7c726b",
+        "f_4ec9599fc203d176a301536c",
+        "f_6f4b6612125fb3a0daecd279",
+        "f_c2356069e9d1e79ca9243781"
+      ]
+    },
+    {
+      "call": "candidates",
+      "input": {
+        "question": "이 회사는"
+      },
+      "result": [
+        "f_c2356069e9d1e79ca9243781",
+        "f_19581e27de7ced00ff1ce50b",
+        "f_4ec9599fc203d176a301536c",
+        "f_6b51d431df5d7f141cbececc",
+        "f_6f4b6612125fb3a0daecd279",
+        "f_e629fa6598d732768f7c726b"
+      ]
+    },
+    {
+      "call": "candidates",
+      "input": {
+        "question": "nothing matches this at all"
+      },
+      "result": [
+        "f_19581e27de7ced00ff1ce50b",
+        "f_4ec9599fc203d176a301536c",
+        "f_6b51d431df5d7f141cbececc",
+        "f_6f4b6612125fb3a0daecd279",
+        "f_c2356069e9d1e79ca9243781",
+        "f_e629fa6598d732768f7c726b"
+      ]
+    },
+    {
+      "call": "candidates",
+      "input": {
+        "question": ""
+      },
+      "result": [
+        "f_19581e27de7ced00ff1ce50b",
+        "f_4ec9599fc203d176a301536c",
+        "f_6b51d431df5d7f141cbececc",
+        "f_6f4b6612125fb3a0daecd279",
+        "f_c2356069e9d1e79ca9243781",
+        "f_e629fa6598d732768f7c726b"
+      ]
+    }
+  ],
+  "corpus": [
+    {
+      "forecastId": "f_19581e27de7ced00ff1ce50b",
+      "question": "Will Acme officially announce Product X before the deadline?"
+    },
+    {
+      "forecastId": "f_6b51d431df5d7f141cbececc",
+      "question": "Will Acme ship the Product Y update before the deadline?"
+    },
+    {
+      "forecastId": "f_e629fa6598d732768f7c726b",
+      "question": "Will Beta Systems announce a new product before the deadline?"
+    },
+    {
+      "forecastId": "f_4ec9599fc203d176a301536c",
+      "question": "Will the Gamma merger complete before the deadline?"
+    },
+    {
+      "forecastId": "f_6f4b6612125fb3a0daecd279",
+      "question": "Will Delta report earnings before the deadline?"
+    },
+    {
+      "forecastId": "f_c2356069e9d1e79ca9243781",
+      "question": "이 회사는 신제품을 발표할까?"
+    }
+  ],
+  "description": "The compiler's candidate selection: the lexical ranking, the term extraction, and the two-pass byte budget.",
+  "rows": {
+    "forecasts": [
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1800000100000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_2c624232cdd221771294dfbb",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_19581e27de7ced00ff1ce50b",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "candidate-key-0",
+        "normalized_question": "will acme officially announce product x before the deadline?",
+        "open_at": 1800000000000,
+        "question": "Will Acme officially announce Product X before the deadline?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"ad2909d9c9bdcb079106d9a120e97b27e65594113064a9880bc8c75c1cb2365c\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"latest_event\":{\"artifact_hash\":\"b6975234c822832aa0835894d633803a9e2ee1a7d6b92fd8464572dd83eae8f7\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"254cb6cf033baba8192e66a4ab4f68a74478dd5d5b7506891bc5cbda655dd346\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"state_hash\":\"8fb3cf4ab0b3388ba38f84da353c269694be82e352e26a6dc707d43f5080041c\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme officially announce Product X before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme officially announce Product X before the deadline?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"81429d457193b8011bcc45b3c0066d82fd4d941b59993ebf0dc369970ed1185d\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7005b665785b2f3fa9085621b6c400e23e97f9c242c5a7e7a6de08e76d8550d8\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28",
+        "state": "OPEN",
+        "title": "Will Acme officially announce Product X before the deadline?",
+        "updated_at": 1800000000000
+      },
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1800000100000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_4fc82b26aecb47d2868c4efb",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_6b51d431df5d7f141cbececc",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "candidate-key-1",
+        "normalized_question": "will acme ship the product y update before the deadline?",
+        "open_at": 1800000000000,
+        "question": "Will Acme ship the Product Y update before the deadline?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"262509b81de2a7d57b165da2a231665ddd4121488c868daae3130ddf12008729\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_6b51d431df5d7f141cbececc\",\"latest_event\":{\"artifact_hash\":\"6f4091b0b15e997b44acfd189d2ff9bdafbfce559a5d184bd690492f8091d4aa\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"f_6b51d431df5d7f141cbececc\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"0b8230694824003646957b0bc91ee602bfa5a24551c192aec58fcb6306d55248\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"6059747d6a77c2c39e25993287e2187d87ebf8c211b7b460072f694ada4a30c1\",\"state_hash\":\"eea1fc81935bf6f897c317caadc9925d8c30bf5a45c41593f56c4687d88b00d8\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme ship the Product Y update before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme ship the Product Y update before the deadline?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"6059747d6a77c2c39e25993287e2187d87ebf8c211b7b460072f694ada4a30c1\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"6059747d6a77c2c39e25993287e2187d87ebf8c211b7b460072f694ada4a30c1\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"626f7591d6d029f4c28f124a81a29a6d01d931eafb1abc2afe71c3ebe94edf42\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"6059747d6a77c2c39e25993287e2187d87ebf8c211b7b460072f694ada4a30c1\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"6059747d6a77c2c39e25993287e2187d87ebf8c211b7b460072f694ada4a30c1\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"01e29803cd70b8646b774347325b29e1b41503cba17a68d5c041e3ebd7014c0e\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"6059747d6a77c2c39e25993287e2187d87ebf8c211b7b460072f694ada4a30c1\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "6059747d6a77c2c39e25993287e2187d87ebf8c211b7b460072f694ada4a30c1",
+        "state": "OPEN",
+        "title": "Will Acme ship the Product Y update before the deadline?",
+        "updated_at": 1800000000000
+      },
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1800000100000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_8527a891e224136950ff32ca",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_e629fa6598d732768f7c726b",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "candidate-key-2",
+        "normalized_question": "will beta systems announce a new product before the deadline?",
+        "open_at": 1800000000000,
+        "question": "Will Beta Systems announce a new product before the deadline?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"3b4d1808f23d0b29564068a6d59cf16b561d278dbc0852f52c27e13773bcb88a\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_e629fa6598d732768f7c726b\",\"latest_event\":{\"artifact_hash\":\"d1d94d21e159c4e2bdb9cda75ada4e2e5812e49ebf660b486f4336c5a11bf797\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"f_e629fa6598d732768f7c726b\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"375db55da533539a1425da5c03c162c24b82c8aae899a8503cbb678899ede297\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"8cca898077722ba43da81e0a9cd8b256e7bcab0b57b3758c22ea03e110d39ad9\",\"state_hash\":\"2cb891e93e6c9cc49a4b1f923fe6f6979a67f4c3f052ce6559f5c0520f64bbe6\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Beta Systems announce a new product before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Beta Systems announce a new product before the deadline?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"8cca898077722ba43da81e0a9cd8b256e7bcab0b57b3758c22ea03e110d39ad9\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"8cca898077722ba43da81e0a9cd8b256e7bcab0b57b3758c22ea03e110d39ad9\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"ae50ea46062bccf4377c5554b6221350e27826a341e58be8c683f492b6c40694\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"8cca898077722ba43da81e0a9cd8b256e7bcab0b57b3758c22ea03e110d39ad9\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"8cca898077722ba43da81e0a9cd8b256e7bcab0b57b3758c22ea03e110d39ad9\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"da6eec843441833ae6dea2dae325877b876916b7fc2c8502388151bb1823c78d\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"8cca898077722ba43da81e0a9cd8b256e7bcab0b57b3758c22ea03e110d39ad9\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "8cca898077722ba43da81e0a9cd8b256e7bcab0b57b3758c22ea03e110d39ad9",
+        "state": "OPEN",
+        "title": "Will Beta Systems announce a new product before the deadline?",
+        "updated_at": 1800000000000
+      },
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1800000100000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_4523540f1504cd17100c4835",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_4ec9599fc203d176a301536c",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "candidate-key-3",
+        "normalized_question": "will the gamma merger complete before the deadline?",
+        "open_at": 1800000000000,
+        "question": "Will the Gamma merger complete before the deadline?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"f2b9070200a7f77e9e61231042259ba9c9427539237e8404f2182ad5025f32ba\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_4ec9599fc203d176a301536c\",\"latest_event\":{\"artifact_hash\":\"ef8fe2178b365e79a46d296efb5da7198f108ed2cc81dab191354340bd25c573\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"f_4ec9599fc203d176a301536c\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"e9867208d28a70e81fa517038e4abcb93af04c4a3ff8f0925abe5aca6c87238b\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"14810f60311bead2c883674d9c91fa223f47b2bc9745b96e02b8dccc1264f328\",\"state_hash\":\"611aabb61cbac72b7d99ec5e4a4b0f73b13d32064431d55f23c09d6a533de170\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will the Gamma merger complete before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will the Gamma merger complete before the deadline?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"14810f60311bead2c883674d9c91fa223f47b2bc9745b96e02b8dccc1264f328\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"14810f60311bead2c883674d9c91fa223f47b2bc9745b96e02b8dccc1264f328\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"d741cd7675a2107455fe70380cf854289b8bd7de3f55619f43d5dfb03316d41e\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"14810f60311bead2c883674d9c91fa223f47b2bc9745b96e02b8dccc1264f328\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"14810f60311bead2c883674d9c91fa223f47b2bc9745b96e02b8dccc1264f328\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"744ffeefe9bb47a284af43900a011d8788ef84a213e258a2602dd060f7137e14\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"14810f60311bead2c883674d9c91fa223f47b2bc9745b96e02b8dccc1264f328\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "14810f60311bead2c883674d9c91fa223f47b2bc9745b96e02b8dccc1264f328",
+        "state": "OPEN",
+        "title": "Will the Gamma merger complete before the deadline?",
+        "updated_at": 1800000000000
+      },
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1800000100000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_f5ca38f748a1d6eaf726b8a4",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_6f4b6612125fb3a0daecd279",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "candidate-key-4",
+        "normalized_question": "will delta report earnings before the deadline?",
+        "open_at": 1800000000000,
+        "question": "Will Delta report earnings before the deadline?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"365b3c67560332eab8b0f0cd8aa1c6450152d30e01199fc3e5aec67ac410f0f7\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_6f4b6612125fb3a0daecd279\",\"latest_event\":{\"artifact_hash\":\"361a25cb6c305c68e839921c9ae89db0fdbdb58d6f15899663d296c3b842cf88\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"f_6f4b6612125fb3a0daecd279\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"90acff0275b572f45f9ebb65c6f91e42f4abaf39e47c685d1c162605b9d69be3\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"dbbd4629b24c3cecca6806fd1e17d10ab3b8e857fe16f6ac01b07aa9003dee0d\",\"state_hash\":\"e4357aea9fe3406190e37383a02b80db490d7ff0eb3529a1ff7a430d6c56c756\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Delta report earnings before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Delta report earnings before the deadline?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"dbbd4629b24c3cecca6806fd1e17d10ab3b8e857fe16f6ac01b07aa9003dee0d\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"dbbd4629b24c3cecca6806fd1e17d10ab3b8e857fe16f6ac01b07aa9003dee0d\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"0584eab7a81807f71fa338734144716f9ef00fab29fe83af6af6b963fad728e8\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"dbbd4629b24c3cecca6806fd1e17d10ab3b8e857fe16f6ac01b07aa9003dee0d\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"dbbd4629b24c3cecca6806fd1e17d10ab3b8e857fe16f6ac01b07aa9003dee0d\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"027f840a6e1575c6fe0b6a6ade19008783e99e6906efa0defea33b8277138149\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"dbbd4629b24c3cecca6806fd1e17d10ab3b8e857fe16f6ac01b07aa9003dee0d\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "dbbd4629b24c3cecca6806fd1e17d10ab3b8e857fe16f6ac01b07aa9003dee0d",
+        "state": "OPEN",
+        "title": "Will Delta report earnings before the deadline?",
+        "updated_at": 1800000000000
+      },
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1800000100000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_535fa30d7e25dd8a49f15367",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_c2356069e9d1e79ca9243781",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "candidate-key-5",
+        "normalized_question": "이 회사는 신제품을 발표할까?",
+        "open_at": 1800000000000,
+        "question": "이 회사는 신제품을 발표할까?",
+        "retry_at": 0,
+        "revision": 2,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"dc477fc950fe22bf9410dad467033d313a7bb2d1c8408dd6ab3092318ca4bb7d\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_c2356069e9d1e79ca9243781\",\"latest_event\":{\"artifact_hash\":\"c0827fb3fdb89a7480e5b04e9d6b16545d8f91c4a09329b9fadbb8bc59ea16cc\",\"command_id\":\"publish\",\"command_name\":\"publish\",\"effects\":[],\"forecast_id\":\"f_c2356069e9d1e79ca9243781\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"VALIDATING\",\"previous_event_hash\":\"d4b9eb3651236a163ebc5968daa131174c65fb3da123781e0519bd93b9b20b6b\",\"revision\":2,\"schema_version\":1,\"specification_hash\":\"6c55ac6cbd9ff7569e0fba87ac0db581706f997291362c05102375dc19cebf45\",\"state_hash\":\"dfcc6fdb9a22c87627f65c3136b3d8053c2b130f5212d2e067680e9005ea2c79\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":2,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"이 회사는 신제품을 발표할까?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"이 회사는 신제품을 발표할까?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"6c55ac6cbd9ff7569e0fba87ac0db581706f997291362c05102375dc19cebf45\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"6c55ac6cbd9ff7569e0fba87ac0db581706f997291362c05102375dc19cebf45\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"342db3bd1a8c010b9461c948f8614dce5ca0adfd5f0707eba071a1cd36785d86\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"6c55ac6cbd9ff7569e0fba87ac0db581706f997291362c05102375dc19cebf45\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"6c55ac6cbd9ff7569e0fba87ac0db581706f997291362c05102375dc19cebf45\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"63385fda9a8d131dcce30018cb57420fcf9802a57de47cb600014f53f69d4b94\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"6c55ac6cbd9ff7569e0fba87ac0db581706f997291362c05102375dc19cebf45\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "6c55ac6cbd9ff7569e0fba87ac0db581706f997291362c05102375dc19cebf45",
+        "state": "OPEN",
+        "title": "이 회사는 신제품을 발표할까?",
+        "updated_at": 1800000000000
+      }
+    ],
+    "users": [
+      {
+        "created_at": 1800000000000,
+        "display_name": "테스터",
+        "handle": "f_4e07408562be",
+        "id": "u_4e07408562bedb8b60ce05c1",
+        "recovery_hash": "7444c5ccee4aba92f325831bd6df61ececb73bb98b0df02ee6032633a4e43c96"
+      },
+      {
+        "created_at": 1800000000000,
+        "display_name": "다른 사용자",
+        "handle": "f_e7f6c011776e",
+        "id": "u_e7f6c011776e8db7cd330b54",
+        "recovery_hash": "0ec2e8eb334b6f181d147a055a970b6e391d1e6872dae8924342378ebc1c1aaf"
+      }
+    ]
+  }
+}
