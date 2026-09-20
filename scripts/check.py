@@ -65,7 +65,10 @@ def main() -> int:
                 [sys.executable, "scripts/generate_market_golden.py", "--check"],
                 # Sandbox billing is nonbillable, but it is still a state machine over two pools
                 # of capital that no sequence of events may leave owing more than it holds.
-                [sys.executable, "scripts/generate_billing_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_billing_golden.py", "--check"],
+                # Product KPIs are definitions rather than arithmetic: a merged alias counted
+                # twice, or an immature window reported as zero, is a plausible wrong answer.
+                [sys.executable, "scripts/generate_analytics_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

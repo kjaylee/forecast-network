@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use worker::*;
 
 pub mod ai;
+pub mod analytics;
 pub mod article;
 mod auth;
 pub mod billing;
