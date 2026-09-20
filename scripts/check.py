@@ -120,7 +120,10 @@ def main() -> int:
                 # The only code in the port that spends money. Every method is a sequence of
                 # refusals, and the vector records the RPC calls in order because the order is the
                 # safety property.
-                [sys.executable, "scripts/generate_solana_rpc_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_solana_rpc_golden.py", "--check"],
+                # The points read models: an assembled history, four onboarding states, and an
+                # identifier rule that refuses rather than reporting a missing position.
+                [sys.executable, "scripts/generate_points_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

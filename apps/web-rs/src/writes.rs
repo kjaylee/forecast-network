@@ -274,12 +274,7 @@ pub async fn update_profile(context: &Context<'_>, user_id: &str, display_name: 
     )
     .await?;
     let user = user_row(session, user_id).await?;
-    let points = crate::points::summary(session, user_id)
-        .await?
-        .ok_or(RouteError::Unauthorized(
-            "points_account_missing",
-            "Sign in to view your participation points.",
-        ))?;
+    let points = crate::points::summary(&crate::db::D1(session), user_id).await?;
     Ok(api_response(
         json!({"user": public_user(&user), "points": points}),
         200,
@@ -390,14 +385,9 @@ async fn submission_response(context: &Context<'_>, user_id: &str, forecast_id: 
             target.insert(key, value);
         }
     }
-    data["points"] = crate::points::summary(session, user_id)
-        .await?
-        .ok_or(RouteError::Unauthorized(
-            "points_account_missing",
-            "Sign in to view your participation points.",
-        ))?;
+    data["points"] = crate::points::summary(&crate::db::D1(session), user_id).await?;
     data["eligibility"] = eligibility;
-    data["stake"] = crate::points::position_for(session, user_id, forecast_id).await?;
+    data["stake"] = crate::points::position_for(&crate::db::D1(session), user_id, forecast_id).await?;
     Ok(api_response(data, 200, false)?)
 }
 
@@ -465,7 +455,7 @@ pub async fn submit_forecast(
         return Err(crate::mutate::conflict());
     }
     if stake_points.is_none() {
-        let position = crate::points::position_for(session, user_id, forecast_id).await?;
+        let position = crate::points::position_for(&crate::db::D1(session), user_id, forecast_id).await?;
         if position["status"] == "committed" && position["amount"].as_i64().unwrap_or(0) > 0 {
             return Err(RouteError::Failed(
                 409,
@@ -546,8 +536,13 @@ pub async fn submit_forecast(
             if !matches!(error, RouteError::Worker(_)) {
                 return Err(error);
             }
-            let points = crate::points::summary(session, user_id).await.ok().flatten();
-            let position = crate::points::position_for(session, user_id, forecast_id).await.ok();
+            // A missing account is a refusal now, and this path only wants the summary if there is
+            // one: the refusal is what the *route* reports, and swallowing it here is the same
+            // `None` the read model used to return.
+            let points = crate::points::summary(&crate::db::D1(session), user_id).await.ok();
+            let position = crate::points::position_for(&crate::db::D1(session), user_id, forecast_id)
+                .await
+                .ok();
             let (Some(points), Some(position)) = (points, position) else {
                 return Err(RouteError::Failed(
                     503,

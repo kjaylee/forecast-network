@@ -532,7 +532,7 @@ pub async fn me(context: &Context<'_>, user_id: Option<&str>) -> Handler {
     )
     .await?;
     let positions = crate::points::positions(
-        session,
+        &crate::db::D1(session),
         user_id,
         &rows
             .iter()
@@ -553,12 +553,7 @@ pub async fn me(context: &Context<'_>, user_id: Option<&str>) -> Handler {
         item["eligibility"] = crate::eligibility::combined(&crate::db::D1(session), id, Some(user_id)).await?;
         cards.push(item);
     }
-    let points = crate::points::summary(session, user_id)
-        .await?
-        .ok_or(RouteError::Unauthorized(
-            "points_account_missing",
-            "Sign in to view your participation points.",
-        ))?;
+    let points = crate::points::summary(&crate::db::D1(session), user_id).await?;
     let mainnet = context
         .env
         .var("SOLANA_MAINNET_RPC")
@@ -644,12 +639,7 @@ pub async fn creator(context: &Context<'_>, creator_id: &str, user_id: Option<&s
 // ---------------------------------------------------------------- points, markets, wallet, billing
 
 pub async fn points(context: &Context<'_>, user_id: &str) -> Handler {
-    let summary = crate::points::summary(context.session, user_id)
-        .await?
-        .ok_or(RouteError::Unauthorized(
-            "points_account_missing",
-            "Sign in to view your participation points.",
-        ))?;
+    let summary = crate::points::summary(&crate::db::D1(context.session), user_id).await?;
     Ok(api_response(summary, 200, false)?)
 }
 
@@ -685,12 +675,7 @@ pub async fn wallet(context: &Context<'_>, user_id: &str) -> Handler {
         &[json!(user_id)],
     )
     .await?;
-    let points = crate::points::summary(context.session, user_id)
-        .await?
-        .ok_or(RouteError::Unauthorized(
-            "points_account_missing",
-            "Sign in to view your participation points.",
-        ))?;
+    let points = crate::points::summary(&crate::db::D1(context.session), user_id).await?;
     Ok(api_response(
         json!({"wallet": row.as_ref().map_or(Value::Null, |r| json!({"address": get(r, "address"), "chain": get(r, "chain"), "linkedAt": get(r, "linked_at")})), "points": points}),
         200,

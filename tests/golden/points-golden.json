@@ -1,0 +1,499 @@
+{
+  "calls": [
+    {
+      "call": "summary:granted",
+      "input": {
+        "userId": "user-a"
+      },
+      "result": {
+        "atomicScale": 1000000,
+        "available": 700,
+        "committed": 300,
+        "entries": [
+          {
+            "amount": -300,
+            "at": 1000000,
+            "availableAfter": 700,
+            "availableDelta": -300,
+            "committedAfter": 300,
+            "committedDelta": 300,
+            "forecastId": "f-staked",
+            "id": "reservation:8c55c18425f32010c7c7a8fb8d8c70690648b581e82d39dc9d30bf8968aa3d8f",
+            "kind": "reservation",
+            "returned": null,
+            "stake": 300
+          },
+          {
+            "amount": 1000,
+            "at": 999800,
+            "availableAfter": 1000,
+            "availableDelta": 1000,
+            "committedAfter": 0,
+            "committedDelta": 0,
+            "forecastId": null,
+            "id": "award:profile:user-a",
+            "kind": "profile_grant",
+            "returned": null,
+            "stake": 0
+          }
+        ],
+        "fractionAtomic": "0",
+        "onboarding": {
+          "profile": {
+            "awardedAt": 999800,
+            "completed": true,
+            "reward": 1000
+          },
+          "wallet": {
+            "awardedAt": null,
+            "completed": false,
+            "eligible": true,
+            "linked": false,
+            "reason": "connect_wallet",
+            "reward": 500
+          }
+        },
+        "policy": {
+          "invalidReturnMultiplier": 1,
+          "maxStake": 1000,
+          "minStake": 0,
+          "practiceAllowed": true,
+          "profileGrant": 1000,
+          "purchasable": false,
+          "redeemable": false,
+          "reputationWeighted": false,
+          "transferable": false,
+          "version": "participation-points-v1",
+          "walletGrant": 500,
+          "winReturnMultiplier": 2
+        },
+        "total": 1000,
+        "userId": "user-a"
+      }
+    },
+    {
+      "call": "summary:empty",
+      "input": {
+        "userId": "user-b"
+      },
+      "result": {
+        "atomicScale": 1000000,
+        "available": 1000,
+        "committed": 0,
+        "entries": [
+          {
+            "amount": 1000,
+            "at": 999800,
+            "availableAfter": 1000,
+            "availableDelta": 1000,
+            "committedAfter": 0,
+            "committedDelta": 0,
+            "forecastId": null,
+            "id": "award:profile:user-b",
+            "kind": "profile_grant",
+            "returned": null,
+            "stake": 0
+          }
+        ],
+        "fractionAtomic": "0",
+        "onboarding": {
+          "profile": {
+            "awardedAt": 999800,
+            "completed": true,
+            "reward": 1000
+          },
+          "wallet": {
+            "awardedAt": null,
+            "completed": false,
+            "eligible": true,
+            "linked": false,
+            "reason": "connect_wallet",
+            "reward": 500
+          }
+        },
+        "policy": {
+          "invalidReturnMultiplier": 1,
+          "maxStake": 1000,
+          "minStake": 0,
+          "practiceAllowed": true,
+          "profileGrant": 1000,
+          "purchasable": false,
+          "redeemable": false,
+          "reputationWeighted": false,
+          "transferable": false,
+          "version": "participation-points-v1",
+          "walletGrant": 500,
+          "winReturnMultiplier": 2
+        },
+        "total": 1000,
+        "userId": "user-b"
+      }
+    },
+    {
+      "call": "summary:unknown",
+      "error": {
+        "code": "points_account_missing",
+        "message": "Sign in to view your participation points.",
+        "status": 401
+      },
+      "input": {
+        "userId": "u-nobody"
+      }
+    },
+    {
+      "call": "summary:empty-id",
+      "error": {
+        "code": "invalid_points_request",
+        "message": "Invalid participation points request.",
+        "status": 400
+      },
+      "input": {
+        "userId": ""
+      }
+    },
+    {
+      "call": "summary:control-character",
+      "error": {
+        "code": "invalid_points_request",
+        "message": "Invalid participation points request.",
+        "status": 400
+      },
+      "input": {
+        "userId": "bad\u0001id"
+      }
+    },
+    {
+      "call": "summary:too-long",
+      "error": {
+        "code": "invalid_points_request",
+        "message": "Invalid participation points request.",
+        "status": 400
+      },
+      "input": {
+        "userId": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"
+      }
+    },
+    {
+      "call": "position:staked",
+      "input": {
+        "forecastId": "f-staked",
+        "userId": "user-a"
+      },
+      "result": {
+        "amount": 300,
+        "forecastRevision": 3,
+        "outcome": "YES",
+        "policyVersion": "participation-points-v1",
+        "returned": null,
+        "status": "committed"
+      }
+    },
+    {
+      "call": "position:absent",
+      "input": {
+        "forecastId": "f-none",
+        "userId": "user-a"
+      },
+      "result": {
+        "amount": 0,
+        "forecastRevision": null,
+        "outcome": null,
+        "policyVersion": "participation-points-v1",
+        "returned": null,
+        "status": "practice"
+      }
+    },
+    {
+      "call": "positions:many",
+      "input": {
+        "forecastIds": [
+          "f-staked",
+          "f-none",
+          "f-staked"
+        ],
+        "userId": "user-a"
+      },
+      "result": {
+        "f-none": {
+          "amount": 0,
+          "forecastRevision": null,
+          "outcome": null,
+          "policyVersion": "participation-points-v1",
+          "returned": null,
+          "status": "practice"
+        },
+        "f-staked": {
+          "amount": 300,
+          "forecastRevision": 3,
+          "outcome": "YES",
+          "policyVersion": "participation-points-v1",
+          "returned": null,
+          "status": "committed"
+        }
+      }
+    },
+    {
+      "call": "positions:empty",
+      "input": {
+        "forecastIds": [],
+        "userId": "user-a"
+      },
+      "result": {}
+    },
+    {
+      "call": "positions:too-many",
+      "error": {
+        "code": "invalid_points_request",
+        "message": "Too many forecast positions were requested.",
+        "status": 400
+      },
+      "input": {
+        "forecastIds": "101 identifiers",
+        "userId": "user-a"
+      }
+    },
+    {
+      "call": "positions:invalid-id",
+      "error": {
+        "code": "invalid_points_request",
+        "message": "Invalid participation points request.",
+        "status": 400
+      },
+      "input": {
+        "forecastIds": [
+          "f-staked",
+          ""
+        ],
+        "userId": "user-a"
+      }
+    },
+    {
+      "call": "positions:not-a-string",
+      "error": {
+        "code": "invalid_points_request",
+        "message": "Invalid participation points request.",
+        "status": 400
+      },
+      "input": {
+        "forecastIds": [
+          7
+        ],
+        "userId": "user-a"
+      }
+    }
+  ],
+  "description": "The participation-points read models: the assembled history, the four onboarding states, and the identifier rules.",
+  "now": 1000000,
+  "rows": {
+    "forecasts": [
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1001000,
+        "created_at": 999900,
+        "creator_id": "user-a",
+        "draft_id": "draft:f-staked",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f-staked",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "publish",
+        "normalized_question": "will f-staked be announced?",
+        "open_at": 999900,
+        "question": "Will f-staked be announced?",
+        "retry_at": 0,
+        "revision": 3,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"3247f7cd8a16b894a20d76e14e378501a515185499c0dd0a8bd478bc392758f4\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":999900,\"creator_id\":\"user-a\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f-staked\",\"latest_event\":{\"artifact_hash\":\"cacfdf753200678817bb749f1f3bcc0b1934e786205b651ee38ace2b544bfc4d\",\"command_id\":\"operation-1\",\"command_name\":\"submit_forecast\",\"effects\":[],\"forecast_id\":\"f-staked\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1000000,\"old_state\":\"OPEN\",\"previous_event_hash\":\"5aee486af5d1446d500476d0b4f7e1e6eb0cafdef5aea3066762bcf8f787fadc\",\"revision\":3,\"schema_version\":1,\"specification_hash\":\"9413016e46662d2bf69260e6fe54f7a43079cb4f4618047894d3e2fa0d73bc47\",\"state_hash\":\"dfdeb196e941732b2ee6b6275d8438715c36b38202ffe186cde4a9eecce0236f\"},\"pause\":null,\"published_at_ms\":1000000,\"resolution\":null,\"revision\":3,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will f-staked be announced?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1001000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":999900,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme announce Product X?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"9413016e46662d2bf69260e6fe54f7a43079cb4f4618047894d3e2fa0d73bc47\",\"state\":\"OPEN\",\"updated_at_ms\":1000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"9413016e46662d2bf69260e6fe54f7a43079cb4f4618047894d3e2fa0d73bc47\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"8ad0b0f07437e9a546a7754d51013e5eeb99c9041ae60f34aaf99e6811aaebd5\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"9413016e46662d2bf69260e6fe54f7a43079cb4f4618047894d3e2fa0d73bc47\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"9413016e46662d2bf69260e6fe54f7a43079cb4f4618047894d3e2fa0d73bc47\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"f2ae8d31964314feadbf1505786aa1051d0ad23d82c4f9106a8699902b4468bf\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"9413016e46662d2bf69260e6fe54f7a43079cb4f4618047894d3e2fa0d73bc47\",\"validated_at_ms\":1000000}}",
+        "specification_hash": "9413016e46662d2bf69260e6fe54f7a43079cb4f4618047894d3e2fa0d73bc47",
+        "state": "OPEN",
+        "title": "Will Acme announce Product X?",
+        "updated_at": 1000000
+      }
+    ],
+    "point_accounts": [
+      {
+        "available": 700,
+        "committed": 300,
+        "updated_at": 1000000,
+        "user_id": "user-a"
+      },
+      {
+        "available": 1000,
+        "committed": 0,
+        "updated_at": 999800,
+        "user_id": "user-b"
+      },
+      {
+        "available": 1000,
+        "committed": 0,
+        "updated_at": 999800,
+        "user_id": "user-c"
+      }
+    ],
+    "point_awards": [
+      {
+        "amount": 1000,
+        "created_at": 999800,
+        "id": "profile:user-a",
+        "kind": "profile",
+        "policy_version": "participation-points-v1",
+        "user_id": "user-a",
+        "wallet_address": null
+      },
+      {
+        "amount": 1000,
+        "created_at": 999800,
+        "id": "profile:user-b",
+        "kind": "profile",
+        "policy_version": "participation-points-v1",
+        "user_id": "user-b",
+        "wallet_address": null
+      },
+      {
+        "amount": 1000,
+        "created_at": 999800,
+        "id": "profile:user-c",
+        "kind": "profile",
+        "policy_version": "participation-points-v1",
+        "user_id": "user-c",
+        "wallet_address": null
+      }
+    ],
+    "point_ledger": [
+      {
+        "available_after": 1000,
+        "available_delta": 1000,
+        "award_id": "profile:user-a",
+        "committed_after": 0,
+        "committed_delta": 0,
+        "created_at": 999800,
+        "forecast_id": null,
+        "forecast_revision": null,
+        "id": "award:profile:user-a",
+        "kind": "profile_grant",
+        "operation_id": null,
+        "outcome": null,
+        "policy_version": "participation-points-v1",
+        "request_hash": null,
+        "resolved_outcome": null,
+        "returned": null,
+        "stake": 0,
+        "user_id": "user-a"
+      },
+      {
+        "available_after": 1000,
+        "available_delta": 1000,
+        "award_id": "profile:user-b",
+        "committed_after": 0,
+        "committed_delta": 0,
+        "created_at": 999800,
+        "forecast_id": null,
+        "forecast_revision": null,
+        "id": "award:profile:user-b",
+        "kind": "profile_grant",
+        "operation_id": null,
+        "outcome": null,
+        "policy_version": "participation-points-v1",
+        "request_hash": null,
+        "resolved_outcome": null,
+        "returned": null,
+        "stake": 0,
+        "user_id": "user-b"
+      },
+      {
+        "available_after": 1000,
+        "available_delta": 1000,
+        "award_id": "profile:user-c",
+        "committed_after": 0,
+        "committed_delta": 0,
+        "created_at": 999800,
+        "forecast_id": null,
+        "forecast_revision": null,
+        "id": "award:profile:user-c",
+        "kind": "profile_grant",
+        "operation_id": null,
+        "outcome": null,
+        "policy_version": "participation-points-v1",
+        "request_hash": null,
+        "resolved_outcome": null,
+        "returned": null,
+        "stake": 0,
+        "user_id": "user-c"
+      },
+      {
+        "available_after": 700,
+        "available_delta": -300,
+        "award_id": null,
+        "committed_after": 300,
+        "committed_delta": 300,
+        "created_at": 1000000,
+        "forecast_id": "f-staked",
+        "forecast_revision": 3,
+        "id": "reservation:8c55c18425f32010c7c7a8fb8d8c70690648b581e82d39dc9d30bf8968aa3d8f",
+        "kind": "reservation",
+        "operation_id": "operation-1",
+        "outcome": "YES",
+        "policy_version": "participation-points-v1",
+        "request_hash": "1927126540d0fd0f790ccaafea291abefaf59885c97b1683f82a359dfbee959f",
+        "resolved_outcome": null,
+        "returned": null,
+        "stake": 300,
+        "user_id": "user-a"
+      }
+    ],
+    "point_positions": [
+      {
+        "amount": 300,
+        "created_at": 1000000,
+        "forecast_id": "f-staked",
+        "forecast_revision": 3,
+        "outcome": "YES",
+        "policy_version": "participation-points-v1",
+        "returned": null,
+        "settlement_id": null,
+        "status": "committed",
+        "updated_at": 1000000,
+        "user_id": "user-a"
+      }
+    ],
+    "user_forecasts": [
+      {
+        "body": "{\"confidence\":70,\"forecast_id\":\"f-staked\",\"forecaster_id\":\"user-a\",\"outcome\":\"YES\",\"schema_version\":1,\"specification_hash\":\"9413016e46662d2bf69260e6fe54f7a43079cb4f4618047894d3e2fa0d73bc47\",\"submitted_at_ms\":1000000}",
+        "confidence": 70,
+        "forecast_id": "f-staked",
+        "outcome": "YES",
+        "revision": 3,
+        "submitted_at": 1000000,
+        "user_id": "user-a",
+        "yes_probability": 70
+      }
+    ],
+    "users": [
+      {
+        "created_at": 999800,
+        "display_name": "user-a",
+        "handle": "user-a",
+        "id": "user-a",
+        "recovery_hash": "hash:user-a"
+      },
+      {
+        "created_at": 999800,
+        "display_name": "user-b",
+        "handle": "user-b",
+        "id": "user-b",
+        "recovery_hash": "hash:user-b"
+      },
+      {
+        "created_at": 999800,
+        "display_name": "user-c",
+        "handle": "user-c",
+        "id": "user-c",
+        "recovery_hash": "hash:user-c"
+      }
+    ]
+  }
+}

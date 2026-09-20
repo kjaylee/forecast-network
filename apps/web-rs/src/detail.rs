@@ -184,19 +184,13 @@ pub async fn forecast_detail(
     let live_enabled = var("LIVE_MARKETS_ENABLED") == "true";
     let attestation_available = registry_enabled && !var("SOLANA_RELAYER").is_empty();
     let points = match user_id {
-        Some(user_id) => match crate::points::summary(session, user_id).await? {
-            Some(summary) => summary,
-            None => {
-                return Err(RouteError::Unauthorized(
-                    "points_account_missing",
-                    "Sign in to view your participation points.",
-                ))
-            }
-        },
+        // The missing-account refusal belongs to the read model, which is where the reference puts
+        // it; four call sites each writing the same sentence is four places to disagree.
+        Some(user_id) => crate::points::summary(&crate::db::D1(session), user_id).await?,
         None => Value::Null,
     };
     let stake = match user_id {
-        Some(user_id) => crate::points::position_for(session, user_id, forecast_id).await?,
+        Some(user_id) => crate::points::position_for(&crate::db::D1(session), user_id, forecast_id).await?,
         None => Value::Null,
     };
     let my_forecast = match own {

@@ -44,6 +44,15 @@ impl From<worker::Error> for RouteError {
     }
 }
 
+/// A module with its own coded error reaches the route layer through its status, code and message:
+/// the reference's `AppError` is one type, and a port that grew one error type per module still has
+/// to answer with the same three fields.
+impl From<crate::points::PointsError> for RouteError {
+    fn from(error: crate::points::PointsError) -> Self {
+        RouteError::Failed(error.status, error.code, error.message)
+    }
+}
+
 pub struct Context<'a> {
     pub env: &'a Env,
     pub session: &'a D1DatabaseSession,
