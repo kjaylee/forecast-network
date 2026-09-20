@@ -24,6 +24,7 @@
 
 use std::sync::OnceLock;
 
+use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 use crate::solana::{self, raw, shortvec};
@@ -81,6 +82,12 @@ fn key(value: &[u8], nonzero: bool) -> Result<Vec<u8>, String> {
 
 fn fixed(value: &[u8], size: usize) -> Result<Vec<u8>, String> {
     raw(value, size, "wire length", false)
+}
+
+/// Lowercase hex, which is how every commitment in this ABI is written on the wire and in
+/// the vector.
+pub fn to_hex(value: &[u8]) -> String {
+    value.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 fn hash(domain: &[u8], data: &[u8]) -> [u8; 32] {
@@ -798,22 +805,20 @@ mod tests_support {
             .collect()
     }
 
-    pub fn to_hex(value: &[u8]) -> String {
-        value.iter().map(|byte| format!("{byte:02x}")).collect()
-    }
+    pub use super::to_hex;
 
-    const PROGRAM: [u8; 32] = [10u8; 32];
-    const FORECAST: [u8; 32] = [7u8; 32];
-    const SPECIFICATION: [u8; 32] = [3u8; 32];
-    const RESOLUTION: [u8; 32] = [6u8; 32];
-    const EVENT: [u8; 32] = [8u8; 32];
-    const USER: [u8; 32] = [11u8; 32];
-    const NONCE: [u8; 32] = [12u8; 32];
-    const ARTIFACT: [u8; 32] = [12u8; 32];
-    const HEAD: [u8; 32] = [9u8; 32];
-    const BODY: &[u8] = b"forecast evidence bodyforecast evidence bodyforecast evidence bodyforecast evidence body";
+    pub const PROGRAM: [u8; 32] = [10u8; 32];
+    pub const FORECAST: [u8; 32] = [7u8; 32];
+    pub const SPECIFICATION: [u8; 32] = [3u8; 32];
+    pub const RESOLUTION: [u8; 32] = [6u8; 32];
+    pub const EVENT: [u8; 32] = [8u8; 32];
+    pub const USER: [u8; 32] = [11u8; 32];
+    pub const NONCE: [u8; 32] = [12u8; 32];
+    pub const ARTIFACT: [u8; 32] = [12u8; 32];
+    pub const HEAD: [u8; 32] = [9u8; 32];
+    pub const BODY: &[u8] = b"forecast evidence bodyforecast evidence bodyforecast evidence bodyforecast evidence body";
 
-    fn open_gate() -> Accumulator {
+    pub fn open_gate() -> Accumulator {
         Accumulator::new(AccumulatorParts {
             forecast: &FORECAST,
             specification: &SPECIFICATION,
@@ -834,7 +839,7 @@ mod tests_support {
     }
 
     /// The advance body the reference builds for its fixtures.
-    fn advance_bytes(state: i64, revision: i64) -> Vec<u8> {
+    pub fn advance_bytes(state: i64, revision: i64) -> Vec<u8> {
         let mut out = vec![2u8];
         put_u64(&mut out, revision as u64);
         put_i64(&mut out, 101);
@@ -853,14 +858,14 @@ mod tests_support {
         out
     }
 
-    fn sealed_gate() -> Accumulator {
+    pub fn sealed_gate() -> Accumulator {
         let payload = advance_hash(&advance_bytes(10, 5)).expect("a payload hash");
         open_gate()
             .sealed(5, &[13u8; 32], &[14u8; 32], &payload, 101, 42)
             .expect("a sealed gate")
     }
 
-    fn receipt(body: &[u8], status: i64) -> Receipt {
+    pub fn receipt(body: &[u8], status: i64) -> Receipt {
         let draft = Receipt::new(ReceiptParts {
             forecast: &FORECAST,
             specification: &SPECIFICATION,
@@ -1370,5 +1375,572 @@ mod publication {
             .unwrap_err(),
             "publication must precede close"
         );
+    }
+}
+
+// ---------------------------------------------------------------- the ABI decoder
+
+/// The fixed length of each opcode's payload, where it is fixed.
+fn fixed_operand(tag: u8) -> Option<usize> {
+    Some(match tag {
+        6 => 73,
+        8 => 181,
+        10 => 73,
+        11 => 74,
+        12 => 295,
+        13 => 287,
+        14 => 73,
+        _ => return None,
+    })
+}
+
+/// The advance body of a tag 7, 12 or 13 instruction: 254 bytes at `start`, with the extension
+/// after it.
+fn decode_advance_body(data: &[u8], tag: u8) -> Result<(Value, Vec<u8>), String> {
+    let start = if tag == 7 { 2 } else { 1 };
+    let body = data
+        .get(start..start + 254)
+        .ok_or_else(|| "noncanonical advance".to_string())?
+        .to_vec();
+    let revision = u64::from_le_bytes(body[0..8].try_into().unwrap_or([0; 8])) as i64;
+    let occurred = i64::from_le_bytes(body[8..16].try_into().unwrap_or([0; 8]));
+    let challenge = i64::from_le_bytes(body[242..250].try_into().unwrap_or([0; 8]));
+    let pending = u16::from_le_bytes(body[250..252].try_into().unwrap_or([0; 2]));
+    let material = u16::from_le_bytes(body[252..254].try_into().unwrap_or([0; 2]));
+    let fields = json!({
+        "revision": revision, "occurred_at_ms": occurred,
+        "previous_event_hash": to_hex(&body[16..48]), "event_hash": to_hex(&body[48..80]),
+        "snapshot_hash": to_hex(&body[80..112]), "state": body[112], "outcome": body[113],
+        "resolution_hash": to_hex(&body[114..146]), "dispute_hash": to_hex(&body[146..178]),
+        "reputation_hash": to_hex(&body[178..210]), "trigger_hash": to_hex(&body[210..242]),
+        "challenge_until_ms": challenge, "pending_disputes": pending, "material_disputes": material,
+    });
+    // Canonicality is proved by re-encoding: an advance whose bytes say one thing and whose
+    // fields say another is not an instruction anyone signed, and a state the program would never
+    // write cannot be smuggled in as a payload that merely parses.
+    let re_encoded = solana::encode_advance(&solana::AdvanceFields {
+        revision,
+        occurred_at_ms: occurred,
+        previous_event_hash: &body[16..48],
+        event_hash: &body[48..80],
+        snapshot_hash: &body[80..112],
+        state: body[112] as i64,
+        outcome: body[113] as i64,
+        resolution_hash: &body[114..146],
+        dispute_hash: &body[146..178],
+        reputation_hash: &body[178..210],
+        trigger_hash: &body[210..242],
+        challenge_until_ms: challenge,
+        pending_disputes: pending as i64,
+        material_disputes: material as i64,
+    })
+    .map_err(|_| "noncanonical advance".to_string())?;
+    let mut canonical = vec![2u8];
+    canonical.extend(&body);
+    if re_encoded != canonical {
+        return Err("noncanonical advance".to_string());
+    }
+    if (body[112] == 10) != (tag == 12 || tag == 13) {
+        return Err("wrong finalization opcode".to_string());
+    }
+    Ok((fields, data[start + 254..].to_vec()))
+}
+
+/// `decode_instruction`: a strict structural decoder. State-dependent authorization is native.
+pub fn decode_instruction(data: &[u8]) -> Result<Value, String> {
+    if data.is_empty() {
+        return Err("missing instruction".to_string());
+    }
+    let tag = data[0];
+    if let Some(size) = fixed_operand(tag) {
+        fixed(data, size)?;
+    } else if tag == 7 {
+        if data.len() < 2 || data[1] > 2 {
+            return Err("unknown advance mode".to_string());
+        }
+        fixed(
+            data,
+            match data[1] {
+                0 => 256,
+                1 => 320,
+                _ => 288,
+            },
+        )?;
+    } else if tag == 9 {
+        if data.len() < 8 {
+            return Err("empty evidence chunk".to_string());
+        }
+        let offset = read_u32(data, 1) as i64;
+        let size = u16::from_le_bytes(data[5..7].try_into().unwrap_or([0; 2])) as usize;
+        if encode_append(offset, &data[7..])? != data || size != data.len() - 7 {
+            return Err("invalid append payload".to_string());
+        }
+        return Ok(json!({"tag": tag, "offset": offset, "chunk": to_hex(&data[7..])}));
+    } else {
+        return Err("unsupported intake opcode".to_string());
+    }
+
+    if matches!(tag, 7 | 12 | 13) {
+        let (advance, extension) = decode_advance_body(data, tag)?;
+        if tag == 12 {
+            number(read_u64(data, 255) as i64, MAX)?;
+        }
+        return Ok(json!({
+            "tag": tag, "mode": if tag == 7 { json!(data[1]) } else { Value::Null },
+            "advance": advance, "extension": to_hex(&extension),
+        }));
+    }
+    number(read_u64(data, 1) as i64, MAX)?;
+    if tag == 8 {
+        number(read_u64(data, 9) as i64, MAX)?;
+        let size = read_u32(data, 177) as i64;
+        if size <= 0 || size > MAX_BODY as i64 {
+            return Err("invalid declared evidence length".to_string());
+        }
+    }
+    if tag == 11 && !(data[73] == 2 || data[73] == 3) {
+        return Err("invalid review disposition".to_string());
+    }
+    Ok(json!({"tag": tag, "payload": to_hex(&data[1..])}))
+}
+
+/// One account an instruction needs, as the caller must declare it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Meta {
+    pub pubkey: [u8; 32],
+    pub signer: bool,
+    pub writable: bool,
+}
+
+impl Meta {
+    /// An account the instruction names. The reference does not require it to be non-zero: the
+    /// system program is the all-zero id, and several instructions address it.
+    fn new(pubkey: &[u8], signer: bool, writable: bool) -> Result<Self, String> {
+        Ok(Self {
+            pubkey: array(&key(pubkey, false)?),
+            signer,
+            writable,
+        })
+    }
+
+    /// An account the reference marks non-zero: a receipt or an adjudicator that cannot be
+    /// absent, because the instruction is addressed to it.
+    fn required(pubkey: &[u8], signer: bool, writable: bool) -> Result<Self, String> {
+        Ok(Self {
+            pubkey: array(&key(pubkey, true)?),
+            signer,
+            writable,
+        })
+    }
+}
+
+/// `instruction`: the exact account metas each opcode requires.
+///
+/// The set is not a suggestion. An instruction with the wrong writability is rejected by the
+/// runtime, and one with the right accounts in the wrong privileges is a different instruction.
+pub fn instruction(
+    program: &[u8],
+    data: &[u8],
+    actor: &[u8],
+    forecast: &[u8],
+    receipt: &[u8],
+    adjudicator: &[u8],
+) -> Result<Vec<Meta>, String> {
+    key(program, true)?;
+    key(actor, true)?;
+    decode_instruction(data)?;
+    let tag = data[0];
+    let config = solana::config_address(program)?.0;
+    let judge = reviewer_address(program)?.0;
+    let gate = if forecast != ZERO {
+        gate_address(program, forecast)?.0
+    } else {
+        ZERO
+    };
+    let metas = match tag {
+        14 => vec![
+            Meta::new(actor, true, true)?,
+            Meta::new(&config, false, false)?,
+            Meta::new(&judge, false, true)?,
+            Meta::new(&SYSTEM, false, false)?,
+        ],
+        6 => vec![
+            Meta::new(actor, true, true)?,
+            Meta::new(&config, false, false)?,
+            Meta::new(forecast, false, false)?,
+            Meta::new(&gate, true == false, true)?,
+            Meta::new(&SYSTEM, false, false)?,
+        ],
+        7 => {
+            let mut metas = vec![
+                Meta::new(actor, true, false)?,
+                Meta::new(&config, false, false)?,
+                Meta::new(forecast, false, true)?,
+                Meta::new(&gate, false, true)?,
+            ];
+            match data.get(1) {
+                Some(1) => {
+                    // An adjudicator signs; it does not need write access to be named.
+                    metas.push(Meta::required(adjudicator, true, false)?);
+                    metas.push(Meta::new(&judge, false, false)?);
+                }
+                Some(2) => metas.push(Meta::required(receipt, false, false)?),
+                _ => {}
+            }
+            metas
+        }
+        8 => vec![
+            Meta::new(actor, true, true)?,
+            Meta::new(forecast, false, false)?,
+            Meta::new(&gate, false, false)?,
+            Meta::required(receipt, false, true)?,
+            Meta::new(&SYSTEM, false, false)?,
+        ],
+        9 => vec![
+            Meta::new(actor, true, true)?,
+            Meta::required(receipt, false, true)?,
+            Meta::new(&SYSTEM, false, false)?,
+        ],
+        10 => vec![
+            Meta::new(actor, true, false)?,
+            Meta::new(forecast, false, false)?,
+            Meta::new(&gate, false, true)?,
+            Meta::required(receipt, false, true)?,
+        ],
+        11 => vec![
+            Meta::new(actor, true, false)?,
+            Meta::new(&config, false, false)?,
+            Meta::new(&judge, false, false)?,
+            Meta::new(forecast, false, false)?,
+            Meta::new(&gate, false, true)?,
+            Meta::required(receipt, false, true)?,
+        ],
+        _ => vec![
+            Meta::new(actor, true, false)?,
+            Meta::new(&config, false, false)?,
+            Meta::new(forecast, false, true)?,
+            Meta::new(&gate, false, true)?,
+        ],
+    };
+    let unique: std::collections::BTreeSet<[u8; 32]> = metas.iter().map(|meta| meta.pubkey).collect();
+    if unique.len() != metas.len() {
+        return Err("aliased accounts".to_string());
+    }
+    Ok(metas)
+}
+
+/// `heap_frame`: the compute-budget instruction that has to appear once per transaction.
+pub fn heap_frame() -> ([u8; 32], Vec<u8>) {
+    let mut data = vec![1u8];
+    data.extend(262_144u32.to_le_bytes());
+    (compute_budget(), data)
+}
+
+/// The fields a source may carry, and nothing else.
+const SOURCE_FIELDS: [&str; 4] = ["url", "body_base64", "sha256", "captured_at_ms"];
+const EVIDENCE_FIELDS: [&str; 5] = ["version", "claim", "rule_clause_id", "explanation", "sources"];
+const EVIDENCE_VERSION: &str = "forecast-dispute-evidence-v1";
+const MAX_SOURCES: usize = 8;
+
+/// Whether a URL is an acceptable evidence source: https, a real host, no credentials, no
+/// fragment. Deliberately *not* the registry check — evidence may cite any public https page, and
+/// it is the resolution path's job to decide whether a source is authoritative, not this one's.
+fn https_source(url: &str) -> bool {
+    if url.len() > 2000 || !url.starts_with("https://") {
+        return false;
+    }
+    let rest = &url["https://".len()..];
+    if rest.is_empty() || rest.starts_with('/') {
+        return false;
+    }
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or_default();
+    if authority.is_empty() || authority.contains('@') {
+        return false;
+    }
+    !url.contains('#')
+}
+
+/// `decode_evidence`: the retained evidence envelope.
+///
+/// The format belongs off chain and inclusion does not establish validity — what this proves is
+/// that the bytes are the ones the hash covers. So it re-encodes canonically and compares, which
+/// is the only way to know a document is its own canonical form rather than something that parses
+/// to the same value.
+pub fn decode_evidence(body: &[u8]) -> Result<Value, String> {
+    evidence_hash(body)?;
+    let text = std::str::from_utf8(body).map_err(|_| "invalid evidence encoding".to_string())?;
+    // A duplicated field is its own refusal: the reference's `object_pairs_hook` raises it before
+    // any schema check runs, and it means something different from a malformed document.
+    let value = match parse_without_duplicates(text) {
+        Ok(value) => value,
+        Err(ParseFailure::Duplicate) => return Err("duplicate evidence field".to_string()),
+        Err(ParseFailure::Other) => return Err("invalid evidence encoding".to_string()),
+    };
+    let Some(fields) = value.as_object() else {
+        return Err("invalid evidence schema".to_string());
+    };
+    let exact = fields.len() == EVIDENCE_FIELDS.len() && EVIDENCE_FIELDS.iter().all(|name| fields.contains_key(*name));
+    if !exact || fields["version"].as_str() != Some(EVIDENCE_VERSION) {
+        return Err("invalid evidence schema".to_string());
+    }
+    for (name, limit) in [("claim", 1000usize), ("rule_clause_id", 128), ("explanation", 3000)] {
+        let text = fields[name].as_str().unwrap_or_default();
+        if text.is_empty() || text.chars().count() > limit {
+            return Err("invalid evidence text".to_string());
+        }
+    }
+    let Some(sources) = fields["sources"].as_array() else {
+        return Err("invalid evidence sources".to_string());
+    };
+    if sources.is_empty() || sources.len() > MAX_SOURCES {
+        return Err("invalid evidence sources".to_string());
+    }
+    for source in sources {
+        let Some(entry) = source.as_object() else {
+            return Err("invalid source".to_string());
+        };
+        if entry.len() != SOURCE_FIELDS.len() || !SOURCE_FIELDS.iter().all(|name| entry.contains_key(*name)) {
+            return Err("invalid source".to_string());
+        }
+        let url = entry["url"].as_str().unwrap_or_default();
+        if !https_source(url) {
+            return Err("invalid source URL".to_string());
+        }
+        number(entry["captured_at_ms"].as_i64().unwrap_or(-1), MAX)?;
+        let Some(encoded) = entry["body_base64"].as_str() else {
+            return Err("invalid retained source".to_string());
+        };
+        let decoded = base64_decode(encoded).ok_or_else(|| "invalid retained source".to_string())?;
+        let digest = to_hex(&evidence_body_digest(&decoded));
+        if decoded.is_empty() || digest != entry["sha256"].as_str().unwrap_or_default() {
+            return Err("source hash mismatch".to_string());
+        }
+    }
+    let canonical = String::from_utf8(crate::translations::canonical_bytes_public(&value))
+        .map_err(|_| "invalid evidence encoding".to_string())?;
+    if canonical.as_bytes() != body {
+        return Err("noncanonical evidence JSON".to_string());
+    }
+    Ok(value)
+}
+
+fn evidence_body_digest(body: &[u8]) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(body);
+    hasher.finalize().into()
+}
+
+fn base64_decode(text: &str) -> Option<Vec<u8>> {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD.decode(text).ok()
+}
+
+/// A JSON parse that refuses a duplicate key, which `serde_json::Value` would otherwise resolve
+/// silently by keeping the last one. The number handling is deliberately permissive: the
+/// reference rejects duplicates here and accepts any number.
+enum ParseFailure {
+    Duplicate,
+    Other,
+}
+
+fn parse_without_duplicates(text: &str) -> Result<Value, ParseFailure> {
+    use serde::de::{Deserialize, Deserializer, Error as DeError, MapAccess, SeqAccess, Visitor};
+    use std::fmt;
+
+    struct Plain(Value);
+    impl<'de> Deserialize<'de> for Plain {
+        fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+            deserializer.deserialize_any(PlainVisitor).map(Plain)
+        }
+    }
+    struct PlainVisitor;
+    impl<'de> Visitor<'de> for PlainVisitor {
+        type Value = Value;
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a JSON value with no duplicate keys")
+        }
+        fn visit_bool<E: DeError>(self, value: bool) -> Result<Value, E> {
+            Ok(Value::Bool(value))
+        }
+        fn visit_i64<E: DeError>(self, value: i64) -> Result<Value, E> {
+            Ok(json!(value))
+        }
+        fn visit_u64<E: DeError>(self, value: u64) -> Result<Value, E> {
+            Ok(json!(value))
+        }
+        fn visit_f64<E: DeError>(self, value: f64) -> Result<Value, E> {
+            Ok(json!(value))
+        }
+        fn visit_str<E: DeError>(self, value: &str) -> Result<Value, E> {
+            Ok(Value::String(value.to_string()))
+        }
+        fn visit_none<E: DeError>(self) -> Result<Value, E> {
+            Ok(Value::Null)
+        }
+        fn visit_unit<E: DeError>(self) -> Result<Value, E> {
+            Ok(Value::Null)
+        }
+        fn visit_seq<A: SeqAccess<'de>>(self, mut access: A) -> Result<Value, A::Error> {
+            let mut items = Vec::new();
+            while let Some(Plain(item)) = access.next_element::<Plain>()? {
+                items.push(item);
+            }
+            Ok(Value::Array(items))
+        }
+        fn visit_map<A: MapAccess<'de>>(self, mut access: A) -> Result<Value, A::Error> {
+            let mut fields = serde_json::Map::new();
+            while let Some(key) = access.next_key::<String>()? {
+                let Plain(value) = access.next_value::<Plain>()?;
+                if fields.contains_key(&key) {
+                    return Err(DeError::custom("duplicate key"));
+                }
+                fields.insert(key, value);
+            }
+            Ok(Value::Object(fields))
+        }
+    }
+
+    let mut deserializer = serde_json::Deserializer::from_str(text);
+    let value = Plain::deserialize(&mut deserializer).map_err(|error| {
+        if error.to_string().contains("duplicate key") {
+            ParseFailure::Duplicate
+        } else {
+            ParseFailure::Other
+        }
+    })?;
+    deserializer.end().map_err(|_| ParseFailure::Other)?;
+    Ok(value.0)
+}
+
+#[cfg(test)]
+mod decoder {
+    use super::tests_support::*;
+    use super::*;
+
+    fn fixtures() -> Vec<(&'static str, Vec<u8>)> {
+        let reviewer = Reviewer::new(&[11u8; 32], 1).unwrap();
+        let mut data = Vec::new();
+        data.push(6u8);
+        data.extend(5u64.to_le_bytes());
+        data.extend([13u8; 32]);
+        data.extend(SPECIFICATION);
+        vec![
+            ("reviewer", encode_reviewer(&[11u8; 32], Some(&reviewer)).unwrap()),
+            ("activate", data),
+            (
+                "advance_mode0",
+                encode_advance(&advance_bytes(9, 5), 0, &ZERO, &ZERO).unwrap(),
+            ),
+            (
+                "advance_mode1",
+                encode_advance(&advance_bytes(9, 5), 1, &ARTIFACT, &HEAD).unwrap(),
+            ),
+            (
+                "advance_mode2",
+                encode_advance(&advance_bytes(9, 5), 2, &ARTIFACT, &ZERO).unwrap(),
+            ),
+            ("draft", encode_draft(&open_gate(), &NONCE, BODY).unwrap()),
+            ("append", encode_append(0, b"chunk").unwrap()),
+            ("submit", encode_submit(&receipt(BODY, 0)).unwrap()),
+            ("review", encode_review(&receipt(BODY, 1), &ARTIFACT, 2).unwrap()),
+            ("seal", encode_seal(&open_gate(), &advance_bytes(10, 5)).unwrap()),
+            (
+                "finalize",
+                encode_finalize(&sealed_gate(), &advance_bytes(10, 5)).unwrap(),
+            ),
+        ]
+    }
+
+    #[test]
+    fn every_opcode_decodes_to_what_the_reference_decoded() {
+        let document = golden();
+        for (name, data) in fixtures() {
+            let produced = decode_instruction(&data).unwrap_or_else(|error| panic!("{name}: {error}"));
+            assert_eq!(produced, document["decodedInstructions"][name], "{name}");
+        }
+    }
+
+    #[test]
+    fn every_opcode_requires_the_accounts_the_reference_requires() {
+        // An instruction with the wrong writability is rejected by the runtime; one with the
+        // right accounts in the wrong privileges is a different instruction.
+        let document = golden();
+        let adjudicator = [2u8; 32];
+        let receipt_key = [1u8; 32];
+        for (name, data) in fixtures() {
+            let metas = instruction(&PROGRAM, &data, &USER, &FORECAST, &receipt_key, &adjudicator)
+                .unwrap_or_else(|error| panic!("{name}: {error}"));
+            let produced: Vec<Value> = metas
+                .iter()
+                .map(|meta| {
+                    serde_json::json!({
+                        "pubkey": to_hex(&meta.pubkey), "signer": meta.signer, "writable": meta.writable,
+                    })
+                })
+                .collect();
+            let expected = document["instructionMetas"][name]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|meta| {
+                    serde_json::json!({
+                        "pubkey": meta["pubkey"].as_str().unwrap(), "signer": meta["signer"],
+                        "writable": meta["writable"],
+                    })
+                })
+                .collect::<Vec<Value>>();
+            assert_eq!(produced, expected, "{name}");
+        }
+        let (program, data) = heap_frame();
+        assert_eq!(to_hex(&data), document["heapFrame"]["bytes"].as_str().unwrap());
+        assert_eq!(to_hex(&program), document["heapFrame"]["program"].as_str().unwrap());
+    }
+
+    #[test]
+    fn the_evidence_envelope_is_read_back_and_its_hash_verified() {
+        let document = golden();
+        let body = from_hex(document["evidence"]["body"].as_str().unwrap());
+        let decoded = decode_evidence(&body).expect("the reference evidence");
+        assert_eq!(decoded, document["evidence"]["decoded"]);
+    }
+
+    #[test]
+    fn every_evidence_refusal_matches_the_reference() {
+        let document = golden();
+        for case in document["evidenceRefusals"].as_array().expect("refusals") {
+            let name = case["name"].as_str().unwrap();
+            let body = match name {
+                "evidence:noncanonical" => {
+                    // The same document, indented: it parses to the same value and is not its own
+                    // canonical form, which is what the re-encode catches.
+                    let canonical = from_hex(document["evidence"]["body"].as_str().unwrap());
+                    let value: Value = serde_json::from_slice(&canonical).unwrap();
+                    serde_json::to_vec_pretty(&value).unwrap()
+                }
+                "evidence:duplicate_field" => {
+                    b"{\"version\":\"forecast-dispute-evidence-v1\",\"claim\":\"a\",\"claim\":\"b\",\"rule_clause_id\":\"r\",\"explanation\":\"e\",\"sources\":[]}".to_vec()
+                }
+                _ => {
+                    let canonical = from_hex(document["evidence"]["body"].as_str().unwrap());
+                    let mut value: Value = serde_json::from_slice(&canonical).unwrap();
+                    match name {
+                        "evidence:bad_hash" => value["sources"][0]["sha256"] = serde_json::json!("0".repeat(64)),
+                        "evidence:wrong_version" => value["version"] = serde_json::json!("v2"),
+                        "evidence:empty_sources" => value["sources"] = serde_json::json!([]),
+                        _ => value["sources"][0]["url"] = serde_json::json!("http://www.apple.com/x"),
+                    }
+                    String::from_utf8(crate::translations::canonical_bytes_public(&value))
+                        .unwrap()
+                        .into_bytes()
+                }
+            };
+            let produced = decode_evidence(&body);
+            assert!(produced.is_err(), "{name}: accepted where the reference refused");
+            assert_eq!(
+                produced.unwrap_err(),
+                case["error"].as_str().unwrap(),
+                "{name}: a different refusal"
+            );
+        }
     }
 }

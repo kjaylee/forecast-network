@@ -550,3 +550,69 @@ pub fn decode_forecast(data: &[u8]) -> Result<ForecastAccount, String> {
     }
     Ok(value)
 }
+
+/// The fields of a forecast advance, as `encode_advance` writes them.
+pub struct AdvanceFields<'a> {
+    pub revision: i64,
+    pub occurred_at_ms: i64,
+    pub previous_event_hash: &'a [u8],
+    pub event_hash: &'a [u8],
+    pub snapshot_hash: &'a [u8],
+    pub state: i64,
+    pub outcome: i64,
+    pub resolution_hash: &'a [u8],
+    pub dispute_hash: &'a [u8],
+    pub reputation_hash: &'a [u8],
+    pub trigger_hash: &'a [u8],
+    pub challenge_until_ms: i64,
+    pub pending_disputes: i64,
+    pub material_disputes: i64,
+}
+
+/// `encode_advance`: the 255-byte pre-image every advance commitment is taken over.
+///
+/// The validations are the point of having this at all. A decoder that re-encodes the fields it
+/// read and compares is checking that the bytes are *reachable* from a valid encoding — a state
+/// the program would never write cannot be smuggled in as a payload that happens to parse.
+pub fn encode_advance(fields: &AdvanceFields<'_>) -> Result<Vec<u8>, String> {
+    integer(fields.revision, 1, MAX_INTEGER)?;
+    integer(fields.occurred_at_ms, 0, MAX_INTEGER)?;
+    integer(fields.challenge_until_ms, 0, MAX_INTEGER)?;
+    integer(fields.state, 2, 11)?;
+    integer(fields.outcome, 0, 3)?;
+    integer(fields.pending_disputes, 0, 256)?;
+    integer(fields.material_disputes, 0, 256)?;
+    require(
+        fields.pending_disputes + fields.material_disputes <= 256,
+        "too many disputes",
+    )?;
+    let previous = raw(fields.previous_event_hash, 32, "event commitment", true)?;
+    let event = raw(fields.event_hash, 32, "event commitment", true)?;
+    let snapshot = raw(fields.snapshot_hash, 32, "event commitment", true)?;
+    require(previous != event, "new event must differ from predecessor")?;
+    let resolution = raw(fields.resolution_hash, 32, "optional commitment", false)?;
+    let dispute = raw(fields.dispute_hash, 32, "optional commitment", false)?;
+    let reputation = raw(fields.reputation_hash, 32, "optional commitment", false)?;
+    let trigger = raw(fields.trigger_hash, 32, "optional commitment", false)?;
+    // A count of disputes with no commitment to what they are is a count nobody can check.
+    require(
+        (fields.pending_disputes == 0 && fields.material_disputes == 0) || !zeroed(&dispute),
+        "dispute commitment required",
+    )?;
+    let mut out = vec![2u8];
+    out.extend((fields.revision as u64).to_le_bytes());
+    out.extend(fields.occurred_at_ms.to_le_bytes());
+    out.extend(previous);
+    out.extend(event);
+    out.extend(snapshot);
+    out.push(fields.state as u8);
+    out.push(fields.outcome as u8);
+    out.extend(resolution);
+    out.extend(dispute);
+    out.extend(reputation);
+    out.extend(trigger);
+    out.extend(fields.challenge_until_ms.to_le_bytes());
+    out.extend((fields.pending_disputes as u16).to_le_bytes());
+    out.extend((fields.material_disputes as u16).to_le_bytes());
+    Ok(out)
+}

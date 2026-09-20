@@ -27,6 +27,7 @@ Regenerate with `--write`; CI runs `--check`.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import struct
 import sys
@@ -308,7 +309,99 @@ def build() -> dict:
             event_hash=bytes([13]) * 32, snapshot_hash=bytes([14]) * 32))),
     ]
 
+    # The ABI decoder, the account metas each opcode requires, and the evidence envelope.
+    decoded_instructions = {}
+    for name, data in {
+        "reviewer": d.encode_reviewer(bytes([11]) * 32, reviewer),
+        "activate": d.encode_activate(w.ForecastAccount(
+            forecast_id_hash=FORECAST, creator_hash=bytes([5]) * 32, specification_hash=SPECIFICATION,
+            open_at_ms=1, close_at_ms=100, revision=5, occurred_at_ms=50, state=4, outcome=0,
+            paused_from=0, event_hash=bytes([13]) * 32, snapshot_hash=bytes([14]) * 32,
+            resolution_hash=RESOLUTION, dispute_hash=w._ZERO, reputation_hash=w._ZERO, trigger_hash=w._ZERO,
+            challenge_until_ms=0, chain_finalize_not_before_ms=0, paused_at_ms=0,
+            pending_disputes=0, material_disputes=0)),
+        "advance_mode0": d.encode_advance(advance(state=9)),
+        "advance_mode1": d.encode_advance(advance(state=9), mode=1, artifact=ARTIFACT, head=HEAD),
+        "advance_mode2": d.encode_advance(advance(state=9), mode=2, artifact=ARTIFACT),
+        "draft": d.encode_draft(draft_gate(), NONCE, body),
+        "append": d.encode_append(0, b"chunk"),
+        "submit": d.encode_submit(receipt(body)),
+        "review": d.encode_review(receipt(body, status=1), ARTIFACT, 2),
+        "seal": d.encode_seal(draft_gate(), advance(state=10)),
+        "finalize": d.encode_finalize(sealed_gate(), advance(state=10)),
+    }.items():
+        value = d.decode_instruction(data)
+        decoded_instructions[name] = json.loads(json.dumps(value, default=lambda item: item.hex() if isinstance(item, bytes) else None))
+
+    metas = {}
+    for name, data in {
+        "reviewer": d.encode_reviewer(bytes([11]) * 32, reviewer),
+        "activate": d.decode_instruction(d.encode_activate(w.ForecastAccount(
+            forecast_id_hash=FORECAST, creator_hash=bytes([5]) * 32, specification_hash=SPECIFICATION,
+            open_at_ms=1, close_at_ms=100, revision=5, occurred_at_ms=50, state=4, outcome=0,
+            paused_from=0, event_hash=bytes([13]) * 32, snapshot_hash=bytes([14]) * 32,
+            resolution_hash=RESOLUTION, dispute_hash=w._ZERO, reputation_hash=w._ZERO, trigger_hash=w._ZERO,
+            challenge_until_ms=0, chain_finalize_not_before_ms=0, paused_at_ms=0,
+            pending_disputes=0, material_disputes=0)))["tag"].to_bytes(1, "big")
+            + d.encode_activate(w.ForecastAccount(
+                forecast_id_hash=FORECAST, creator_hash=bytes([5]) * 32, specification_hash=SPECIFICATION,
+                open_at_ms=1, close_at_ms=100, revision=5, occurred_at_ms=50, state=4, outcome=0,
+                paused_from=0, event_hash=bytes([13]) * 32, snapshot_hash=bytes([14]) * 32,
+                resolution_hash=RESOLUTION, dispute_hash=w._ZERO, reputation_hash=w._ZERO,
+                trigger_hash=w._ZERO, challenge_until_ms=0, chain_finalize_not_before_ms=0,
+                paused_at_ms=0, pending_disputes=0, material_disputes=0))[1:],
+        "advance_mode0": d.encode_advance(advance(state=9)),
+        "advance_mode1": d.encode_advance(advance(state=9), mode=1, artifact=ARTIFACT, head=HEAD),
+        "advance_mode2": d.encode_advance(advance(state=9), mode=2, artifact=ARTIFACT),
+        "draft": d.encode_draft(draft_gate(), NONCE, body),
+        "append": d.encode_append(0, b"chunk"),
+        "submit": d.encode_submit(receipt(body)),
+        "review": d.encode_review(receipt(body, status=1), ARTIFACT, 2),
+        "seal": d.encode_seal(draft_gate(), advance(state=10)),
+        "finalize": d.encode_finalize(sealed_gate(), advance(state=10)),
+    }.items():
+        built = d.instruction(PROGRAM, data, actor=USER, forecast=FORECAST, receipt=bytes([1]) * 32,
+                              adjudicator=bytes([2]) * 32)
+        metas[name] = [{"pubkey": meta.pubkey.hex(), "signer": meta.is_signer, "writable": meta.is_writable}
+                       for meta in built.accounts]
+
+    evidence_document = {"version": "forecast-dispute-evidence-v1", "claim": "Product name differs.",
+                         "rule_clause_id": "yes-rule", "explanation": "The referenced name is another product.",
+                         "sources": [{"url": "https://www.apple.com/newsroom/correction/",
+                                      "body_base64": "Zm9yZWNhc3Q=", "sha256":
+                                          hashlib.sha256(b"forecast").hexdigest(), "captured_at_ms": 2000}]}
+    canonical_evidence = json.dumps(evidence_document, sort_keys=True, ensure_ascii=False,
+                                    separators=(",", ":"), allow_nan=False).encode()
+
     return {
+        "decodedInstructions": decoded_instructions,
+        "instructionMetas": metas,
+        "heapFrame": {"bytes": d.heap_frame().data.hex(),
+                      "program": d.heap_frame().program_id.hex(),
+                      "accounts": len(d.heap_frame().accounts)},
+        "evidence": {"body": hexed(canonical_evidence),
+                     "decoded": d.decode_evidence(canonical_evidence)},
+        "evidenceRefusals": [
+            case("evidence:noncanonical", lambda: hexed(d.decode_evidence(
+                json.dumps(evidence_document, indent=2).encode())["claim"].encode())),
+            case("evidence:duplicate_field", lambda: hexed(d.decode_evidence(
+                b'{"version":"forecast-dispute-evidence-v1","claim":"a","claim":"b","rule_clause_id":"r",'
+                b'"explanation":"e","sources":[]}')["claim"].encode())),
+            case("evidence:bad_hash", lambda: hexed(d.decode_evidence(
+                json.dumps({**evidence_document, "sources": [{**evidence_document["sources"][0],
+                                                              "sha256": "0" * 64}]},
+                           sort_keys=True, separators=(",", ":")).encode())["claim"].encode())),
+            case("evidence:wrong_version", lambda: hexed(d.decode_evidence(
+                json.dumps({**evidence_document, "version": "v2"}, sort_keys=True,
+                           separators=(",", ":")).encode())["claim"].encode())),
+            case("evidence:empty_sources", lambda: hexed(d.decode_evidence(
+                json.dumps({**evidence_document, "sources": []}, sort_keys=True,
+                           separators=(",", ":")).encode())["claim"].encode())),
+            case("evidence:url_scheme", lambda: hexed(d.decode_evidence(
+                json.dumps({**evidence_document, "sources": [{**evidence_document["sources"][0],
+                                                              "url": "http://www.apple.com/x"}]},
+                           sort_keys=True, separators=(",", ":")).encode())["claim"].encode())),
+        ],
         "accounts": accounts_encoded,
         "publication": publication,
         "decoded": decoded,

@@ -85,6 +85,11 @@ pub const TOO_LARGE: TranslationError = TranslationError::new(
     "This forecast is too large for automatic translation.",
 );
 
+/// The canonical form's bytes, for callers that hold a value rather than a digest.
+pub fn canonical_bytes_public(value: &Value) -> Vec<u8> {
+    canonical_bytes(value).unwrap_or_default()
+}
+
 /// `canonical`: the reference's compact, sorted, non-ASCII-preserving JSON.
 pub fn canonical(value: &Value) -> String {
     String::from_utf8(canonical_bytes(value).unwrap_or_default()).unwrap_or_default()
