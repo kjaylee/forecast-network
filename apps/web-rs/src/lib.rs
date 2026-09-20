@@ -28,6 +28,7 @@ mod points;
 mod projections;
 mod reads;
 mod registry;
+pub mod registry_chain;
 mod reputation;
 pub mod resolution_timing;
 pub mod risk_ops;

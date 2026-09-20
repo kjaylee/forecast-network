@@ -54,6 +54,11 @@ MIN_FRAGMENT = 12
 # reconstruct the reasoning from a diff. Anything absent from here fails the check, so adding an
 # entry is a decision someone has to make on purpose.
 DIVERGENCES = {
+    "SELECTreserved_lamportsFROMregistry_spendWHEREday=?":
+        "`reserve_daily_spend` reads the day back to confirm the reserve, because this `Database` "
+        "reports no affected-row count. The statement it confirms is the reference's own: a WHERE "
+        "clause that refuses the update leaves the row unchanged, and the reserve is refused. "
+        "Two extra reads, the same outcome, and nothing invented to make the check possible.",
     "SELECTu.idFROMsessionssJOINusersuONu.id=":
         "`auth::user_id` reads only the id, where Python's `authenticate` builds a whole public "
         "user. The session guard is identical; the projection is narrower because the caller is.",
