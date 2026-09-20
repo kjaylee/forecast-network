@@ -20,7 +20,7 @@ use worker::*;
 use forecast_domain::lifecycle::{AnyResolution, Forecast};
 use forecast_domain::models::EvidenceSnapshot;
 
-use crate::article::article_content;
+use crate::article::{article_content, instant_ms};
 use crate::db::{text, Database};
 use crate::routes::RouteError;
 
@@ -42,33 +42,6 @@ fn determined_error(_determination: &str) -> RouteError {
         "resolution_timing_determined",
         "The publication-time review for this forecast is closed and determines INVALID. No other result can be finalized from this evidence.",
     )
-}
-
-/// `datetime.fromisoformat(...).timestamp() * 1000`, for the shape `_publication_date` accepted.
-/// Days from the civil date, so leap years are the calendar's problem and not a table's.
-fn instant_ms(publication: &str) -> i64 {
-    let bytes = publication.as_bytes();
-    let number =
-        |from: usize, to: usize| -> i64 { bytes[from..to].iter().fold(0i64, |acc, b| acc * 10 + (b - b'0') as i64) };
-    let (year, month, day) = (number(0, 4), number(5, 7), number(8, 10));
-    let (hour, minute, second) = (number(11, 13), number(14, 16), number(17, 19));
-    let offset = match &publication[19..] {
-        "Z" => 0,
-        zone => {
-            let sign = if zone.starts_with('-') { -1 } else { 1 };
-            let hours = zone[1..3].parse::<i64>().unwrap_or(0);
-            let minutes = zone[4..6].parse::<i64>().unwrap_or(0);
-            sign * (hours * 3600 + minutes * 60)
-        }
-    };
-    let year = if month <= 2 { year - 1 } else { year };
-    let era = if year >= 0 { year } else { year - 399 } / 400;
-    let year_of_era = year - era * 400;
-    let shifted_month = (month + 9) % 12;
-    let day_of_year = (153 * shifted_month + 2) / 5 + day - 1;
-    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
-    let days = era * 146097 + day_of_era - 719468;
-    (days * 86400 + hour * 3600 + minute * 60 + second - offset) * 1000
 }
 
 async fn completed(db: &dyn Database, forecast_id: &str, specification_hash: &str) -> Result<bool, RouteError> {

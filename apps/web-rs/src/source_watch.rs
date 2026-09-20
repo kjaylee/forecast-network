@@ -955,6 +955,102 @@ async fn record_review_failure(
     Ok(())
 }
 
+/// Register a reported article under its watched publisher, fetch it now, and queue review for
+/// this forecast regardless of keyword relevance.
+pub async fn ingest_report(
+    db: &dyn Database,
+    fetch: &Fetcher,
+    host: &dyn ForecastSource,
+    hold: Option<&dyn Hold>,
+    forecast_id: &str,
+    url: &str,
+    index_id: &str,
+    lease: &str,
+    now_ms: i64,
+) -> Result<Option<Value>, WatchError> {
+    let article_id = format!("article-{}", &hash_hex(url)[..32]);
+    register(
+        db,
+        Registration {
+            source_id: &article_id,
+            url,
+            kind: "article",
+            interval_ms: 3_600_000,
+            parent_id: Some(index_id),
+            pinned: true,
+        },
+        now_ms,
+    )
+    .await?;
+    let claimed = db
+        .execute(
+            "UPDATE official_watch_sources SET lease_token=?,lease_until=? WHERE id=? AND lease_until<=? RETURNING id",
+            &[json!(lease), json!(now_ms + LEASE_MS), json!(article_id), json!(now_ms)],
+        )
+        .await
+        .map(|rows| !rows.is_empty())
+        .unwrap_or(false);
+    if !claimed {
+        return Ok(None);
+    }
+    // A report must be judged on the page as it is now: fetch unconditionally even if the
+    // article was polled before, so a fresh observation exists under this publisher.
+    db.execute(
+        "UPDATE official_watch_sources SET etag=NULL,last_modified=NULL WHERE id=? AND lease_token=?",
+        &[json!(article_id), json!(lease)],
+    )
+    .await?;
+    let Some(source) = db
+        .first("SELECT * FROM official_watch_sources WHERE id=?", &[json!(article_id)])
+        .await?
+    else {
+        return Ok(None);
+    };
+    let mut leased = source.clone();
+    leased.insert("lease_token".to_string(), json!(lease));
+    let outcome = poll(db, fetch, host, hold, &leased, now_ms).await;
+    db.execute(
+        "UPDATE official_watch_sources SET lease_token=NULL,lease_until=0 WHERE id=? AND lease_token=?",
+        &[json!(article_id), json!(lease)],
+    )
+    .await?;
+    // A refusal and a non-modification both leave whatever was already retained; anything else
+    // is a real failure and has to surface.
+    if let Err(error) = outcome {
+        if !matches!(
+            error,
+            WatchError::Rejected(_) | WatchError::Unavailable | WatchError::NotModified
+        ) {
+            return Err(error);
+        }
+    }
+    let Some(row) = db
+        .first(
+            "SELECT body FROM official_source_observations WHERE url=? ORDER BY observed_at DESC LIMIT 1",
+            &[json!(url)],
+        )
+        .await?
+    else {
+        return Ok(None);
+    };
+    let observation: Value = serde_json::from_str(text(&row, "body").unwrap_or("")).unwrap_or(Value::Null);
+    // A page published before the question opened cannot be its resolving event. Saying so
+    // here is better than pausing participation for a review that must reject it.
+    let forecast = host.load_forecast(forecast_id).await?;
+    if observation["datePrecision"] == "instant" {
+        if let Some(published) = observation["publicationDate"].as_str() {
+            let open_at = forecast["specification"]["open_at_ms"].as_i64().unwrap_or(0);
+            if crate::article::instant_ms(published) < open_at {
+                let mut flagged = observation.clone();
+                flagged["predatesQuestion"] = json!(true);
+                return Ok(Some(flagged));
+            }
+        }
+    }
+    enqueue(db, host, forecast_id, &observation, now_ms, hold).await?;
+    Ok(Some(observation))
+}
+
 /// The dispatch table for the source list, exposed so a caller can render what is watched.
 pub async fn registered(db: &dyn Database, id: &str) -> Result<Option<Row>, WatchError> {
     Ok(db
