@@ -18,8 +18,9 @@
 //!     payload hash, revision, event and snapshot, which is what makes the seal a commitment to
 //!     one candidate rather than to the act of sealing.
 //!
-//! Not yet ported from `solana_wire`: the config and forecast account decoders, `encode_register`,
-//! `assemble_transaction`. They are the publication side rather than the intake side.
+//! The publication side lives in `crate::solana`: the config and forecast account decoders and
+//! `encode_register`. Not yet ported from `solana_wire`: `assemble_transaction`, which needs the
+//! signature map a signer owns.
 
 use std::sync::OnceLock;
 
@@ -781,23 +782,23 @@ pub fn compact(value: i64) -> Result<Vec<u8>, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::Value;
+mod tests_support {
+    pub use super::*;
+    pub use serde_json::Value;
 
-    fn golden() -> Value {
+    pub fn golden() -> Value {
         let path =
             std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/solana-wire-golden.json");
         serde_json::from_str(&std::fs::read_to_string(&path).expect("solana golden")).expect("json")
     }
 
-    fn from_hex(text: &str) -> Vec<u8> {
+    pub fn from_hex(text: &str) -> Vec<u8> {
         (0..text.len() / 2)
             .map(|index| u8::from_str_radix(&text[index * 2..index * 2 + 2], 16).expect("hex"))
             .collect()
     }
 
-    fn to_hex(value: &[u8]) -> String {
+    pub fn to_hex(value: &[u8]) -> String {
         value.iter().map(|byte| format!("{byte:02x}")).collect()
     }
 
@@ -1229,6 +1230,145 @@ mod tests {
         assert_eq!(
             compiled.account_keys.len(),
             document["message"]["account_keys"].as_array().unwrap().len()
+        );
+    }
+}
+
+#[cfg(test)]
+mod publication {
+    use super::tests_support::*;
+    use crate::solana;
+
+    #[test]
+    fn every_publication_encoding_matches_the_reference() {
+        let document = golden();
+        let publication = &document["publication"];
+        let produced = [
+            ("initialize", solana::encode_initialize(&[7u8; 32]).unwrap()),
+            ("set_relayer", solana::encode_set_relayer(&[8u8; 32]).unwrap()),
+            ("propose_admin", solana::encode_propose_admin(&[9u8; 32]).unwrap()),
+            ("accept_admin", solana::encode_accept_admin()),
+            (
+                "register",
+                solana::encode_register(solana::RegisterParts {
+                    forecast_id_hash: &[7u8; 32],
+                    creator_hash: &[5u8; 32],
+                    specification_hash: &[3u8; 32],
+                    open_at_ms: 1,
+                    close_at_ms: 100,
+                    revision: 1,
+                    occurred_at_ms: 50,
+                    event_hash: &[13u8; 32],
+                    snapshot_hash: &[14u8; 32],
+                })
+                .unwrap(),
+            ),
+        ];
+        for (name, bytes) in produced {
+            assert_eq!(to_hex(&bytes), publication[name].as_str().unwrap(), "{name}");
+        }
+    }
+
+    #[test]
+    fn the_config_account_reads_back_and_refuses_a_broken_separation() {
+        let document = golden();
+        let fixture = from_hex(document["accounts"]["config"].as_str().unwrap());
+        assert_eq!(to_hex(&fixture), document["accounts"]["config"].as_str().unwrap());
+        let config = solana::decode_config(&fixture).expect("a config");
+        assert_eq!(
+            to_hex(&config.administrator),
+            document["decoded"]["config"]["administrator"].as_str().unwrap()
+        );
+        assert_eq!(
+            to_hex(&config.relayer),
+            document["decoded"]["config"]["relayer"].as_str().unwrap()
+        );
+        for case in document["accountRefusals"].as_array().unwrap() {
+            let name = case["name"].as_str().unwrap();
+            if !name.starts_with("config:") {
+                continue;
+            }
+            let produced = match name {
+                "config:zero_administrator" => {
+                    let mut broken = fixture.clone();
+                    broken[8..40].fill(0);
+                    solana::decode_config(&broken)
+                }
+                "config:same_authority" => {
+                    let mut broken = fixture.clone();
+                    let administrator = broken[8..40].to_vec();
+                    broken[40..72].copy_from_slice(&administrator);
+                    solana::decode_config(&broken)
+                }
+                _ => {
+                    let mut broken = fixture.clone();
+                    let administrator = broken[8..40].to_vec();
+                    broken[72..104].copy_from_slice(&administrator);
+                    solana::decode_config(&broken)
+                }
+            };
+            assert_eq!(produced.unwrap_err(), case["error"].as_str().unwrap(), "{name}");
+        }
+    }
+
+    #[test]
+    fn the_forecast_account_reads_back_and_upholds_its_cross_field_rules() {
+        // An inclusion proof is only worth what the decoder that accepted the account is worth.
+        let document = golden();
+        let fixture = from_hex(document["accounts"]["forecast"].as_str().unwrap());
+        let forecast = solana::decode_forecast(&fixture).expect("a forecast");
+        assert_eq!(
+            forecast.state,
+            document["decoded"]["forecast"]["state"].as_i64().unwrap()
+        );
+        assert_eq!(
+            forecast.close_at_ms,
+            document["decoded"]["forecast"]["close_at_ms"].as_i64().unwrap()
+        );
+        assert_eq!(
+            to_hex(&forecast.event_hash),
+            document["decoded"]["forecast"]["event_hash"].as_str().unwrap()
+        );
+        for case in document["accountRefusals"].as_array().unwrap() {
+            let name = case["name"].as_str().unwrap();
+            if !name.starts_with("forecast:") {
+                continue;
+            }
+            let produced = match name {
+                "forecast:bad_discriminator" => {
+                    let mut broken = fixture.clone();
+                    broken[0..5].copy_from_slice(b"XXXXX");
+                    solana::decode_forecast(&broken)
+                }
+                "forecast:window" => {
+                    let mut broken = fixture.clone();
+                    broken[104..112].copy_from_slice(&100i64.to_le_bytes());
+                    broken[112..120].copy_from_slice(&1i64.to_le_bytes());
+                    solana::decode_forecast(&broken)
+                }
+                _ => {
+                    let mut broken = fixture.clone();
+                    broken[340..348].copy_from_slice(&5i64.to_le_bytes());
+                    solana::decode_forecast(&broken)
+                }
+            };
+            assert_eq!(produced.unwrap_err(), case["error"].as_str().unwrap(), "{name}");
+        }
+        // And the register instruction refuses a publication that closes before it opens.
+        assert_eq!(
+            solana::encode_register(solana::RegisterParts {
+                forecast_id_hash: &[7u8; 32],
+                creator_hash: &[5u8; 32],
+                specification_hash: &[3u8; 32],
+                open_at_ms: 1,
+                close_at_ms: 100,
+                revision: 1,
+                occurred_at_ms: 200,
+                event_hash: &[13u8; 32],
+                snapshot_hash: &[14u8; 32],
+            })
+            .unwrap_err(),
+            "publication must precede close"
         );
     }
 }

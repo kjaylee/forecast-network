@@ -40,6 +40,12 @@ pub fn raw(value: &[u8], size: usize, name: &str, nonzero: bool) -> Result<Vec<u
     Ok(value.to_vec())
 }
 
+/// Whether every byte is zero. The reference's accounts compare several commitments against the
+/// all-zero value, which is how "absent" is spelled on chain.
+pub fn zeroed(value: &[u8]) -> bool {
+    value.iter().all(|byte| *byte == 0)
+}
+
 /// `_integer`.
 pub fn integer(value: i64, low: i64, high: i64) -> Result<i64, String> {
     require(low <= value && value <= high, "integer outside allowed range")?;
@@ -278,4 +284,269 @@ pub fn compile_message(
         signer_keys: signers,
         account_keys: keys,
     })
+}
+
+// ---------------------------------------------------------------- the publication side
+
+pub const CONFIG_RESERVED: &[u8; 8] = b"FNCONF01";
+pub const FORECAST_RESERVED: &[u8; 8] = b"FNFORE01";
+pub const CONFIG_SIZE: usize = 104;
+pub const FORECAST_SIZE: usize = 360;
+
+/// `encode_initialize`.
+pub fn encode_initialize(relayer: &[u8]) -> Result<Vec<u8>, String> {
+    let mut out = vec![0];
+    out.extend(raw(relayer, 32, "relayer", true)?);
+    Ok(out)
+}
+
+/// `encode_set_relayer`.
+pub fn encode_set_relayer(relayer: &[u8]) -> Result<Vec<u8>, String> {
+    let mut out = vec![3];
+    out.extend(raw(relayer, 32, "relayer", true)?);
+    Ok(out)
+}
+
+/// `encode_propose_admin`.
+pub fn encode_propose_admin(administrator: &[u8]) -> Result<Vec<u8>, String> {
+    let mut out = vec![4];
+    out.extend(raw(administrator, 32, "administrator", true)?);
+    Ok(out)
+}
+
+/// `encode_accept_admin`.
+pub fn encode_accept_admin() -> Vec<u8> {
+    vec![5]
+}
+
+pub struct RegisterParts<'a> {
+    pub forecast_id_hash: &'a [u8],
+    pub creator_hash: &'a [u8],
+    pub specification_hash: &'a [u8],
+    pub open_at_ms: i64,
+    pub close_at_ms: i64,
+    pub revision: i64,
+    pub occurred_at_ms: i64,
+    pub event_hash: &'a [u8],
+    pub snapshot_hash: &'a [u8],
+}
+
+/// `encode_register`.
+pub fn encode_register(parts: RegisterParts<'_>) -> Result<Vec<u8>, String> {
+    let hashes = [
+        raw(parts.forecast_id_hash, 32, "publication commitment", true)?,
+        raw(parts.creator_hash, 32, "publication commitment", true)?,
+        raw(parts.specification_hash, 32, "publication commitment", true)?,
+    ];
+    let trailing = [
+        raw(parts.event_hash, 32, "publication commitment", true)?,
+        raw(parts.snapshot_hash, 32, "publication commitment", true)?,
+    ];
+    for timestamp in [parts.open_at_ms, parts.close_at_ms, parts.occurred_at_ms] {
+        integer(timestamp, 0, MAX_INTEGER)?;
+    }
+    integer(parts.revision, 1, MAX_INTEGER)?;
+    if parts.open_at_ms >= parts.close_at_ms || parts.occurred_at_ms >= parts.close_at_ms {
+        return Err("publication must precede close".to_string());
+    }
+    let mut out = vec![1];
+    for hash in &hashes {
+        out.extend(hash);
+    }
+    out.extend(parts.open_at_ms.to_le_bytes());
+    out.extend(parts.close_at_ms.to_le_bytes());
+    out.extend((parts.revision as u64).to_le_bytes());
+    out.extend(parts.occurred_at_ms.to_le_bytes());
+    for hash in &trailing {
+        out.extend(hash);
+    }
+    Ok(out)
+}
+
+/// `ConfigAccount`: who administers the program, and who is proposed to.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigAccount {
+    pub administrator: [u8; 32],
+    pub relayer: [u8; 32],
+    pub pending_administrator: [u8; 32],
+}
+
+/// `decode_config`.
+pub fn decode_config(data: &[u8]) -> Result<ConfigAccount, String> {
+    raw(data, CONFIG_SIZE, "config account", false)?;
+    if &data[0..8] != CONFIG_RESERVED {
+        return Err("invalid config discriminator".to_string());
+    }
+    let mut administrator = [0u8; 32];
+    administrator.copy_from_slice(&data[8..40]);
+    let mut relayer = [0u8; 32];
+    relayer.copy_from_slice(&data[40..72]);
+    let mut pending_administrator = [0u8; 32];
+    pending_administrator.copy_from_slice(&data[72..104]);
+    let separated = !zeroed(&administrator) && !zeroed(&relayer) && administrator != relayer;
+    if !separated {
+        return Err("invalid authority separation".to_string());
+    }
+    // A pending administrator that is already one of the two current authorities is not a
+    // rotation; it is a no-op that would silently leave the separation unchanged.
+    if !zeroed(&pending_administrator) && (pending_administrator == administrator || pending_administrator == relayer) {
+        return Err("invalid pending administrator".to_string());
+    }
+    Ok(ConfigAccount {
+        administrator,
+        relayer,
+        pending_administrator,
+    })
+}
+
+/// `ForecastAccount`: the on-chain publication, which the intake path reads to prove inclusion.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ForecastAccount {
+    pub forecast_id_hash: [u8; 32],
+    pub creator_hash: [u8; 32],
+    pub specification_hash: [u8; 32],
+    pub open_at_ms: i64,
+    pub close_at_ms: i64,
+    pub revision: i64,
+    pub occurred_at_ms: i64,
+    pub state: i64,
+    pub outcome: i64,
+    pub paused_from: i64,
+    pub event_hash: [u8; 32],
+    pub snapshot_hash: [u8; 32],
+    pub resolution_hash: [u8; 32],
+    pub dispute_hash: [u8; 32],
+    pub reputation_hash: [u8; 32],
+    pub trigger_hash: [u8; 32],
+    pub challenge_until_ms: i64,
+    pub chain_finalize_not_before_ms: i64,
+    pub paused_at_ms: i64,
+    pub pending_disputes: i64,
+    pub material_disputes: i64,
+}
+
+fn at(raw: &[u8], from: usize) -> [u8; 32] {
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&raw[from..from + 32]);
+    out
+}
+
+/// `decode_forecast`: the account, but only if every cross-field rule holds.
+///
+/// The rules are not decoration. A state byte and a resolution hash that disagree, a challenge
+/// window on an unchallenged forecast, a reputation commitment before the outcome is known — each
+/// would let an inclusion proof succeed against a record the program would never have written.
+#[allow(clippy::too_many_lines)]
+pub fn decode_forecast(data: &[u8]) -> Result<ForecastAccount, String> {
+    raw(data, FORECAST_SIZE, "forecast account", false)?;
+    if &data[0..8] != FORECAST_RESERVED || data[139] != 0 {
+        return Err("invalid forecast discriminator/reserved".to_string());
+    }
+    let value = ForecastAccount {
+        forecast_id_hash: at(data, 8),
+        creator_hash: at(data, 40),
+        specification_hash: at(data, 72),
+        open_at_ms: i64::from_le_bytes(data[104..112].try_into().unwrap_or([0; 8])),
+        close_at_ms: i64::from_le_bytes(data[112..120].try_into().unwrap_or([0; 8])),
+        revision: u64::from_le_bytes(data[120..128].try_into().unwrap_or([0; 8])) as i64,
+        occurred_at_ms: i64::from_le_bytes(data[128..136].try_into().unwrap_or([0; 8])),
+        state: data[136] as i64,
+        outcome: data[137] as i64,
+        paused_from: data[138] as i64,
+        event_hash: at(data, 140),
+        snapshot_hash: at(data, 172),
+        resolution_hash: at(data, 204),
+        dispute_hash: at(data, 236),
+        reputation_hash: at(data, 268),
+        trigger_hash: at(data, 300),
+        challenge_until_ms: i64::from_le_bytes(data[332..340].try_into().unwrap_or([0; 8])),
+        chain_finalize_not_before_ms: i64::from_le_bytes(data[340..348].try_into().unwrap_or([0; 8])),
+        paused_at_ms: i64::from_le_bytes(data[348..356].try_into().unwrap_or([0; 8])),
+        pending_disputes: u16::from_le_bytes(data[356..358].try_into().unwrap_or([0; 2])) as i64,
+        material_disputes: u16::from_le_bytes(data[358..360].try_into().unwrap_or([0; 2])) as i64,
+    };
+    for commitment in [
+        value.forecast_id_hash,
+        value.creator_hash,
+        value.specification_hash,
+        value.event_hash,
+        value.snapshot_hash,
+    ] {
+        if zeroed(&commitment) {
+            return Err("invalid required account commitment".to_string());
+        }
+    }
+    for timestamp in [
+        value.open_at_ms,
+        value.close_at_ms,
+        value.occurred_at_ms,
+        value.challenge_until_ms,
+        value.chain_finalize_not_before_ms,
+        value.paused_at_ms,
+    ] {
+        integer(timestamp, 0, MAX_INTEGER)?;
+    }
+    integer(value.revision, 1, MAX_INTEGER)?;
+    integer(value.state, 2, 11)?;
+    if value.open_at_ms >= value.close_at_ms {
+        return Err("invalid publication window".to_string());
+    }
+    let pause_ok = (value.state == 9 && (4..=8).contains(&value.paused_from) && value.paused_at_ms > 0)
+        || (value.state != 9 && value.paused_from == 0 && value.paused_at_ms == 0);
+    if !pause_ok {
+        return Err("invalid pause state".to_string());
+    }
+    // A paused forecast is judged by the state it paused from, everywhere below.
+    let effective = if value.state == 9 {
+        value.paused_from
+    } else {
+        value.state
+    };
+    let resolved = effective >= 5;
+    let resolution_ok = if resolved {
+        !zeroed(&value.resolution_hash) && (1..=3).contains(&value.outcome) && value.chain_finalize_not_before_ms > 0
+    } else {
+        zeroed(&value.resolution_hash) && value.outcome == 0 && value.chain_finalize_not_before_ms == 0
+    };
+    if !resolution_ok {
+        return Err("invalid resolution state".to_string());
+    }
+    let challenge_ok = if effective >= 6 {
+        value.challenge_until_ms > 0
+    } else {
+        value.challenge_until_ms == 0 && value.pending_disputes == 0 && value.material_disputes == 0
+    };
+    if !challenge_ok {
+        return Err("invalid challenge state".to_string());
+    }
+    if value.pending_disputes + value.material_disputes > 256 {
+        return Err("too many disputes".to_string());
+    }
+    let finalization_ok = value.chain_finalize_not_before_ms >= value.challenge_until_ms
+        && (!matches!(effective, 10 | 11) || value.occurred_at_ms >= value.challenge_until_ms);
+    if !finalization_ok {
+        return Err("invalid finalization time".to_string());
+    }
+    if matches!(effective, 6 | 10 | 11) && (value.pending_disputes != 0 || value.material_disputes != 0) {
+        return Err("unresolved disputes".to_string());
+    }
+    if effective == 8 && (value.pending_disputes != 0 || value.material_disputes == 0) {
+        return Err("invalid escalation".to_string());
+    }
+    if (value.pending_disputes != 0 || value.material_disputes != 0) && zeroed(&value.dispute_hash) {
+        return Err("missing dispute commitment".to_string());
+    }
+    if effective < 10 && !zeroed(&value.reputation_hash) {
+        return Err("premature reputation commitment".to_string());
+    }
+    if value.state == 2 && (!zeroed(&value.trigger_hash) || value.occurred_at_ms >= value.close_at_ms) {
+        return Err("invalid open state".to_string());
+    }
+    if value.state != 2 && value.occurred_at_ms < value.close_at_ms && zeroed(&value.trigger_hash) {
+        return Err("missing early trigger".to_string());
+    }
+    if value.occurred_at_ms < value.close_at_ms && resolved && value.outcome != 1 {
+        return Err("early outcome must be YES".to_string());
+    }
+    Ok(value)
 }

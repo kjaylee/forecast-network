@@ -28,7 +28,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import struct
 import sys
+import dataclasses
 from dataclasses import replace
 from pathlib import Path
 
@@ -98,6 +100,43 @@ def receipt(body: bytes = b"*", *, status: int = 0) -> d.Receipt:
 
 def hexed(value: bytes) -> str:
     return value.hex()
+
+
+CONFIG_RESERVED = b"FNCONF01"
+FORECAST_RESERVED = b"FNFORE01"
+
+
+def config_account(admin: bytes = bytes([7]) * 32, relayer: bytes = bytes([8]) * 32,
+                   pending: bytes = w._ZERO) -> bytes:
+    return CONFIG_RESERVED + admin + relayer + pending
+
+
+def forecast_account(**changes) -> bytes:
+    """An OPEN forecast: the state every other state's invariants are written against."""
+    values = {"forecast_id": FORECAST, "creator": bytes([5]) * 32, "specification": SPECIFICATION,
+              "open_at": 1, "close_at": 100, "revision": 1, "occurred": 50,
+              "state": 2, "outcome": 0, "paused_from": 0,
+              "event": bytes([13]) * 32, "snapshot": bytes([14]) * 32,
+              "resolution": w._ZERO, "dispute": w._ZERO, "reputation": w._ZERO, "trigger": w._ZERO,
+              "challenge": 0, "chain_not_before": 0, "paused_at": 0, "pending": 0, "material": 0}
+    values.update(changes)
+    out = bytearray(FORECAST_RESERVED)
+    out += values["forecast_id"] + values["creator"] + values["specification"]
+    out += struct.pack("<qqQq", values["open_at"], values["close_at"], values["revision"], values["occurred"])
+    out += bytes([values["state"], values["outcome"], values["paused_from"], 0])
+    out += values["event"] + values["snapshot"] + values["resolution"] + values["dispute"]
+    out += values["reputation"] + values["trigger"]
+    out += struct.pack("<qqqHH", values["challenge"], values["chain_not_before"], values["paused_at"],
+                         values["pending"], values["material"])
+    assert len(out) == 360, len(out)
+    return bytes(out)
+
+
+def register_instruction() -> bytes:
+    return w.encode_register(forecast_id_hash=FORECAST, creator_hash=bytes([5]) * 32,
+                             specification_hash=SPECIFICATION, open_at_ms=1, close_at_ms=100,
+                             revision=1, occurred_at_ms=50, event_hash=bytes([13]) * 32,
+                             snapshot_hash=bytes([14]) * 32)
 
 
 def case(name: str, call) -> dict:
@@ -229,7 +268,51 @@ def build() -> dict:
     message = {"data": hexed(compiled.data), "signer_keys": [hexed(key) for key in compiled.signer_keys],
                "account_keys": [hexed(key) for key in compiled.account_keys]}
 
+    # The publication side: the config and forecast accounts, and the instruction that opens one.
+    accounts_encoded = {
+        "config": hexed(config_account()),
+        "forecast": hexed(forecast_account()),
+    }
+    publication = {
+        "initialize": hexed(w.encode_initialize(bytes([7]) * 32)),
+        "set_relayer": hexed(w.encode_set_relayer(bytes([8]) * 32)),
+        "propose_admin": hexed(w.encode_propose_admin(bytes([9]) * 32)),
+        "accept_admin": hexed(w.encode_accept_admin()),
+        "register": hexed(register_instruction()),
+    }
+    decoded = {
+        "config": {"administrator": hexed(w.decode_config(config_account()).administrator),
+                   "relayer": hexed(w.decode_config(config_account()).relayer),
+                   "pending": hexed(w.decode_config(config_account()).pending_administrator)},
+        "forecast": {name: (hexed(value) if isinstance(value, bytes) else value)
+                     for name, value in dataclasses.asdict(
+                         w.decode_forecast(forecast_account())).items()},
+    }
+    account_refusals = [
+        case("config:zero_administrator", lambda: hexed(
+            w.decode_config(b"FNCONF01" + w._ZERO + bytes([8]) * 32 + w._ZERO))),
+        case("config:same_authority", lambda: hexed(
+            w.decode_config(b"FNCONF01" + bytes([7]) * 32 + bytes([7]) * 32 + w._ZERO))),
+        case("config:pending_is_authority", lambda: hexed(
+            w.decode_config(b"FNCONF01" + bytes([7]) * 32 + bytes([8]) * 32 + bytes([7]) * 32))),
+        case("forecast:bad_discriminator", lambda: hexed(w.decode_forecast(b"XXXXX" + forecast_account()[5:]))),
+        case("forecast:window", lambda: hexed(w.decode_forecast(
+            forecast_account()[:104] + struct.pack("<qqQq", 100, 1, 1, 50) + forecast_account()[136:]))),
+        # A chain delay with no resolution is refused by the resolution invariant first, which is
+        # what this case actually pins.
+        case("forecast:chain_delay_without_resolution", lambda: hexed(w.decode_forecast(
+            forecast_account()[:340] + struct.pack("<q", 5) + forecast_account()[348:]))),
+        case("register:publication_after_close", lambda: hexed(w.encode_register(
+            forecast_id_hash=FORECAST, creator_hash=bytes([5]) * 32, specification_hash=SPECIFICATION,
+            open_at_ms=1, close_at_ms=100, revision=1, occurred_at_ms=200,
+            event_hash=bytes([13]) * 32, snapshot_hash=bytes([14]) * 32))),
+    ]
+
     return {
+        "accounts": accounts_encoded,
+        "publication": publication,
+        "decoded": decoded,
+        "accountRefusals": account_refusals,
         # The four values the repository already publishes, recomputed from the same fixture.
         # A port that disagrees with these is wrong regardless of anything else below.
         "pinned": {
