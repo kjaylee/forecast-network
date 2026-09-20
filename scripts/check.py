@@ -90,7 +90,14 @@ def main() -> int:
                 # reference uses both — for commitments and for the hashes that key rows. They
                 # agree on every ASCII value, so picking the wrong one is invisible until the
                 # first accent, and then it is a different digest for the same request.
-                [sys.executable, "scripts/generate_canonical_json_golden.py", "--check"]]
+                [sys.executable, "scripts/generate_canonical_json_golden.py", "--check"],
+                # The signed feed is the live path: its cohorts decide a signed probability, and
+                # its guard batch is the only thing standing between a raced snapshot and a
+                # publication that never should have been signed.
+                [sys.executable, "scripts/generate_reputation_golden.py", "--check"],
+                # The publication lifecycle itself, including the bytes the signer was handed —
+                # the signature is over a specific text, not over the outcome.
+                [sys.executable, "scripts/generate_risk_feed_golden.py", "--check"]]
     if args.tools:
         for tool in ("ruff", "mypy"):
             if shutil.which(tool) is None:

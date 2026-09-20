@@ -1,0 +1,1 @@
+/Volumes/workspace/forecast/target/debug/libforecast_registry.rlib: /Volumes/workspace/forecast/programs/forecast_registry/src/initial_admin.rs /Volumes/workspace/forecast/programs/forecast_registry/src/lib.rs

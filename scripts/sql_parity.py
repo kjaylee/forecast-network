@@ -109,6 +109,18 @@ def drop_continuations(raw: str) -> str:
     return re.sub(r"\\\r?\n[ \t]*", "", raw)
 
 
+def drop_escapes(raw: str) -> str:
+    """Rust's whitespace escapes, turned into what the database actually receives.
+
+    The scan reads source text, so `\n` in a literal arrives as two characters — and `canonical`,
+    whose whole job is to drop the whitespace *between* tokens, keeps them. A SQL constant written
+    across several `"..."` pieces with an explicit `\n` at each line end then reads as drift
+    against the identical Python statement, which is written with real newlines. Python's own
+    literals are unescaped by the parser before this sees them, so this is the same treatment.
+    """
+    return raw.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
+
+
 def rust_statements(source: str) -> list[tuple[int, str]]:
     """(line, statement) for every SQL string literal in one Rust file.
 
@@ -138,14 +150,14 @@ def rust_statements(source: str) -> list[tuple[int, str]]:
         match = RUST_STRING.search(source, index)
         if match is None:
             return statements
-        parts, cursor = [drop_continuations(match.group(1))], match.end()
+        parts, cursor = [drop_escapes(drop_continuations(match.group(1)))], match.end()
         while True:
             remainder = source[cursor:]
             gap = len(remainder) - len(remainder.lstrip())
             following = RUST_STRING.match(source, cursor + gap)
             if following is None:
                 break
-            parts.append(drop_continuations(following.group(1)))
+            parts.append(drop_escapes(drop_continuations(following.group(1))))
             cursor = following.end()
         joined = " ".join(parts).strip()
         if len(joined) > MIN_STATEMENT and SQL_START.match(joined):

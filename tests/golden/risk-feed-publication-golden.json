@@ -1,0 +1,499 @@
+{
+  "calls": [
+    {
+      "call": "approve:bad-actor",
+      "error": {
+        "code": null,
+        "message": "authenticated approver required",
+        "type": "ValidationError"
+      },
+      "input": {
+        "approvedBy": "   ",
+        "feedId": "risk"
+      },
+      "kind": "approve_binding"
+    },
+    {
+      "call": "approve:actor-too-long",
+      "error": {
+        "code": null,
+        "message": "authenticated approver required",
+        "type": "ValidationError"
+      },
+      "input": {
+        "approvedBy": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "feedId": "risk"
+      },
+      "kind": "approve_binding"
+    },
+    {
+      "call": "approve:not-current",
+      "error": {
+        "code": null,
+        "message": "binding is not current",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "approve_binding"
+    },
+    {
+      "call": "approve:bad-feed-id",
+      "error": {
+        "code": null,
+        "message": "invalid feed ID",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk feed"
+      },
+      "kind": "approve_binding"
+    },
+    {
+      "call": "approve:unknown-forecast",
+      "error": {
+        "code": null,
+        "message": "unknown canonical forecast",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "approve_binding"
+    },
+    {
+      "call": "approve:wrong-specification",
+      "error": {
+        "code": null,
+        "message": "binding does not match the published specification window",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "approve_binding"
+    },
+    {
+      "call": "approve:ok",
+      "input": {
+        "approvedBy": "authenticated-admin",
+        "feedId": "risk"
+      },
+      "kind": "approve_binding",
+      "result": null
+    },
+    {
+      "call": "publish:no-observations",
+      "error": {
+        "code": null,
+        "message": "no eligible current canonical risk observations",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "publish_feed"
+    },
+    {
+      "call": "publish:window-zero",
+      "error": {
+        "code": null,
+        "message": "invalid feed observation window",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "publish_feed"
+    },
+    {
+      "call": "publish:window-too-large",
+      "error": {
+        "code": null,
+        "message": "invalid feed observation window",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "publish_feed"
+    },
+    {
+      "call": "publish:first",
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "publish_feed",
+      "result": {
+        "payload": {
+          "bindings": [
+            {
+              "asset": "USDC",
+              "binding_id": "canonical-001",
+              "category": "TECHNOLOGY",
+              "channel": "depegRisk1d",
+              "forecast_id": "f_19581e27de7ced00ff1ce50b",
+              "horizon_hours": 24,
+              "schema_version": 1,
+              "specification_hash": "7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28",
+              "valid_from_ms": 1800000000000,
+              "valid_until_ms": 1800000100000,
+              "version": "canonical-risk-binding-v1"
+            }
+          ],
+          "expires_at_ms": 1800000100000,
+          "feed_id": "risk",
+          "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+          "issued_at_ms": 1800000000000,
+          "key_id": "test-key",
+          "purpose": "forecast-risk-feed-v1",
+          "schema_version": 1,
+          "sequence": 1,
+          "signals": [
+            {
+              "binding_id": "canonical-001",
+              "calibration_status": "provisional",
+              "confidence_bp": 3100,
+              "dependence_group": "f506dadcdad86b40af1e8d5afb5732e82a69594880ab4829b63bb7ec32157e88",
+              "evidence_hash": "34e71870e9310139695163ddb740ddc5789a1fe4cdde087c345c8e8927f1d9a5",
+              "observed_at_ms": 1800000000000,
+              "probability_bp": 8000,
+              "sample_count": 1,
+              "schema_version": 1,
+              "source": "crowd",
+              "units": "basis-points"
+            }
+          ],
+          "weight_set_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "weight_set_version": "source-calibration-v1"
+        },
+        "public_key_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_version": 1,
+        "signature_hex": "972bf615d8e374bc6af0447fb5925a779afee1df1e95f42f44dfd39692f68fa971a26a09263b18272051fb656cc154af5dc1e10eaa43ce4ab4e29a4fbb571c36"
+      }
+    },
+    {
+      "call": "publish:second",
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "publish_feed",
+      "result": {
+        "payload": {
+          "bindings": [
+            {
+              "asset": "USDC",
+              "binding_id": "canonical-001",
+              "category": "TECHNOLOGY",
+              "channel": "depegRisk1d",
+              "forecast_id": "f_19581e27de7ced00ff1ce50b",
+              "horizon_hours": 24,
+              "schema_version": 1,
+              "specification_hash": "7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28",
+              "valid_from_ms": 1800000000000,
+              "valid_until_ms": 1800000100000,
+              "version": "canonical-risk-binding-v1"
+            }
+          ],
+          "expires_at_ms": 1800000100000,
+          "feed_id": "risk",
+          "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+          "issued_at_ms": 1800000000000,
+          "key_id": "test-key",
+          "purpose": "forecast-risk-feed-v1",
+          "schema_version": 1,
+          "sequence": 2,
+          "signals": [
+            {
+              "binding_id": "canonical-001",
+              "calibration_status": "provisional",
+              "confidence_bp": 3100,
+              "dependence_group": "f506dadcdad86b40af1e8d5afb5732e82a69594880ab4829b63bb7ec32157e88",
+              "evidence_hash": "34e71870e9310139695163ddb740ddc5789a1fe4cdde087c345c8e8927f1d9a5",
+              "observed_at_ms": 1800000000000,
+              "probability_bp": 8000,
+              "sample_count": 1,
+              "schema_version": 1,
+              "source": "crowd",
+              "units": "basis-points"
+            }
+          ],
+          "weight_set_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "weight_set_version": "source-calibration-v1"
+        },
+        "public_key_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_version": 1,
+        "signature_hex": "3648d53dea347e3c882e37b8a6e78ea3184e93d969336681e5c98c66a815d76104d2007bd1731b611cdb574b49d154929fdb09e82c6ac16b2dfb1f30d8a94bd8"
+      }
+    },
+    {
+      "call": "latest",
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "latest_feed",
+      "result": {
+        "payload": {
+          "bindings": [
+            {
+              "asset": "USDC",
+              "binding_id": "canonical-001",
+              "category": "TECHNOLOGY",
+              "channel": "depegRisk1d",
+              "forecast_id": "f_19581e27de7ced00ff1ce50b",
+              "horizon_hours": 24,
+              "schema_version": 1,
+              "specification_hash": "7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28",
+              "valid_from_ms": 1800000000000,
+              "valid_until_ms": 1800000100000,
+              "version": "canonical-risk-binding-v1"
+            }
+          ],
+          "expires_at_ms": 1800000100000,
+          "feed_id": "risk",
+          "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+          "issued_at_ms": 1800000000000,
+          "key_id": "test-key",
+          "purpose": "forecast-risk-feed-v1",
+          "schema_version": 1,
+          "sequence": 2,
+          "signals": [
+            {
+              "binding_id": "canonical-001",
+              "calibration_status": "provisional",
+              "confidence_bp": 3100,
+              "dependence_group": "f506dadcdad86b40af1e8d5afb5732e82a69594880ab4829b63bb7ec32157e88",
+              "evidence_hash": "34e71870e9310139695163ddb740ddc5789a1fe4cdde087c345c8e8927f1d9a5",
+              "observed_at_ms": 1800000000000,
+              "probability_bp": 8000,
+              "sample_count": 1,
+              "schema_version": 1,
+              "source": "crowd",
+              "units": "basis-points"
+            }
+          ],
+          "weight_set_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "weight_set_version": "source-calibration-v1"
+        },
+        "public_key_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_version": 1,
+        "signature_hex": "3648d53dea347e3c882e37b8a6e78ea3184e93d969336681e5c98c66a815d76104d2007bd1731b611cdb574b49d154929fdb09e82c6ac16b2dfb1f30d8a94bd8"
+      }
+    },
+    {
+      "call": "active",
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "active_bindings",
+      "result": [
+        {
+          "asset": "USDC",
+          "binding_id": "canonical-001",
+          "category": "TECHNOLOGY",
+          "channel": "depegRisk1d",
+          "forecast_id": "f_19581e27de7ced00ff1ce50b",
+          "horizon_hours": 24,
+          "schema_version": 1,
+          "specification_hash": "7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28",
+          "valid_from_ms": 1800000000000,
+          "valid_until_ms": 1800000100000,
+          "version": "canonical-risk-binding-v1"
+        }
+      ]
+    },
+    {
+      "call": "publish:after-snapshot-change",
+      "error": {
+        "code": null,
+        "message": "no eligible current canonical risk observations",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "publish_feed"
+    },
+    {
+      "call": "revoke:bad-actor",
+      "error": {
+        "code": null,
+        "message": "revocation requires authenticated actor and bounded reason",
+        "type": "ValidationError"
+      },
+      "input": {
+        "bindingId": "canonical-001"
+      },
+      "kind": "revoke_binding"
+    },
+    {
+      "call": "revoke:reason-too-long",
+      "error": {
+        "code": null,
+        "message": "revocation requires authenticated actor and bounded reason",
+        "type": "ValidationError"
+      },
+      "input": {
+        "bindingId": "canonical-001"
+      },
+      "kind": "revoke_binding"
+    },
+    {
+      "call": "revoke:ok",
+      "input": {
+        "bindingId": "canonical-001"
+      },
+      "kind": "revoke_binding",
+      "result": null
+    },
+    {
+      "call": "publish:after-revocation",
+      "error": {
+        "code": null,
+        "message": "no eligible current canonical risk observations",
+        "type": "ValidationError"
+      },
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "publish_feed"
+    },
+    {
+      "call": "active:after-revocation",
+      "input": {
+        "feedId": "risk"
+      },
+      "kind": "active_bindings",
+      "result": []
+    }
+  ],
+  "description": "The signed risk-feed publication lifecycle: approval against the published specification window, the guarded batch after the signer, sequence compare-and-set, and revocation.",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+  "rows": {
+    "artifacts": [
+      {
+        "body": "{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme officially announce Product X before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme officially announce Product X before the deadline?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}}",
+        "created_at": 1800000000000,
+        "hash": "7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28",
+        "kind": "specification",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"81429d457193b8011bcc45b3c0066d82fd4d941b59993ebf0dc369970ed1185d\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7005b665785b2f3fa9085621b6c400e23e97f9c242c5a7e7a6de08e76d8550d8\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"validated_at_ms\":1800000000000}",
+        "created_at": 1800000000000,
+        "hash": "b6975234c822832aa0835894d633803a9e2ee1a7d6b92fd8464572dd83eae8f7",
+        "kind": "validation",
+        "media_type": "application/json"
+      },
+      {
+        "body": "{\"confidence\":80,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"forecaster_id\":\"u_e7f6c011776e8db7cd330b54\",\"outcome\":\"YES\",\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"submitted_at_ms\":1800000000000}",
+        "created_at": 1800000000000,
+        "hash": "af7e818c9784a31540982a395bfcacb4399df0dc93d2e5c0b71a16b1b91a26f2",
+        "kind": "user_forecast",
+        "media_type": "application/json"
+      }
+    ],
+    "forecasts": [
+      {
+        "ai_forecast": null,
+        "category": "TECHNOLOGY",
+        "challenge_until": null,
+        "close_at": 1800000100000,
+        "created_at": 1800000000000,
+        "creator_id": "u_4e07408562bedb8b60ce05c1",
+        "draft_id": "d_2c624232cdd221771294dfbb",
+        "failure_count": 0,
+        "finalized_outcome": null,
+        "id": "f_19581e27de7ced00ff1ce50b",
+        "job_error": null,
+        "job_token": null,
+        "job_until": 0,
+        "mutation_key": "user:91bb7ecc165e94ba6eb609983e310ccb1ea19d59d124fbe15b31e43767b28efb",
+        "normalized_question": "will acme officially announce product x before the deadline?",
+        "open_at": 1800000000000,
+        "question": "Will Acme officially announce Product X before the deadline?",
+        "retry_at": 0,
+        "revision": 3,
+        "share_count": 0,
+        "snapshot": "{\"audit_head_hash\":\"b3e9febf0e10c7ee1c16c87dd36b7a830646b6d063f3e275932f21e4f635bf49\",\"challenge_started_at_ms\":null,\"challenge_until_ms\":null,\"created_at_ms\":1800000000000,\"creator_id\":\"u_4e07408562bedb8b60ce05c1\",\"dispute_reviews\":[],\"disputes\":[],\"finalized_outcome\":null,\"finalized_resolution_hash\":null,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"latest_event\":{\"artifact_hash\":\"af7e818c9784a31540982a395bfcacb4399df0dc93d2e5c0b71a16b1b91a26f2\",\"command_id\":\"user:91bb7ecc165e94ba6eb609983e310ccb1ea19d59d124fbe15b31e43767b28efb\",\"command_name\":\"submit_forecast\",\"effects\":[],\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"new_state\":\"OPEN\",\"occurred_at_ms\":1800000000000,\"old_state\":\"OPEN\",\"previous_event_hash\":\"ad2909d9c9bdcb079106d9a120e97b27e65594113064a9880bc8c75c1cb2365c\",\"revision\":3,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"state_hash\":\"e64acaf5f74fb769278e48261c0b7c3d5b4c30fd7bd289195dd39d06607f05cd\"},\"pause\":null,\"published_at_ms\":1800000000000,\"resolution\":null,\"revision\":3,\"schema_version\":1,\"specification\":{\"ambiguity_score_bp\":500,\"canonical_question\":\"Will Acme officially announce Product X before the deadline?\",\"category\":\"TECHNOLOGY\",\"close_at_ms\":1800000100000,\"duplicate_candidates\":[],\"invalidation_rules\":[\"Apply INVALID if the named product has multiple incompatible identities.\"],\"open_at_ms\":1800000000000,\"rules\":[{\"clause_id\":\"yes-rule\",\"condition\":\"An official announcement dated before closing names Product X.\",\"outcome\":\"YES\",\"schema_version\":1},{\"clause_id\":\"no-rule\",\"condition\":\"No qualifying announcement exists at closing.\",\"outcome\":\"NO\",\"schema_version\":1},{\"clause_id\":\"invalid-rule\",\"condition\":\"The named company or product cannot be uniquely identified.\",\"outcome\":\"INVALID\",\"schema_version\":1}],\"schema_version\":1,\"share_title\":\"Will Acme officially announce Product X before the deadline?\",\"source_policy\":{\"fallback_sources\":[{\"is_official\":false,\"name\":\"Independent News Wire\",\"schema_version\":1,\"source_id\":\"news-wire\",\"url\":\"https://wire.example/acme\"}],\"primary_sources\":[{\"is_official\":true,\"name\":\"Acme Newsroom\",\"schema_version\":1,\"source_id\":\"acme-news\",\"url\":\"https://acme.example/news\"}],\"schema_version\":1}},\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"state\":\"OPEN\",\"updated_at_ms\":1800000000000,\"validation_assessment\":{\"ambiguity_judge\":{\"created_at_ms\":51,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"81429d457193b8011bcc45b3c0066d82fd4d941b59993ebf0dc369970ed1185d\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"AMBIGUITY_JUDGE\"},\"ambiguity_limit_bp\":1000,\"ambiguity_passed\":true,\"compiler\":{\"created_at_ms\":50,\"input_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"MARKET_COMPILER\"},\"deterministic_check_version\":\"deterministic-v1\",\"deterministic_passed\":true,\"duplicate_check_completed\":true,\"duplicate_detector\":{\"created_at_ms\":52,\"input_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"model\":\"grounded-model\",\"model_version\":\"2026-09-01\",\"output_hash\":\"7005b665785b2f3fa9085621b6c400e23e97f9c242c5a7e7a6de08e76d8550d8\",\"policy_version\":\"policy-v1\",\"provider\":\"provider-a\",\"schema_version\":1,\"task\":\"DUPLICATE_DETECTOR\"},\"duplicate_similarity_threshold_bp\":8500,\"explanation\":\"Objective rules, official sources, no equivalent duplicates.\",\"objectively_resolvable\":true,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"validated_at_ms\":1800000000000}}",
+        "specification_hash": "7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28",
+        "state": "OPEN",
+        "title": "Will Acme officially announce Product X before the deadline?",
+        "updated_at": 1800000000000
+      }
+    ],
+    "mutation_guards": [],
+    "risk_feed_binding_revocations": [
+      {
+        "binding_id": "canonical-001",
+        "reason": "operator withdrew the mapped question",
+        "revoked_at": 1800000000000,
+        "revoked_by": "authenticated-admin"
+      }
+    ],
+    "risk_feed_bindings": [
+      {
+        "approved_at": 1800000000000,
+        "approved_by": "authenticated-admin",
+        "binding_id": "canonical-001",
+        "binding_json": "{\"asset\":\"USDC\",\"binding_id\":\"canonical-001\",\"category\":\"TECHNOLOGY\",\"channel\":\"depegRisk1d\",\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"horizon_hours\":24,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"valid_from_ms\":1800000000000,\"valid_until_ms\":1800000100000,\"version\":\"canonical-risk-binding-v1\"}",
+        "feed_id": "risk"
+      }
+    ],
+    "risk_feed_heads": [
+      {
+        "feed_id": "risk",
+        "sequence": 2
+      }
+    ],
+    "risk_feed_publications": [
+      {
+        "created_at": 1800000000000,
+        "envelope_json": "{\"payload\":{\"bindings\":[{\"asset\":\"USDC\",\"binding_id\":\"canonical-001\",\"category\":\"TECHNOLOGY\",\"channel\":\"depegRisk1d\",\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"horizon_hours\":24,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"valid_from_ms\":1800000000000,\"valid_until_ms\":1800000100000,\"version\":\"canonical-risk-binding-v1\"}],\"expires_at_ms\":1800000100000,\"feed_id\":\"risk\",\"genesis_hash\":\"EtWTRABZaYq6iMfeYKouRu166VU2xqa1\",\"issued_at_ms\":1800000000000,\"key_id\":\"test-key\",\"purpose\":\"forecast-risk-feed-v1\",\"schema_version\":1,\"sequence\":1,\"signals\":[{\"binding_id\":\"canonical-001\",\"calibration_status\":\"provisional\",\"confidence_bp\":3100,\"dependence_group\":\"f506dadcdad86b40af1e8d5afb5732e82a69594880ab4829b63bb7ec32157e88\",\"evidence_hash\":\"34e71870e9310139695163ddb740ddc5789a1fe4cdde087c345c8e8927f1d9a5\",\"observed_at_ms\":1800000000000,\"probability_bp\":8000,\"sample_count\":1,\"schema_version\":1,\"source\":\"crowd\",\"units\":\"basis-points\"}],\"weight_set_hash\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"weight_set_version\":\"source-calibration-v1\"},\"public_key_hex\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"schema_version\":1,\"signature_hex\":\"972bf615d8e374bc6af0447fb5925a779afee1df1e95f42f44dfd39692f68fa971a26a09263b18272051fb656cc154af5dc1e10eaa43ce4ab4e29a4fbb571c36\"}",
+        "feed_id": "risk",
+        "payload_hash": "a2e0ce4bb0b7bb48e14fb13bf732f1487e152ae246d09c1a3d3b35cf3a5ea1d8",
+        "sequence": 1
+      },
+      {
+        "created_at": 1800000000000,
+        "envelope_json": "{\"payload\":{\"bindings\":[{\"asset\":\"USDC\",\"binding_id\":\"canonical-001\",\"category\":\"TECHNOLOGY\",\"channel\":\"depegRisk1d\",\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"horizon_hours\":24,\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"valid_from_ms\":1800000000000,\"valid_until_ms\":1800000100000,\"version\":\"canonical-risk-binding-v1\"}],\"expires_at_ms\":1800000100000,\"feed_id\":\"risk\",\"genesis_hash\":\"EtWTRABZaYq6iMfeYKouRu166VU2xqa1\",\"issued_at_ms\":1800000000000,\"key_id\":\"test-key\",\"purpose\":\"forecast-risk-feed-v1\",\"schema_version\":1,\"sequence\":2,\"signals\":[{\"binding_id\":\"canonical-001\",\"calibration_status\":\"provisional\",\"confidence_bp\":3100,\"dependence_group\":\"f506dadcdad86b40af1e8d5afb5732e82a69594880ab4829b63bb7ec32157e88\",\"evidence_hash\":\"34e71870e9310139695163ddb740ddc5789a1fe4cdde087c345c8e8927f1d9a5\",\"observed_at_ms\":1800000000000,\"probability_bp\":8000,\"sample_count\":1,\"schema_version\":1,\"source\":\"crowd\",\"units\":\"basis-points\"}],\"weight_set_hash\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"weight_set_version\":\"source-calibration-v1\"},\"public_key_hex\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"schema_version\":1,\"signature_hex\":\"3648d53dea347e3c882e37b8a6e78ea3184e93d969336681e5c98c66a815d76104d2007bd1731b611cdb574b49d154929fdb09e82c6ac16b2dfb1f30d8a94bd8\"}",
+        "feed_id": "risk",
+        "payload_hash": "dbeb31081f15a7dd0729b6202de50d7b3f5ff9c648a1692c6414d48191df201b",
+        "sequence": 2
+      }
+    ],
+    "user_forecasts": [
+      {
+        "body": "{\"confidence\":80,\"forecast_id\":\"f_19581e27de7ced00ff1ce50b\",\"forecaster_id\":\"u_e7f6c011776e8db7cd330b54\",\"outcome\":\"YES\",\"schema_version\":1,\"specification_hash\":\"7dc6b20d505cc2b85da3db3530f1e60373e766e1046396b17ef44e6c20c61e28\",\"submitted_at_ms\":1800000000000}",
+        "confidence": 80,
+        "forecast_id": "f_19581e27de7ced00ff1ce50b",
+        "outcome": "YES",
+        "revision": 3,
+        "submitted_at": 1800000000000,
+        "user_id": "u_e7f6c011776e8db7cd330b54",
+        "yes_probability": 80
+      }
+    ],
+    "users": [
+      {
+        "created_at": 1800000000000,
+        "display_name": "테스터",
+        "handle": "f_4e07408562be",
+        "id": "u_4e07408562bedb8b60ce05c1",
+        "recovery_hash": "7444c5ccee4aba92f325831bd6df61ececb73bb98b0df02ee6032633a4e43c96"
+      },
+      {
+        "created_at": 1800000000000,
+        "display_name": "다른 사용자",
+        "handle": "f_e7f6c011776e",
+        "id": "u_e7f6c011776e8db7cd330b54",
+        "recovery_hash": "0ec2e8eb334b6f181d147a055a970b6e391d1e6872dae8924342378ebc1c1aaf"
+      }
+    ]
+  },
+  "signed": [
+    "666f7265636173742d7269736b2d666565642d76313a7369676e61747572653a7b2262696e64696e6773223a5b7b226173736574223a2255534443222c2262696e64696e675f6964223a2263616e6f6e6963616c2d303031222c2263617465676f7279223a22544543484e4f4c4f4759222c226368616e6e656c223a2264657065675269736b3164222c22666f7265636173745f6964223a22665f313935383165323764653763656430306666316365353062222c22686f72697a6f6e5f686f757273223a32342c22736368656d615f76657273696f6e223a312c2273706563696669636174696f6e5f68617368223a2237646336623230643530356363326238356461336462333533306631653630333733653736366531303436333936623137656634346536633230633631653238222c2276616c69645f66726f6d5f6d73223a313830303030303030303030302c2276616c69645f756e74696c5f6d73223a313830303030303130303030302c2276657273696f6e223a2263616e6f6e6963616c2d7269736b2d62696e64696e672d7631227d5d2c22657870697265735f61745f6d73223a313830303030303130303030302c22666565645f6964223a227269736b222c2267656e657369735f68617368223a22457457545241425a61597136694d6665594b6f75527531363656553278716131222c226973737565645f61745f6d73223a313830303030303030303030302c226b65795f6964223a22746573742d6b6579222c22707572706f7365223a22666f7265636173742d7269736b2d666565642d7631222c22736368656d615f76657273696f6e223a312c2273657175656e6365223a312c227369676e616c73223a5b7b2262696e64696e675f6964223a2263616e6f6e6963616c2d303031222c2263616c6962726174696f6e5f737461747573223a2270726f766973696f6e616c222c22636f6e666964656e63655f6270223a333130302c22646570656e64656e63655f67726f7570223a2266353036646164636461643836623430616631653864356166623537333265383261363935393438383061623438323962363362623765633332313537653838222c2265766964656e63655f68617368223a2233346537313837306539333130313339363935313633646462373430646463353738396131666534636464653038376333343563386538393237663164396135222c226f627365727665645f61745f6d73223a313830303030303030303030302c2270726f626162696c6974795f6270223a383030302c2273616d706c655f636f756e74223a312c22736368656d615f76657273696f6e223a312c22736f75726365223a2263726f7764222c22756e697473223a2262617369732d706f696e7473227d5d2c227765696768745f7365745f68617368223a2264646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464222c227765696768745f7365745f76657273696f6e223a22736f757263652d63616c6962726174696f6e2d7631227d",
+    "666f7265636173742d7269736b2d666565642d76313a7369676e61747572653a7b2262696e64696e6773223a5b7b226173736574223a2255534443222c2262696e64696e675f6964223a2263616e6f6e6963616c2d303031222c2263617465676f7279223a22544543484e4f4c4f4759222c226368616e6e656c223a2264657065675269736b3164222c22666f7265636173745f6964223a22665f313935383165323764653763656430306666316365353062222c22686f72697a6f6e5f686f757273223a32342c22736368656d615f76657273696f6e223a312c2273706563696669636174696f6e5f68617368223a2237646336623230643530356363326238356461336462333533306631653630333733653736366531303436333936623137656634346536633230633631653238222c2276616c69645f66726f6d5f6d73223a313830303030303030303030302c2276616c69645f756e74696c5f6d73223a313830303030303130303030302c2276657273696f6e223a2263616e6f6e6963616c2d7269736b2d62696e64696e672d7631227d5d2c22657870697265735f61745f6d73223a313830303030303130303030302c22666565645f6964223a227269736b222c2267656e657369735f68617368223a22457457545241425a61597136694d6665594b6f75527531363656553278716131222c226973737565645f61745f6d73223a313830303030303030303030302c226b65795f6964223a22746573742d6b6579222c22707572706f7365223a22666f7265636173742d7269736b2d666565642d7631222c22736368656d615f76657273696f6e223a312c2273657175656e6365223a322c227369676e616c73223a5b7b2262696e64696e675f6964223a2263616e6f6e6963616c2d303031222c2263616c6962726174696f6e5f737461747573223a2270726f766973696f6e616c222c22636f6e666964656e63655f6270223a333130302c22646570656e64656e63655f67726f7570223a2266353036646164636461643836623430616631653864356166623537333265383261363935393438383061623438323962363362623765633332313537653838222c2265766964656e63655f68617368223a2233346537313837306539333130313339363935313633646462373430646463353738396131666534636464653038376333343563386538393237663164396135222c226f627365727665645f61745f6d73223a313830303030303030303030302c2270726f626162696c6974795f6270223a383030302c2273616d706c655f636f756e74223a312c22736368656d615f76657273696f6e223a312c22736f75726365223a2263726f7764222c22756e697473223a2262617369732d706f696e7473227d5d2c227765696768745f7365745f68617368223a2264646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464646464222c227765696768745f7365745f76657273696f6e223a22736f757263652d63616c6962726174696f6e2d7631227d"
+  ]
+}
