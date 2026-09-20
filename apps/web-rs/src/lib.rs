@@ -25,6 +25,7 @@ mod reputation;
 pub mod resolution_timing;
 pub mod risk_ops;
 mod routes;
+pub mod sources;
 mod writes;
 
 pub const VERSION: &str = "0.13.0";
