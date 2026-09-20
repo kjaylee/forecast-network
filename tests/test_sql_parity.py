@@ -169,6 +169,7 @@ class ComparisonTests(unittest.TestCase):
         canon_only = [entry[2] for entry in entries]
         drifted = [(path.name, line)
                    for path in sorted(sql_parity.RUST_SOURCES.glob("*.rs"))
+                   if path.name not in sql_parity.NOT_THE_WORKER
                    for line, statement in sql_parity.rust_statements(path.read_text(encoding="utf-8"))
                    if not sql_parity.accounted_for(statement, canon_only)
                    and not any(marker in sql_parity.canonical(statement) for marker in sql_parity.DIVERGENCES)]

@@ -131,6 +131,9 @@ def main() -> int:
                 # re-reads retained bytes, the release only an observer's hold may earn, and the
                 # poller driven through the automation object end to end.
                 [sys.executable, "scripts/generate_automation_run_golden.py", "--check"],
+                # The outbox and the sweep that drains it: the exactly-once selection, the blocked
+                # forecast, the adapter hand-off, and the set-based settlement.
+                [sys.executable, "scripts/generate_outbox_golden.py", "--check"],
                 # What the compiler is allowed to see: the ranking, the terms, and the byte budget
                 # that decides which candidates reach the model at all.
                 [sys.executable, "scripts/generate_candidates_golden.py", "--check"]]

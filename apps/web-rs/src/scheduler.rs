@@ -12,7 +12,7 @@
 //! The lease exists for the same reason: one worker may be inside an AI call for a forecast at a
 //! time, and the database says so rather than this process remembering.
 
-use serde_json::json;
+use serde_json::{json, Value};
 
 use forecast_domain::lifecycle::Payload;
 use forecast_domain::lifecycle::Snapshot;
@@ -20,6 +20,7 @@ use forecast_domain::lifecycle::Snapshot;
 use crate::ai::coordinator::Coordinator;
 use crate::ai::resolution::{propose_resolution, EvidenceFetcher};
 use crate::db::{int, text, Database};
+use crate::mutate::Statement;
 use crate::resolution_timing::{close_indeterminate, status as timing_status};
 
 pub const LEASE_MS: i64 = 300_000;
@@ -31,6 +32,91 @@ const MAX_TRANSITIONS_PER_LEASE: usize = 6;
 pub struct Sweep {
     pub processed: i64,
     pub failed: i64,
+    /// What the outbox delivered in the same pass. Named `effects` because that is what the
+    /// reference calls it on the wire, and an operator reads that name.
+    pub effects: i64,
+}
+
+/// `_process_outbox`: deliver what a finalized question owes — its reputation, its settlement and
+/// the notification a participant reads.
+///
+/// The exactly-once rule is in the *selection*, not in a flag: every statement carries
+/// `EXISTS(SELECT 1 FROM outbox WHERE id=? AND status='pending')` in its own `WHERE` clause and the
+/// status flips in the same batch, so a replay selects nothing because the row is no longer
+/// pending. A question whose evidence review is still open is excluded from the selection
+/// entirely, which is why a blocked forecast is not scored, settled or announced while it waits.
+///
+/// `adapter_configured` is the reference's `self.registry is not None`. Without a chain adapter
+/// there is nothing to hand a commitment to, so the row is left exactly where it is rather than
+/// being marked as though something had taken it.
+pub async fn process_outbox(
+    db: &dyn Database,
+    now_ms: i64,
+    limit: i64,
+    adapter_configured: bool,
+) -> Result<i64, String> {
+    if adapter_configured {
+        db.execute(
+            "UPDATE outbox SET status='processed',processed_at=? WHERE kind='RESOLUTION_COMMITMENT_REQUIRED'              AND status='awaiting_adapter' AND EXISTS (SELECT 1 FROM registry_delivery d JOIN registry_intents i              USING(forecast_id,revision) JOIN forecasts f ON f.id=d.forecast_id WHERE d.forecast_id=outbox.forecast_id              AND d.status='confirmed' AND d.revision=f.revision AND f.state IN ('FINALIZED','ARCHIVED')              AND json_extract(i.snapshot,'$.audit_head_hash')=json_extract(f.snapshot,'$.audit_head_hash'))",
+            &[json!(now_ms)],
+        )
+        .await
+        .map_err(|error| error.to_string())?;
+    }
+    let rows = db
+        .all(
+            "SELECT * FROM outbox WHERE status='pending' AND NOT EXISTS              (SELECT 1 FROM forecast_resolution_blockers b WHERE b.forecast_id=outbox.forecast_id)              ORDER BY created_at,id LIMIT ?",
+            &[json!(limit)],
+        )
+        .await
+        .map_err(|error| error.to_string())?;
+    let mut processed = 0;
+    for row in &rows {
+        let id = row.get("id").cloned().unwrap_or(Value::Null);
+        let forecast_id = text(row, "forecast_id").unwrap_or("").to_string();
+        let now = now_ms;
+        if text(row, "kind") == Some("RESOLUTION_COMMITMENT_REQUIRED") {
+            // Handed to the adapter, which is a different thing from delivered: the status says so
+            // rather than claiming the work is done.
+            db.execute(
+                "UPDATE outbox SET status='awaiting_adapter' WHERE id=? AND status='pending'",
+                &[id],
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+            continue;
+        }
+        let mut statements: Vec<Statement> = Vec::new();
+        match text(row, "kind") {
+            Some("REPUTATION_UPDATE_REQUIRED") => {
+                statements.push((
+                    "INSERT OR IGNORE INTO reputation_scores(forecast_id,user_id,category,outcome,probability,                     correct,brier_score,created_at) SELECT f.id,v.user_id,f.category,f.finalized_outcome,                     v.yes_probability,CASE WHEN f.finalized_outcome='INVALID' THEN NULL                      WHEN f.finalized_outcome=v.outcome THEN 1 ELSE 0 END,                     CASE WHEN f.finalized_outcome='INVALID' THEN NULL ELSE                      (v.yes_probability/100.0-CASE WHEN f.finalized_outcome='YES' THEN 1 ELSE 0 END)*                     (v.yes_probability/100.0-CASE WHEN f.finalized_outcome='YES' THEN 1 ELSE 0 END) END,?                      FROM forecasts f JOIN eligible_user_forecasts v ON v.forecast_id=f.id WHERE f.id=?                      AND f.state IN ('FINALIZED','ARCHIVED') AND EXISTS(SELECT 1 FROM outbox WHERE id=? AND status='pending')"
+                        .to_string(),
+                    vec![json!(now), json!(forecast_id), id.clone()],
+                ));
+                statements.extend(
+                    crate::points::settlement_sql(&forecast_id, now).map_err(|error| error.message.to_string())?,
+                );
+            }
+            Some("RESULT_NOTIFICATION_REQUIRED") => {
+                statements.push((
+                    "INSERT OR IGNORE INTO activity(id,user_id,forecast_id,kind,title,body,created_at)                      SELECT ?||':'||v.user_id,v.user_id,f.id,'forecast_finalized',f.title,                     'The forecast was finalized as '||f.finalized_outcome||'.',?                      FROM forecasts f JOIN eligible_user_forecasts v ON v.forecast_id=f.id WHERE f.id=?                      AND f.state IN ('FINALIZED','ARCHIVED') AND EXISTS(SELECT 1 FROM outbox WHERE id=? AND status='pending')"
+                        .to_string(),
+                    vec![id.clone(), json!(now), json!(forecast_id), id.clone()],
+                ));
+            }
+            // A kind this version does not know is left pending rather than marked done: the row
+            // is a claim nothing here can honour, and marking it processed would lose it.
+            _ => continue,
+        }
+        statements.push((
+            "UPDATE outbox SET status='processed',processed_at=? WHERE id=? AND status='pending'".to_string(),
+            vec![json!(now), id],
+        ));
+        db.batch(&statements).await.map_err(|error| error.to_string())?;
+        processed += 1;
+    }
+    Ok(processed)
 }
 
 /// The failure reason an operator reads. The generic message is the fallback and is wrong often
@@ -251,6 +337,7 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), String> {
 }
 
 /// `run_due_jobs`: claim what is due under a lease, advance it, and record what happened.
+#[allow(clippy::too_many_arguments)]
 pub async fn run_due_jobs(
     db: &dyn Database,
     coordinator: &Coordinator,
@@ -259,6 +346,9 @@ pub async fn run_due_jobs(
     limit: i64,
     tokens: &mut dyn FnMut() -> String,
     daily_limit: i64,
+    // `adapter_configured` is `self.registry is not None`: whether anything is there to commit a
+    // resolution to.
+    adapter_configured: bool,
 ) -> Result<Sweep, String> {
     let limit = limit.clamp(1, 50);
     let rows = db
@@ -343,6 +433,10 @@ pub async fn run_due_jobs(
         .await
         .map_err(|error| error.to_string())?;
     }
+    // The outbox is drained by the same pass, and the count it reports is part of what the pass
+    // says it did.
+    let effects = process_outbox(db, now_ms, limit * 3, adapter_configured).await?;
+    sweep.effects = effects;
     // Housekeeping the reference does in the same pass, so nothing accumulates unbounded.
     for (sql, params) in [
         ("DELETE FROM sessions WHERE expires_at<=?", vec![json!(now_ms)]),
@@ -391,6 +485,9 @@ pub struct Scheduler<'a> {
     pub fetch: &'a EvidenceFetcher,
     pub now_ms: i64,
     pub daily_limit: i64,
+    /// Whether a chain adapter is configured. `None` in the reference is a real configuration, not
+    /// an absence: without an adapter a resolution commitment row is left where it is.
+    pub adapter_configured: bool,
 }
 
 impl Scheduler<'_> {
@@ -403,6 +500,7 @@ impl Scheduler<'_> {
             limit,
             tokens,
             self.daily_limit,
+            self.adapter_configured,
         )
         .await
     }
@@ -592,6 +690,7 @@ mod tests {
             5,
             &mut tokens,
             100,
+            true,
         ))
         .unwrap();
         assert_eq!(sweep, Sweep::default(), "a forecast before its close is not due");
@@ -667,6 +766,7 @@ mod tests {
             5,
             &mut tokens,
             100,
+            true,
         ))
         .unwrap();
         assert_eq!(
@@ -705,7 +805,17 @@ mod tests {
         };
         // Inside the window the row is not even selected: the query only has a CHALLENGE branch
         // for one whose window has closed. Nothing is attempted, which is the point.
-        let inside = block(run_due_jobs(&db, &coordinator, &fetch, until - 1, 5, &mut tokens, 100)).unwrap();
+        let inside = block(run_due_jobs(
+            &db,
+            &coordinator,
+            &fetch,
+            until - 1,
+            5,
+            &mut tokens,
+            100,
+            true,
+        ))
+        .unwrap();
         assert_eq!(inside, Sweep::default());
         assert_eq!(
             block(db.first("SELECT state FROM forecasts WHERE id=?", &[json!(id)]))
@@ -715,7 +825,17 @@ mod tests {
         );
 
         // Past it, the same row is due and finalizing it needs no provider.
-        let past = block(run_due_jobs(&db, &coordinator, &fetch, until + 1, 5, &mut tokens, 100)).unwrap();
+        let past = block(run_due_jobs(
+            &db,
+            &coordinator,
+            &fetch,
+            until + 1,
+            5,
+            &mut tokens,
+            100,
+            true,
+        ))
+        .unwrap();
         assert_eq!(past.processed, 1);
         assert_eq!(
             block(db.first("SELECT state FROM forecasts WHERE id=?", &[json!(id)]))
@@ -805,5 +925,155 @@ mod chain_tests {
         assert_eq!(retry_at(&db), Some(now + 600_000), "a lost lease is not re-armed");
         block(wait_for_chain(&db, "f", "token", now)).expect("wait");
         assert_eq!(retry_at(&db), Some(now + CHAIN_RETRY_MS));
+    }
+}
+
+/// The outbox, the settlement statement and the sweep that drains both, replayed against the
+/// reference's own recorded state.
+#[cfg(test)]
+mod outbox_tests {
+    use super::*;
+    use crate::golden::{assert_all_cases_known, assert_case, block, entry, load, static_database, Tokens};
+
+    const REPLAYED: [&str; 16] = [
+        "settlement:valid",
+        "settlement:empty-id",
+        "settlement:control-char",
+        "settlement:too-long",
+        "settlement:negative-time",
+        "settlement:over-ceiling",
+        "outbox:empty",
+        "outbox:commitment",
+        "outbox:unknown",
+        "outbox:blocked",
+        "outbox:reputation",
+        "outbox:notification",
+        "outbox:not-finalized",
+        "sweep:before-deadline",
+        "sweep:finalize",
+        "sweep:cleanup",
+    ];
+
+    /// `settlement:wrong-type` passes Python's `True` where the statement wants an instant. This
+    /// port cannot express that: the parameter is an `i64`, so the refusal is unreachable rather
+    /// than reproduced. It is listed here so the vector cannot grow a case nobody looked at.
+    const NOT_REPLAYED: [(&str, &str); 1] = [(
+        "settlement:wrong-type",
+        "the reference passes `True` where it wants an int; this port's parameter is an `i64`, so \
+         the check cannot fail",
+    )];
+
+    #[test]
+    fn the_vector_has_no_case_this_replay_silently_skips() {
+        assert_all_cases_known(&load("outbox-golden.json"), &REPLAYED, &NOT_REPLAYED);
+    }
+
+    fn sweep(db: &crate::db::Sqlite, case: &Value, tokens: &Tokens) -> Result<Value, String> {
+        let coordinator = Coordinator {
+            providers: Vec::new(),
+            fetch: Box::new(|_, _, _| Box::pin(async { Err(()) })),
+        };
+        let fetch: EvidenceFetcher = Box::new(|_, _| Box::pin(async { Err(()) }));
+        let now_ms = case["now"].as_i64().unwrap_or(0);
+        let limit = 3;
+        let mut source = || tokens.next();
+        block(run_due_jobs(
+            db,
+            &coordinator,
+            &fetch,
+            now_ms,
+            limit,
+            &mut source,
+            100,
+            false,
+        ))
+        .map(|sweep| json!({"processed": sweep.processed, "failed": sweep.failed, "effects": sweep.effects}))
+    }
+
+    fn outcome(db: &'static crate::db::Sqlite, case: &Value) -> (Option<Value>, Option<Value>, Tokens) {
+        let tokens = Tokens::new(Tokens::recorded(case));
+        let name = case["call"].as_str().expect("name");
+        let now_ms = case["now"].as_i64().unwrap_or(0);
+        let input = &case["input"];
+        let result: Result<Value, Value> = match name {
+            _ if name.starts_with("settlement:") => {
+                let forecast_id = input["forecastId"].as_str().unwrap_or("");
+                let at = input["now"].as_i64().unwrap_or(0);
+                match crate::points::settlement_sql(forecast_id, at) {
+                    Ok(statements) => Ok(json!(statements
+                        .into_iter()
+                        .map(|(sql, params)| json!({"sql": sql, "params": params}))
+                        .collect::<Vec<_>>())),
+                    Err(error) => Err(json!({"status": error.status, "code": error.code, "message": error.message})),
+                }
+            }
+            "sweep:before-deadline" | "sweep:finalize" | "sweep:cleanup" => {
+                sweep(db, case, &tokens).map_err(|code| json!({"code": code, "message": code}))
+            }
+            "outbox:commitment" => {
+                // Twice: a commitment row is handed to the adapter rather than delivered, so the
+                // second pass has nothing left to look at.
+                let limit = input["limit"].as_i64().unwrap_or(15);
+                let first = block(process_outbox(db, now_ms, limit, false));
+                let second = block(process_outbox(db, now_ms, limit, false));
+                match (first, second) {
+                    (Ok(first), Ok(second)) => Ok(json!({"first": first, "second": second})),
+                    (Err(detail), _) | (_, Err(detail)) => Err(json!({"code": detail, "message": detail})),
+                }
+            }
+            _ => {
+                let limit = input["limit"].as_i64().unwrap_or(15);
+                match block(process_outbox(db, now_ms, limit, false)) {
+                    Ok(count) => Ok(json!(count)),
+                    Err(detail) => Err(json!({"code": detail, "message": detail})),
+                }
+            }
+        };
+        match result {
+            Ok(value) => (Some(value), None, tokens),
+            Err(error) => (None, Some(error), tokens),
+        }
+    }
+
+    #[test]
+    fn the_reference_outbox_and_sweep_are_reproduced_case_for_case() {
+        let document = load("outbox-golden.json");
+        for name in REPLAYED {
+            let case = entry(&document, name);
+            if case.get("initial").is_none() {
+                // A pure function: the statement and its refusals, with no database to leave behind.
+                let (result, error, _) = outcome_for_pure(case);
+                assert_case(name, case, &result, &error, &crate::db::Sqlite::from_migrations());
+                continue;
+            }
+            let db = static_database(&case["initial"]);
+            let (result, error, tokens) = outcome(db, case);
+            assert_case(name, case, &result, &error, db);
+            tokens.assert_drained(name, "");
+        }
+    }
+
+    /// The settlement cases have no database at all, so the replay runs them against an empty one
+    /// purely so the comparison machinery has something to hand.
+    fn outcome_for_pure(case: &Value) -> (Option<Value>, Option<Value>, Tokens) {
+        let input = &case["input"];
+        let forecast_id = input["forecastId"].as_str().unwrap_or("");
+        let at = input["now"].as_i64().unwrap_or(0);
+        let tokens = Tokens::new(Vec::new());
+        match crate::points::settlement_sql(forecast_id, at) {
+            Ok(statements) => (
+                Some(json!(statements
+                    .into_iter()
+                    .map(|(sql, params)| json!({"sql": sql, "params": params}))
+                    .collect::<Vec<_>>())),
+                None,
+                tokens,
+            ),
+            Err(error) => (
+                None,
+                Some(json!({"status": error.status, "code": error.code, "message": error.message})),
+                tokens,
+            ),
+        }
     }
 }

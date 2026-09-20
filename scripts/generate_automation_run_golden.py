@@ -120,14 +120,16 @@ async def record(case, action, name: str, **inputs) -> dict:
     compare = inputs.pop("compare", [])
     produced = getattr(case, "produced", None)
     start = len(produced) if produced is not None else 0
-    entry: dict = {"call": name, "input": inputs, "compare": compare,
-                   "now": case.now if case is not None else None}
+    entry: dict = {"call": name, "input": inputs, "compare": compare}
     if case is not None:
         entry["initial"] = await tables(case)
     try:
         entry["result"] = await action(case)
     except AppError as error:
         entry["error"] = {"status": error.status, "code": error.code, "message": error.message}
+    # The clock is read *after* the call, because an action may move it: the reference's own
+    # `_sweep` sets `self.now` before running, and a replay has to be at the instant the pass ran.
+    entry["now"] = case.now if case is not None else None
     if produced is not None:
         entry["tokens"] = produced[start:]
     if case is not None:
@@ -612,7 +614,7 @@ async def build() -> dict:
                 "reviews": await c.db.all(
                     "SELECT id,state,result,last_error FROM official_source_reviews ORDER BY id")}
 
-    cases.append(await record(case, run, "run", limit=2, fetcher=script, compare=["summary"]))
+    cases.append(await record(case, run, "run", limit=2, fetcher=script, compare=["reviews", "summary"]))
     case.connection.close()
 
     return {

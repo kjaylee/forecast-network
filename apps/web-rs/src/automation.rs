@@ -1016,127 +1016,17 @@ mod tests {
 #[cfg(test)]
 mod orchestration_tests {
     use super::*;
-    use crate::db::Sqlite;
+    use crate::golden::{assert_all_cases_known, assert_case, block, entry, load, static_database, Tokens};
     use crate::source_watch::error_kind;
 
-    fn block<F: std::future::Future>(future: F) -> F::Output {
-        futures_lite::future::block_on(future)
-    }
-
-    fn golden() -> Value {
-        let path =
-            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden/automation-run-golden.json");
-        serde_json::from_str(&std::fs::read_to_string(&path).expect("automation run golden")).expect("json")
-    }
-
-    fn entry<'a>(document: &'a Value, name: &str) -> &'a Value {
-        document["cases"]
-            .as_array()
-            .expect("cases")
-            .iter()
-            .find(|case| case["call"] == json!(name))
-            .unwrap_or_else(|| panic!("{name} is not in the vector"))
-    }
-
-    /// Restore the reference's own state.
-    ///
-    /// Foreign keys are off because this restores an already-consistent database rather than
-    /// replaying a sequence of user actions, and the vector's tables are in an order that is
-    /// alphabetical rather than a dependency order.
-    fn restore(db: &Sqlite, initial: &Value) {
-        db.run("PRAGMA foreign_keys=OFF", &[]).expect("foreign keys off");
-        // The schema's own guards are taken down for the restore and put straight back. They are
-        // *transitions* — a policy may not be rewritten, a ledger entry has to follow from the
-        // account it applies to — and the vector holds the state those transitions already
-        // produced. Leaving them up would mean replaying the reference's history rather than its
-        // result; dropping them for good would mean the call under test runs unguarded, which is
-        // the half this layer actually depends on.
-        let guards: Vec<(String, String)> = db
-            .run("SELECT name,sql FROM sqlite_master WHERE type='trigger'", &[])
-            .expect("triggers")
-            .0
-            .iter()
-            .filter_map(|row| Some((db::text(row, "name")?.to_string(), db::text(row, "sql")?.to_string())))
-            .collect();
-        for (name, _) in &guards {
-            db.run(&format!("DROP TRIGGER {name}"), &[]).expect("drop trigger");
-        }
-        for table in initial.as_object().expect("tables").keys() {
-            db.run(&format!("DELETE FROM {table}"), &[])
-                .unwrap_or_else(|error| panic!("{table}: {error}"));
-        }
-        for (table, rows) in initial.as_object().expect("tables") {
-            for row in rows.as_array().expect("rows") {
-                let row = row.as_object().expect("row");
-                let columns: Vec<&str> = row.keys().map(String::as_str).collect();
-                let placeholders = vec!["?"; columns.len()].join(",");
-                let sql = format!("INSERT INTO {table}({}) VALUES({placeholders})", columns.join(","));
-                let params: Vec<Value> = columns.iter().map(|name| row[*name].clone()).collect();
-                db.run(&sql, &params).unwrap_or_else(|error| panic!("{table}: {error}"));
+    /// The refusal, in the shape the vector records one.
+    fn refusal(error: &WatchError) -> Value {
+        match error {
+            WatchError::Refused { status, code, message } => {
+                json!({"status": status, "code": code, "message": message})
             }
+            other => json!({"code": error_kind(other), "message": other.message()}),
         }
-        for (_, sql) in &guards {
-            db.run(sql, &[])
-                .unwrap_or_else(|error| panic!("recreating a trigger: {error}"));
-        }
-    }
-
-    /// Every table, in rowid order, exactly as the generator dumped it.
-    fn dump(db: &Sqlite) -> Value {
-        let names: Vec<String> = db
-            .run(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
-                &[],
-            )
-            .expect("tables")
-            .0
-            .iter()
-            .filter_map(|row| db::text(row, "name").map(str::to_string))
-            .collect();
-        let mut out = serde_json::Map::new();
-        for name in names {
-            let (rows, _) = db
-                .run(&format!("SELECT * FROM {name} ORDER BY rowid"), &[])
-                .expect("rows");
-            out.insert(name, Value::Array(rows.into_iter().map(Value::Object).collect()));
-        }
-        Value::Object(out)
-    }
-
-    /// A reader over the retained bytes.
-    ///
-    /// The leak is deliberate: `ArtifactReader`'s future is `'static`, and this is the only way to
-    /// hand it a database that lives as long. A test database is exactly the thing that *should*
-    /// outlive the test.
-    fn static_database(initial: &Value) -> &'static Sqlite {
-        let db: &'static Sqlite = Box::leak(Box::new(Sqlite::from_migrations()));
-        restore(db, initial);
-        db
-    }
-
-    fn artifact_reader(db: &'static Sqlite) -> ArtifactReader {
-        Box::new(move |digest| {
-            Box::pin(async move { crate::scheduler::read_artifact(db, &digest).await.map_err(|_| ()) })
-        })
-    }
-
-    fn fetcher(script: &Value) -> source_watch::Fetcher {
-        let responses: Vec<(String, Value)> = script.as_object().cloned().unwrap_or_default().into_iter().collect();
-        Box::new(move |url, _headers| {
-            let found = responses.iter().find(|(scripted, _)| *scripted == url).cloned();
-            Box::pin(async move {
-                found
-                    .map(|(_, response)| crate::sources::TextResponse {
-                        status: response["status"].as_u64().unwrap_or(200) as u16,
-                        headers: vec![(
-                            "content-type".to_string(),
-                            response["contentType"].as_str().unwrap_or("text/html").to_string(),
-                        )],
-                        body: response["body"].as_str().unwrap_or("").to_string(),
-                    })
-                    .ok_or(())
-            })
-        })
     }
 
     /// The reference's own test transport, over the responses the vector recorded.
@@ -1181,7 +1071,12 @@ mod orchestration_tests {
         }
     }
 
-    /// A coordinator whose transport refuses: the cases that need one never reach a provider.
+    /// A coordinator whose transport refuses.
+    ///
+    /// Its providers are configured and its transport is not, which is the reference's own
+    /// `no_network` shape: a review that needs no model still requires the *configuration* to be
+    /// there, and a port that read an empty provider list as "nothing to ask" would answer a
+    /// different question.
     fn unreachable_coordinator() -> Coordinator {
         Coordinator {
             providers: vec![
@@ -1202,42 +1097,32 @@ mod orchestration_tests {
         }
     }
 
-    /// The reference's token stream, replayed in order.
-    ///
-    /// A token is opaque, so a replay that invented its own would fail on every row a token names.
-    /// Yielding the recorded sequence instead makes the *count* and the *order* part of what is
-    /// checked: a port that took one token where the reference took two is caught here.
-    struct Tokens {
-        produced: Vec<String>,
-        taken: std::cell::Cell<usize>,
+    fn artifact_reader(db: &'static crate::db::Sqlite) -> ArtifactReader {
+        Box::new(move |digest| {
+            Box::pin(async move { crate::scheduler::read_artifact(db, &digest).await.map_err(|_| ()) })
+        })
     }
 
-    impl Tokens {
-        fn new(produced: Vec<String>) -> Self {
-            Self {
-                produced,
-                taken: std::cell::Cell::new(0),
-            }
-        }
-
-        fn next(&self) -> String {
-            let index = self.taken.get();
-            self.taken.set(index + 1);
-            self.produced.get(index).cloned().unwrap_or_default()
-        }
+    fn fetcher(script: &Value) -> source_watch::Fetcher {
+        let responses: Vec<(String, Value)> = script.as_object().cloned().unwrap_or_default().into_iter().collect();
+        Box::new(move |url, _headers| {
+            let found = responses.iter().find(|(scripted, _)| *scripted == url).cloned();
+            Box::pin(async move {
+                found
+                    .map(|(_, response)| crate::sources::TextResponse {
+                        status: response["status"].as_u64().unwrap_or(200) as u16,
+                        headers: vec![(
+                            "content-type".to_string(),
+                            response["contentType"].as_str().unwrap_or("text/html").to_string(),
+                        )],
+                        body: response["body"].as_str().unwrap_or("").to_string(),
+                    })
+                    .ok_or(())
+            })
+        })
     }
 
-    fn refusal(error: &WatchError) -> Value {
-        match error {
-            WatchError::Refused { status, code, message } => {
-                json!({"status": status, "code": code, "message": message})
-            }
-            other => json!({"code": error_kind(other), "message": other.message()}),
-        }
-    }
-
-    /// The closed set of cases this replay drives. A vector that grows a case it does not know
-    /// about fails here rather than being silently skipped.
+    /// The cases this replay drives.
     const REPLAYED: [&str; 24] = [
         "load",
         "load:missing",
@@ -1265,41 +1150,25 @@ mod orchestration_tests {
         "run",
     ];
 
-    /// Cases the replay does not drive, each for a stated reason rather than by omission.
+    /// The cases it does not drive, each for a stated reason rather than by omission.
     const NOT_REPLAYED: [(&str, &str); 2] = [
         (
             "review:accepted",
-            "needs the reference's scripted provider transport, held by ai-early-golden",
+            "the review's own record is pinned by the run case below and by ai-early-golden",
         ),
         (
             "review:uncertain",
-            "needs the reference's scripted provider transport, held by ai-early-golden",
+            "the review's own record is pinned by the run case below and by ai-early-golden",
         ),
     ];
 
     #[test]
     fn the_vector_has_no_case_this_replay_silently_skips() {
-        let document = golden();
-        for case in document["cases"].as_array().expect("cases") {
-            let name = case["call"].as_str().expect("name");
-            assert!(
-                REPLAYED.contains(&name) || NOT_REPLAYED.iter().any(|(known, _)| *known == name),
-                "{name} is in the vector and the replay neither drives it nor says why not"
-            );
-        }
+        assert_all_cases_known(&load("automation-run-golden.json"), &REPLAYED, &NOT_REPLAYED);
     }
 
-    fn outcome(db: &'static Sqlite, case: &Value) -> (Option<Value>, Option<Value>) {
-        let recorded: Vec<String> = case["tokens"]
-            .as_array()
-            .map(|values| {
-                values
-                    .iter()
-                    .filter_map(|value| value.as_str().map(str::to_string))
-                    .collect()
-            })
-            .unwrap_or_default();
-        let tokens = Tokens::new(recorded);
+    fn outcome(db: &'static crate::db::Sqlite, case: &Value) -> (Option<Value>, Option<Value>, Tokens) {
+        let tokens = Tokens::new(Tokens::recorded(case));
         let reader = artifact_reader(db);
         let input = &case["input"];
         // A case that scripted model output gets it served in the reference's envelopes; one that
@@ -1315,7 +1184,6 @@ mod orchestration_tests {
         // `no_network` collector does.
         let script = input.get("fetcher").cloned().unwrap_or(Value::Null);
         let fetch = Some(fetcher(&script));
-        // The fetcher owns its script, so it has to outlive the automation that borrows it.
         // Both outlive the automation that borrows them, which is why they are bound here rather
         // than constructed at the call.
         let fetch = fetch.as_ref();
@@ -1349,7 +1217,7 @@ mod orchestration_tests {
                 Err(error) => Err(error),
                 Ok(()) => {
                     // The second review only becomes dismissible once the database says it is.
-                    run_sql(
+                    crate::golden::run_sql(
                         db,
                         "UPDATE official_source_reviews SET state='reviewed',result=? WHERE id=?",
                         &[input["secondStored"].clone(), input["secondReviewId"].clone()],
@@ -1358,7 +1226,7 @@ mod orchestration_tests {
                 }
             },
             "dismiss:polling" => {
-                run_sql(
+                crate::golden::run_sql(
                     db,
                     "UPDATE official_watch_sources SET lease_until=?",
                     &[json!(now_ms + 10_000)],
@@ -1367,7 +1235,7 @@ mod orchestration_tests {
                     block(automation.dismiss(forecast_id, &input["result"])).is_err(),
                     "a poll in flight is not evidence, and the release must be refused"
                 );
-                run_sql(db, "UPDATE official_watch_sources SET lease_until=0", &[]);
+                crate::golden::run_sql(db, "UPDATE official_watch_sources SET lease_until=0", &[]);
                 block(automation.dismiss(forecast_id, &input["result"])).map(|()| None)
             }
             "check_creation:unknown" | "check_creation:known" => {
@@ -1384,124 +1252,32 @@ mod orchestration_tests {
                 // carries no announcement of its own.
                 let limit = input["limit"].as_i64().unwrap_or(2);
                 block(automation.run(limit)).and_then(|first| {
-                    block(automation.run(limit)).map(|second| Some(json!({"summary": [first, second]})))
+                    block(automation.run(limit)).map(|second| {
+                        let reviews = crate::golden::rows(
+                            db,
+                            "SELECT id,state,result,last_error FROM official_source_reviews ORDER BY id",
+                        );
+                        Some(json!({"summary": [first, second], "reviews": reviews}))
+                    })
                 })
             }
             other => panic!("{other} has no replay"),
         };
-        let observed = match result {
-            Ok(value) => (value, None),
-            Err(error) => (None, Some(refusal(&error))),
-        };
-        // The whole recorded stream has to be used. Both counts are reported because "took too
-        // few" and "took too many" are different defects: the first means a step was skipped, the
-        // second that one was added.
-        assert_eq!(
-            tokens.taken.get(),
-            tokens.produced.len(),
-            "{name}: the reference took {} tokens and the replay took {} (result {observed:?})",
-            tokens.produced.len(),
-            tokens.taken.get()
-        );
-        (observed.0, observed.1)
-    }
-
-    fn run_sql(db: &Sqlite, sql: &str, params: &[Value]) {
-        db.run(sql, params).expect("statement");
-    }
-
-    /// Which tables differ, so a failure names the table instead of printing two databases.
-    fn differing(expected: &Value, actual: &Value) -> Vec<String> {
-        let mut tables: Vec<&String> = expected
-            .as_object()
-            .expect("tables")
-            .keys()
-            .chain(actual.as_object().expect("tables").keys())
-            .collect();
-        tables.sort();
-        tables.dedup();
-        let mut out = Vec::new();
-        for table in tables {
-            let left = expected.get(table).cloned().unwrap_or(Value::Null);
-            let right = actual.get(table).cloned().unwrap_or(Value::Null);
-            if left != right {
-                out.push(format!(
-                    "{table}: reference {}, replay {}",
-                    rows_of(&left),
-                    rows_of(&right)
-                ));
-                let (a, b) = (
-                    left.as_array().cloned().unwrap_or_default(),
-                    right.as_array().cloned().unwrap_or_default(),
-                );
-                for (index, row) in a.iter().enumerate() {
-                    let other = b.get(index).cloned().unwrap_or(Value::Null);
-                    if *row != other {
-                        out.push(format!("    row {index}: reference {row}"));
-                        out.push(format!("    row {index}: replay    {other}"));
-                    }
-                }
-            }
+        match result {
+            Ok(value) => (value, None, tokens),
+            Err(error) => (None, Some(refusal(&error)), tokens),
         }
-        out
-    }
-
-    fn rows_of(value: &Value) -> usize {
-        value.as_array().map(Vec::len).unwrap_or(0)
     }
 
     #[test]
     fn the_reference_orchestration_half_is_reproduced_case_for_case() {
-        let document = golden();
+        let document = load("automation-run-golden.json");
         for name in REPLAYED {
             let case = entry(&document, name);
             let db = static_database(&case["initial"]);
-            let (result, error) = outcome(db, case);
-
-            // The refusal, first: a case that should be refused and is not is a different bug from
-            // one that refuses for a different reason, and the code says which.
-            match case.get("error") {
-                Some(expected) => assert_eq!(
-                    error.as_ref().expect("a refusal was expected").get("code"),
-                    expected.get("code"),
-                    "{name}: refused for a different reason"
-                ),
-                None => assert!(
-                    error.is_none(),
-                    "{name}: refused when the reference succeeded: {error:?}"
-                ),
-            }
-            // A refusal has no result to compare: the reference raised before returning one.
-            if case.get("error").is_some() {
-                assert_database(name, &case["rows"], &dump(db));
-                continue;
-            }
-            for key in case["compare"].as_array().expect("compare") {
-                let key = key.as_str().expect("key");
-                assert_eq!(
-                    result.as_ref().and_then(|value| value.get(key)),
-                    case["result"].get(key),
-                    "{name}: {key} differs"
-                );
-            }
-            if case["compare"]
-                .as_array()
-                .expect("compare")
-                .iter()
-                .any(|key| key == "result")
-            {
-                assert_eq!(result, Some(case["result"].clone()), "{name}: the whole result differs");
-            }
-            assert_database(name, &case["rows"], &dump(db));
+            let (result, error, tokens) = outcome(db, case);
+            assert_case(name, case, &result, &error, db);
+            tokens.assert_drained(name, "");
         }
-    }
-
-    fn assert_database(name: &str, expected: &Value, actual: &Value) {
-        let tables = differing(expected, actual);
-        assert!(
-            tables.is_empty(),
-            "{name}: a different database\n  {}",
-            tables.join("\n  ")
-        );
     }
 }

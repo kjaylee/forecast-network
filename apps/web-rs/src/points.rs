@@ -47,6 +47,49 @@ impl From<worker::Error> for PointsError {
     }
 }
 
+/// `MAX_BALANCE`. A points figure beyond it cannot survive a round trip through a double, so the
+/// reference refuses it rather than storing a number that will not read back.
+pub const MAX_BALANCE: i64 = 9_007_199_254_740_991;
+
+/// `settlement_sql`: set-based exact-once settlement inside the caller's existing atomic batch.
+///
+/// Each newly inserted ledger row atomically credits that account and moves its position from
+/// committed to settled, and the row's *own* identifier — derived from the forecast and the user —
+/// is what makes it exactly once: a replay inserts under a name that already exists, so it inserts
+/// nothing. Nothing is aggregated from previous settlement rows and no applied flag is mutated.
+pub fn settlement_sql(forecast_id: &str, now: i64) -> Result<Vec<(String, Vec<Value>)>, PointsError> {
+    identifier(forecast_id)?;
+    if !(0..=MAX_BALANCE).contains(&now) {
+        return Err(PointsError {
+            status: 400,
+            code: "invalid_points_request",
+            message: "Invalid points settlement timestamp.",
+        });
+    }
+    Ok(vec![(
+        concat!(
+            "INSERT INTO point_ledger(id,user_id,kind,forecast_id,available_delta,committed_delta,",
+            "available_after,committed_after,stake,returned,outcome,resolved_outcome,forecast_revision,policy_version,created_at) ",
+            "SELECT 'settlement:'||length(p.forecast_id)||':'||p.forecast_id||':'||p.user_id,p.user_id,'settlement',p.forecast_id,",
+            "CASE WHEN f.finalized_outcome='INVALID' THEN p.amount*policy.invalid_return_multiplier ",
+            "WHEN f.finalized_outcome=p.outcome THEN p.amount*policy.win_return_multiplier ELSE 0 END,-p.amount,",
+            "a.available+CASE WHEN f.finalized_outcome='INVALID' THEN p.amount*policy.invalid_return_multiplier ",
+            "WHEN f.finalized_outcome=p.outcome THEN p.amount*policy.win_return_multiplier ELSE 0 END,",
+            "a.committed-p.amount,p.amount,CASE WHEN f.finalized_outcome='INVALID' THEN p.amount*policy.invalid_return_multiplier ",
+            "WHEN f.finalized_outcome=p.outcome THEN p.amount*policy.win_return_multiplier ELSE 0 END,",
+            "p.outcome,f.finalized_outcome,p.forecast_revision,p.policy_version,? ",
+            "FROM point_positions p JOIN forecasts f ON f.id=p.forecast_id JOIN point_accounts a ON a.user_id=p.user_id ",
+            "JOIN point_policies policy ON policy.version=p.policy_version ",
+            "WHERE p.forecast_id=? AND p.status='committed' AND f.state IN ('FINALIZED','ARCHIVED') ",
+            "AND f.finalized_outcome IN ('YES','NO','INVALID') ",
+            "AND EXISTS(SELECT 1 FROM events e WHERE e.forecast_id=f.id AND json_extract(e.event,'$.command_name')='finalize' AND e.created_at<=?) ",
+            "AND NOT EXISTS(SELECT 1 FROM point_ledger l WHERE l.id='settlement:'||length(p.forecast_id)||':'||p.forecast_id||':'||p.user_id)"
+        )
+        .to_string(),
+        vec![json!(now), json!(forecast_id), json!(now)],
+    )])
+}
+
 /// The identifier list is serialized into one JSON parameter, so an unserializable list is the
 /// same storage-level failure.
 impl From<serde_json::Error> for PointsError {

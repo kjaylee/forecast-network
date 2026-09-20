@@ -19,6 +19,8 @@ pub mod dispute_intake;
 pub mod dispute_wire;
 mod eligibility;
 mod forecasts;
+#[cfg(test)]
+mod golden;
 pub mod html;
 pub mod html_entities;
 pub mod html_parse;

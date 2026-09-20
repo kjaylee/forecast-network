@@ -21977,6 +21977,7 @@
     {
       "call": "run",
       "compare": [
+        "reviews",
         "summary"
       ],
       "initial": {

@@ -269,6 +269,14 @@ def accounted_for(statement: str, corpus_canon: list[str]) -> bool:
     return bool(pieces) and all(any(piece in other for other in corpus_canon) for piece in pieces)
 
 
+# Statements that belong to the *harness* rather than to the Worker. `golden.rs` restores and
+# dumps a whole database — it reads `sqlite_master`, drops and recreates the schema's triggers, and
+# selects every table by name — so its queries are about the schema, and asking whether Python runs
+# them has no answer. The set is named rather than pattern-matched so that adding to it is a
+# decision rather than a side effect.
+NOT_THE_WORKER = {"golden.rs"}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Fail when a statement has drifted from Python")
@@ -280,6 +288,8 @@ def main() -> int:
     canon_only = [entry[2] for entry in entries]
     checked = mismatched = known = 0
     for path in sorted(RUST_SOURCES.glob("*.rs")):
+        if path.name in NOT_THE_WORKER:
+            continue
         for line, statement in rust_statements(path.read_text(encoding="utf-8")):
             checked += 1
             if accounted_for(statement, canon_only):
