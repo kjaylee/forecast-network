@@ -14,9 +14,9 @@ Three things here are not ordinary serialisation and are the reason this vector 
     points and noncanonical encodings count as on-curve — treating them otherwise finds a
     different address than Solana does.
   * **The reserved bytes and the genesis binding.** Every account carries `GENESIS` and a
-    seven-byte reserved field that is packed as `bytes(7)` — which the unpacker compares to
-    the packed value, not to zero, because `struct` pads with NUL and the comparison is on
-    the unpacked form. A port that writes eight zero bytes produces a rejected account.
+    reserved run of seven NULs — the reference's `bytes(7)`, which is a count of zero bytes
+    rather than a fill value. Reading it as seven 0x07 bytes produces an account that looks
+    plausible and that no validator will accept.
   * **The seal chain.** A finalize is only accepted if the candidate advance equals the
     sealed payload hash, revision, event and snapshot, so the seal is a commitment to one
     specific candidate rather than to the act of sealing.
