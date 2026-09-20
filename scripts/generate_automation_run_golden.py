@@ -617,6 +617,28 @@ async def build() -> dict:
     cases.append(await record(case, run, "run", limit=2, fetcher=script, compare=["reviews", "summary"]))
     case.connection.close()
 
+    # --- run_automation: the operator's one call, and what it does when there is nothing to do.
+    case = await integration()
+    card = await apple_forecast(case)
+    cases.append(await record(case, lambda c: c.app.run_automation(limit=2), "run_automation:idle",
+                              forecastId=card["id"], limit=2, compare=["result"]))
+    case.connection.close()
+
+    # And with a market whose question has finalized: the last step is the one that would stay
+    # broken quietly, because a settled market and an unsettled one look the same until a holder
+    # tries to withdraw.
+    case = await integration()
+    await case.market_receipt()
+    forecast = case.card
+    case.now = forecast["closeAt"] + 1000
+    await case.app.run_due_jobs()
+    record_ = await case.app._forecast(forecast["id"])
+    case.now = record_.challenge_until_ms + 1
+    await case.app.run_due_jobs()
+    cases.append(await record(case, lambda c: c.app.run_automation(limit=2), "run_automation:settle",
+                              forecastId=forecast["id"], limit=2, compare=["result"]))
+    case.connection.close()
+
     return {
         "description": "The automation orchestration half: the hold that pauses participation, the "
                        "upgrade that reads retained bytes and refuses without a pause, the dismissal "

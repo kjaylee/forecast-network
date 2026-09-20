@@ -714,6 +714,71 @@ impl<'a> Automation<'a> {
     }
 }
 
+/// `Application.run_automation`: one call for the operator's cron, doing everything the app does
+/// without a person.
+///
+/// Four steps, and the order is the reference's: observe the official sources, resume any
+/// compensation still owed, advance the lifecycle, and then settle the markets whose questions have
+/// finalized. Nothing here decides anything — every step is a call to something that does.
+pub struct Cron<'a> {
+    pub automation: &'a Automation<'a>,
+    pub scheduler: &'a crate::scheduler::Scheduler<'a>,
+    /// The lease source for the scheduler's own claims. Distinct from the automation's, which mints
+    /// its own per hold and per upgrade.
+    pub tokens: &'a mut dyn FnMut() -> String,
+    /// `live_markets_enabled and self.automation.enabled`: settling is not something a watcher that
+    /// is switched off may do.
+    pub markets_live: bool,
+}
+
+impl Cron<'_> {
+    pub async fn run(&mut self, limit: i64) -> Result<Value, String> {
+        let sources = self.automation.run(limit).await.map_err(|error| error.message())?;
+        let eligibility = self
+            .automation
+            .retry_eligibility(3)
+            .await
+            .map_err(|error| error.message())?;
+        let lifecycle = self.scheduler.run(3, self.tokens).await?;
+        // A market whose question has finalized but whose settlement has not run is exactly the
+        // kind of thing that stays broken quietly, so the pass looks for them rather than waiting
+        // for someone to notice.
+        let due = self
+            .automation
+            .db
+            .all(
+                "SELECT f.id FROM forecasts f JOIN point_markets m ON m.forecast_id=f.id \
+                 WHERE f.state IN ('FINALIZED','ARCHIVED') AND m.status!='settled' \
+                 ORDER BY f.updated_at DESC LIMIT 10",
+                &[],
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+        let markets = point_markets::PointMarkets {
+            db: self.automation.db,
+            clock: &|| self.automation.now_ms,
+            token: self.automation.token,
+            live_enabled: self.markets_live,
+        };
+        for row in due {
+            let forecast_id = db::text(&row, "id").unwrap_or("");
+            markets
+                .settle(forecast_id, point_markets::MAX_BATCH)
+                .await
+                .map_err(|error| error.message.to_string())?;
+        }
+        Ok(json!({
+            "sources": sources,
+            "eligibility": eligibility,
+            "lifecycle": {
+                "processed": lifecycle.processed,
+                "failed": lifecycle.failed,
+                "effects": lifecycle.effects,
+            },
+        }))
+    }
+}
+
 /// The four questions the watcher asks, answered by the object that holds the collaborators.
 ///
 /// Each arm boxes a call to the inherent method of the same name; the reference's `ForecastAutomation`
@@ -1123,7 +1188,7 @@ mod orchestration_tests {
     }
 
     /// The cases this replay drives.
-    const REPLAYED: [&str; 24] = [
+    const REPLAYED: [&str; 26] = [
         "load",
         "load:missing",
         "bootstrap",
@@ -1148,6 +1213,8 @@ mod orchestration_tests {
         "status",
         "run:disabled",
         "run",
+        "run_automation:idle",
+        "run_automation:settle",
     ];
 
     /// The cases it does not drive, each for a stated reason rather than by omission.
@@ -1178,7 +1245,14 @@ mod orchestration_tests {
             None => unreachable_coordinator(),
         };
         let now_ms = case["now"].as_i64().unwrap_or(0);
-        let enabled = !matches!(case["call"].as_str(), Some("bootstrap:disabled") | Some("run:disabled"));
+        let name = case["call"].as_str().expect("name");
+        // The watcher's switch is a property of the object under test, not of the call. A case that
+        // drives `app.automation` gets the application's own flag — off in every fixture here — and
+        // a case that builds its own watcher gets what the reference built it with.
+        let enabled = !matches!(
+            name,
+            "bootstrap:disabled" | "run:disabled" | "run_automation:idle" | "run_automation:settle"
+        );
         // The collector always exists; whether it is *enabled* is the flag's business. A case
         // without a script gets one that refuses every fetch, which is what the reference's own
         // `no_network` collector does.
@@ -1189,7 +1263,9 @@ mod orchestration_tests {
         let fetch = fetch.as_ref();
         let token = || tokens.next();
         let automation = Automation::new(db, fetch, Some(&coordinator), &reader, now_ms, &token, enabled);
-        let name = case["call"].as_str().expect("name");
+        // The cron's own lease source, separate from the automation's: both read the same recorded
+        // stream, which is what makes the *order* of consumption part of what is checked.
+        let mut leases = || tokens.next();
         let forecast_id = input["forecastId"].as_str().unwrap_or("");
         let result = match name {
             "load" | "load:missing" => block(automation.load(forecast_id)).map(Some),
@@ -1246,6 +1322,27 @@ mod orchestration_tests {
             "run:disabled" => {
                 let limit = input["limit"].as_i64().unwrap_or(2);
                 block(automation.run(limit)).map(Some)
+            }
+            "run_automation:idle" | "run_automation:settle" => {
+                let evidence: crate::ai::resolution::EvidenceFetcher = Box::new(|_, _| Box::pin(async { Err(()) }));
+                let scheduler = crate::scheduler::Scheduler {
+                    db,
+                    coordinator: &coordinator,
+                    fetch: &evidence,
+                    now_ms,
+                    daily_limit: 100,
+                    adapter_configured: false,
+                };
+                let limit = input["limit"].as_i64().unwrap_or(2);
+                let mut cron = Cron {
+                    automation: &automation,
+                    scheduler: &scheduler,
+                    tokens: &mut leases,
+                    // `live_markets_enabled and self.automation.enabled`, and this fixture has the
+                    // switch off.
+                    markets_live: false,
+                };
+                block(cron.run(limit)).map(Some).map_err(WatchError::Database)
             }
             "run" => {
                 // Twice, because the article is *discovered* by the first pass: the feed index
