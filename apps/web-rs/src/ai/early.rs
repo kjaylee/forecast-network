@@ -54,7 +54,10 @@ pub struct ObservationReview {
     pub trigger: Option<forecast_domain::lifecycle::EarlyResolutionTrigger>,
     pub artifacts: Vec<Artifact>,
     pub reason: String,
-    pub dismissible: bool,
+    /// The reference includes `dismissible` in the record for *exactly* four branches, and
+    /// `None` is how this port says "this branch did not mention it". A `bool` would conflate
+    /// "false" with "absent", and the record is stored as text.
+    pub dismissible: Option<bool>,
     pub dismissal_proof: Option<Value>,
 }
 
@@ -434,16 +437,16 @@ pub async fn review_source_observation(
         }
     }
     if !(specification.open_at_ms <= event_at && event_at <= observed) {
-        return Ok(dismissed("event_outside_open_window", true));
+        return Ok(dismissed("event_outside_open_window", Some(true)));
     }
     if precision == "date" {
         if let Some(publication) = publication.as_deref() {
             let open_date = super::compiler_time::date_of(specification.open_at_ms);
             if publication < open_date.as_str() {
-                return Ok(dismissed("publication_predates_open", true));
+                return Ok(dismissed("publication_predates_open", Some(true)));
             }
             if publication > super::compiler_time::date_of(observed).as_str() {
-                return Ok(dismissed("publication_time_uncertain", false));
+                return Ok(dismissed("publication_time_uncertain", None));
             }
         }
     }
@@ -494,7 +497,7 @@ pub async fn review_source_observation(
             trigger: None,
             artifacts,
             reason: "source_not_verified".to_string(),
-            dismissible: false,
+            dismissible: None,
             dismissal_proof: None,
         });
     }
@@ -535,7 +538,7 @@ pub async fn review_source_observation(
         return Ok(ObservationReview {
             accepted: false,
             trigger: None,
-            dismissible,
+            dismissible: Some(dismissible),
             reason: if dismissible {
                 "unrelated_official_article".to_string()
             } else {
@@ -623,7 +626,7 @@ pub async fn review_source_observation(
             trigger: None,
             artifacts,
             reason: "conditions_not_qualified".to_string(),
-            dismissible: false,
+            dismissible: None,
             dismissal_proof: None,
         });
     }
@@ -668,7 +671,7 @@ pub async fn review_source_observation(
             trigger: None,
             artifacts,
             reason: "independent_disagreement".to_string(),
-            dismissible: false,
+            dismissible: None,
             dismissal_proof: None,
         });
     }
@@ -712,12 +715,12 @@ pub async fn review_source_observation(
         trigger: Some(trigger),
         artifacts,
         reason: "qualified".to_string(),
-        dismissible: false,
+        dismissible: None,
         dismissal_proof: None,
     })
 }
 
-fn dismissed(reason: &str, dismissible: bool) -> ObservationReview {
+fn dismissed(reason: &str, dismissible: Option<bool>) -> ObservationReview {
     ObservationReview {
         accepted: false,
         trigger: None,
@@ -1221,7 +1224,7 @@ mod tests {
             );
             assert_eq!(result.reason, expect["reason"].as_str().unwrap(), "{name}: reason");
             assert_eq!(
-                result.dismissible,
+                result.dismissible.unwrap_or(false),
                 expect["dismissible"].as_bool().unwrap(),
                 "{name}: dismissible"
             );

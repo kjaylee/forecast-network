@@ -128,7 +128,7 @@ pub async fn status(db: &dyn Database, forecast_id: &str) -> Result<Value, HoldE
 /// Take or release a hold. Only the authenticated administrative route may call this.
 pub async fn change(
     db: &dyn Database,
-    token: &str,
+    token: &dyn Fn() -> String,
     now_ms: i64,
     forecast_id: &str,
     body: &Map<String, Value>,
@@ -238,8 +238,11 @@ pub async fn change(
         ];
     }
 
-    let event_id = format!("{token}-{}", revision + 1);
-    let guard = format!("{token}-guard");
+    // Two fresh tokens, as the reference takes them: the event's identifier and the guard's are
+    // both opaque, and neither is derived from the other. A hold id that spelled out the revision
+    // would be a second, weaker identity for the same row.
+    let event_id = token();
+    let guard = token();
     let result = serde_json::json!({
         "id": event_id, "forecastId": forecast_id, "revision": revision + 1,
         "action": action, "holdId": if taking { Value::String(event_id.clone()) } else { serde_json::json!(hold_id) },
@@ -348,6 +351,16 @@ mod tests {
 
     const SPEC: &str = "1111111111111111111111111111111111111111111111111111111111111111";
 
+    /// A token source, as the application supplies: a fresh opaque value per call.
+    fn token() -> String {
+        use std::cell::Cell;
+        thread_local! { static NEXT: Cell<u64> = const { Cell::new(0) }; }
+        NEXT.with(|next| {
+            next.set(next.get() + 1);
+            format!("{:064x}", next.get())
+        })
+    }
+
     fn block<F: std::future::Future>(future: F) -> F::Output {
         futures_lite::future::block_on(future)
     }
@@ -388,7 +401,15 @@ mod tests {
     fn a_hold_is_audited_and_released_by_its_owner() {
         let db = Sqlite::from_migrations();
         forecast(&db, "f", "OPEN");
-        let held = block(change(&db, "t", 100, "f", &body("hold", 0, None, "key-hold-1"), None)).unwrap();
+        let held = block(change(
+            &db,
+            &token,
+            100,
+            "f",
+            &body("hold", 0, None, "key-hold-1"),
+            None,
+        ))
+        .unwrap();
         assert_eq!(held["revision"], 1);
         assert_eq!(held["action"], "hold");
         assert_eq!(held["actor"], "authenticated_admin");
@@ -402,7 +423,7 @@ mod tests {
         let hold_id = held["holdId"].as_str().unwrap().to_string();
         let released = block(change(
             &db,
-            "t",
+            &token,
             200,
             "f",
             &body("release", 1, Some(&hold_id), "key-release-1"),
@@ -418,8 +439,24 @@ mod tests {
     fn the_same_request_identifier_returns_the_original_and_a_different_one_conflicts() {
         let db = Sqlite::from_migrations();
         forecast(&db, "f", "OPEN");
-        let first = block(change(&db, "t", 100, "f", &body("hold", 0, None, "key-hold-1"), None)).unwrap();
-        let again = block(change(&db, "t", 999, "f", &body("hold", 0, None, "key-hold-1"), None)).unwrap();
+        let first = block(change(
+            &db,
+            &token,
+            100,
+            "f",
+            &body("hold", 0, None, "key-hold-1"),
+            None,
+        ))
+        .unwrap();
+        let again = block(change(
+            &db,
+            &token,
+            999,
+            "f",
+            &body("hold", 0, None, "key-hold-1"),
+            None,
+        ))
+        .unwrap();
         assert_eq!(again, first, "a replay returns what happened, not a second hold");
 
         // The same identifier with different content is a conflict. It has to be a change the
@@ -430,14 +467,16 @@ mod tests {
             serde_json::json!("https://www.apple.com/newsroom/2026/09/other/"),
         );
         assert_eq!(
-            block(change(&db, "t", 100, "f", &conflicting, None)).unwrap_err().code,
+            block(change(&db, &token, 100, "f", &conflicting, None))
+                .unwrap_err()
+                .code,
             "idempotency_conflict"
         );
         // A reason the reference does not know never reaches the idempotency check at all.
         let mut unknown_reason = body("hold", 0, None, "key-hold-1");
         unknown_reason.insert("reason".into(), serde_json::json!("something_else"));
         assert_eq!(
-            block(change(&db, "t", 100, "f", &unknown_reason, None))
+            block(change(&db, &token, 100, "f", &unknown_reason, None))
                 .unwrap_err()
                 .code,
             "invalid_input"
@@ -448,19 +487,34 @@ mod tests {
     fn a_stale_revision_or_the_wrong_hold_is_refused() {
         let db = Sqlite::from_migrations();
         forecast(&db, "f", "OPEN");
-        block(change(&db, "t", 100, "f", &body("hold", 0, None, "key-hold-1"), None)).unwrap();
+        block(change(
+            &db,
+            &token,
+            100,
+            "f",
+            &body("hold", 0, None, "key-hold-1"),
+            None,
+        ))
+        .unwrap();
         // The revision has already moved.
         assert_eq!(
-            block(change(&db, "t", 100, "f", &body("hold", 0, None, "key-hold-2"), None))
-                .unwrap_err()
-                .code,
+            block(change(
+                &db,
+                &token,
+                100,
+                "f",
+                &body("hold", 0, None, "key-hold-2"),
+                None
+            ))
+            .unwrap_err()
+            .code,
             "participation_hold_changed"
         );
         // The revision is right but the caller names a hold that is not the one in force.
         assert_eq!(
             block(change(
                 &db,
-                "t",
+                &token,
                 100,
                 "f",
                 &body("release", 1, Some("other"), "key-release-2"),
@@ -477,16 +531,23 @@ mod tests {
         let db = Sqlite::from_migrations();
         forecast(&db, "f", "RESOLVING");
         assert_eq!(
-            block(change(&db, "t", 100, "f", &body("hold", 0, None, "key-hold-1"), None))
-                .unwrap_err()
-                .code,
+            block(change(
+                &db,
+                &token,
+                100,
+                "f",
+                &body("hold", 0, None, "key-hold-1"),
+                None
+            ))
+            .unwrap_err()
+            .code,
             "participation_hold_changed",
             "only an open forecast can be held"
         );
         let mut extra = body("hold", 0, None, "key-hold-2");
         extra.insert("extra".into(), serde_json::json!(1));
         assert_eq!(
-            block(change(&db, "t", 100, "f", &extra, None)).unwrap_err().code,
+            block(change(&db, &token, 100, "f", &extra, None)).unwrap_err().code,
             "invalid_input"
         );
     }
@@ -508,7 +569,7 @@ mod tests {
             let mut candidate = body("hold", 0, None, &format!("key-evidence-{index}"));
             candidate.insert("evidenceUrl".into(), serde_json::json!(url));
             assert_eq!(
-                block(change(&db, "t", 100, "f", &candidate, None)).unwrap_err().code,
+                block(change(&db, &token, 100, "f", &candidate, None)).unwrap_err().code,
                 "invalid_input",
                 "{url}"
             );
@@ -522,7 +583,7 @@ mod tests {
         assert_eq!(
             block(change(
                 &db,
-                "t",
+                &token,
                 100,
                 "absent",
                 &body("hold", 0, None, "key-hold-1"),

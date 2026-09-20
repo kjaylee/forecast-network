@@ -420,7 +420,7 @@ pub async fn decide(
     db: &dyn Database,
     trigger: &EarlyResolutionTrigger,
     now_ms: i64,
-    guard: &str,
+    token: &dyn Fn() -> String,
 ) -> Result<(), EligibilityError> {
     validate(db, trigger, now_ms).await?;
     let trigger_hash = trigger
@@ -439,6 +439,10 @@ pub async fn decide(
         }
         return Ok(());
     }
+    // Minted here rather than by the caller, and *after* the early return above: a decision that
+    // already exists costs no token at all, and the reference's own order is what makes that
+    // visible.
+    let guard = token();
     let statements = vec![
         (
             "INSERT INTO mutation_guards(token,valid) SELECT ?, ( CASE WHEN NOT EXISTS(SELECT 1 FROM forecasts \
@@ -447,7 +451,7 @@ pub async fn decide(
              AND NOT EXISTS(SELECT 1 FROM forecast_eligibility_decisions WHERE forecast_id=? AND id!=?) THEN 1 ELSE 0 END )"
                 .to_string(),
             vec![
-                json!(guard),
+                json!(&guard),
                 json!(trigger.forecast_id),
                 json!(trigger.forecast_id),
                 json!(trigger.forecast_id),
@@ -619,9 +623,9 @@ pub async fn apply(
     db: &dyn Database,
     trigger: &EarlyResolutionTrigger,
     now_ms: i64,
-    guard: &str,
+    token: &dyn Fn() -> String,
 ) -> Result<Value, EligibilityError> {
-    if let Err(error) = decide(db, trigger, now_ms, guard).await {
+    if let Err(error) = decide(db, trigger, now_ms, token).await {
         if error.code != "forecast_not_found" {
             let finalized = db
                 .first(

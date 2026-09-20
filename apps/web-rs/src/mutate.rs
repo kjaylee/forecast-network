@@ -164,6 +164,7 @@ pub async fn mutate(
     db: &dyn Database,
     mutation: Mutation<'_>,
     clock_now_ms: i64,
+    token: &dyn Fn() -> String,
 ) -> std::result::Result<Snapshot, RouteError> {
     let forecast = mutation.snapshot.base();
     let v2 = matches!(
@@ -206,7 +207,10 @@ pub async fn mutate(
             "The forecast record exceeds the safe storage limit.",
         ));
     }
-    let guard = random_token();
+    // The application's token, not one of this module's own: the reference takes it from
+    // `self.random_token()`, and a caller that supplies the source can see every token a command
+    // consumes, in the order it consumed them.
+    let guard = token();
     let mut guard_sql = "SELECT ?,CASE WHEN EXISTS(SELECT 1 FROM forecasts WHERE id=? AND revision=?".to_string();
     let mut guard_params = vec![json!(guard), json!(forecast.forecast_id), json!(forecast.revision)];
     if let Some(token) = &mutation.job_token {

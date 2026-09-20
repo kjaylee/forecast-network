@@ -116,6 +116,9 @@ pub struct Job<'a> {
     pub now_ms: i64,
     pub ai_token: &'a str,
     pub daily_limit: i64,
+    /// `self.random_token`. A command's guard token comes from the application, as the reference
+    /// takes it, rather than from this module's own source.
+    pub token: &'a dyn Fn() -> String,
 }
 
 /// One lease's worth of transitions, at most six, stopping when the state stops changing.
@@ -129,6 +132,7 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), String> {
         now_ms,
         ai_token,
         daily_limit,
+        token,
     } = job;
     for _ in 0..MAX_TRANSITIONS_PER_LEASE {
         let snapshot = load(db, forecast_id).await?;
@@ -231,6 +235,7 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), String> {
                 job_token: Some(job_token.to_string()),
             },
             now_ms,
+            token,
         )
         .await
         .map_err(|error| match error {
@@ -301,6 +306,10 @@ pub async fn run_due_jobs(
             now_ms,
             ai_token: &ai_token,
             daily_limit,
+            // The lease source is an `FnMut` and the guard source has to be an `Fn`, and the guard
+            // is inserted and deleted inside one batch — it never reaches a row. So this module
+            // keeps its own source here rather than unravelling the lease's.
+            token: &crate::mutate::random_token,
         })
         .await;
         match outcome {
@@ -614,6 +623,7 @@ mod tests {
             now_ms: close_at + 1,
             ai_token: "ai1",
             daily_limit: 100,
+            token: &crate::mutate::random_token,
         }));
         // The lease carries several transitions and reports success only if all of them succeed,
         // so this ends at the first thing needing a provider. What matters is that the lock

@@ -9,6 +9,7 @@ use crate::{api_response, VERSION};
 
 pub const CHALLENGE_HOURS: i64 = 48;
 
+#[derive(Debug)]
 pub enum RouteError {
     Invalid,
     Input,

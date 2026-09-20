@@ -47,6 +47,16 @@ pub enum WatchError {
     Missing(&'static str),
     /// The database refused the statement, carrying its own text for the operator.
     Database(String),
+    /// The reference's `AppError`. The application decided this, and the code is the public one.
+    Refused {
+        status: u16,
+        code: String,
+        message: String,
+    },
+    /// `ai.AIRejected`, and `ai.AIUnavailable`. Named after the reference's classes because the
+    /// class name is what a failed review records as its `last_error`.
+    AiRejected(String),
+    AiUnavailable(String),
 }
 
 impl From<worker::Error> for WatchError {
@@ -65,6 +75,8 @@ impl WatchError {
             WatchError::BudgetExhausted => "Daily review budget is exhausted".to_string(),
             WatchError::Missing(what) => format!("{what} is missing"),
             WatchError::Database(detail) => detail.clone(),
+            WatchError::Refused { message, .. } => message.clone(),
+            WatchError::AiRejected(message) | WatchError::AiUnavailable(message) => message.clone(),
         }
     }
 }
@@ -78,6 +90,10 @@ pub fn error_kind(error: &WatchError) -> &'static str {
         WatchError::NotModified => "NotModified",
         WatchError::BudgetExhausted => "BudgetExhausted",
         WatchError::Database(_) => "Error",
+        // The names of the reference's own classes, because the class name is what it stores.
+        WatchError::Refused { .. } => "AppError",
+        WatchError::AiRejected(_) => "AIRejected",
+        WatchError::AiUnavailable(_) => "AIUnavailable",
     }
 }
 
@@ -118,22 +134,49 @@ fn sort_keys(value: &Value) -> Value {
     }
 }
 
-/// The statements the watch retains evidence with, refusing anything that is not
-/// self-consistent before it becomes immutable.
+/// `Application._artifact_sql`: the statements evidence is retained with, refusing anything that
+/// is not self-consistent before it becomes immutable.
+///
+/// The two hashes an artifact may be named by are **not** the same function. One is the plain
+/// digest of the bytes it was stored as; the other is the *commitment* hash, which is taken over
+/// the canonical encoding with the domain's own prefix. An artifact produced by the AI layer is
+/// named by the second, so a port that compared against a plain digest of the canonical text —
+/// which is what this did — refused every AI artifact it was ever handed, and reported it as a
+/// `ValueError` rather than as the integrity failure the caller needs to see.
 pub fn artifact_sql(
     artifacts: &[(String, String, String, String)],
     now_ms: i64,
 ) -> Result<Vec<(String, Vec<Value>)>, WatchError> {
+    let over = |status: u16, code: &str, message: &str| WatchError::Refused {
+        status,
+        code: code.to_string(),
+        message: message.to_string(),
+    };
     let mut statements = Vec::new();
+    let mut total = 0usize;
     for (content_hash, kind, body, media_type) in artifacts {
+        total += body.len();
+        if body.len() > MAX_ARTIFACT_BYTES || total > 4 * MAX_ARTIFACT_BYTES {
+            return Err(over(
+                413,
+                "artifact_too_large",
+                "The evidence exceeds the storage limit.",
+            ));
+        }
         let mut hashes = vec![hash_hex(body)];
         if media_type == "application/json" {
-            if let Ok(parsed) = serde_json::from_str::<Value>(body) {
-                hashes.push(hash_hex(&compact(&parsed)));
-            }
+            let parsed: Value = serde_json::from_str(body)
+                .map_err(|_| over(502, "artifact_invalid", "The AI result did not pass format validation."))?;
+            let commitment = forecast_domain::content_hash(&parsed)
+                .map_err(|_| over(502, "artifact_invalid", "The AI result did not pass format validation."))?;
+            hashes.push(commitment);
         }
-        if !hashes.contains(content_hash) || body.len() > MAX_ARTIFACT_BYTES {
-            return Err(WatchError::Invalid("Invalid retained source artifact"));
+        if !hashes.contains(content_hash) {
+            return Err(over(
+                502,
+                "artifact_hash_mismatch",
+                "The evidence did not pass integrity verification.",
+            ));
         }
         statements.push((
             "INSERT OR IGNORE INTO artifacts(hash,kind,body,media_type,created_at) VALUES(?,?,?,?,?)".to_string(),
@@ -696,7 +739,11 @@ pub struct Watch<'a> {
     pub reviewer: Option<&'a dyn Reviewer>,
     pub dismisser: Option<&'a dyn Dismisser>,
     pub now_ms: i64,
-    pub token: &'a str,
+    /// `self.token`: a fresh lease per claim, not one string for the whole pass.
+    ///
+    /// A lease that is reused across sources cannot tell "this process is still working" from
+    /// "this process is working on something else", and the reference mints one per claim.
+    pub token: &'a dyn Fn() -> String,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -721,11 +768,7 @@ pub async fn run(watch: &Watch<'_>, limit: i64) -> Result<Summary, WatchError> {
         )
         .await?;
     for source in sources {
-        let lease = format!(
-            "{}-{}",
-            watch.token,
-            source.get("id").and_then(Value::as_str).unwrap_or("")
-        );
+        let lease = (watch.token)();
         let claimed = watch
             .db
             .execute(
@@ -786,7 +829,7 @@ pub async fn run(watch: &Watch<'_>, limit: i64) -> Result<Summary, WatchError> {
         .await?;
     for job in jobs {
         let job_id = job.get("id").cloned().unwrap_or(Value::Null);
-        let lease = format!("{}-review-{}", watch.token, job_id.as_str().unwrap_or(""));
+        let lease = (watch.token)();
         let claimed = watch
             .db
             .execute(
@@ -1566,7 +1609,7 @@ mod tests {
             reviewer: None,
             dismisser: None,
             now_ms: 100,
-            token: "t",
+            token: &|| "t".to_string(),
         };
         let summary = block(run(&watch, 2)).unwrap();
         assert_eq!(summary.reviewed, 0);
@@ -1606,7 +1649,7 @@ mod tests {
             reviewer: None,
             dismisser: None,
             now_ms: 1,
-            token: "t",
+            token: &|| "t".to_string(),
         };
         for limit in [0, 7] {
             assert!(
@@ -1629,13 +1672,58 @@ mod tests {
             )],
             1,
         );
-        assert!(matches!(
-            wrong,
-            Err(WatchError::Invalid("Invalid retained source artifact"))
-        ));
+        assert_eq!(
+            wrong.unwrap_err(),
+            WatchError::Refused {
+                status: 502,
+                code: "artifact_hash_mismatch".to_string(),
+                message: "The evidence did not pass integrity verification.".to_string(),
+            }
+        );
         let body = "<p>x</p>";
         let right = artifact_sql(&[(hash_hex(body), "source".into(), body.into(), "text/html".into())], 7).unwrap();
         assert_eq!(right.len(), 1);
         assert_eq!(right[0].1[4], json!(7));
+    }
+
+    #[test]
+    fn an_ai_artifact_is_named_by_its_commitment_and_not_by_a_plain_digest() {
+        // The AI layer names its own artifacts with the domain's *commitment* hash: the canonical
+        // encoding with the domain's prefix, which is not the digest of the encoded text. Comparing
+        // against a plain digest of the canonical text looks almost right and refuses every AI
+        // artifact there is — which is what this did until the automation golden said so.
+        let value = json!({"kind": "ai-decision", "nested": {"b": 2, "a": [1, 2, 3]}});
+        let body = String::from_utf8(forecast_domain::canonical_bytes(&value).expect("canonical")).expect("utf8");
+        let commitment = forecast_domain::content_hash(&value).expect("commitment");
+        assert_ne!(hash_hex(&body), commitment, "these are two different functions");
+        let statements = artifact_sql(
+            &[(commitment, "ai-decision".into(), body, "application/json".into())],
+            7,
+        )
+        .expect("an artifact named by its commitment is retained");
+        assert_eq!(statements.len(), 1);
+    }
+
+    #[test]
+    fn a_json_artifact_that_does_not_parse_is_a_format_failure_rather_than_an_integrity_one() {
+        // The reference tells the two apart, and the caller acts on which: a body that will not
+        // parse is the model's fault, a body that parses under the wrong name is the store's.
+        let refused = artifact_sql(
+            &[(
+                "irrelevant".into(),
+                "ai-decision".into(),
+                "{not json".into(),
+                "application/json".into(),
+            )],
+            7,
+        );
+        assert_eq!(
+            refused.unwrap_err(),
+            WatchError::Refused {
+                status: 502,
+                code: "artifact_invalid".to_string(),
+                message: "The AI result did not pass format validation.".to_string(),
+            }
+        );
     }
 }

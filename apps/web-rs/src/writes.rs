@@ -512,7 +512,7 @@ pub async fn submit_forecast(
         extra,
         job_token: None,
     };
-    match mutate(&crate::db::D1(session), mutation, now).await {
+    match mutate(&crate::db::D1(session), mutation, now, &random_token).await {
         Ok(_) => submission_response(context, user_id, forecast_id, response).await,
         Err(error) => {
             // A transport error can arrive after the D1 batch committed; the durable receipt wins.

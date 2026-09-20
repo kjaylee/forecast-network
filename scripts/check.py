@@ -127,6 +127,10 @@ def main() -> int:
                 # The profile card: one snapshot read, three metric divisions, and a publication the
                 # public lookup verifies against the hash it is stored under.
                 [sys.executable, "scripts/generate_profile_card_golden.py", "--check"],
+                # The automation orchestration half: the pause `accept` requires, the upgrade that
+                # re-reads retained bytes, the release only an observer's hold may earn, and the
+                # poller driven through the automation object end to end.
+                [sys.executable, "scripts/generate_automation_run_golden.py", "--check"],
                 # What the compiler is allowed to see: the ranking, the terms, and the byte budget
                 # that decides which candidates reach the model at all.
                 [sys.executable, "scripts/generate_candidates_golden.py", "--check"]]
