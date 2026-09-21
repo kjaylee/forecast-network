@@ -19,8 +19,8 @@ use crate::routes::RouteError;
 
 /// A credential shorter than this is not a credential. The reference's own floor.
 pub const MIN_TOKEN_LENGTH: usize = 32;
-pub const MAX_BODY_BYTES: usize = 16 * 1024;
-/// `MAX_PROVIDER_BYTES`. What an operator may send, because evidence is large and a verdict is not.
+/// `MAX_PROVIDER_BYTES`. What an operator may send, because evidence is large and a verdict is not;
+/// the general cap every other write shares is `crate::MAX_BODY_BYTES`.
 pub const MAX_ADMIN_BODY_BYTES: usize = 512 * 1024;
 
 /// `hmac.compare_digest`, for two byte strings.

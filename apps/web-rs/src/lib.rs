@@ -87,16 +87,7 @@ fn bookmark(req: &Request) -> Option<String> {
 }
 
 pub fn api_response(data: Value, status: u16, error: bool) -> Result<Response> {
-    let headers = Headers::new();
-    headers.set("Content-Type", "application/json")?;
-    headers.set("Cache-Control", "no-store")?;
-    headers.set("X-Content-Type-Options", "nosniff")?;
-    headers.set("Referrer-Policy", "strict-origin-when-cross-origin")?;
-    headers.set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")?;
-    let body = json!({ (if error { "error" } else { "data" }): data });
-    Ok(Response::from_bytes(serde_json::to_vec(&body)?)?
-        .with_status(status)
-        .with_headers(headers))
+    api_response_with(data, status, error, Cookies::None)
 }
 
 pub fn api_error(status: u16, code: &str, message: &str) -> Result<Response> {
