@@ -81,7 +81,14 @@ pub async fn check(
     if base.forecast_id != forecast.forecast_id || base.specification_hash != forecast.specification_hash {
         return Err(review_error());
     }
-    base.validate_for(&forecast.specification).map_err(|_| review_error())?;
+    // Dispatched on the variant rather than through the base: the reference's
+    // `_validate_evidence_time` is **virtual**, and `EarlyResolution` overrides it so that the
+    // ordinary rule — every evidence item collected after the forecast expired — becomes the
+    // trigger's own window checks. An early proposal is judged *before* expiry by construction, so
+    // calling the base method refuses every one of them.
+    resolution
+        .validate_for(&forecast.specification)
+        .map_err(|_| review_error())?;
     if matches!(resolution, AnyResolution::Early(_)) {
         return Ok(());
     }

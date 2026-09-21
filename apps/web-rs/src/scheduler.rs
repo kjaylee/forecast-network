@@ -12,39 +12,25 @@
 //! The lease exists for the same reason: one worker may be inside an AI call for a forecast at a
 //! time, and the database says so rather than this process remembering.
 //!
-//! **What the vectors reach, and what only a reading does.** The resolution, dispute and sweep
-//! goldens drive `run_due_jobs` over a v1 snapshot, which is every state the *default* lifecycle
-//! passes through. Two arms are not covered by any of them — a v2 question proposing from
-//! `RESOLVING`, and a paused job recovering its `RESOLVING` work — and both were wrong until they
-//! were read against the reference: each called the v1 pipeline for a v2 snapshot, because the
-//! snapshot had been narrowed to its base before the branch that distinguishes them. (A v2
-//! question reaches `RESOLVING` the ordinary way: `LOCKED` applies `BeginResolution` in both
-//! languages, and the proposal — the branch in question — belongs to the arm after it.) The branch
-//! is now the reference's own, verified by that reading and by nothing else.
+//! **What the vectors reach.** The resolution, dispute and sweep goldens drive `run_due_jobs` over
+//! a v1 snapshot, which is every state the *default* lifecycle passes through. The arm a v2
+//! question takes was not covered by any of them, and two defects lived there:
 //!
-//! A vector for it is *reachable* and was half-built: an `AutomationIntegrationTests` fixture whose
-//! forecast is upgraded by `automation.accept` becomes a real `ForecastV2` in `LOCKED`, and
-//! `run_due_jobs` then drives the arm — with the clock past the trigger's `qualified_at_ms`, and
-//! with the coordinator replaced by the real one over the early pipeline's scripted conversation
-//! (`[resolution_outputs()[1], counter()]`, as `generate_early_golden.proposal_case` scripts it).
-//! Two blockers were found and passed. The first is the fixture's evidence *host*:
-//! `reviewed_trigger`'s default article is not on an approved authoritative host, so the pipeline
-//! refuses with `SourceRejected: Source host is not in the approved authoritative-source registry`
-//! before it calls anyone — the Apple newsroom URL the automation golden already uses is. The
-//! second is that `reviewed_trigger` binds its trigger to the *fixture's* forecast, so accepting it
-//! against the Apple-rooted question it must be paired with answers `The forecast changed while the
-//! event was reviewed`. A fixture that reaches this arm therefore needs `reviewed_trigger`'s shape
-//! rebuilt for that forecast — evidence, verification, event times, qualification, qualifier and
-//! counter-qualifier provenance — which is the next unit of work rather than a line of setup.
+//!   * the branch itself — the snapshot was narrowed to its base before the branch that
+//!     distinguishes a v2 question from a v1 one, so an upgraded question was proposed against the
+//!     question it used to be; and
+//!   * `resolution_timing::check` calling the *base* `validate_for`, where the reference's
+//!     `_validate_evidence_time` is virtual and `EarlyResolution` overrides it. The ordinary rule
+//!     is that evidence is collected after expiry, which is precisely what an early proposal is
+//!     not — so every early proposal was refused before expiry.
 //!
-//! And a third thing, found by experiment rather than by reading: **reaching the arm is not enough
-//! to test it.** A pass was driven over that fixture in both languages, and the *ordinary* pipeline
-//! produces byte-identical results — the same `LOCKED` → `RESOLVING` step, the same sweep counts,
-//! and the same refusal, because the fixture's early pipeline refuses at the source gate before it
-//! builds a payload. The branch was then removed from this crate and the pass run again: the same
-//! output, character for character. A test built on that fixture would pass whether or not the
-//! branch is correct, which is worse than no test, so it was deleted. What a vector needs is a
-//! fixture where the early pipeline *succeeds*.
+//! `sweep-early-golden.json` covers it now: the early-resolution fixture's own `RESOLVING` v2
+//! snapshot, seeded into a migrated database and driven through one pass, compared on the
+//! conversation as well as the outcome. Both defects were re-introduced one at a time and the
+//! vector failed on each, with a different refusal — a vector that cannot tell them apart would
+//! have been worse than none. What it needed, and what the fixture has to provide, is in
+//! `scripts/generate_sweep_early_golden.py`: the evidence retained as an artifact row, a clock past
+//! the trigger's `qualified_at_ms`, and a seeded row that satisfies the due-job selection exactly.
 
 use serde_json::{json, Value};
 
@@ -416,11 +402,12 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                         JobFailure::Refused { code, artifacts }
                     }
                 })?;
-                if let Ok(retained) = serde_json::to_value(&resolution) {
-                    if let Ok(artifact) = crate::ai::coordinator::artifact("resolution", &retained) {
-                        let _ = retain(db, &artifact, now_ms).await;
-                    }
-                }
+                // The resolution is *not* retained here, and the reference is why: it travels with
+                // the command as one of the batch's statements, so a mutation that fails leaves no
+                // resolution behind. Writing it first — which this arm used to do before the
+                // early-proposal vector caught the row order — leaves an artifact for a command
+                // that never ran.
+                //
                 // The artifacts the judge produced travel with the command *and* with the timing
                 // review: the review reads the bytes the judge read, rather than re-fetching a page
                 // that may have changed since.
@@ -1058,22 +1045,6 @@ async fn load(db: &dyn Database, forecast_id: &str) -> Result<Snapshot, String> 
         return Err("forecast_not_found".to_string());
     };
     Snapshot::from_json(text(&row, "snapshot").unwrap_or("")).map_err(|error| format!("snapshot_invalid:{error}"))
-}
-
-async fn retain(db: &dyn Database, artifact: &crate::ai::coordinator::Artifact, now_ms: i64) -> Result<(), String> {
-    db.execute(
-        "INSERT OR IGNORE INTO artifacts(hash,kind,body,media_type,created_at) VALUES(?,?,?,?,?)",
-        &[
-            json!(artifact.hash),
-            json!(artifact.kind),
-            json!(artifact.body),
-            json!("application/json"),
-            json!(now_ms),
-        ],
-    )
-    .await
-    .map_err(|error| error.to_string())?;
-    Ok(())
 }
 
 /// What the scheduler needs from outside itself, named rather than positional.
@@ -1835,5 +1806,164 @@ mod dispute_sweep_tests {
             assert_case(name, case, &result, &error, db);
             tokens.assert_drained(name, "");
         }
+    }
+}
+
+#[cfg(test)]
+mod early_sweep_tests {
+    use super::*;
+    use crate::db::Sqlite;
+    use crate::golden::{assert_database, block, dump, load, static_database, Tokens};
+    use std::sync::{Arc, Mutex};
+
+    /// The user text of whichever provider envelope a call used.
+    ///
+    /// Three shapes reach here: Gemini's `contents[0].parts[0].text`, the Responses API's `input`
+    /// as a string, and the same `input` as a list of messages. Reading only the first two is how
+    /// the second call of this vector first compared as `null` against a payload that was in fact
+    /// correct.
+    fn payload_of(request: &Value) -> Value {
+        let raw = if let Some(text) = request["contents"][0]["parts"][0]["text"].as_str() {
+            text.to_string()
+        } else if let Some(text) = request["input"].as_str() {
+            text.to_string()
+        } else {
+            request["input"]
+                .as_array()
+                .and_then(|messages| messages.last())
+                .and_then(|last| last["content"].as_str())
+                .unwrap_or("")
+                .to_string()
+        };
+        serde_json::from_str(&raw).unwrap_or(Value::Null)
+    }
+
+    /// The reference's own early proposal, driven by the scheduler that decides to make it.
+    ///
+    /// This is the arm every other vector misses: they drive `run_due_jobs` over a v1 snapshot, so
+    /// nothing reached the branch an upgraded question takes. Two defects were found by driving it:
+    ///
+    ///   * the branch itself — the port narrowed the snapshot to its base before the branch that
+    ///     distinguishes a v2 question from a v1 one, so an upgraded question was proposed against
+    ///     the question it used to be; and
+    ///   * `resolution_timing::check` calling the *base* `validate_for`, where the reference's
+    ///     `_validate_evidence_time` is virtual and `EarlyResolution` overrides it — the ordinary
+    ///     rule is that evidence is collected after expiry, which is exactly what an early proposal
+    ///     is not.
+    ///
+    /// The comparison is on the **conversation** as well as the outcome, because the outcome alone
+    /// would not have caught the first defect: the early judge's payload carries a `trigger` and
+    /// the ordinary judge's does not, so a port that took the wrong branch fails on what it asked.
+    #[test]
+    fn the_reference_early_proposal_is_reproduced_call_for_call() {
+        let document = load("sweep-early-golden.json");
+        let db: &'static Sqlite = static_database(&document["initial"]);
+        let tokens = Tokens::new(Tokens::recorded(&document));
+        let taken = Arc::new(Mutex::new(
+            document["responses"].as_array().cloned().unwrap_or_default(),
+        ));
+        let asked = Arc::new(Mutex::new(Vec::new()));
+        let taken_by_fetch = taken.clone();
+        let asked_by_fetch = asked.clone();
+        let fetch: crate::ai::coordinator::JsonFetcher = Box::new(move |url, _headers, body| {
+            asked_by_fetch.lock().expect("lock").push(body.clone());
+            let answer = {
+                let mut pending = taken_by_fetch.lock().expect("lock");
+                if pending.is_empty() {
+                    Value::Null
+                } else {
+                    pending.remove(0)
+                }
+            };
+            let text = answer.to_string();
+            Box::pin(async move {
+                if url.contains("generativelanguage") {
+                    Ok(json!({
+                        "candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": text}]}}],
+                        "modelVersion": "gemini-tested-revision",
+                    }))
+                } else {
+                    // The Responses API's envelope, which is what the openai provider parses. The
+                    // `{"response": ...}` shape is the Workers AI binding's, and using it for this
+                    // provider reads as a transport failure rather than as a wrong answer.
+                    Ok(json!({"status": "completed", "model": "openai-tested-revision",
+                              "output": [{"type": "message",
+                                          "content": [{"type": "output_text", "text": text}]}]}))
+                }
+            })
+        });
+        let providers = document["providers"]
+            .as_array()
+            .expect("providers")
+            .iter()
+            .map(|config| {
+                crate::ai::coordinator::ProviderConfig::new(
+                    config["provider"].as_str().unwrap_or(""),
+                    config["model"].as_str().unwrap_or(""),
+                    config["apiKey"].as_str().unwrap_or(""),
+                    None,
+                )
+                .expect("a provider")
+            })
+            .collect();
+        let coordinator = Coordinator { providers, fetch };
+        // The reference's application reads the evidence through its own retained-artifact reader;
+        // this replay holds the same bytes and reads them the same way.
+        let reader = crate::ai::early::Held(
+            document["initial"]["artifacts"]
+                .as_array()
+                .map(|rows| {
+                    rows.iter()
+                        .map(|row| {
+                            (
+                                row["hash"].as_str().unwrap_or("").to_string(),
+                                row["body"].as_str().unwrap_or("").to_string(),
+                            )
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
+        );
+        let now_ms = document["now_ms"].as_i64().unwrap_or(0);
+        let clock = || now_ms;
+        let evidence: EvidenceFetcher = Box::new(|_, _| Box::pin(async { Err(()) }));
+        let sweep = block(run_due_jobs(
+            &Scheduler {
+                db,
+                coordinator: &coordinator,
+                fetch: &evidence,
+                now_ms,
+                clock: &clock,
+                daily_limit: 100,
+                registry: None,
+                reader: &reader,
+            },
+            3,
+            &mut || tokens.next(),
+        ))
+        .expect("a pass");
+        let expected = &document["expect"]["sweep"];
+        let recorded = crate::golden::rows(db, "SELECT state,job_error FROM forecasts");
+        assert_eq!(
+            json!({"processed": sweep.processed, "failed": sweep.failed}),
+            *expected,
+            "a different sweep: forecast={recorded}"
+        );
+        let asked = asked.lock().expect("lock");
+        let expected = document["expect"]["payloads"].as_array().expect("payloads");
+        assert_eq!(asked.len(), expected.len(), "a different number of calls was made");
+        for (index, payload) in expected.iter().enumerate() {
+            assert_eq!(
+                &payload_of(&asked[index]),
+                payload,
+                "call {index} was a different question"
+            );
+        }
+        assert!(
+            expected.iter().all(|payload| payload.get("trigger").is_some()),
+            "the vector must carry the early judge's payload, and it does not"
+        );
+        tokens.assert_drained("sweep:early", " (the lease, the guard and the command keys)");
+        assert_database("sweep:early", &document["expect"]["rows"], &dump(db));
     }
 }

@@ -294,6 +294,20 @@ impl AnyResolution {
         }
     }
 
+    /// `validate_for`, dispatched on the variant.
+    ///
+    /// The reference reaches this through a **virtual** `_validate_evidence_time`: `Resolution`
+    /// requires every evidence item to have been collected after the forecast expired, and
+    /// `EarlyResolution` overrides that with its trigger's own window checks — an early proposal is
+    /// judged before expiry by construction, so the ordinary rule would refuse every one of them.
+    /// A port that always called the base method did exactly that.
+    pub fn validate_for(&self, specification: &ForecastSpecification) -> Result<()> {
+        match self {
+            AnyResolution::Standard(r) => r.validate_for(specification),
+            AnyResolution::Early(e) => e.validate_for(specification),
+        }
+    }
+
     pub fn require_proposable(&self, specification: &ForecastSpecification) -> Result<()> {
         match self {
             AnyResolution::Standard(r) => r.require_proposable(specification),

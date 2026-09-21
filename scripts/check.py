@@ -62,6 +62,9 @@ def main() -> int:
                 # forwarded through the service binding and works, which is exactly why nothing
                 # else would ever say so.
                 [sys.executable, "scripts/route_parity.py", "--check"],
+                # One scheduler pass over an *upgraded* question: the arm no other vector
+                # reaches, compared on the conversation rather than on the outcome.
+                [sys.executable, "scripts/generate_sweep_early_golden.py", "--check"],
                 # A display translation is presentation only, and this is what that costs.
                 [sys.executable, "scripts/generate_translation_golden.py", "--check"],
                 # The operator's own translation write: fifteen refusals, a replay that appends
