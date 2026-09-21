@@ -350,6 +350,24 @@ pub fn registry_rpc<'a>(env: &Env) -> Box<Rpc<'a>> {
     })
 }
 
+/// `relayer_public_key`: the address the relayer signs as, or `None` when it is not configured.
+///
+/// The seed is required as well as the address, because an address without a key is an operator who
+/// cannot sign — and the caller that needs the key id needs it for a signature that will exist.
+/// The feed's key id is the hash of *these bytes*, so the two must be derived from one place.
+pub fn relayer_public_key(env: &Env) -> Option<Vec<u8>> {
+    let seed = env.secret("SOLANA_RELAYER_SEED").ok()?.to_string();
+    if seed.is_empty() {
+        return None;
+    }
+    let relayer = var(env, "SOLANA_RELAYER");
+    if relayer.is_empty() {
+        return None;
+    }
+    let decoded = bs58::decode(relayer).into_vec().ok()?;
+    (decoded.len() == 32).then_some(decoded)
+}
+
 /// `sign_registry_message`: the relayer's Ed25519 signature, from the runtime.
 ///
 /// WebCrypto rather than a Rust implementation, and the identity is *verified* before the signature
@@ -362,10 +380,7 @@ pub fn relayer_signer<'a>(env: &Env) -> Option<Box<Signer<'a>>> {
     if seed.len() != 32 {
         return None;
     }
-    let expected = bs58::decode(var(env, "SOLANA_RELAYER")).into_vec().ok()?;
-    if expected.len() != 32 {
-        return None;
-    }
+    let expected = relayer_public_key(env)?;
     // PKCS#8 wrapping for a raw Ed25519 seed: the fixed prefix the reference prepends.
     let mut pkcs8 = vec![
         0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20,

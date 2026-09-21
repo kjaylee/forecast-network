@@ -49,14 +49,77 @@ pub const CLOCK_SQL: &str = concat!(
     "WHERE estimate_artifact_hash=?)",
 );
 
+/// Where a feed failure came from, as the reference's exception class.
+///
+/// The class is not decoration: the tick records `type(exc).__name__` as a feed's
+/// `refreshFailure` or `publishFailure`, and that record is read back by `operations_health`. A
+/// message alone cannot name it, so the fault travels alongside.
+///
+/// `Storage` is the one name this port cannot derive. The reference raises its runtime's own class
+/// from a binding call, and the port's `worker::Error` carries no such name; it records `Error`,
+/// which is what the sibling watch module records for the same case. Nothing drives it — every
+/// refusal a caller can reach is a `ValidationError`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FeedFault {
+    Refused,
+    Signer,
+    Storage,
+}
+
+impl FeedFault {
+    const fn name(self) -> &'static str {
+        match self {
+            Self::Refused => "ValidationError",
+            Self::Signer => "AppError",
+            Self::Storage => "Error",
+        }
+    }
+}
+
 /// The reference raises `ValidationError` from every `require`, and the caller maps it to a server
 /// fault: a feed that cannot be assembled is not a request to answer differently.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FeedError(pub String);
+pub struct FeedError {
+    pub message: String,
+    pub fault: FeedFault,
+}
+
+impl FeedError {
+    pub fn refused(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            fault: FeedFault::Refused,
+        }
+    }
+
+    pub fn storage() -> Self {
+        Self::storage_at("feed storage unavailable")
+    }
+
+    pub fn storage_at(message: &str) -> Self {
+        Self {
+            message: message.to_string(),
+            fault: FeedFault::Storage,
+        }
+    }
+
+    /// `risk_signer_unavailable`: the entry's own refusal, not a domain one.
+    pub fn signer() -> Self {
+        Self {
+            message: "risk feed signer unavailable".to_string(),
+            fault: FeedFault::Signer,
+        }
+    }
+
+    /// `type(exc).__name__`, for the tick's failure record.
+    pub const fn kind(&self) -> &'static str {
+        self.fault.name()
+    }
+}
 
 impl From<ValidationError> for FeedError {
     fn from(error: ValidationError) -> Self {
-        Self(error.to_string())
+        Self::refused(error.to_string())
     }
 }
 
@@ -65,7 +128,7 @@ fn require_that(condition: bool, message: &str) -> Result<(), FeedError> {
 }
 
 fn storage() -> FeedError {
-    FeedError("feed storage unavailable".to_string())
+    FeedError::storage()
 }
 
 /// `storage`, for the sibling module that would otherwise repeat the message.
@@ -245,10 +308,10 @@ pub async fn approve_binding_v2(
     // `measurement_window` answers with the interval the question itself states. A question that
     // does not state one cannot be the target of a typed binding at all.
     let window = measurement_window(question)
-        .map_err(|_| FeedError("published question has no explicit [start, end) measurement interval".to_string()))?;
+        .map_err(|_| FeedError::refused("published question has no explicit [start, end) measurement interval"))?;
     let Some(window) = window else {
-        return Err(FeedError(
-            "published question has no explicit [start, end) measurement interval".to_string(),
+        return Err(FeedError::refused(
+            "published question has no explicit [start, end) measurement interval",
         ));
     };
     require_that(
@@ -506,7 +569,7 @@ pub fn signals_v2(
         &binding.category,
         now_ms,
     )
-    .map_err(|error| FeedError(error.0))?;
+    .map_err(|error| FeedError::refused(error.0))?;
     let top: Vec<String> = cohorts["top"]
         .as_array()
         .map(|ids| ids.iter().filter_map(Value::as_str).map(str::to_string).collect())
@@ -727,7 +790,8 @@ pub async fn publish_feed_v2(
         bindings: bindings.clone(),
         signals: collected,
         channel_coverage,
-        profile_set_hash: profile_set_hash(feed_id, &profile_hashes).map_err(|error| FeedError(error.to_string()))?,
+        profile_set_hash: profile_set_hash(feed_id, &profile_hashes)
+            .map_err(|error| FeedError::refused(error.to_string()))?,
         weight_set_hash: weight_set_hash.to_string(),
         weight_set_version: weight_set_version.to_string(),
         calibration_cohort_id: calibration_cohort_id.to_string(),
@@ -736,7 +800,7 @@ pub async fn publish_feed_v2(
     let signature = signer
         .sign(signing_bytes_v2(&payload).map_err(FeedError::from)?)
         .await
-        .map_err(|_| FeedError("risk feed signer unavailable".to_string()))?;
+        .map_err(|_| FeedError::signer())?;
     require_that(signature.len() == 64, "signer returned invalid Ed25519 signature")?;
     let envelope = SignedRiskFeedV2 {
         schema_version: 1,
@@ -808,7 +872,7 @@ pub async fn publish_feed_v2(
     ]);
     db.batch(&statements)
         .await
-        .map_err(|_| FeedError("risk feed publication did not persist".to_string()))?;
+        .map_err(|_| FeedError::storage_at("risk feed publication did not persist"))?;
     Ok(envelope)
 }
 
@@ -930,12 +994,15 @@ pub trait PublishCallback {
         weight_set_hash: &'a str,
         weight_set_version: &'a str,
         calibration_cohort_id: &'a str,
-    ) -> BorrowedFuture<'a, Result<SignedRiskFeedV2, ()>>;
+    ) -> BorrowedFuture<'a, Result<SignedRiskFeedV2, FeedError>>;
 }
 
 /// `refresh_bound_prediction_v2`: bring one binding's forecast up to date.
 pub trait RefreshCallback {
-    fn refresh<'a>(&'a self, binding_id: String) -> BorrowedFuture<'a, Result<(), ()>>;
+    fn refresh<'a>(
+        &'a self,
+        binding_id: String,
+    ) -> BorrowedFuture<'a, Result<Value, crate::risk_refresh::RefreshError>>;
 }
 
 /// `operate_feeds_v2`: one scheduled tick — due episodes, at most one budgeted refresh per feed,
@@ -985,9 +1052,9 @@ pub async fn operate_feeds_v2(
         if let Some(first) = stale.first() {
             let mark = instant();
             match refresh.refresh(first.clone()).await {
-                Ok(()) => outcome["refreshed"] = json!(first),
+                Ok(_) => outcome["refreshed"] = json!(first),
                 // Budget, lease or provider failure: the publication still reports honestly.
-                Err(()) => outcome["refreshFailure"] = json!("RefreshUnavailable"),
+                Err(error) => outcome["refreshFailure"] = json!(error.kind()),
             }
             outcome["phaseMs"]["refresh"] = json!(instant() - mark);
         }
@@ -1011,7 +1078,7 @@ pub async fn operate_feeds_v2(
                     .map(|row| row.channel.clone())
                     .collect::<Vec<_>>());
             }
-            Err(()) => outcome["publishFailure"] = json!("PublishUnavailable"),
+            Err(error) => outcome["publishFailure"] = json!(error.kind()),
         }
         outcome["phaseMs"]["publish"] = json!(instant() - mark);
         db.execute(
@@ -1354,7 +1421,7 @@ mod tests {
                     "{name}: refused with {error:?} where the reference succeeded"
                 );
                 assert_eq!(
-                    error.0,
+                    error.message,
                     entry["error"]["message"].as_str().unwrap(),
                     "{name}: a different refusal"
                 );

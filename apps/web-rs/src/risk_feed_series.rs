@@ -114,16 +114,16 @@ pub async fn configure_series(
             &[json!(series.definition_hash), json!(series.feed_id)],
         )
         .await
-        .map_err(|_| FeedError("feed storage unavailable".to_string()))?;
+        .map_err(|_| FeedError::storage())?;
     let profile = db
         .first(
             "SELECT profile_json FROM risk_feed_profiles_v2 WHERE profile_hash=? AND feed_id=?",
             &[json!(series.mapping_profile_hash), json!(series.feed_id)],
         )
         .await
-        .map_err(|_| FeedError("feed storage unavailable".to_string()))?;
+        .map_err(|_| FeedError::storage())?;
     let (Some(definition), Some(profile)) = (definition, profile) else {
-        return Err(FeedError("series references unadmitted records".to_string()));
+        return Err(FeedError::refused("series references unadmitted records"));
     };
     let definition_body: Value =
         serde_json::from_str(db::text(&definition, "definition_json").unwrap_or("")).unwrap_or(Value::Null);
@@ -160,7 +160,7 @@ pub async fn configure_series(
         ],
     )
     .await
-    .map_err(|_| FeedError("feed storage unavailable".to_string()))?;
+    .map_err(|_| FeedError::storage())?;
     Ok(digest)
 }
 
@@ -176,7 +176,7 @@ pub async fn latest_episode_start(db: &dyn Database, series_id: &str) -> Result<
             &[json!(series_id)],
         )
         .await
-        .map_err(|_| FeedError("feed storage unavailable".to_string()))?;
+        .map_err(|_| FeedError::storage())?;
     Ok(row.as_ref().and_then(|row| db::int(row, "start")))
 }
 
@@ -233,9 +233,7 @@ pub fn episode_binding(
     let question = card["question"].as_str().unwrap_or("");
     let window = measurement_window(question).ok().flatten();
     let Some(window) = window else {
-        return Err(FeedError(
-            "published episode lacks its measurement interval".to_string(),
-        ));
+        return Err(FeedError::refused("published episode lacks its measurement interval"));
     };
     let horizon = if series.mapping_kind == "containing_upper_estimate" {
         series.policy_horizon_ms
@@ -243,7 +241,7 @@ pub fn episode_binding(
         0
     };
     let category = category_for(&series.channel)
-        .ok_or_else(|| FeedError("series channel has no publication category".to_string()))?;
+        .ok_or_else(|| FeedError::refused("series channel has no publication category"))?;
     let specification_hash = card["specificationHash"].as_str().unwrap_or("");
     let forecast_id = card["id"].as_str().unwrap_or("");
     let value = RiskFeedBindingV2 {
@@ -302,7 +300,7 @@ pub async fn create_due_episodes(
             &[],
         )
         .await
-        .map_err(|_| FeedError("feed storage unavailable".to_string()))?;
+        .map_err(|_| FeedError::storage())?;
     for row in rows {
         let series =
             RiskFeedSeriesV2::from_json(db::text(&row, "series_json").unwrap_or("")).map_err(FeedError::from)?;
@@ -322,7 +320,7 @@ pub async fn create_due_episodes(
                 &[json!(series.series_id), json!(start)],
             )
             .await
-            .map_err(|_| FeedError("feed storage unavailable".to_string()))?;
+            .map_err(|_| FeedError::storage())?;
         let backing_off = last.as_ref().is_some_and(|last| {
             db::text(last, "outcome").is_some_and(|outcome| outcome.starts_with("failed"))
                 && db::int(last, "attempted_at").is_some_and(|at| now_ms - at < RETRY_MS)
@@ -380,7 +378,7 @@ pub async fn create_due_episodes(
             ],
         )
         .await
-        .map_err(|_| FeedError("feed storage unavailable".to_string()))?;
+        .map_err(|_| FeedError::storage())?;
         outcomes.push(outcome);
     }
     Ok(outcomes)
@@ -403,7 +401,7 @@ impl From<FeedError> for AttemptError {
         Self {
             code: None,
             kind: "ValidationError".to_string(),
-            message: error.0,
+            message: error.message,
         }
     }
 }
@@ -426,8 +424,8 @@ async fn attempt(
         .map_err(|_| storage_unavailable())?;
     let _ = row;
     let Some(profile) = profile else {
-        return Err(AttemptError::from(FeedError(
-            "series profile no longer admitted".to_string(),
+        return Err(AttemptError::from(FeedError::refused(
+            "series profile no longer admitted",
         )));
     };
     let decoded: Value = serde_json::from_str(db::text(&profile, "profile_json").unwrap_or("")).unwrap_or(Value::Null);
@@ -547,7 +545,7 @@ mod tests {
                     "{name}: refused with {error:?} where the reference succeeded"
                 );
                 assert_eq!(
-                    error.0,
+                    error.message,
                     entry["error"]["message"].as_str().unwrap(),
                     "{name}: a different refusal"
                 );

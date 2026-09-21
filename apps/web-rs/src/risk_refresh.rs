@@ -58,6 +58,15 @@ impl RefreshError {
     const fn new(status: u16, code: &'static str, message: &'static str) -> Self {
         Self { status, code, message }
     }
+
+    /// `type(exc).__name__`, for the tick's `refreshFailure`.
+    ///
+    /// Every failure `refresh_bound_prediction_v2` can raise is an `AppError`: the two refusals
+    /// above are constructed as one, the timeout is one, and the AI's own error is mapped to one.
+    /// A `ValidationError` escaping that function would have been caught and re-raised as one too.
+    pub const fn kind(&self) -> &'static str {
+        "AppError"
+    }
 }
 
 fn not_current() -> RefreshError {

@@ -105,6 +105,7 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || path == "/api/admin/automation/run"
                 || path == "/api/admin/sweep"
                 || path == "/api/admin/seed"
+                || path.starts_with("/api/admin/risk/v2/")
         }
         _ => false,
     }
@@ -138,6 +139,39 @@ pub async fn dispatch_write(
             let question = body.get("question").and_then(Value::as_str).unwrap_or("");
             let result = crate::writes::seed(context, question, "Forecast Editorial", Some((15, 85)), false).await?;
             return Ok(api_response(result, 201, false)?);
+        }
+        // The v2 registry, in the reference's own order: the exact paths first, then the two
+        // families of identifier paths. Its fallthrough is its own message, and a caller that
+        // mistyped a v2 path is told that rather than told the page does not exist.
+        if path.starts_with("/api/admin/risk/v2/") {
+            if path == "/api/admin/risk/v2/definitions" {
+                return crate::admin_risk::admit_definition_route(context, body).await;
+            }
+            if path == "/api/admin/risk/v2/profiles" {
+                return crate::admin_risk::admit_profile_route(context, body).await;
+            }
+            if path == "/api/admin/risk/v2/bindings" {
+                return crate::admin_risk::approve_binding_route(context, body).await;
+            }
+            if let Some(id) = identifier(path, "/api/admin/risk/v2/bindings/", "/refresh") {
+                return crate::admin_risk::refresh_binding_route(context, &id, body).await;
+            }
+            if let Some(id) = identifier(path, "/api/admin/risk/v2/bindings/", "/revoke") {
+                return crate::admin_risk::revoke_binding_route(context, &id, body).await;
+            }
+            if let Some(id) = identifier(path, "/api/admin/risk/v2/feeds/", "/publish") {
+                return crate::admin_risk::publish_feed_route(context, &id, body).await;
+            }
+            if let Some(id) = identifier(path, "/api/admin/risk/v2/feeds/", "/operate") {
+                return crate::admin_risk::operate_feed_route(context, &id, body).await;
+            }
+            if path == "/api/admin/risk/v2/series" {
+                return crate::admin_risk::configure_series_route(context, body).await;
+            }
+            if path == "/api/admin/risk/v2/operate" {
+                return crate::admin_risk::operate_route(context, body).await;
+            }
+            return Err(RouteError::NotFound("not_found", "Unknown risk v2 route."));
         }
         return Err(RouteError::NotFound("not_found", "This page could not be found."));
     }
@@ -261,6 +295,8 @@ pub async fn dispatch_write(
 /// than by being a public GET, and the entry applies that check to every path this returns.
 pub fn owns_admin_read(path: &str) -> bool {
     path == "/api/admin/automation"
+        || path == "/api/admin/risk/v2/health"
+        || identifier(path, "/api/admin/risk/v2/feeds/", "/training").is_some()
 }
 
 pub fn owns(path: &str) -> bool {
@@ -299,6 +335,14 @@ pub async fn dispatch(
         "/api/health" => health(context).await,
         "/api/status" => status(context),
         "/api/admin/automation" => automation_status(context).await,
+        "/api/admin/risk/v2/health" => crate::admin_risk::health_route(context).await,
+        _ if identifier(path, "/api/admin/risk/v2/feeds/", "/training").is_some() => {
+            crate::admin_risk::training_route(
+                context,
+                &identifier(path, "/api/admin/risk/v2/feeds/", "/training").expect("matched"),
+            )
+            .await
+        }
         "/api/forecasts" => {
             let user = crate::auth::user_id(context.env, context.session, req, context.now_ms).await?;
             crate::forecasts::list_forecasts(context, user.as_deref(), &crate::forecasts::list_query(url)).await
