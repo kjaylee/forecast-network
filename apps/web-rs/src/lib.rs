@@ -6,7 +6,9 @@ use serde_json::{json, Value};
 use worker::*;
 
 pub mod admin;
+pub mod admin_markets;
 pub mod admin_ops;
+pub mod admin_registry;
 pub mod admin_risk;
 pub mod admin_risk_v1;
 pub mod ai;
@@ -53,6 +55,7 @@ pub mod solana;
 pub mod solana_rpc;
 pub mod source_watch;
 pub mod sources;
+pub mod translation_admin;
 pub mod translations;
 pub mod wallet_login;
 pub mod wallets;

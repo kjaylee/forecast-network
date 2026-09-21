@@ -92,7 +92,7 @@ pub async fn rate_limit(
 }
 
 /// `Application._card`: the quality card for one forecast.
-async fn card_row(
+pub(crate) async fn card_row(
     db: &dyn crate::db::Database,
     forecast_id: &str,
     now_ms: i64,

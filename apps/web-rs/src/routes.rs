@@ -60,6 +60,18 @@ impl From<crate::billing::BillingError> for RouteError {
     }
 }
 
+impl From<crate::translations::TranslationError> for RouteError {
+    fn from(error: crate::translations::TranslationError) -> Self {
+        RouteError::Failed(error.status, error.code, error.message)
+    }
+}
+
+impl From<crate::point_markets::MarketError> for RouteError {
+    fn from(error: crate::point_markets::MarketError) -> Self {
+        RouteError::Failed(error.status, error.code, error.message)
+    }
+}
+
 impl From<crate::participation_holds::HoldError> for RouteError {
     fn from(error: crate::participation_holds::HoldError) -> Self {
         RouteError::Failed(error.status, error.code, error.message)
@@ -118,7 +130,11 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || path == "/api/admin/sweep"
                 || path == "/api/admin/seed"
                 || path == "/api/admin/billing/sandbox"
+                || path == "/api/admin/markets/treasury"
+                || path == "/api/admin/registry/run"
                 || identifier(path, "/api/admin/forecasts/", "/participation").is_some()
+                || identifier(path, "/api/admin/forecasts/", "/market").is_some()
+                || identifier(path, "/api/admin/forecasts/", "/translations/en").is_some()
                 || path.starts_with("/api/admin/risk/")
         }
         _ => false,
@@ -159,6 +175,18 @@ pub async fn dispatch_write(
         }
         if path == "/api/admin/billing/sandbox" {
             return crate::admin_ops::billing_action_route(context, body).await;
+        }
+        if let Some(id) = identifier(path, "/api/admin/forecasts/", "/market") {
+            return crate::admin_markets::create_market_route(context, &id, body).await;
+        }
+        if path == "/api/admin/markets/treasury" {
+            return crate::admin_markets::fund_treasury_route(context, body).await;
+        }
+        if path == "/api/admin/registry/run" {
+            return crate::admin_registry::run_route(context, body).await;
+        }
+        if let Some(id) = identifier(path, "/api/admin/forecasts/", "/translations/en") {
+            return crate::translation_admin::set_translation_route(context, &id, body).await;
         }
         // The v2 registry, in the reference's own order: the exact paths first, then the two
         // families of identifier paths. Its fallthrough is its own message, and a caller that
@@ -339,6 +367,8 @@ pub fn owns_admin_read(path: &str) -> bool {
         || path == "/api/admin/analytics"
         || path == "/api/admin/ai/health"
         || path == "/api/admin/billing/sandbox"
+        || path == "/api/admin/markets/treasury"
+        || path == "/api/admin/registry/health"
         || path == "/api/admin/risk/v2/health"
         || identifier(path, "/api/admin/risk/v2/feeds/", "/training").is_some()
         || identifier(path, "/api/admin/forecasts/", "/participation").is_some()
@@ -383,6 +413,8 @@ pub async fn dispatch(
         "/api/admin/analytics" => crate::admin_ops::analytics_route(context, url).await,
         "/api/admin/ai/health" => crate::admin_ops::ai_health_route(context).await,
         "/api/admin/billing/sandbox" => crate::admin_ops::billing_route(context).await,
+        "/api/admin/markets/treasury" => crate::admin_markets::budget_route(context, url).await,
+        "/api/admin/registry/health" => crate::admin_registry::health_route(context).await,
         _ if identifier(path, "/api/admin/forecasts/", "/participation").is_some() => {
             crate::admin_ops::participation_route(
                 context,

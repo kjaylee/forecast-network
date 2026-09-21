@@ -83,6 +83,16 @@ pub fn refused() -> RouteError {
     crate::routes::RouteError::Failed(503, "service_unavailable", "Please try again shortly.")
 }
 
+/// `str(getattr(env, NAME, "false")).lower() == "true"`: the shape every switch in this Worker is
+/// read with, case-insensitively because a var set to `TRUE` is a var somebody meant to set.
+pub fn flag(env: &Env, name: &str) -> bool {
+    env.var(name)
+        .map(|value| value.to_string())
+        .unwrap_or_default()
+        .to_lowercase()
+        == "true"
+}
+
 /// The exact key set a route accepts.
 ///
 /// `set(body) != {...}` in the reference, and the *set* is the check: a body with one right key

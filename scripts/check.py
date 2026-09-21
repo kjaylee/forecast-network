@@ -60,6 +60,9 @@ def main() -> int:
                 [sys.executable, "scripts/generate_early_golden.py", "--check"],
                 # A display translation is presentation only, and this is what that costs.
                 [sys.executable, "scripts/generate_translation_golden.py", "--check"],
+                # The operator's own translation write: fifteen refusals, a replay that appends
+                # nothing, and a correction that appends exactly one audit row.
+                [sys.executable, "scripts/generate_translation_admin_golden.py", "--check"],
                 # The market is where points are committed; a price that matches is not enough
                 # if the fill that charged for it recorded a different receipt.
                 [sys.executable, "scripts/generate_market_golden.py", "--check"],
