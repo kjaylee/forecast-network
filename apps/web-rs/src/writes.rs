@@ -9,6 +9,7 @@ use forecast_domain::lifecycle::{Payload, Snapshot};
 use forecast_domain::models::UserForecast;
 
 use crate::api_response;
+use crate::api_response_with;
 use crate::db::{all, batch, first, get, int, text, Row};
 use crate::mutate::{
     canonical_text, hash_of, load_snapshot, mutate, random_token, record_artifact, Mutation, Statement,
@@ -377,6 +378,156 @@ pub async fn adjudicate(context: &Context<'_>, forecast_id: &str, body: &Map<Str
         })
         .await?;
     Ok(api_response(result, 200, false)?)
+}
+
+/// The `Authentication` service, over the session secret the Worker holds.
+/// `POST /api/auth/register`: the recovery-code account, when wallet sign-in is not required.
+///
+/// The switch is a *deployment* decision and it is checked before anything else: an installation
+/// that requires wallet sign-in must not leave a second way in open.
+pub async fn register(context: &Context<'_>, req: &Request, body: &Map<String, Value>) -> Handler {
+    if var(context.env, "WALLET_LOGIN_REQUIRED").to_lowercase() != "false" {
+        return Err(RouteError::Failed(
+            409,
+            "wallet_login_required",
+            "Connect and sign with your wallet to create a profile.",
+        ));
+    }
+    let fingerprint = crate::auth::fingerprint(context.env, req)?;
+    rate_limit(
+        context.session,
+        context.now_ms,
+        &format!("register:{fingerprint}"),
+        5,
+        DAY_MS,
+    )
+    .await?;
+    let secret = session_secret(context)?;
+    let hash = |token: &str| crate::auth::token_hash(&secret, token);
+    let db = crate::db::D1(context.session);
+    let now = || context.now_ms;
+    let authentication = crate::auth::Authentication {
+        db: &db,
+        now_ms: &now,
+        token_hash: &hash,
+        random_token: &random_token,
+    };
+    let mut result = authentication
+        .register(body.get("displayName"))
+        .await
+        .map_err(refused_from_auth)?;
+    let user_id = result["user"]["id"].as_str().unwrap_or("").to_string();
+    // The points summary is part of the same answer, and it is read *after* the account exists.
+    result["points"] = crate::points::summary(&db, &user_id)
+        .await
+        .map_err(refused_from_points)?;
+    let token = take_session_token(&mut result);
+    Ok(api_response_with(result, 201, false, crate::Cookies::Session(&token))?)
+}
+
+/// `POST /api/auth/login`: import an old profile with its recovery code.
+pub async fn login(context: &Context<'_>, req: &Request, body: &Map<String, Value>) -> Handler {
+    let fingerprint = crate::auth::fingerprint(context.env, req)?;
+    rate_limit(
+        context.session,
+        context.now_ms,
+        &format!("login:{fingerprint}"),
+        20,
+        HOUR_MS,
+    )
+    .await?;
+    // A recovery code is imported *into* a wallet context, so one has to exist: without it the
+    // account would be created outside the context the caller is signing in from.
+    let Some(context_token) = crate::auth::cookie(req, crate::AUTH_CONTEXT_COOKIE) else {
+        return Err(RouteError::Failed(
+            409,
+            "wallet_context_required",
+            "Start sign-in again before importing your old profile.",
+        ));
+    };
+    let secret = session_secret(context)?;
+    let hash = |token: &str| crate::auth::token_hash(&secret, token);
+    let db = crate::db::D1(context.session);
+    let now = || context.now_ms;
+    let authentication = crate::auth::Authentication {
+        db: &db,
+        now_ms: &now,
+        token_hash: &hash,
+        random_token: &random_token,
+    };
+    let mut result = authentication
+        .login(body.get("recoveryCode"), Some(&json!(context_token)))
+        .await
+        .map_err(refused_from_auth)?;
+    let user_id = result["user"]["id"].as_str().unwrap_or("").to_string();
+    result["points"] = crate::points::summary(&db, &user_id)
+        .await
+        .map_err(refused_from_points)?;
+    let token = take_session_token(&mut result);
+    Ok(api_response_with(result, 200, false, crate::Cookies::Session(&token))?)
+}
+
+/// `POST /api/auth/logout`.
+pub async fn logout(context: &Context<'_>, req: &Request) -> Handler {
+    let secret = session_secret(context)?;
+    let hash = |token: &str| crate::auth::token_hash(&secret, token);
+    let session_token = crate::auth::cookie(req, crate::SESSION_COOKIE);
+    let context_token = crate::auth::cookie(req, crate::AUTH_CONTEXT_COOKIE);
+    let db = crate::db::D1(context.session);
+    let now = || context.now_ms;
+    let authentication = crate::auth::Authentication {
+        db: &db,
+        now_ms: &now,
+        token_hash: &hash,
+        random_token: &random_token,
+    };
+    let result = authentication
+        .logout(session_token.as_deref(), context_token.as_deref())
+        .await
+        .map_err(refused_from_auth)?;
+    Ok(api_response_with(result, 200, false, crate::Cookies::ClearSession)?)
+}
+
+/// The session secret, with the reference's own floor. A short one is a misconfiguration, and it
+/// is refused rather than used: every token hash would be weaker for it.
+fn session_secret(context: &Context<'_>) -> std::result::Result<String, RouteError> {
+    let secret = var(context.env, "SESSION_SECRET");
+    let secret = if secret.is_empty() {
+        context
+            .env
+            .secret("SESSION_SECRET")
+            .ok()
+            .map(|value| value.to_string())
+            .unwrap_or_default()
+    } else {
+        secret
+    };
+    if secret.len() < 32 {
+        return Err(RouteError::Failed(
+            503,
+            "configuration_unavailable",
+            "Service configuration is temporarily unavailable.",
+        ));
+    }
+    Ok(secret)
+}
+
+/// `sessionToken` is the cookie, not part of the body: it is removed from the answer so a caller
+/// never sees the credential in a payload it might log.
+fn take_session_token(result: &mut Value) -> String {
+    result
+        .as_object_mut()
+        .and_then(|object| object.remove("sessionToken"))
+        .and_then(|token| token.as_str().map(str::to_string))
+        .unwrap_or_default()
+}
+
+fn refused_from_auth(error: crate::auth::AuthError) -> RouteError {
+    RouteError::Failed(error.status, error.code, error.message)
+}
+
+fn refused_from_points(error: crate::points::PointsError) -> RouteError {
+    RouteError::Failed(error.status, error.code, error.message)
 }
 
 /// `POST /api/forecasts/{id}/disputes`: a participant challenges the proposed resolution.

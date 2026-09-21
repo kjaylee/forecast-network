@@ -84,7 +84,10 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
     match method {
         Method::Patch => path == "/api/me",
         Method::Post => {
-            path == "/api/activity/read"
+            path == "/api/auth/register"
+                || path == "/api/auth/login"
+                || path == "/api/auth/logout"
+                || path == "/api/activity/read"
                 || identifier(path, "/api/creators/", "/follow").is_some()
                 || ["/forecast", "/comments", "/share", "/evidence", "/disputes"]
                     .iter()
@@ -104,6 +107,7 @@ pub async fn dispatch_write(
     path: &str,
     user_id: Option<&str>,
     body: &serde_json::Map<String, Value>,
+    req: &Request,
 ) -> std::result::Result<Response, RouteError> {
     // The administrative paths come first, and before the session is required: they are authorized
     // by the bearer credential the entry already checked, and an operator is not a user. A route
@@ -119,6 +123,17 @@ pub async fn dispatch_write(
             return crate::writes::sweep(context).await;
         }
         return Err(RouteError::NotFound("not_found", "This page could not be found."));
+    }
+    // The routes that *make* a session come before the session requirement, for the obvious
+    // reason: a caller with no session is exactly who they are for.
+    if path == "/api/auth/register" {
+        return crate::writes::register(context, req, body).await;
+    }
+    if path == "/api/auth/login" {
+        return crate::writes::login(context, req, body).await;
+    }
+    if path == "/api/auth/logout" {
+        return crate::writes::logout(context, req).await;
     }
     let Some(user_id) = user_id else {
         return Err(RouteError::Unauthorized(

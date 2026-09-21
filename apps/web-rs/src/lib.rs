@@ -93,6 +93,51 @@ pub fn api_error(status: u16, code: &str, message: &str) -> Result<Response> {
     api_response(json!({"code": code, "message": message}), status, true)
 }
 
+pub const SESSION_COOKIE: &str = "__Host-forecast_session";
+pub const AUTH_CONTEXT_COOKIE: &str = "__Host-forecast_auth";
+pub const COOKIE_MAX_AGE: i64 = 2_592_000;
+
+/// What a response does to the two cookies, if anything.
+///
+/// Three states rather than two because they are three *different* responses in the reference: a
+/// bootstrapped context and a mutated session may not share one, and a response that carried both
+/// would leave the browser holding a context for a session that does not exist yet.
+pub enum Cookies<'a> {
+    None,
+    Session(&'a str),
+    ClearSession,
+    Context(&'a str),
+}
+
+fn cookie_header(cookies: &Cookies<'_>) -> Option<String> {
+    let (name, value, age) = match cookies {
+        Cookies::None => return None,
+        Cookies::Session(value) => (SESSION_COOKIE, (*value).to_string(), COOKIE_MAX_AGE),
+        Cookies::ClearSession => (SESSION_COOKIE, String::new(), 0),
+        Cookies::Context(value) => (AUTH_CONTEXT_COOKIE, (*value).to_string(), COOKIE_MAX_AGE),
+    };
+    Some(format!(
+        "{name}={value}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age={age}"
+    ))
+}
+
+/// `api_response`, with the cookies it may set.
+pub fn api_response_with(data: Value, status: u16, error: bool, cookies: Cookies<'_>) -> Result<Response> {
+    let headers = Headers::new();
+    headers.set("Content-Type", "application/json")?;
+    headers.set("Cache-Control", "no-store")?;
+    headers.set("X-Content-Type-Options", "nosniff")?;
+    headers.set("Referrer-Policy", "strict-origin-when-cross-origin")?;
+    headers.set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")?;
+    if let Some(cookie) = cookie_header(&cookies) {
+        headers.set("Set-Cookie", &cookie)?;
+    }
+    let body = json!({ (if error { "error" } else { "data" }): data });
+    Ok(Response::from_bytes(serde_json::to_vec(&body)?)?
+        .with_status(status)
+        .with_headers(headers))
+}
+
 fn now_ms() -> i64 {
     Date::now().as_millis() as i64
 }
@@ -187,13 +232,13 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
             // An administrative request is not rate-limited by the *client* bucket: it is one
             // operator, and the bucket exists to bound a crowd.
             if is_admin {
-                routes::dispatch_write(&context, &method, path, None, body).await
+                routes::dispatch_write(&context, &method, path, None, body, &req).await
             } else {
                 let fingerprint = auth::fingerprint(&env, &req)?;
                 match writes::rate_limit(&session, context.now_ms, &format!("http:{fingerprint}"), 180, 3_600_000).await
                 {
                     Ok(()) => match auth::user_id(&env, &session, &req, context.now_ms).await {
-                        Ok(user) => routes::dispatch_write(&context, &method, path, user.as_deref(), body).await,
+                        Ok(user) => routes::dispatch_write(&context, &method, path, user.as_deref(), body, &req).await,
                         Err(error) => Err(routes::RouteError::Worker(error)),
                     },
                     Err(error) => Err(error),
