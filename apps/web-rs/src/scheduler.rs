@@ -14,12 +14,28 @@
 //!
 //! **What the vectors reach, and what only a reading does.** The resolution, dispute and sweep
 //! goldens drive `run_due_jobs` over a v1 snapshot, which is every state the *default* lifecycle
-//! passes through. Two arms are not covered by any of them — an early-locked v2 question reaching
-//! `LOCKED`, and a paused job recovering its `RESOLVING` work — and both were wrong until they
+//! passes through. Two arms are not covered by any of them — a v2 question proposing from
+//! `RESOLVING`, and a paused job recovering its `RESOLVING` work — and both were wrong until they
 //! were read against the reference: each called the v1 pipeline for a v2 snapshot, because the
-//! snapshot had been narrowed to its base before the branch that distinguishes them. The branch
-//! is now the reference's own. It is verified by that reading and by nothing else, and a fixture
-//! that reaches these arms is what would change that.
+//! snapshot had been narrowed to its base before the branch that distinguishes them. (A v2
+//! question reaches `RESOLVING` the ordinary way: `LOCKED` applies `BeginResolution` in both
+//! languages, and the proposal — the branch in question — belongs to the arm after it.) The branch
+//! is now the reference's own, verified by that reading and by nothing else.
+//!
+//! A vector for it is *reachable* and was half-built: an `AutomationIntegrationTests` fixture whose
+//! forecast is upgraded by `automation.accept` becomes a real `ForecastV2` in `LOCKED`, and
+//! `run_due_jobs` then drives the arm — with the clock past the trigger's `qualified_at_ms`, and
+//! with the coordinator replaced by the real one over the early pipeline's scripted conversation
+//! (`[resolution_outputs()[1], counter()]`, as `generate_early_golden.proposal_case` scripts it).
+//! Two blockers were found and passed. The first is the fixture's evidence *host*:
+//! `reviewed_trigger`'s default article is not on an approved authoritative host, so the pipeline
+//! refuses with `SourceRejected: Source host is not in the approved authoritative-source registry`
+//! before it calls anyone — the Apple newsroom URL the automation golden already uses is. The
+//! second is that `reviewed_trigger` binds its trigger to the *fixture's* forecast, so accepting it
+//! against the Apple-rooted question it must be paired with answers `The forecast changed while the
+//! event was reviewed`. A fixture that reaches this arm therefore needs `reviewed_trigger`'s shape
+//! rebuilt for that forecast — evidence, verification, event times, qualification, qualifier and
+//! counter-qualifier provenance — which is the next unit of work rather than a line of setup.
 
 use serde_json::{json, Value};
 
