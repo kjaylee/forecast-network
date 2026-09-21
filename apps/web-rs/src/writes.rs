@@ -739,7 +739,7 @@ pub async fn compile_forecast(context: &Context<'_>, user_id: &str, body: &Map<S
     crate::scheduler::ai_lease(&db, &owner, &lease, context.now_ms, AI_DAILY_LIMIT)
         .await
         .map_err(|code| RouteError::Failed(429, "ai_unavailable", Box::leak(code.into_boxed_str())))?;
-    let outcome = compile(context.env, &db, user_id, &question, context.now_ms).await;
+    let outcome = compile(context.env, &db, user_id, &question, context.now_ms, false).await;
     crate::scheduler::release_ai(&db, &owner, &lease).await;
     let result = outcome?;
     Ok(api_response(result, 200, false)?)
@@ -751,6 +751,7 @@ async fn compile(
     user_id: &str,
     question: &str,
     now_ms: i64,
+    canonical_series: bool,
 ) -> std::result::Result<Value, RouteError> {
     let candidates = crate::ai::compiler_wire::candidate_forecasts(db, question)
         .await
@@ -764,8 +765,9 @@ async fn compile(
         &candidates,
         now_ms,
         // Only an operator-declared canonical series may treat a shifted explicit measurement
-        // interval as a distinct contract; a question a person wrote never does.
-        false,
+        // interval as a distinct contract; a question a person wrote never does, which is why this
+        // is a parameter with one call site that sets it.
+        canonical_series,
     )
     .await
     .map_err(|error| {
@@ -879,29 +881,34 @@ pub async fn publish_forecast(context: &Context<'_>, user_id: &str, body: &Map<S
     let draft_id = crate::auth::checked_text(body.get("draftId"), 128, 1)
         .map_err(|_| RouteError::Failed(400, "invalid_input", "Please check your input."))?;
     let key = body.get("idempotencyKey").and_then(Value::as_str).unwrap_or("");
-    let request = json!({"kind": "publish", "draftId": draft_id});
     let db = crate::db::D1(context.session);
-    if let Some(prior) = prior_row(&db, user_id, key, &request).await? {
+    let result = publish(context, &db, user_id, &draft_id, key).await?;
+    Ok(api_response(result, 201, false)?)
+}
+
+/// The publication itself, without the route's body parsing: an operator seed publishes through the
+/// same path a person does, and it must not go round it.
+async fn publish(
+    context: &Context<'_>,
+    db: &crate::db::D1<'_>,
+    user_id: &str,
+    draft_id: &str,
+    key: &str,
+) -> std::result::Result<Value, RouteError> {
+    let request = json!({"kind": "publish", "draftId": draft_id});
+    if let Some(prior) = prior_row(db, user_id, key, &request).await? {
         let forecast_id = text(&prior, "forecast_id").unwrap_or("").to_string();
-        return Ok(api_response(
-            json!({"forecast": card_row(&db, &forecast_id, context.now_ms).await?}),
-            200,
-            false,
-        )?);
+        return Ok(json!({"forecast": card_row(db, &forecast_id, context.now_ms).await?}));
     }
     let draft = crate::db::Database::first(
-        &db,
+        db,
         "SELECT * FROM drafts WHERE id=? AND user_id=?",
         &[json!(draft_id), json!(user_id)],
     )
     .await?
     .ok_or(RouteError::NotFound("draft_not_found", "Draft not found."))?;
     if let Some(published) = text(&draft, "published_id") {
-        return Ok(api_response(
-            json!({"forecast": card_row(&db, published, context.now_ms).await?}),
-            200,
-            false,
-        )?);
+        return Ok(json!({"forecast": card_row(db, published, context.now_ms).await?}));
     }
     let now = context.now_ms;
     if int(&draft, "expires_at").unwrap_or(0) <= now {
@@ -920,9 +927,9 @@ pub async fn publish_forecast(context: &Context<'_>, user_id: &str, body: &Map<S
     // event a retained article has since established.
     let coordinator = crate::application::coordinator(context.env);
     let collector = crate::application::text_fetcher();
-    let reader = crate::ai::early::Retained(&db);
+    let reader = crate::ai::early::Retained(db);
     crate::automation::Automation::new(
-        &db,
+        db,
         Some(&collector),
         Some(&coordinator),
         &reader,
@@ -1029,17 +1036,13 @@ pub async fn publish_forecast(context: &Context<'_>, user_id: &str, body: &Map<S
             json!(user_id),
         ],
     ));
-    if crate::db::Database::batch(&db, &statements).await.is_err() {
-        if let Some(prior) = prior_row(&db, user_id, key, &request).await? {
+    if crate::db::Database::batch(db, &statements).await.is_err() {
+        if let Some(prior) = prior_row(db, user_id, key, &request).await? {
             let forecast_id = text(&prior, "forecast_id").unwrap_or("").to_string();
-            return Ok(api_response(
-                json!({"forecast": card_row(&db, &forecast_id, context.now_ms).await?}),
-                200,
-                false,
-            )?);
+            return Ok(json!({"forecast": card_row(db, &forecast_id, context.now_ms).await?}));
         }
         let duplicate = crate::db::Database::first(
-            &db,
+            db,
             "SELECT id FROM forecasts WHERE specification_hash=? OR (normalized_question=? AND close_at=?)",
             &[
                 json!(specification.specification_hash().map_err(|_| invalid())?),
@@ -1060,11 +1063,7 @@ pub async fn publish_forecast(context: &Context<'_>, user_id: &str, body: &Map<S
         }
         return Err(crate::mutate::conflict());
     }
-    Ok(api_response(
-        json!({"forecast": card_row(&db, &forecast_id, context.now_ms).await?}),
-        201,
-        false,
-    )?)
+    Ok(json!({"forecast": card_row(db, &forecast_id, context.now_ms).await?}))
 }
 
 /// `require_expected_user`: the displayed account is a precondition, not a decoration.
@@ -1281,6 +1280,86 @@ pub async fn share_card(context: &Context<'_>, user_id: &str, body: &Map<String,
         .await
         .map_err(|error| RouteError::Failed(error.status, error.code, error.message))?;
     Ok(api_response(result, 201, false)?)
+}
+
+/// `POST /api/admin/seed`: create a genuine, compiler-reviewed question with no votes.
+///
+/// Editorial questions must be genuinely *open*: when the compiler's own forecast falls outside the
+/// uncertainty band the draft is discarded rather than published, so a question like "will there be
+/// a new version" never reaches the feed looking like a market. That check is the whole reason this
+/// is not merely compile-then-publish.
+///
+/// The seed key is derived from the question, so seeding the same question twice returns the first
+/// one: the operations row is the record that it was already asked.
+pub async fn seed(
+    context: &Context<'_>,
+    question: &str,
+    creator_name: &str,
+    uncertainty_band: Option<(i64, i64)>,
+    canonical_risk: bool,
+) -> std::result::Result<Value, RouteError> {
+    let db = crate::db::D1(context.session);
+    let editorial = crate::db::Database::first(&db, "SELECT id FROM users WHERE id='system_editorial'", &[]).await?;
+    if editorial.is_none() {
+        let secret = session_secret(context)?;
+        let recovery = crate::auth::token_hash(&secret, &format!("recovery:{}", random_token()));
+        crate::db::Database::execute(
+            &db,
+            "INSERT OR IGNORE INTO users(id,display_name,handle,recovery_hash,created_at) VALUES(?,?,?,?,?)",
+            &[
+                json!("system_editorial"),
+                json!(creator_name.chars().take(40).collect::<String>()),
+                json!("forecast_editorial"),
+                json!(recovery),
+                json!(context.now_ms),
+            ],
+        )
+        .await?;
+    }
+    let seed_key = format!(
+        "seed:{}",
+        forecast_domain::content_hash(&json!({"question": question}))
+            .map_err(|error| RouteError::Worker(error.to_string().into()))?
+    );
+    let previous = crate::db::Database::first(
+        &db,
+        "SELECT forecast_id FROM operations WHERE user_id=? AND operation_key=?",
+        &[json!("system_editorial"), json!(seed_key)],
+    )
+    .await?;
+    if let Some(previous) = previous {
+        let forecast_id = text(&previous, "forecast_id").unwrap_or("").to_string();
+        return Ok(json!({"forecast": card_row(&db, &forecast_id, context.now_ms).await?}));
+    }
+    let draft = compile(
+        context.env,
+        &db,
+        "system_editorial",
+        question,
+        context.now_ms,
+        canonical_risk,
+    )
+    .await?;
+    if let Some((low, high)) = uncertainty_band {
+        if let Some(probability) = draft.get("aiForecast").and_then(|forecast| forecast.get("probability")) {
+            if let Some(probability) = probability.as_f64() {
+                if !(low as f64..=high as f64).contains(&probability) {
+                    return Err(RouteError::Failed(
+                        409,
+                        "seed_not_uncertain",
+                        Box::leak(
+                            format!(
+                                "The compiler already expects this outcome ({probability:.0}% YES); editorial questions must be genuinely open."
+                            )
+                            .into_boxed_str(),
+                        ),
+                    ));
+                }
+            }
+        }
+    }
+    let draft_id = draft["draftId"].as_str().unwrap_or("");
+    publish(context, &db, "system_editorial", draft_id, &seed_key).await
 }
 
 /// `POST /api/forecasts/{id}/attest/{prepare|confirm}`: a phone signs a Devnet memo.

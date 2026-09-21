@@ -104,6 +104,7 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || identifier(path, "/api/admin/forecasts/", "/adjudicate").is_some()
                 || path == "/api/admin/automation/run"
                 || path == "/api/admin/sweep"
+                || path == "/api/admin/seed"
         }
         _ => false,
     }
@@ -130,6 +131,13 @@ pub async fn dispatch_write(
         }
         if path == "/api/admin/sweep" {
             return crate::writes::sweep(context).await;
+        }
+        if path == "/api/admin/seed" {
+            // An editorial seed is genuinely open by default: the band is the route's, and the
+            // canonical-series flag is what tells the compiler this is a declared series.
+            let question = body.get("question").and_then(Value::as_str).unwrap_or("");
+            let result = crate::writes::seed(context, question, "Forecast Editorial", Some((15, 85)), false).await?;
+            return Ok(api_response(result, 201, false)?);
         }
         return Err(RouteError::NotFound("not_found", "This page could not be found."));
     }
