@@ -11,13 +11,23 @@
 //!
 //! The lease exists for the same reason: one worker may be inside an AI call for a forecast at a
 //! time, and the database says so rather than this process remembering.
+//!
+//! **What the vectors reach, and what only a reading does.** The resolution, dispute and sweep
+//! goldens drive `run_due_jobs` over a v1 snapshot, which is every state the *default* lifecycle
+//! passes through. Two arms are not covered by any of them — an early-locked v2 question reaching
+//! `LOCKED`, and a paused job recovering its `RESOLVING` work — and both were wrong until they
+//! were read against the reference: each called the v1 pipeline for a v2 snapshot, because the
+//! snapshot had been narrowed to its base before the branch that distinguishes them. The branch
+//! is now the reference's own. It is verified by that reading and by nothing else, and a fixture
+//! that reaches these arms is what would change that.
 
 use serde_json::{json, Value};
 
 use forecast_domain::lifecycle::Payload;
-use forecast_domain::lifecycle::Snapshot;
+use forecast_domain::lifecycle::{AnyResolution, Snapshot};
 
 use crate::ai::coordinator::Coordinator;
+use crate::ai::early::propose_early_resolution;
 use crate::ai::resolution::{propose_resolution, EvidenceFetcher};
 use crate::db::{int, text, Database};
 use crate::mutate::Statement;
@@ -353,13 +363,27 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                 // it reproduces is the *acceptance* rule rather than the interruption: the work may
                 // run long, and its answer is discarded rather than used.
                 let started = (clock)();
-                let outcome =
-                    propose_resolution(coordinator, fetch, &forecast, now_ms, indeterminate, determined).await;
+                // A v2 question proposes an *early* resolution: the upgrade replaced the question
+                // the judge is asked, and the payload's schema version is what says so. The
+                // reference branches here on the snapshot's own type — and a port that read
+                // `.base()` first, which is what this arm did, would lock a v2 question against
+                // the question it used to be. The timing review above is still computed for both:
+                // the reference computes it before the branch too, and it can refuse either.
+                let outcome = match &snapshot {
+                    Snapshot::V2(v2) => propose_early_resolution(coordinator, reader, v2, now_ms)
+                        .await
+                        .map(|result| (2, AnyResolution::Early(result.resolution), result.artifacts)),
+                    Snapshot::V1(_) => {
+                        propose_resolution(coordinator, fetch, &forecast, now_ms, indeterminate, determined)
+                            .await
+                            .map(|result| (1, AnyResolution::Standard(result.resolution), result.artifacts))
+                    }
+                };
                 release_ai(db, &owner, &ai_token).await;
                 if workflow_deadline_passed(started, (clock)()) {
                     return Err(JobFailure::new("ai_workflow_timeout"));
                 }
-                let result = outcome.map_err(|error| match error {
+                let (schema_version, resolution, artifacts) = outcome.map_err(|error| match error {
                     crate::ai::coordinator::CoordinatorError::Unavailable { providers, artifacts } => {
                         JobFailure::AiUnavailable { providers, artifacts }
                     }
@@ -367,7 +391,6 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                         JobFailure::Refused { code, artifacts }
                     }
                 })?;
-                let resolution = result.resolution;
                 if let Ok(retained) = serde_json::to_value(&resolution) {
                     if let Ok(artifact) = crate::ai::coordinator::artifact("resolution", &retained) {
                         let _ = retain(db, &artifact, now_ms).await;
@@ -376,8 +399,7 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                 // The artifacts the judge produced travel with the command *and* with the timing
                 // review: the review reads the bytes the judge read, rather than re-fetching a page
                 // that may have changed since.
-                let rows: Vec<crate::source_watch::Retained> = result
-                    .artifacts
+                let rows: Vec<crate::source_watch::Retained> = artifacts
                     .iter()
                     .map(|artifact| {
                         (
@@ -390,8 +412,7 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                     .collect();
                 extra = crate::source_watch::artifact_sql(&rows, now_ms)
                     .map_err(|refusal| JobFailure::new(refusal.code()))?;
-                timing_artifacts = result
-                    .artifacts
+                timing_artifacts = artifacts
                     .iter()
                     .map(|artifact| {
                         (
@@ -402,8 +423,8 @@ pub async fn advance_job(job: Job<'_>) -> Result<(), JobFailure> {
                     })
                     .collect();
                 Payload::ProposeResolution {
-                    schema_version: 1,
-                    resolution: forecast_domain::lifecycle::AnyResolution::Standard(resolution),
+                    schema_version,
+                    resolution,
                 }
             }
             "PROPOSED" => Payload::BeginChallenge {
@@ -593,7 +614,9 @@ struct Work<'a> {
     coordinator: &'a Coordinator,
     fetch: &'a EvidenceFetcher,
     reader: &'a dyn crate::ai::early::ArtifactReader,
-    forecast: &'a forecast_domain::lifecycle::Forecast,
+    /// The whole snapshot rather than its base: a v2 question is recovered through the *early*
+    /// pipeline, and a base forecast has already lost the distinction by the time it arrives.
+    snapshot: &'a Snapshot,
     previous: &'a str,
     now_ms: i64,
     clock: &'a dyn Fn() -> i64,
@@ -606,11 +629,12 @@ async fn recover_work(work: Work<'_>) -> Result<Recovered, JobFailure> {
         coordinator,
         fetch,
         reader,
-        forecast,
+        snapshot,
         previous,
         now_ms,
         clock,
     } = work;
+    let forecast = snapshot.base();
     if previous == "RESOLVING" {
         let started = (clock)();
         let timing = timing_status(db, &forecast.forecast_id)
@@ -618,32 +642,39 @@ async fn recover_work(work: Work<'_>) -> Result<Recovered, JobFailure> {
             .map_err(|_| JobFailure::new("resolution_timing_unavailable"))?;
         let indeterminate = timing["reason"] == json!("publication_time_unknown");
         let determined = timing["determination"].as_str();
-        let result = propose_resolution(coordinator, fetch, forecast, now_ms, indeterminate, determined)
-            .await
-            .map_err(|error| match error {
-                crate::ai::coordinator::CoordinatorError::Unavailable { providers, artifacts } => {
-                    JobFailure::AiUnavailable { providers, artifacts }
-                }
-                crate::ai::coordinator::CoordinatorError::Rejected { code, artifacts, .. } => {
-                    JobFailure::Refused { code, artifacts }
-                }
-            })?;
+        // The same branch the LOCKED arm takes, for the same reason: a v2 question's recovery is
+        // an early proposal, and the schema version is what carries that to the command.
+        let outcome = match snapshot {
+            Snapshot::V2(v2) => propose_early_resolution(coordinator, reader, v2, now_ms)
+                .await
+                .map(|result| (2, AnyResolution::Early(result.resolution), result.artifacts)),
+            Snapshot::V1(_) => propose_resolution(coordinator, fetch, forecast, now_ms, indeterminate, determined)
+                .await
+                .map(|result| (1, AnyResolution::Standard(result.resolution), result.artifacts)),
+        };
         if workflow_deadline_passed(started, (clock)()) {
             return Err(JobFailure::new("ai_workflow_timeout"));
         }
-        let resolution = result.resolution;
-        let provider = resolution.judge.provider.clone();
-        let at = resolution.proposed_at_ms;
+        let (schema_version, resolution, artifacts) = outcome.map_err(|error| match error {
+            crate::ai::coordinator::CoordinatorError::Unavailable { providers, artifacts } => {
+                JobFailure::AiUnavailable { providers, artifacts }
+            }
+            crate::ai::coordinator::CoordinatorError::Rejected { code, artifacts, .. } => {
+                JobFailure::Refused { code, artifacts }
+            }
+        })?;
+        let provider = resolution.base().judge.provider.clone();
+        let at = resolution.base().proposed_at_ms;
         let record = serde_json::to_value(&resolution).unwrap_or(Value::Null);
         return Ok((
             Payload::ProposeResolution {
-                schema_version: 1,
-                resolution: forecast_domain::lifecycle::AnyResolution::Standard(resolution),
+                schema_version,
+                resolution,
             },
             at,
             provider,
             record,
-            result.artifacts,
+            artifacts,
         ));
     }
     let reviewed: Vec<String> = forecast
@@ -732,7 +763,7 @@ async fn recover_job(recovery: Recovery<'_>) -> Result<(), JobFailure> {
         coordinator,
         fetch,
         reader,
-        forecast: &forecast,
+        snapshot,
         previous: &previous,
         now_ms,
         clock,
