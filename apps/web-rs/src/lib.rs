@@ -31,6 +31,7 @@ mod golden;
 pub mod html;
 pub mod html_entities;
 pub mod html_parse;
+mod market_trades;
 mod markets;
 mod mutate;
 pub mod participation_holds;

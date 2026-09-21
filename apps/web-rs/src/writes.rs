@@ -1071,7 +1071,7 @@ async fn publish(
 /// A profile can change in another tab, so an action that moves points or wallet settings carries
 /// the account the caller believed they were acting as. A missing precondition is the caller's to
 /// fix; a mismatched one is a different account entirely, and those are two different answers.
-fn require_expected_user(body: &Map<String, Value>, user_id: &str) -> std::result::Result<(), RouteError> {
+pub(crate) fn require_expected_user(body: &Map<String, Value>, user_id: &str) -> std::result::Result<(), RouteError> {
     let Some(expected) = body.get("expectedUserId").and_then(Value::as_str) else {
         return Err(RouteError::Failed(
             400,

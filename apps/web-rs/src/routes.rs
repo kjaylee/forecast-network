@@ -33,7 +33,7 @@ fn profile_card_hash(path: &str) -> Option<&str> {
     (rest.len() == 64 && rest.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))).then_some(rest)
 }
 
-fn query_value(url: &Url, name: &str) -> Option<String> {
+pub(crate) fn query_value(url: &Url, name: &str) -> Option<String> {
     url.query_pairs()
         .find(|(k, v)| k == name && !v.is_empty())
         .map(|(_, v)| v.to_string())
@@ -125,6 +125,9 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || ["/forecast", "/comments", "/share", "/evidence", "/disputes"]
                     .iter()
                     .any(|suffix| identifier(path, "/api/forecasts/", suffix).is_some())
+                || ["/quote", "/fill"]
+                    .iter()
+                    .any(|suffix| identifier(path, "/api/forecasts/", &format!("/market{suffix}")).is_some())
                 || identifier(path, "/api/admin/forecasts/", "/adjudicate").is_some()
                 || path == "/api/admin/automation/run"
                 || path == "/api/admin/sweep"
@@ -258,6 +261,16 @@ pub async fn dispatch_write(
     if path.starts_with("/api/auth/wallet/") {
         return crate::writes::wallet_login(context, req, path, body).await;
     }
+    // A market quote is the one trade a caller without a session may reach, because it binds
+    // nothing — and a market fill needs a session with a message of its own. Both come before the
+    // session requirement: one because it does not need a session, the other because the refusal
+    // it *does* give is spelled differently from the generic one.
+    if let Some(id) = identifier(path, "/api/forecasts/", "/market/quote") {
+        return crate::market_trades::quote_route(context, req, user_id, &id, body).await;
+    }
+    if let Some(id) = identifier(path, "/api/forecasts/", "/market/fill") {
+        return crate::market_trades::fill_route(context, user_id, &id, body).await;
+    }
     let Some(user_id) = user_id else {
         return Err(RouteError::Unauthorized(
             "authentication_required",
@@ -390,6 +403,7 @@ pub fn owns(path: &str) -> bool {
         || profile_card_hash(path).is_some()
         || identifier(path, "/api/forecasts/", "/integrity").is_some()
         || identifier(path, "/api/forecasts/", "/market").is_some()
+        || identifier(path, "/api/forecasts/", "/market/receipt").is_some()
         || identifier(path, "/api/forecasts/", "/translation").is_some()
         || identifier(path, "/api/creators/", "").is_some()
         || path.starts_with("/api/risk/feeds/")
@@ -446,6 +460,16 @@ pub async fn dispatch(
             crate::reads::integrity(
                 context,
                 &identifier(path, "/api/forecasts/", "/integrity").expect("matched"),
+            )
+            .await
+        }
+        _ if identifier(path, "/api/forecasts/", "/market/receipt").is_some() => {
+            let user = crate::auth::user_id(context.env, context.session, req, context.now_ms).await?;
+            crate::market_trades::receipt_route(
+                context,
+                url,
+                user.as_deref(),
+                &identifier(path, "/api/forecasts/", "/market/receipt").expect("matched"),
             )
             .await
         }
