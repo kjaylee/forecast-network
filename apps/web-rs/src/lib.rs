@@ -5,6 +5,7 @@
 use serde_json::{json, Value};
 use worker::*;
 
+pub mod admin;
 pub mod ai;
 pub mod analytics;
 pub mod application;
@@ -106,6 +107,7 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         return env.assets("ASSETS")?.fetch_request(req).await;
     }
     let method = req.method();
+    let is_admin = path.starts_with("/api/admin/");
     let native_read = method == Method::Get && routes::owns(path);
     let native_write = routes::owns_write(&method, path);
     if !native_read && !native_write {
@@ -114,20 +116,30 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let mut req = req;
     let mut body: Option<serde_json::Map<String, Value>> = None;
     if native_write {
-        let url = req.url()?;
-        let origin = format!("{}://{}", url.scheme(), url.host_str().unwrap_or(""));
-        let origin = match url.port() {
-            Some(port) => format!("{origin}:{port}"),
-            None => origin,
-        };
-        if req.headers().get("origin")?.as_deref() != Some(origin.as_str())
-            || req.headers().get("X-Forecast-Client")?.as_deref() != Some("web")
-        {
-            return api_error(
-                403,
-                "origin_denied",
-                "Please submit this request from the Forecast website.",
-            );
+        // An administrative request is authenticated by a bearer credential rather than by its
+        // origin: it does not come from a browser, so there is no origin to check. That exemption
+        // is exactly what the bearer check buys, and it is stated here rather than left to be
+        // inferred from the route table.
+        if is_admin {
+            if !admin::authorized(&env, &req, admin::scheduler_may_trigger(path)) {
+                return api_error(403, "forbidden", "You do not have access to this action.");
+            }
+        } else {
+            let url = req.url()?;
+            let origin = format!("{}://{}", url.scheme(), url.host_str().unwrap_or(""));
+            let origin = match url.port() {
+                Some(port) => format!("{origin}:{port}"),
+                None => origin,
+            };
+            if req.headers().get("origin")?.as_deref() != Some(origin.as_str())
+                || req.headers().get("X-Forecast-Client")?.as_deref() != Some("web")
+            {
+                return api_error(
+                    403,
+                    "origin_denied",
+                    "Please submit this request from the Forecast website.",
+                );
+            }
         }
         if !req
             .headers()
@@ -139,7 +151,15 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
             return api_error(415, "json_required", "A JSON request is required.");
         }
         let bytes = req.bytes().await?;
-        if bytes.len() > MAX_BODY_BYTES {
+        // A prepared adjudication carries retained evidence, so the operator's cap is the wider
+        // one. It is raised *here* rather than by widening the general cap, which every write
+        // shares.
+        let cap = if is_admin {
+            admin::MAX_ADMIN_BODY_BYTES
+        } else {
+            MAX_BODY_BYTES
+        };
+        if bytes.len() > cap {
             return api_error(413, "payload_too_large", "The request body exceeds the size limit.");
         }
         match serde_json::from_slice::<Value>(&bytes) {
@@ -163,13 +183,20 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     };
     let outcome = match &body {
         Some(body) => {
-            let fingerprint = auth::fingerprint(&env, &req)?;
-            match writes::rate_limit(&session, context.now_ms, &format!("http:{fingerprint}"), 180, 3_600_000).await {
-                Ok(()) => match auth::user_id(&env, &session, &req, context.now_ms).await {
-                    Ok(user) => routes::dispatch_write(&context, &method, path, user.as_deref(), body).await,
-                    Err(error) => Err(routes::RouteError::Worker(error)),
-                },
-                Err(error) => Err(error),
+            // An administrative request is not rate-limited by the *client* bucket: it is one
+            // operator, and the bucket exists to bound a crowd.
+            if is_admin {
+                routes::dispatch_write(&context, &method, path, None, body).await
+            } else {
+                let fingerprint = auth::fingerprint(&env, &req)?;
+                match writes::rate_limit(&session, context.now_ms, &format!("http:{fingerprint}"), 180, 3_600_000).await
+                {
+                    Ok(()) => match auth::user_id(&env, &session, &req, context.now_ms).await {
+                        Ok(user) => routes::dispatch_write(&context, &method, path, user.as_deref(), body).await,
+                        Err(error) => Err(routes::RouteError::Worker(error)),
+                    },
+                    Err(error) => Err(error),
+                }
             }
         }
         None => routes::dispatch(&context, path, &req, &url).await,

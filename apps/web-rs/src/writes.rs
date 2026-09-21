@@ -324,6 +324,65 @@ pub async fn adjudicate_forecast(
     Ok(result)
 }
 
+/// `POST /api/admin/forecasts/{id}/adjudicate`: a prepared operator verdict.
+///
+/// The route layer authenticates the operator before this is reached; what is checked here is the
+/// *shape* of the decision, because a missing revision is not a decision anybody can replay.
+/// `revision` is required exactly — a prepared verdict that does not say which revision it was
+/// prepared against is a verdict that may be applied to the wrong one.
+pub async fn adjudicate(context: &Context<'_>, forecast_id: &str, body: &Map<String, Value>) -> Handler {
+    let revision = match body.get("revision").and_then(Value::as_i64) {
+        Some(revision) if revision >= 0 => revision,
+        _ => return Err(RouteError::Input),
+    };
+    let resolution: forecast_domain::models::Resolution =
+        serde_json::from_value(body.get("resolution").cloned().unwrap_or(Value::Null))
+            .map_err(|_| RouteError::Input)?;
+    let adjudicator: forecast_domain::models::AIProvenance =
+        serde_json::from_value(body.get("adjudicator").cloned().unwrap_or(Value::Null))
+            .map_err(|_| RouteError::Input)?;
+    let mut artifacts = Vec::new();
+    for record in body.get("artifacts").and_then(Value::as_array).unwrap_or(&Vec::new()) {
+        let field = |name: &str| record.get(name).and_then(Value::as_str).map(str::to_string);
+        let (Some(hash), Some(kind), Some(body_text)) = (field("content_hash"), field("kind"), field("body")) else {
+            return Err(RouteError::Input);
+        };
+        let media = field("media_type").unwrap_or_else(|| "application/json".to_string());
+        artifacts.push((hash, kind, body_text, media));
+    }
+    let key = body.get("idempotencyKey").and_then(Value::as_str).unwrap_or("");
+    let db = crate::db::D1(context.session);
+    let coordinator = crate::application::coordinator(context.env);
+    let evidence = crate::application::evidence_fetcher();
+    let collector = crate::application::text_fetcher();
+    let application = crate::application::Application {
+        db: &db,
+        ai: &coordinator,
+        evidence: &evidence,
+        collector: &collector,
+        reader: crate::ai::early::Retained(&db),
+        now_ms: context.now_ms,
+        token: &random_token,
+        daily_limit: AI_DAILY_LIMIT,
+        source_watch_enabled: var(context.env, "SOURCE_WATCH_ENABLED") == "true",
+        live_markets_enabled: var(context.env, "LIVE_MARKETS_ENABLED") == "true",
+        // An adjudication enters PROPOSED and never finalizes, so no chain gate is consulted.
+        registry: None,
+    };
+    let result = application
+        .adjudicate_forecast(Adjudication {
+            forecast_id,
+            resolution: &resolution,
+            adjudicator: &adjudicator,
+            artifacts: &artifacts,
+            idempotency_key: key,
+            expected_revision: Some(revision),
+            token: &random_token,
+        })
+        .await?;
+    Ok(api_response(result, 200, false)?)
+}
+
 /// `POST /api/forecasts/{id}/evidence`: a forecaster reports an official announcement.
 ///
 /// The application is assembled here rather than held on the route context, because every transport

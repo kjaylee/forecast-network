@@ -89,6 +89,7 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || ["/forecast", "/comments", "/share", "/evidence"]
                     .iter()
                     .any(|suffix| identifier(path, "/api/forecasts/", suffix).is_some())
+                || identifier(path, "/api/admin/forecasts/", "/adjudicate").is_some()
         }
         _ => false,
     }
@@ -102,6 +103,15 @@ pub async fn dispatch_write(
     user_id: Option<&str>,
     body: &serde_json::Map<String, Value>,
 ) -> std::result::Result<Response, RouteError> {
+    // The administrative paths come first, and before the session is required: they are authorized
+    // by the bearer credential the entry already checked, and an operator is not a user. A route
+    // that needed both would be a route no operator could reach.
+    if path.starts_with("/api/admin/") {
+        if let Some(id) = identifier(path, "/api/admin/forecasts/", "/adjudicate") {
+            return crate::writes::adjudicate(context, &id, body).await;
+        }
+        return Err(RouteError::NotFound("not_found", "This page could not be found."));
+    }
     let Some(user_id) = user_id else {
         return Err(RouteError::Unauthorized(
             "authentication_required",
