@@ -188,7 +188,7 @@ pub fn evidence_fetcher() -> EvidenceFetcher {
 }
 
 #[cfg(target_arch = "wasm32")]
-async fn post_json(url: &str, headers: &[(String, String)], body: &Value) -> Result<String, ()> {
+pub(crate) async fn post_json(url: &str, headers: &[(String, String)], body: &Value) -> Result<String, ()> {
     let init = request_init(Method::Post, headers, Some(body.to_string())).map_err(|_| ())?;
     let request = Request::new_with_init(url, &init).map_err(|_| ())?;
     let mut response = Fetch::Request(request).send().await.map_err(|_| ())?;
@@ -196,7 +196,7 @@ async fn post_json(url: &str, headers: &[(String, String)], body: &Value) -> Res
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-async fn post_json(_url: &str, _headers: &[(String, String)], _body: &Value) -> Result<String, ()> {
+pub(crate) async fn post_json(_url: &str, _headers: &[(String, String)], _body: &Value) -> Result<String, ()> {
     Err(())
 }
 

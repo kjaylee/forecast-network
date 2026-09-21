@@ -89,6 +89,9 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || path == "/api/auth/logout"
                 || path.starts_with("/api/auth/wallet/")
                 || path == "/api/activity/read"
+                || path == "/api/me/share-card"
+                || path == "/api/seeker/verify"
+                || ["/api/wallet/challenge", "/api/wallet/link", "/api/wallet/unlink"].contains(&path)
                 || path == "/api/forecasts/compile"
                 || ["/prepare", "/confirm"]
                     .iter()
@@ -156,6 +159,15 @@ pub async fn dispatch_write(
     }
     if path == "/api/activity/read" {
         return crate::writes::read_activity(context, user_id).await;
+    }
+    if path == "/api/me/share-card" {
+        return crate::writes::share_card(context, user_id, body).await;
+    }
+    if path == "/api/seeker/verify" {
+        return crate::writes::seeker_verify(context, user_id, body).await;
+    }
+    if ["/api/wallet/challenge", "/api/wallet/link", "/api/wallet/unlink"].contains(&path) {
+        return crate::writes::wallet(context, req, path, user_id, body).await;
     }
     if path == "/api/forecasts" {
         return crate::writes::publish_forecast(context, user_id, body).await;

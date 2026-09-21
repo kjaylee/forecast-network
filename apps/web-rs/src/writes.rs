@@ -1067,6 +1067,222 @@ pub async fn publish_forecast(context: &Context<'_>, user_id: &str, body: &Map<S
     )?)
 }
 
+/// `require_expected_user`: the displayed account is a precondition, not a decoration.
+///
+/// A profile can change in another tab, so an action that moves points or wallet settings carries
+/// the account the caller believed they were acting as. A missing precondition is the caller's to
+/// fix; a mismatched one is a different account entirely, and those are two different answers.
+fn require_expected_user(body: &Map<String, Value>, user_id: &str) -> std::result::Result<(), RouteError> {
+    let Some(expected) = body.get("expectedUserId").and_then(Value::as_str) else {
+        return Err(RouteError::Failed(
+            400,
+            "account_precondition_required",
+            "Reload your profile before changing points or wallet settings.",
+        ));
+    };
+    if expected != user_id {
+        return Err(RouteError::Failed(
+            409,
+            "account_changed",
+            "Your signed-in account changed. Reload your profile before continuing.",
+        ));
+    }
+    Ok(())
+}
+
+/// The three wallet-management routes: challenge, link and unlink.
+///
+/// All three are gated by the wallet-login switch and by the displayed-account precondition, and
+/// both gates are checked before the limiter: an installation that has moved to wallet sign-in must
+/// not leave the migration routes open, and a stale tab must not spend a caller's daily allowance.
+pub async fn wallet(
+    context: &Context<'_>,
+    req: &Request,
+    path: &str,
+    user_id: &str,
+    body: &Map<String, Value>,
+) -> Handler {
+    if var(context.env, "WALLET_LOGIN_REQUIRED").to_lowercase() == "true" {
+        return Err(RouteError::Failed(
+            409,
+            "wallet_migration_required",
+            "Use wallet sign-in to migrate your existing profile.",
+        ));
+    }
+    require_expected_user(body, user_id)?;
+    let (scope, limit) = match path {
+        "/api/wallet/challenge" => ("wallet-challenge", 20),
+        "/api/wallet/link" => ("wallet-link", 40),
+        _ => ("wallet-unlink", 10),
+    };
+    rate_limit(
+        context.session,
+        context.now_ms,
+        &format!("{scope}:{user_id}"),
+        limit,
+        HOUR_MS,
+    )
+    .await?;
+    let db = crate::db::D1(context.session);
+    let now = || context.now_ms;
+    let verifier = crate::application::signature_verifier();
+    let points = ProductionPoints {
+        session: context.session,
+    };
+    let service = crate::wallets::WalletService {
+        db: &db,
+        now_ms: &now,
+        random_token: &random_token,
+        verify_signature: &verifier,
+        points: &points,
+        origin: origin_of(req)?,
+    };
+    let result = match path {
+        "/api/wallet/challenge" => {
+            service
+                .challenge(user_id, body.get("address").and_then(Value::as_str).unwrap_or(""))
+                .await
+        }
+        "/api/wallet/link" => {
+            // The precondition is the *route's*, not the service's: the body it forwards carries
+            // only what the wallet protocol is about.
+            let wallet_body: Map<String, Value> = body
+                .iter()
+                .filter(|(key, _)| key.as_str() != "expectedUserId")
+                .map(|(key, value)| (key.clone(), value.clone()))
+                .collect();
+            service.link(user_id, &Value::Object(wallet_body)).await
+        }
+        _ => service.unlink(user_id).await,
+    }
+    .map_err(refused_from_wallet)?;
+    Ok(api_response(result, 200, false)?)
+}
+
+/// `POST /api/seeker/verify`: prove a Seeker device from its own token.
+pub async fn seeker_verify(context: &Context<'_>, user_id: &str, body: &Map<String, Value>) -> Handler {
+    require_expected_user(body, user_id)?;
+    let db = crate::db::D1(context.session);
+    let now = || context.now_ms;
+    let rpc = seeker_rpc(context.env);
+    let limiter = SeekerLimit {
+        session: context.session,
+        now_ms: context.now_ms,
+    };
+    let verification = crate::seeker::SeekerVerification {
+        db: &db,
+        rpc: rpc.as_deref(),
+        now_ms: &now,
+        rate_limit: &limiter,
+    };
+    let result = verification
+        .verify(user_id)
+        .await
+        .map_err(|error| RouteError::Failed(error.status, error.code, error.message))?;
+    Ok(api_response(result, 200, false)?)
+}
+
+/// `mainnet_rpc`: a keyed endpoint first, then the public failover list from the vars.
+fn seeker_rpc(env: &Env) -> Option<Box<crate::seeker::Rpc>> {
+    let keyed = env
+        .secret("SOLANA_MAINNET_RPC_KEYED")
+        .ok()
+        .map(|value| value.to_string());
+    let public = var(env, "SOLANA_MAINNET_RPC");
+    let mut urls: Vec<String> = Vec::new();
+    if let Some(keyed) = keyed {
+        if !keyed.is_empty() {
+            urls.push(keyed);
+        }
+    }
+    urls.extend(
+        public
+            .split(',')
+            .map(str::trim)
+            .filter(|url| !url.is_empty())
+            .map(str::to_string),
+    );
+    if urls.is_empty() {
+        return None;
+    }
+    let rpc: crate::seeker::Rpc = Box::new(move |method: String, params: Vec<Value>| {
+        let urls = urls.clone();
+        Box::pin(async move { rpc_call(&urls, &method, &params).await })
+    });
+    Some(Box::new(rpc))
+}
+
+/// A JSON-RPC call with failover, for the one reader that talks to a chain this Worker does not own.
+async fn rpc_call(urls: &[String], method: &str, params: &[Value]) -> Result<Value, ()> {
+    for url in urls {
+        let body = json!({"jsonrpc": "2.0", "id": 1, "method": method, "params": params});
+        let headers = vec![("Content-Type".to_string(), "application/json".to_string())];
+        let Ok(text) = crate::application::post_json(url, &headers, &body).await else {
+            continue;
+        };
+        if let Ok(reply) = serde_json::from_str::<Value>(&text) {
+            if let Some(result) = reply.get("result") {
+                return Ok(result.clone());
+            }
+        }
+    }
+    Err(())
+}
+
+struct SeekerLimit<'a> {
+    session: &'a D1DatabaseSession,
+    now_ms: i64,
+}
+
+impl crate::seeker::RateLimit for SeekerLimit<'_> {
+    fn check<'a>(
+        &'a self,
+        scope: String,
+        limit: i64,
+        window_ms: i64,
+    ) -> crate::seeker::BorrowedFuture<'a, Result<(), ()>> {
+        Box::pin(async move {
+            rate_limit(self.session, self.now_ms, &scope, limit, window_ms)
+                .await
+                .map_err(|_| ())
+        })
+    }
+}
+
+/// `POST /api/me/share-card`: publish the profile card, so nothing is public until it is shared.
+pub async fn share_card(context: &Context<'_>, user_id: &str, body: &Map<String, Value>) -> Handler {
+    // The body's key set is checked exactly: a publication that accepted anything else would be a
+    // way to hand this route fields it does not read.
+    let exact = body.len() == 1 && body.contains_key("expectedUserId");
+    if !exact || !body["expectedUserId"].is_string() {
+        return Err(RouteError::Failed(
+            400,
+            "invalid_input",
+            "Profile publication requires the displayed account precondition.",
+        ));
+    }
+    if body["expectedUserId"].as_str() != Some(user_id) {
+        return Err(RouteError::Failed(
+            409,
+            "profile_owner_changed",
+            "Your signed-in profile changed. Reload your profile before sharing.",
+        ));
+    }
+    rate_limit(
+        context.session,
+        context.now_ms,
+        &format!("profile-card:{user_id}"),
+        10,
+        HOUR_MS,
+    )
+    .await?;
+    let db = crate::db::D1(context.session);
+    let result = crate::profile_cards::create(&db, user_id, context.now_ms)
+        .await
+        .map_err(|error| RouteError::Failed(error.status, error.code, error.message))?;
+    Ok(api_response(result, 201, false)?)
+}
+
 /// `POST /api/forecasts/{id}/attest/{prepare|confirm}`: a phone signs a Devnet memo.
 ///
 /// `prepare` returns an *incomplete* transaction — one real signature and one zeroed slot — which is
