@@ -27,11 +27,31 @@ pub const CURRENT_ADDRESS: &str =
     "COALESCE((SELECT address FROM wallet_identities WHERE user_id=? AND status='active' \
      AND converted_at IS NOT NULL),(SELECT address FROM wallet_links WHERE user_id=?))";
 
+/// A future that borrows for as long as its caller does, for the seams that reach the request's
+/// own database handle.
+pub type BorrowedFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
 pub type BoxFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T>>>;
 /// The mainnet transport. It is injected so the parsing stays testable without a network.
 pub type Rpc = Box<dyn Fn(String, Vec<Value>) -> BoxFuture<Result<Value, ()>>>;
 /// `rate_limit(scope, limit, window_ms)`, injected like every other counter in this port.
-pub type RateLimit = dyn Fn(&str, i64, i64) -> BoxFuture<Result<(), String>>;
+/// `self.rate_limit(scope, limit, window_ms)`, injected because the limiter is storage.
+///
+/// A trait rather than a boxed closure, for the reason `PointsSummary` is: `Fn`'s `Output` is an
+/// associated type and a trait object over `Fn` is invariant in it, so a closure that reads the
+/// request's own database cannot be passed where a `'static` box is wanted — and a rate limit is
+/// exactly that. A method can name its own lifetime, and the future it returns borrows `&self`.
+pub trait RateLimit {
+    fn check<'a>(&'a self, scope: String, limit: i64, window_ms: i64) -> BorrowedFuture<'a, Result<(), ()>>;
+}
+
+/// A limiter that never refuses, for the paths where the reference does not count.
+pub struct NoLimit;
+
+impl RateLimit for NoLimit {
+    fn check<'a>(&'a self, _scope: String, _limit: i64, _window_ms: i64) -> BorrowedFuture<'a, Result<(), ()>> {
+        Box::pin(async { Ok(()) })
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SeekerError {
@@ -229,7 +249,7 @@ pub struct SeekerVerification<'a> {
     pub db: &'a dyn Database,
     pub rpc: Option<&'a Rpc>,
     pub now_ms: &'a dyn Fn() -> i64,
-    pub rate_limit: &'a RateLimit,
+    pub rate_limit: &'a dyn RateLimit,
 }
 
 impl SeekerVerification<'_> {
@@ -319,7 +339,9 @@ impl SeekerVerification<'_> {
                 "Seeker verification is not configured.",
             ));
         }
-        if (self.rate_limit)(&format!("seeker-verify:{user_id}"), 6, 3_600_000)
+        if self
+            .rate_limit
+            .check(format!("seeker-verify:{user_id}"), 6, 3_600_000)
             .await
             .is_err()
         {

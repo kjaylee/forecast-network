@@ -13,6 +13,9 @@
 use crate::db::{self, Database};
 use crate::solana::{base58_decode, base58_encode, compile_message, shortvec, AccountMeta, Instruction};
 use crate::wallets::BoxFuture;
+
+/// A future that borrows for as long as its caller does.
+pub type BorrowedFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
 use forecast_domain::content_hash;
 use serde_json::{json, Value};
 
@@ -117,7 +120,24 @@ fn account(value: &str) -> Result<[u8; 32], AttestationError> {
 /// `sign(message)` as the relayer, injected so the key never enters this crate.
 pub type RelayerSigner = dyn Fn(Vec<u8>) -> BoxFuture<Result<[u8; 64], ()>>;
 /// `rate_limit(scope, limit, window_ms)`, injected because the limiter is storage.
-pub type RateLimit = dyn Fn(String, i64, i64) -> BoxFuture<Result<(), ()>>;
+/// `self.rate_limit(scope, limit, window_ms)`, injected because the limiter is storage.
+///
+/// A trait rather than a boxed closure, for the reason `PointsSummary` is: `Fn`'s `Output` is an
+/// associated type and a trait object over `Fn` is invariant in it, so a closure that reads the
+/// request's own database cannot be passed where a `'static` box is wanted — and a rate limit is
+/// exactly that. A method can name its own lifetime, and the future it returns borrows `&self`.
+pub trait RateLimit {
+    fn check<'a>(&'a self, scope: String, limit: i64, window_ms: i64) -> BorrowedFuture<'a, Result<(), ()>>;
+}
+
+/// A limiter that never refuses, for the paths where the reference does not count.
+pub struct NoLimit;
+
+impl RateLimit for NoLimit {
+    fn check<'a>(&'a self, _scope: String, _limit: i64, _window_ms: i64) -> BorrowedFuture<'a, Result<(), ()>> {
+        Box::pin(async { Ok(()) })
+    }
+}
 
 /// `Attestations`.
 pub struct Attestations<'a> {
@@ -127,7 +147,7 @@ pub struct Attestations<'a> {
     pub sign: Option<&'a RelayerSigner>,
     pub now_ms: &'a dyn Fn() -> i64,
     pub random_token: &'a dyn Fn() -> String,
-    pub rate_limit: &'a RateLimit,
+    pub rate_limit: &'a dyn RateLimit,
 }
 
 impl Attestations<'_> {
@@ -183,7 +203,8 @@ impl Attestations<'_> {
         // The limit is per user per day, and it is taken *before* the receipt is read: a stamp is
         // a chain write paid for by the relayer, so the cost is bounded whether or not the request
         // turns out to be valid.
-        (self.rate_limit)(format!("attest:{user_id}"), 20, DAY_MS)
+        self.rate_limit
+            .check(format!("attest:{user_id}"), 20, DAY_MS)
             .await
             .map_err(|_| storage())?;
         let (receipt_hash, address) = self.receipt(user_id, forecast_id).await?;
@@ -375,6 +396,20 @@ mod tests {
         out
     }
 
+    /// The limiter, recording what it was asked and refusing nothing.
+    struct Recorded {
+        state: std::rc::Rc<RefCell<Vec<Value>>>,
+    }
+
+    impl RateLimit for Recorded {
+        fn check<'a>(&'a self, scope: String, limit: i64, window_ms: i64) -> BorrowedFuture<'a, Result<(), ()>> {
+            self.state
+                .borrow_mut()
+                .push(json!({"scope": scope, "limit": limit, "windowMs": window_ms}));
+            Box::pin(async { Ok(()) })
+        }
+    }
+
     fn key(value: &str) -> [u8; 32] {
         let raw = base58_decode(value, 32).expect("a fixture key");
         let mut out = [0u8; 32];
@@ -479,12 +514,9 @@ mod tests {
         };
         let limited = std::rc::Rc::new(RefCell::new(Vec::<Value>::new()));
         let seen = std::rc::Rc::clone(&limited);
-        let rate_limit = move |scope: String, limit: i64, window_ms: i64| -> BoxFuture<Result<(), ()>> {
-            limited
-                .borrow_mut()
-                .push(json!({"scope": scope, "limit": limit, "windowMs": window_ms}));
-            Box::pin(async { Ok(()) })
-        };
+        // The limiter records what it was asked, so the vector's `limited` sequence is the
+        // reference's own rather than a fixture's idea of it.
+        let rate_limit = Recorded { state: limited };
         let relayer = key(document["relayer"].as_str().unwrap());
         let signer = |message: Vec<u8>| -> BoxFuture<Result<[u8; 64], ()>> {
             let signature = sign(&message);

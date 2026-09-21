@@ -607,11 +607,31 @@ pub const TRANSLATION_FAILED: TranslationError = TranslationError::new(
     "The translation could not be verified. The original text is unchanged.",
 );
 
+/// A future that borrows for as long as its caller does, for the seams that reach the request's
+/// own database handle.
+pub type BorrowedFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
 pub type BoxFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T>>>;
 /// `self.ai.translate_display`, injected so this module never reaches for a coordinator.
 pub type TranslateDisplay = Box<dyn Fn(&Value, &str) -> BoxFuture<Result<DisplayTranslationResult, CoordinatorError>>>;
 /// The reference's `self.rate_limit(scope, limit, window_ms)`.
-pub type RateLimit = dyn Fn(&str, i64, i64) -> BoxFuture<Result<(), String>>;
+/// `self.rate_limit(scope, limit, window_ms)`, injected because the limiter is storage.
+///
+/// A trait rather than a boxed closure, for the reason `PointsSummary` is: `Fn`'s `Output` is an
+/// associated type and a trait object over `Fn` is invariant in it, so a closure that reads the
+/// request's own database cannot be passed where a `'static` box is wanted — and a rate limit is
+/// exactly that. A method can name its own lifetime, and the future it returns borrows `&self`.
+pub trait RateLimit {
+    fn check<'a>(&'a self, scope: String, limit: i64, window_ms: i64) -> BorrowedFuture<'a, Result<(), ()>>;
+}
+
+/// A limiter that never refuses, for the paths where the reference does not count.
+pub struct NoLimit;
+
+impl RateLimit for NoLimit {
+    fn check<'a>(&'a self, _scope: String, _limit: i64, _window_ms: i64) -> BorrowedFuture<'a, Result<(), ()>> {
+        Box::pin(async { Ok(()) })
+    }
+}
 
 /// One artifact as a statement, which is what the commit actually needs.
 pub fn artifact_statement(artifact: &crate::ai::coordinator::Artifact, now_ms: i64) -> (String, Vec<Value>) {
@@ -646,7 +666,7 @@ pub struct Translations<'a> {
     pub translate: TranslateDisplay,
     pub now_ms: &'a dyn Fn() -> i64,
     pub token: &'a dyn Fn() -> String,
-    pub rate_limit: &'a RateLimit,
+    pub rate_limit: &'a dyn RateLimit,
 }
 
 impl Translations<'_> {
@@ -949,7 +969,7 @@ impl Translations<'_> {
             (format!("translation:minute:{fingerprint}"), 5, 60_000),
             ("ai:global".to_string(), 240, DAY_MS),
         ] {
-            if (self.rate_limit)(&scope, limit, window).await.is_err() {
+            if self.rate_limit.check(scope, limit, window).await.is_err() {
                 return Err(TranslationError::new(
                     429,
                     "translation_rate_limited",

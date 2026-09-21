@@ -1067,6 +1067,88 @@ pub async fn publish_forecast(context: &Context<'_>, user_id: &str, body: &Map<S
     )?)
 }
 
+/// `POST /api/forecasts/{id}/attest/{prepare|confirm}`: a phone signs a Devnet memo.
+///
+/// `prepare` returns an *incomplete* transaction — one real signature and one zeroed slot — which is
+/// the whole contract: the relayer pays the fee and the wallet fills the slot, so neither side can
+/// produce the other's signature. `confirm` is what makes the record final, and it is separate
+/// because a phone that never came back must not leave a half-signed transaction looking sent.
+pub async fn attest(
+    context: &Context<'_>,
+    user_id: &str,
+    forecast_id: &str,
+    action: &str,
+    body: &Map<String, Value>,
+) -> Handler {
+    let db = crate::db::D1(context.session);
+    let now = || context.now_ms;
+    let signer = crate::application::relayer_signer(context.env);
+    let relayer = relayer_public_key(context.env);
+    let limiter = AttestationLimit {
+        session: context.session,
+        now_ms: context.now_ms,
+    };
+    // The relayer is only available when both its address and its seed are deployed: an address
+    // with no seed cannot sign, and a seed with no address cannot be checked against.
+    let attestations = crate::attestation::Attestations {
+        db: &db,
+        relayer,
+        sign: signer.as_deref(),
+        now_ms: &now,
+        random_token: &random_token,
+        rate_limit: &limiter,
+    };
+    let payload = Value::Object(body.clone());
+    if action == "prepare" {
+        let result = attestations
+            .prepare(user_id, forecast_id, &payload)
+            .await
+            .map_err(refused_from_attestation)?;
+        return Ok(api_response(result, 201, false)?);
+    }
+    let result = attestations
+        .confirm(user_id, forecast_id, &payload)
+        .await
+        .map_err(refused_from_attestation)?;
+    Ok(api_response(result, 200, false)?)
+}
+
+/// `relayer_public_key`: the hot relayer's address, only when its seed is deployed too.
+fn relayer_public_key(env: &Env) -> Option<[u8; 32]> {
+    let address = var(env, "SOLANA_RELAYER");
+    let seed = env.secret("SOLANA_RELAYER_SEED").ok().map(|value| value.to_string())?;
+    if address.is_empty() || seed.is_empty() {
+        return None;
+    }
+    let decoded = bs58::decode(address).into_vec().ok()?;
+    <[u8; 32]>::try_from(decoded.as_slice()).ok()
+}
+
+/// The `attest` limiter, over the session the request was served with.
+struct AttestationLimit<'a> {
+    session: &'a D1DatabaseSession,
+    now_ms: i64,
+}
+
+impl crate::attestation::RateLimit for AttestationLimit<'_> {
+    fn check<'a>(
+        &'a self,
+        scope: String,
+        limit: i64,
+        window_ms: i64,
+    ) -> crate::attestation::BorrowedFuture<'a, Result<(), ()>> {
+        Box::pin(async move {
+            rate_limit(self.session, self.now_ms, &scope, limit, window_ms)
+                .await
+                .map_err(|_| ())
+        })
+    }
+}
+
+fn refused_from_attestation(error: crate::attestation::AttestationError) -> RouteError {
+    RouteError::Failed(error.status, error.code, error.message)
+}
+
 /// `POST /api/forecasts/{id}/disputes`: a participant challenges the proposed resolution.
 ///
 /// The evidence is *collected here*, under the application's own AI lease, and only then is the

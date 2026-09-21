@@ -90,6 +90,9 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || path.starts_with("/api/auth/wallet/")
                 || path == "/api/activity/read"
                 || path == "/api/forecasts/compile"
+                || ["/prepare", "/confirm"]
+                    .iter()
+                    .any(|phase| identifier(path, "/api/forecasts/", &format!("/attest{phase}")).is_some())
                 || path == "/api/forecasts"
                 || identifier(path, "/api/creators/", "/follow").is_some()
                 || ["/forecast", "/comments", "/share", "/evidence", "/disputes"]
@@ -156,6 +159,19 @@ pub async fn dispatch_write(
     }
     if path == "/api/forecasts" {
         return crate::writes::publish_forecast(context, user_id, body).await;
+    }
+    // The attestation pair is the one path whose *suffix* is an action rather than an identifier,
+    // so it is split here rather than matched by `identifier`.
+    if let Some(rest) = path.strip_prefix("/api/forecasts/") {
+        if let Some((forecast_id, action)) = rest.rsplit_once("/attest/") {
+            let shaped = (1..=128).contains(&forecast_id.len())
+                && forecast_id
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | ':' | '-'));
+            if shaped && matches!(action, "prepare" | "confirm") {
+                return crate::writes::attest(context, user_id, forecast_id, action, body).await;
+            }
+        }
     }
     if path == "/api/forecasts/compile" {
         // The per-client bound, applied before the lease: a compiler run costs a model call, and
