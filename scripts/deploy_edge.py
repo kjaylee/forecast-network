@@ -52,6 +52,12 @@ def main() -> None:
     shutil.copytree(SOURCE / "build", EDGE_STAGE / "build")
     shutil.copytree(STAGE / "public", EDGE_STAGE / "public")
     config = json.loads((SOURCE / "wrangler.jsonc").read_text())
+    # The edge is deployed with head sampling at 1.0 for the LEGACY retirement window: every
+    # request the binding still answers is logged as `forwarded_to_legacy`, and that log is the
+    # evidence for retiring it. At 0.1, nine in ten of those requests were dropped before they
+    # were written, so a week of silence was a week at one-tenth sensitivity. Return the config
+    # to 0.1 once the binding is gone — and not before, whatever the log volume costs.
+    assert config["observability"]["head_sampling_rate"] == 1.0, "retirement window: log every request"
     config.pop("build", None)  # already built above; wrangler must not rebuild inside the stage
     if args.preview:
         config["name"] += "-preview"
