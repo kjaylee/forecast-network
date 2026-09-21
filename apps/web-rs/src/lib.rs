@@ -288,3 +288,57 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     }
     Ok(response)
 }
+
+/// The two jobs the schedule owns, dispatched in-process.
+///
+/// The reference's `scheduled` handler dispatched through a self service binding, because its
+/// background work had to run in the ordinary authenticated fetch path — and that is why a
+/// borrowed cron needed the operator's secret, and why a per-minute cron could not survive on
+/// Pyodide (an invocation awaiting its own fetch collided with the next request on the isolate).
+/// A scheduled event is not an HTTP request: it carries no bearer, needs none, and the work is
+/// called here directly against a primary session. Each cron pattern owns one job, as before.
+#[event(scheduled)]
+pub async fn scheduled(event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
+    console_error_panic_hook::set_once();
+    let started = now_ms();
+    let (name, path) = if event.cron() == "* * * * *" {
+        ("scheduled_risk_v2", "/api/admin/risk/v2/operate")
+    } else {
+        ("scheduled_sweep", "/api/admin/sweep")
+    };
+    let outcome = async {
+        let db = env.d1("DB").map_err(|error| error.to_string())?;
+        let session = db
+            .with_session(Some("first-primary"))
+            .map_err(|error| error.to_string())?;
+        let context = routes::Context {
+            env: &env,
+            session: &session,
+            now_ms: now_ms(),
+        };
+        let body = serde_json::Map::new();
+        let response = if path == "/api/admin/sweep" {
+            writes::sweep(&context).await
+        } else {
+            admin_risk::operate_route(&context, &body).await
+        };
+        match response {
+            Ok(response) => Ok(response.status_code()),
+            Err(routes::RouteError::Worker(error)) => Err(error.to_string()),
+            Err(other) => Err(format!("{other:?}")),
+        }
+    }
+    .await;
+    // The same line the reference printed, so the dashboards that read it keep reading it; the
+    // duration is new, because the cold start this schedule no longer pays was the point.
+    match outcome {
+        Ok(status) => console_log!(
+            "{}",
+            json!({"event": name, "httpStatus": status, "ms": now_ms() - started})
+        ),
+        Err(error) => console_error!(
+            "{}",
+            json!({"event": name, "httpStatus": 500, "ms": now_ms() - started, "errorType": error})
+        ),
+    }
+}

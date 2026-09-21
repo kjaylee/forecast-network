@@ -57,8 +57,8 @@ PYTHON_ATTRIBUTE = re.compile(r"\b(?:self\.env|bindings)\.([A-Z][A-Z0-9_]+)\b")
 # A name one Worker reads and the other does not, with the reason it is not a drift. A row
 # added here without reading both sides is a hole in this check rather than a fix to it.
 REVIEWED: dict[str, str] = {
-    "SCHEDULED_JOBS": "The Python Worker's cron dispatches through a self-binding; the edge has no "
-                      "scheduled handler yet, and when it does it will call its application in-process.",
+    "SCHEDULED_JOBS": "The Python Worker's cron dispatched through a self-binding; the edge's scheduled "
+                      "handler calls its application in-process and needs no binding and no bearer.",
     "APP_ORIGIN": "The URL the Python Worker's cron dispatches to through its self-binding; the "
                   "edge's own origin is the request's.",
     "LEGACY": "The strangler's service binding to the Python Worker: the edge's rollback path, "
