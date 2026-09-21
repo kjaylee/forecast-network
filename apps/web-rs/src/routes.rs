@@ -170,6 +170,14 @@ pub async fn dispatch_write(
 }
 
 /// Paths this Worker answers itself; everything else stays with the Python Worker.
+/// The administrative reads this Worker serves.
+///
+/// Separate from `owns` because an administrative path is authorized by a bearer credential rather
+/// than by being a public GET, and the entry applies that check to every path this returns.
+pub fn owns_admin_read(path: &str) -> bool {
+    path == "/api/admin/automation"
+}
+
 pub fn owns(path: &str) -> bool {
     matches!(
         path,
@@ -205,6 +213,7 @@ pub async fn dispatch(
     match path {
         "/api/health" => health(context).await,
         "/api/status" => status(context),
+        "/api/admin/automation" => automation_status(context).await,
         "/api/forecasts" => {
             let user = crate::auth::user_id(context.env, context.session, req, context.now_ms).await?;
             crate::forecasts::list_forecasts(context, user.as_deref(), &crate::forecasts::list_query(url)).await
@@ -281,6 +290,15 @@ pub async fn dispatch(
         }
         _ => Err(RouteError::Invalid),
     }
+}
+
+/// `GET /api/admin/automation`: the operator's view of source watching.
+async fn automation_status(context: &Context<'_>) -> std::result::Result<Response, RouteError> {
+    let enabled = var(context.env, "SOURCE_WATCH_ENABLED") == "true";
+    let status = crate::automation::status(&crate::db::D1(context.session), enabled)
+        .await
+        .map_err(|detail| RouteError::Worker(worker::Error::from(detail)))?;
+    Ok(api_response(status, 200, false)?)
 }
 
 async fn health(context: &Context<'_>) -> std::result::Result<Response, RouteError> {

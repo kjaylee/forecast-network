@@ -108,23 +108,24 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     }
     let method = req.method();
     let is_admin = path.starts_with("/api/admin/");
-    let native_read = method == Method::Get && routes::owns(path);
+    let native_read = method == Method::Get && (routes::owns(path) || routes::owns_admin_read(path));
     let native_write = routes::owns_write(&method, path);
     if !native_read && !native_write {
         return env.service("LEGACY")?.fetch_request(req).await;
     }
     let mut req = req;
+    // An administrative request is authenticated by a bearer credential, *before* the method is
+    // considered: a read an operator may make is no more public than a write, and a check that
+    // guarded only writes would leave every administrative GET open.
+    if is_admin && !admin::authorized(&env, &req, admin::scheduler_may_trigger(path)) {
+        return api_error(403, "forbidden", "You do not have access to this action.");
+    }
     let mut body: Option<serde_json::Map<String, Value>> = None;
     if native_write {
-        // An administrative request is authenticated by a bearer credential rather than by its
-        // origin: it does not come from a browser, so there is no origin to check. That exemption
-        // is exactly what the bearer check buys, and it is stated here rather than left to be
-        // inferred from the route table.
-        if is_admin {
-            if !admin::authorized(&env, &req, admin::scheduler_may_trigger(path)) {
-                return api_error(403, "forbidden", "You do not have access to this action.");
-            }
-        } else {
+        // An administrative request is exempt from the *origin* check that guards browser writes,
+        // because it does not come from a browser. That exemption is what the bearer check above
+        // buys, and it is stated here rather than left to be inferred from the route table.
+        if !is_admin {
             let url = req.url()?;
             let origin = format!("{}://{}", url.scheme(), url.host_str().unwrap_or(""));
             let origin = match url.port() {
