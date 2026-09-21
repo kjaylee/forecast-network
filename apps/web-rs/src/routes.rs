@@ -86,7 +86,7 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
         Method::Post => {
             path == "/api/activity/read"
                 || identifier(path, "/api/creators/", "/follow").is_some()
-                || ["/forecast", "/comments", "/share"]
+                || ["/forecast", "/comments", "/share", "/evidence"]
                     .iter()
                     .any(|suffix| identifier(path, "/api/forecasts/", suffix).is_some())
         }
@@ -153,6 +153,9 @@ pub async fn dispatch_write(
     if let Some(id) = identifier(path, "/api/forecasts/", "/share") {
         return crate::writes::record_share(context, &id, Some(user_id)).await;
     }
+    if let Some(id) = identifier(path, "/api/forecasts/", "/evidence") {
+        return crate::writes::report_evidence(context, user_id, &id, body.get("url").unwrap_or(&null)).await;
+    }
     Err(RouteError::NotFound("not_found", "This page could not be found."))
 }
 
@@ -179,7 +182,7 @@ pub fn owns(path: &str) -> bool {
         || path.starts_with("/api/risk/v2/feeds/")
 }
 
-fn var(env: &Env, name: &str) -> String {
+pub(crate) fn var(env: &Env, name: &str) -> String {
     env.var(name).map(|v| v.to_string()).unwrap_or_default()
 }
 

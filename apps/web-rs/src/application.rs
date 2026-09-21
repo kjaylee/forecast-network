@@ -142,6 +142,14 @@ async fn workers_ai(ai: Option<&worker::Ai>, model: &str, body: &Value) -> Resul
     }
 }
 
+/// The AI coordinator, over the transports above.
+pub fn coordinator(env: &Env) -> Coordinator {
+    Coordinator {
+        providers: providers(env),
+        fetch: json_fetcher(env),
+    }
+}
+
 /// `request_text`, as the source watch and the evidence collector use it.
 pub fn text_fetcher() -> Fetcher {
     Box::new(|url, headers| {

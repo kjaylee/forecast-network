@@ -15,12 +15,15 @@ use crate::mutate::{
 };
 use crate::projections::{card, quality_card_sql};
 use crate::reads::public_user;
+use crate::routes::var;
 use crate::routes::{Context, RouteError};
 
 pub const HOUR_MS: i64 = 3_600_000;
 pub const DAY_MS: i64 = 86_400_000;
 pub const MAX_STAKE: i64 = 1000;
 pub const POINTS_POLICY_VERSION: &str = "participation-points-v1";
+/// `Application`'s daily AI budget. One call's worth of work per question, bounded per day.
+pub const AI_DAILY_LIMIT: i64 = 200;
 
 type Handler = std::result::Result<Response, RouteError>;
 
@@ -319,6 +322,78 @@ pub async fn adjudicate_forecast(
     let mut result = response;
     result["forecast"] = card_row(db, forecast_id, now_ms).await?;
     Ok(result)
+}
+
+/// `POST /api/forecasts/{id}/evidence`: a forecaster reports an official announcement.
+///
+/// The application is assembled here rather than held on the route context, because every transport
+/// it needs is created from bindings the context does not carry — and because a request that does
+/// not use them should not build them.
+pub async fn report_evidence(context: &Context<'_>, user_id: &str, forecast_id: &str, url: &Value) -> Handler {
+    let Some(url) = url.as_str() else {
+        return Err(RouteError::Failed(400, "invalid_input", "Please check your input."));
+    };
+    let db = crate::db::D1(context.session);
+    let coordinator = crate::application::coordinator(context.env);
+    let evidence = crate::application::evidence_fetcher();
+    let collector = crate::application::text_fetcher();
+    let application = crate::application::Application {
+        db: &db,
+        ai: &coordinator,
+        evidence: &evidence,
+        collector: &collector,
+        reader: crate::ai::early::Retained(&db),
+        now_ms: context.now_ms,
+        token: &random_token,
+        daily_limit: AI_DAILY_LIMIT,
+        source_watch_enabled: var(context.env, "SOURCE_WATCH_ENABLED") == "true",
+        live_markets_enabled: var(context.env, "LIVE_MARKETS_ENABLED") == "true",
+        // A report never commits anything to a chain, so no adapter is consulted on this path.
+        registry: None,
+    };
+    let report = application.report_evidence(user_id, forecast_id, url).await?;
+    Ok(api_response(report, 200, false)?)
+}
+
+/// `report_evidence`'s refusals, as the route layer reports them.
+///
+/// The codes are the reference's own and a *closed* set — every one of them is raised in that
+/// function and nowhere else — so each is mapped to a static rather than carried through as text.
+/// A route error wants `&'static str`, and the alternative to naming them here is naming them
+/// nowhere.
+impl From<crate::source_watch::WatchError> for RouteError {
+    fn from(error: crate::source_watch::WatchError) -> Self {
+        match error {
+            // The refusal's own status and text are the reference's and are repeated below rather
+            // than carried: a route error wants statics, and these are a closed set that belongs to
+            // one function. They are repeated *exactly*, which is what makes the repetition safe to
+            // check by reading.
+            crate::source_watch::WatchError::Refused { code, .. } => match code.as_str() {
+                "authentication_required" => {
+                    RouteError::Unauthorized("authentication_required", "Please sign in to continue.")
+                }
+                "evidence_report_closed" => RouteError::Failed(
+                    409,
+                    "evidence_report_closed",
+                    "This forecast is no longer accepting evidence reports.",
+                ),
+                "evidence_report_url" => RouteError::Failed(
+                    400,
+                    "evidence_report_url",
+                    "Report a public https page on one of this question's official sources.",
+                ),
+                "evidence_report_source" => RouteError::Failed(
+                    400,
+                    "evidence_report_source",
+                    "Only the question's published official sources can be reported.",
+                ),
+                "rate_limited" => RouteError::Failed(429, "rate_limited", "Too many requests. Please try again later."),
+                _ => RouteError::Failed(400, "invalid_input", "Please check your input."),
+            },
+            // A watcher that cannot fetch is not a bad request; it is an outage of a dependency.
+            other => RouteError::Worker(worker::Error::from(other.message())),
+        }
+    }
 }
 
 pub async fn user_row(session: &D1DatabaseSession, user_id: &str) -> std::result::Result<Row, RouteError> {
