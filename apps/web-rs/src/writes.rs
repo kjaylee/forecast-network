@@ -438,6 +438,96 @@ pub async fn run_automation(context: &Context<'_>) -> Handler {
     Ok(api_response(result, 200, false)?)
 }
 
+/// `POST /api/admin/sweep`: the five-minute pass, and the chain's delivery half.
+///
+/// Two jobs in one call, and the order is the reference's: the local sweep first, then whatever the
+/// chain owes. The phase timings are returned because this route was once failing with a platform
+/// error and nothing recorded where the time went — the failure was being attributed to whatever
+/// seemed likeliest, which is the same reason the operate tick got them.
+pub async fn sweep(context: &Context<'_>) -> Handler {
+    let db = crate::db::D1(context.session);
+    let now = || context.now_ms;
+    let started = clock_ms();
+    let parts = crate::application::chain_parts(context.env, &db, &now);
+    let program = bs58::decode(var(context.env, "SOLANA_PROGRAM_ID"))
+        .into_vec()
+        .unwrap_or_default();
+    let relayer = bs58::decode(var(context.env, "SOLANA_RELAYER"))
+        .into_vec()
+        .unwrap_or_default();
+    let transport = match &parts {
+        Some(parts) => Some(
+            parts
+                .transport(&program, &relayer)
+                .map_err(|error| RouteError::Worker(worker::Error::from(error.0)))?,
+        ),
+        None => None,
+    };
+    let registry = match (&transport, &parts) {
+        (Some(transport), Some(_)) => Some(
+            crate::registry_chain::SolanaRegistry::new(&db, transport, &program, &relayer, &now, &random_token)
+                .map_err(|error| RouteError::Worker(worker::Error::from(error.code)))?,
+        ),
+        _ => None,
+    };
+    let coordinator = crate::application::coordinator(context.env);
+    let evidence = crate::application::evidence_fetcher();
+    let collector = crate::application::text_fetcher();
+    let application = crate::application::Application {
+        db: &db,
+        ai: &coordinator,
+        evidence: &evidence,
+        collector: &collector,
+        reader: crate::ai::early::Retained(&db),
+        now_ms: context.now_ms,
+        token: &random_token,
+        daily_limit: AI_DAILY_LIMIT,
+        source_watch_enabled: var(context.env, "SOURCE_WATCH_ENABLED") == "true",
+        live_markets_enabled: var(context.env, "LIVE_MARKETS_ENABLED") == "true",
+        registry: registry
+            .as_ref()
+            .map(|registry| registry as &dyn crate::mutate::FinalizationGate),
+    };
+    // Four source polls per five-minute sweep keeps every watched publisher and article current;
+    // one per tick starved the market source gate.
+    let mut result = application
+        .run_automation(4)
+        .await
+        .map_err(|detail| RouteError::Worker(worker::Error::from(detail)))?;
+    let automation_ms = clock_ms() - started;
+    if let Some(registry) = &registry {
+        if var(context.env, "SOLANA_REGISTRY_RELAY_ENABLED").to_lowercase() == "true" {
+            let registry_started = clock_ms();
+            // A delivery that fails is a retry, not a failed sweep: the local half has already
+            // completed, and reporting the whole pass as failed would re-run it.
+            result["registry"] = match registry.sync(3).await {
+                Ok(value) => value,
+                Err(_) => json!({"status": "retry_pending"}),
+            };
+            result["phaseMs"]["registry"] = json!(clock_ms() - registry_started);
+        } else {
+            result["registry"] = json!({"status": "relay_paused"});
+        }
+    }
+    result["phaseMs"]["automation"] = json!(automation_ms);
+    result["phaseMs"]["total"] = json!(clock_ms() - started);
+    Ok(api_response(result, 200, false)?)
+}
+
+/// A monotonic-enough millisecond clock for the phase timings. It is the wall clock, which is what
+/// this runtime offers; a phase that takes a negative number of milliseconds would mean the clock
+/// moved, and the reference's `time.monotonic` is the only thing that would have hidden it.
+fn clock_ms() -> i64 {
+    #[cfg(target_arch = "wasm32")]
+    {
+        worker::js_sys::Date::now() as i64
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        0
+    }
+}
+
 /// `POST /api/forecasts/{id}/evidence`: a forecaster reports an official announcement.
 ///
 /// The application is assembled here rather than held on the route context, because every transport

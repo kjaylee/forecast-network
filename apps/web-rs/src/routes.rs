@@ -91,6 +91,7 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                     .any(|suffix| identifier(path, "/api/forecasts/", suffix).is_some())
                 || identifier(path, "/api/admin/forecasts/", "/adjudicate").is_some()
                 || path == "/api/admin/automation/run"
+                || path == "/api/admin/sweep"
         }
         _ => false,
     }
@@ -113,6 +114,9 @@ pub async fn dispatch_write(
         }
         if path == "/api/admin/automation/run" {
             return crate::writes::run_automation(context).await;
+        }
+        if path == "/api/admin/sweep" {
+            return crate::writes::sweep(context).await;
         }
         return Err(RouteError::NotFound("not_found", "This page could not be found."));
     }

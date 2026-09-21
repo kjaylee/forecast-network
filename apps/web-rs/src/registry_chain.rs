@@ -16,8 +16,10 @@
 //!     about the past that nobody can check.
 //!
 //! `send` is on the transport because the delivery path needs it, and it is the only place in this
-//! port that writes to a chain. That half — `_deliver`, `_payload`, `_artifact`, `_release`,
-//! `sync`, `backfill` — is not ported yet and is recorded here rather than left to be discovered.
+//! port that writes to a chain. That half — `deliver`, `payload`, `artifact`, `release`, `sync`,
+//! `backfill` — is *ported*: the code is below, and this paragraph said otherwise for long enough
+//! that a reader relied on it. What has no vector is the delivery half's end-to-end behaviour,
+//! because it is the one path whose transcript is a chain.
 
 use serde_json::{json, Value};
 

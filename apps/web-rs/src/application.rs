@@ -19,6 +19,7 @@
 //!     the `workers-ai://` scheme the reference reserves for it.
 
 use serde_json::{json, Value};
+#[cfg(target_arch = "wasm32")]
 use worker::wasm_bindgen::JsCast;
 use worker::*;
 
