@@ -58,6 +58,10 @@ def main() -> int:
                 # The early-resolution path: the only way a positive result is reached without a
                 # deadline passing, so its refusals matter as much as its acceptances.
                 [sys.executable, "scripts/generate_early_golden.py", "--check"],
+                # Every route Python serves is one Rust claims. A route it does not claim is
+                # forwarded through the service binding and works, which is exactly why nothing
+                # else would ever say so.
+                [sys.executable, "scripts/route_parity.py", "--check"],
                 # A display translation is presentation only, and this is what that costs.
                 [sys.executable, "scripts/generate_translation_golden.py", "--check"],
                 # The operator's own translation write: fifteen refusals, a replay that appends

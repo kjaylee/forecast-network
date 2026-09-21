@@ -1134,6 +1134,65 @@ impl Translations<'_> {
     }
 }
 
+/// `self.rate_limit(scope, limit, window_ms)`, over the request's own store.
+struct RequestLimit<'a> {
+    session: &'a worker::D1DatabaseSession,
+    now_ms: i64,
+}
+
+impl RateLimit for RequestLimit<'_> {
+    fn check<'a>(&'a self, scope: String, limit: i64, window_ms: i64) -> BorrowedFuture<'a, Result<(), ()>> {
+        Box::pin(async move {
+            crate::writes::rate_limit(self.session, self.now_ms, &scope, limit, window_ms)
+                .await
+                .map_err(|_| ())
+        })
+    }
+}
+
+/// `POST /api/forecasts/{id}/translation`: prepare a display translation.
+///
+/// The rate limits here are *inside* the service rather than at the route, and that is the
+/// reference's shape: three of the four are only counted once the lease is held, so a burst of
+/// concurrent requests cannot spend the day's global budget without doing the work it counts.
+pub async fn generate_route(
+    context: &crate::routes::Context<'_>,
+    req: &worker::Request,
+    forecast_id: &str,
+    body: &serde_json::Map<String, serde_json::Value>,
+) -> std::result::Result<worker::Response, crate::routes::RouteError> {
+    let fingerprint = crate::auth::fingerprint(context.env, req)?;
+    let db = crate::db::D1(context.session);
+    let clock = || context.now_ms;
+    let token = || crate::mutate::random_token();
+    let limit = RequestLimit {
+        session: context.session,
+        now_ms: context.now_ms,
+    };
+    // The coordinator is `Rc`-shared rather than borrowed: `TranslateDisplay` is a boxed `Fn` whose
+    // future is `'static`, and a closure that borrows the request's coordinator cannot be one.
+    // A Worker is single-threaded, so `Rc` is the right sharing — the same reason the AI transport
+    // shares its binding that way.
+    let coordinator = std::rc::Rc::new(crate::application::coordinator(context.env));
+    let translate: TranslateDisplay = Box::new(move |source, language| {
+        let coordinator = coordinator.clone();
+        let source = source.clone();
+        let language = language.to_string();
+        Box::pin(async move { generate_translation(&coordinator, &source, &language).await })
+    });
+    let translations = Translations {
+        db: &db,
+        translate,
+        now_ms: &clock,
+        token: &token,
+        rate_limit: &limit,
+    };
+    let prepared = translations
+        .generate(forecast_id, &serde_json::Value::Object(body.clone()), &fingerprint)
+        .await?;
+    Ok(crate::api_response(prepared, 200, false)?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

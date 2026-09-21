@@ -128,6 +128,7 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || ["/quote", "/fill"]
                     .iter()
                     .any(|suffix| identifier(path, "/api/forecasts/", &format!("/market{suffix}")).is_some())
+                || identifier(path, "/api/forecasts/", "/translation").is_some()
                 || identifier(path, "/api/admin/forecasts/", "/adjudicate").is_some()
                 || path == "/api/admin/automation/run"
                 || path == "/api/admin/sweep"
@@ -270,6 +271,11 @@ pub async fn dispatch_write(
     }
     if let Some(id) = identifier(path, "/api/forecasts/", "/market/fill") {
         return crate::market_trades::fill_route(context, user_id, &id, body).await;
+    }
+    // Preparing a translation needs no session either: it is counted against the *client* rather
+    // than the user, which is what the reference does with the fingerprint it passes down.
+    if let Some(id) = identifier(path, "/api/forecasts/", "/translation") {
+        return crate::translations::generate_route(context, req, &id, body).await;
     }
     let Some(user_id) = user_id else {
         return Err(RouteError::Unauthorized(
