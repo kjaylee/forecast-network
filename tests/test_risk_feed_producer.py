@@ -23,7 +23,7 @@ from forecast_domain.models import Category
 from forecast_domain.risk_feed import RiskFeedBinding, signing_bytes
 
 from tests import test_web_application as fixtures
-from tests.test_risk_feed_contract import GENESIS
+from tests.risk_feed_fixtures import GENESIS
 
 
 class RiskFeedProducerTests(unittest.IsolatedAsyncioTestCase):

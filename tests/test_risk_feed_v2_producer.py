@@ -36,8 +36,7 @@ from forecast_domain.risk_feed import RiskFeedBindingV2, signing_bytes_v2
 from forecast_domain.serialization import content_hash
 
 from tests import test_web_application as fixtures
-from tests.test_risk_feed_contract import GENESIS
-from tests.test_risk_feed_v2_contract import golden_definition, golden_profile
+from tests.risk_feed_fixtures import GENESIS, golden_definition, golden_profile
 from tests.test_web_ai import Transport, coordinator, specification
 
 HOUR = 3_600_000

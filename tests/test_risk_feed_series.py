@@ -26,7 +26,7 @@ from forecast_domain.risk_feed import RiskFeedSeriesV2
 from forecast_domain.serialization import content_hash, loads
 
 from tests import test_web_application as fixtures
-from tests.test_risk_feed_v2_contract import golden_definition, golden_profile, golden_series
+from tests.risk_feed_fixtures import golden_definition, golden_profile, golden_series
 from tests.test_web_ai import specification
 
 HOUR = 3_600_000

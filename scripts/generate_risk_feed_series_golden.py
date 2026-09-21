@@ -53,11 +53,7 @@ from forecast_domain.serialization import to_dict  # noqa: E402
 from golden_cli import golden_main  # noqa: E402
 
 from tests import test_web_application as fixtures  # noqa: E402
-from tests.test_risk_feed_v2_contract import (  # noqa: E402
-    golden_definition,
-    golden_profile,
-    golden_series,
-)
+from tests.risk_feed_fixtures import golden_definition, golden_profile, golden_series  # noqa: E402
 from tests.test_web_ai import specification  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/risk-feed-series-golden.json"

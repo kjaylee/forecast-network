@@ -42,7 +42,7 @@ from forecast_application.sources import Artifact  # noqa: E402
 from forecast_domain.serialization import content_hash  # noqa: E402
 from golden_cli import golden_main  # noqa: E402
 
-from tests.test_risk_feed_contract import GENESIS  # noqa: E402
+from tests.risk_feed_fixtures import GENESIS  # noqa: E402
 from tests.test_risk_feed_v2_producer import (  # noqa: E402
     RiskFeedV2ProducerTests,  # noqa: E402
 )

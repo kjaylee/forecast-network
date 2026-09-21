@@ -23,7 +23,7 @@ from forecast_domain.risk_feed import (
 from forecast_domain.serialization import canonical_bytes, from_dict, to_dict
 
 T = 1_800_000_000_000
-GENESIS = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1"
+from tests.risk_feed_fixtures import GENESIS  # noqa: E402 — one value, shared with the generators
 
 
 def golden_payload() -> RiskFeedPayload:

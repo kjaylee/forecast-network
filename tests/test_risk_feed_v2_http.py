@@ -22,13 +22,13 @@ from forecast_domain.risk_feed import (
 )
 from forecast_domain.serialization import content_hash, from_dict, to_dict
 
-from tests.test_risk_feed_v2_contract import (
+from tests.risk_feed_fixtures import (
     golden_definition,
-    golden_envelope,
     golden_payload,
     golden_profile,
     golden_series,
 )
+from tests.test_risk_feed_v2_contract import golden_envelope
 from tests.test_web_transport import scheduled_method
 
 
