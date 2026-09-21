@@ -89,6 +89,8 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || path == "/api/auth/logout"
                 || path.starts_with("/api/auth/wallet/")
                 || path == "/api/activity/read"
+                || path == "/api/forecasts/compile"
+                || path == "/api/forecasts"
                 || identifier(path, "/api/creators/", "/follow").is_some()
                 || ["/forecast", "/comments", "/share", "/evidence", "/disputes"]
                     .iter()
@@ -151,6 +153,23 @@ pub async fn dispatch_write(
     }
     if path == "/api/activity/read" {
         return crate::writes::read_activity(context, user_id).await;
+    }
+    if path == "/api/forecasts" {
+        return crate::writes::publish_forecast(context, user_id, body).await;
+    }
+    if path == "/api/forecasts/compile" {
+        // The per-client bound, applied before the lease: a compiler run costs a model call, and
+        // this is the counter that bounds them per address rather than per account.
+        let fingerprint = crate::auth::fingerprint(context.env, req)?;
+        crate::writes::rate_limit(
+            context.session,
+            context.now_ms,
+            &format!("compile-ip:{fingerprint}"),
+            12,
+            crate::writes::DAY_MS,
+        )
+        .await?;
+        return crate::writes::compile_forecast(context, user_id, body).await;
     }
     if let Some(creator) = identifier(path, "/api/creators/", "/follow") {
         return crate::writes::follow(context, user_id, &creator, body.get("following").unwrap_or(&null)).await;

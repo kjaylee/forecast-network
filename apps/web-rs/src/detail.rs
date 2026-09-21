@@ -18,28 +18,6 @@ fn hash_of(value: &Value) -> Result<String> {
     content_hash(value).map_err(|e| worker::Error::from(e.to_string()))
 }
 
-fn specification(spec: &Value) -> Value {
-    let sources = |items: &Value| -> Vec<Value> {
-        items
-            .as_array()
-            .map(|list| {
-                list.iter()
-                    .map(|s| json!({"name": s["name"], "url": s["url"]}))
-                    .collect()
-            })
-            .unwrap_or_default()
-    };
-    json!({
-        "canonicalQuestion": spec["canonical_question"], "shareTitle": spec["share_title"],
-        "category": spec["category"].as_str().unwrap_or("").to_lowercase(), "openAt": spec["open_at_ms"], "closeAt": spec["close_at_ms"],
-        "rules": spec["rules"].as_array().map(|rules| rules.iter().map(|r| json!({"clauseId": r["clause_id"], "outcome": r["outcome"], "condition": r["condition"]})).collect::<Vec<_>>()).unwrap_or_default(),
-        "primarySources": sources(&spec["source_policy"]["primary_sources"]),
-        "fallbackSources": sources(&spec["source_policy"]["fallback_sources"]),
-        "invalidationRules": spec["invalidation_rules"],
-        "ambiguityScore": spec["ambiguity_score_bp"].as_f64().unwrap_or(0.0) / 10000.0,
-    })
-}
-
 fn resolution(value: &Value) -> Result<Value> {
     if value.is_null() {
         return Ok(Value::Null);
@@ -129,7 +107,7 @@ pub async fn forecast_detail(
     let job = job_rows.first();
     let own = own_rows.first();
     let translation_row = translation_rows.first();
-    item["specification"] = specification(&forecast["specification"]);
+    item["specification"] = crate::projections::specification(&forecast["specification"]);
     item["challengeUntil"] = forecast["challenge_until_ms"].clone();
     item["finalizedOutcome"] = forecast["finalized_outcome"].clone();
     item["pauseReason"] = if !forecast["pause"].is_null() {

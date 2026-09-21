@@ -289,3 +289,31 @@ pub fn profile_card_payload(row: &Row, as_of: i64) -> Value {
 pub fn profile_card_json(payload: &Value) -> String {
     crate::source_watch::compact(payload)
 }
+
+/// `projections.specification`: the published criteria, as the API shows them.
+///
+/// The floor division is the interesting line: `ambiguity_score_bp` is basis points and the wire
+/// carries a fraction, so a score of 500 is 0.05. A port that divided by 100 would be off by two
+/// orders of magnitude everywhere this appears — and it appears in the drafts a compiler returns
+/// *and* in the cards a reader sees, which is why it lives here rather than beside either of them.
+pub fn specification(spec: &Value) -> Value {
+    let sources = |items: &Value| -> Vec<Value> {
+        items
+            .as_array()
+            .map(|list| {
+                list.iter()
+                    .map(|s| json!({"name": s["name"], "url": s["url"]}))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    json!({
+        "canonicalQuestion": spec["canonical_question"], "shareTitle": spec["share_title"],
+        "category": spec["category"].as_str().unwrap_or("").to_lowercase(), "openAt": spec["open_at_ms"], "closeAt": spec["close_at_ms"],
+        "rules": spec["rules"].as_array().map(|rules| rules.iter().map(|r| json!({"clauseId": r["clause_id"], "outcome": r["outcome"], "condition": r["condition"]})).collect::<Vec<_>>()).unwrap_or_default(),
+        "primarySources": sources(&spec["source_policy"]["primary_sources"]),
+        "fallbackSources": sources(&spec["source_policy"]["fallback_sources"]),
+        "invalidationRules": spec["invalidation_rules"],
+        "ambiguityScore": spec["ambiguity_score_bp"].as_f64().unwrap_or(0.0) / 10000.0,
+    })
+}

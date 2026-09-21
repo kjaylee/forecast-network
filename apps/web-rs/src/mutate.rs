@@ -64,7 +64,7 @@ pub fn record_artifact<T: serde::Serialize>(
     ))
 }
 
-fn event_statements(result: &TransitionResult) -> Result<Vec<Statement>> {
+pub fn event_statements(result: &TransitionResult) -> Result<Vec<Statement>> {
     let mut statements = Vec::new();
     for event in &result.events {
         let digest = hash_of(event)?;

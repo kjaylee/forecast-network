@@ -713,6 +713,360 @@ fn refused_from_wallet(error: crate::wallets::WalletError) -> RouteError {
     RouteError::Failed(error.status, error.code, error.message)
 }
 
+/// `POST /api/forecasts/compile`: turn a question into a reviewable draft.
+///
+/// The order is the reference's and every step is load-bearing. The question is bounded *before*
+/// the lease, so a malformed one costs nothing; the lease comes before the model, so one account
+/// cannot have two compilations in flight; the duplicate candidates are read after the model has
+/// seen them but before anything is written; and the draft is written in one batch with the
+/// specification and assessment it names, so a draft cannot exist whose own record disagrees with
+/// it. A closing time in the past is refused here rather than stored, because a draft that cannot
+/// be published is not a draft.
+pub async fn compile_forecast(context: &Context<'_>, user_id: &str, body: &Map<String, Value>) -> Handler {
+    user_row(context.session, user_id).await?;
+    let question = crate::auth::checked_text(body.get("question"), 1000, 10)
+        .map_err(|_| RouteError::Failed(400, "invalid_input", "Please check your input."))?;
+    if question.chars().count() > 1000 {
+        return Err(RouteError::Failed(
+            400,
+            "invalid_input",
+            "The original question must contain at most 1,000 characters.",
+        ));
+    }
+    let db = crate::db::D1(context.session);
+    let owner = format!("user:{user_id}");
+    let lease = random_token();
+    crate::scheduler::ai_lease(&db, &owner, &lease, context.now_ms, AI_DAILY_LIMIT)
+        .await
+        .map_err(|code| RouteError::Failed(429, "ai_unavailable", Box::leak(code.into_boxed_str())))?;
+    let outcome = compile(context.env, &db, user_id, &question, context.now_ms).await;
+    crate::scheduler::release_ai(&db, &owner, &lease).await;
+    let result = outcome?;
+    Ok(api_response(result, 200, false)?)
+}
+
+async fn compile(
+    env: &Env,
+    db: &crate::db::D1<'_>,
+    user_id: &str,
+    question: &str,
+    now_ms: i64,
+) -> std::result::Result<Value, RouteError> {
+    let candidates = crate::ai::compiler_wire::candidate_forecasts(db, question)
+        .await
+        .map_err(RouteError::Worker)?;
+    let coordinator = crate::application::coordinator(env);
+    let evidence = crate::application::evidence_fetcher();
+    let compiled = crate::ai::compile::compile_question(
+        &coordinator,
+        &evidence,
+        question,
+        &candidates,
+        now_ms,
+        // Only an operator-declared canonical series may treat a shifted explicit measurement
+        // interval as a distinct contract; a question a person wrote never does.
+        false,
+    )
+    .await
+    .map_err(|error| {
+        let mapped = crate::ai::error::ai_error(&error, false);
+        RouteError::Failed(mapped.status, mapped.code, mapped.message)
+    })?;
+    // The freshness gate runs before the draft exists: a question whose event a retained article
+    // already establishes is refused, not stored and refused later.
+    let reader = crate::ai::early::Retained(db);
+    let collector = crate::application::text_fetcher();
+    let automation = crate::automation::Automation::new(
+        db,
+        Some(&collector),
+        Some(&coordinator),
+        &reader,
+        now_ms,
+        &random_token,
+        var(env, "SOURCE_WATCH_ENABLED") == "true",
+    );
+    automation
+        .check_creation(&compiled.specification)
+        .await
+        .map_err(|error| {
+            RouteError::Failed(
+                400,
+                "source_temporarily_unavailable",
+                Box::leak(error.message().into_boxed_str()),
+            )
+        })?;
+    if compiled.specification.close_at_ms <= now_ms {
+        return Err(RouteError::Failed(
+            400,
+            "invalid_input",
+            "The closing time must be in the future.",
+        ));
+    }
+    let draft_id = format!("d_{}", &random_token()[..24]);
+    let expiry = now_ms + HOUR_MS;
+    let specification = crate::mutate::canonical_text(&compiled.specification)?;
+    let assessment = crate::mutate::canonical_text(&compiled.assessment)?;
+    let mut statements = crate::source_watch::artifact_sql(&retained_from(&compiled.artifacts), now_ms)
+        .map_err(|refusal| RouteError::Failed(refusal.status(), refusal.code(), refusal.message()))?;
+    statements.push(record_artifact(&compiled.specification, "specification", None, now_ms)?);
+    statements.push(record_artifact(&compiled.assessment, "validation", None, now_ms)?);
+    statements.push((
+        "INSERT INTO drafts(id,user_id,specification,assessment,ai_forecast,created_at,expires_at) VALUES(?,?,?,?,?,?,?)"
+            .to_string(),
+        vec![
+            json!(draft_id),
+            json!(user_id),
+            json!(specification),
+            json!(assessment),
+            match &compiled.ai_forecast {
+                Some(forecast) => json!(crate::source_watch::compact(forecast)),
+                None => Value::Null,
+            },
+            json!(now_ms),
+            json!(expiry),
+        ],
+    ));
+    crate::db::Database::batch(db, &statements)
+        .await
+        .map_err(RouteError::Worker)?;
+    Ok(json!({
+        "draftId": draft_id,
+        "specification": crate::projections::specification(&serde_json::to_value(&compiled.specification).unwrap_or(Value::Null)),
+        "assessment": {
+            "publishable": true,
+            "explanation": compiled.assessment.explanation,
+            "provider": compiled.assessment.compiler.provider,
+            "model": compiled.assessment.compiler.model,
+        },
+        "duplicateCandidates": compiled.specification.duplicate_candidates.iter().map(|item| json!({
+            "id": item.forecast_id,
+            "similarity": item.similarity_bp as f64 / 10000.0,
+            "explanation": item.explanation,
+        })).collect::<Vec<_>>(),
+        "aiForecast": compiled.ai_forecast,
+        "expiresAt": expiry,
+    }))
+}
+
+/// The retained bytes a compiled artifact names, in the shape `artifact_sql` takes.
+fn retained_from(artifacts: &[crate::ai::coordinator::Artifact]) -> Vec<crate::source_watch::Retained> {
+    artifacts
+        .iter()
+        .map(|artifact| {
+            (
+                artifact.hash.clone(),
+                artifact.kind.to_string(),
+                artifact.body.clone(),
+                "application/json".to_string(),
+            )
+        })
+        .collect()
+}
+
+/// `POST /api/forecasts`: publish a draft.
+///
+/// The forecast is created and carried through *two* domain commands in memory before anything is
+/// written — `BeginValidation` then `Publish` — because the record that is stored has to be the one
+/// the domain would have produced, and both transitions are what make it that. The draft is marked
+/// published in the same batch, under a `published_id IS NULL` guard, which is what makes two
+/// simultaneous publishes of one draft produce one forecast rather than two.
+///
+/// A failure is read back before it is reported: a lost response and a lost race look the same from
+/// here, so the receipt is consulted first, then the duplicate criteria, and only then is the
+/// caller told the request conflicted.
+pub async fn publish_forecast(context: &Context<'_>, user_id: &str, body: &Map<String, Value>) -> Handler {
+    user_row(context.session, user_id).await?;
+    let draft_id = crate::auth::checked_text(body.get("draftId"), 128, 1)
+        .map_err(|_| RouteError::Failed(400, "invalid_input", "Please check your input."))?;
+    let key = body.get("idempotencyKey").and_then(Value::as_str).unwrap_or("");
+    let request = json!({"kind": "publish", "draftId": draft_id});
+    let db = crate::db::D1(context.session);
+    if let Some(prior) = prior_row(&db, user_id, key, &request).await? {
+        let forecast_id = text(&prior, "forecast_id").unwrap_or("").to_string();
+        return Ok(api_response(
+            json!({"forecast": card_row(&db, &forecast_id, context.now_ms).await?}),
+            200,
+            false,
+        )?);
+    }
+    let draft = crate::db::Database::first(
+        &db,
+        "SELECT * FROM drafts WHERE id=? AND user_id=?",
+        &[json!(draft_id), json!(user_id)],
+    )
+    .await?
+    .ok_or(RouteError::NotFound("draft_not_found", "Draft not found."))?;
+    if let Some(published) = text(&draft, "published_id") {
+        return Ok(api_response(
+            json!({"forecast": card_row(&db, published, context.now_ms).await?}),
+            200,
+            false,
+        )?);
+    }
+    let now = context.now_ms;
+    if int(&draft, "expires_at").unwrap_or(0) <= now {
+        return Err(RouteError::Failed(
+            410,
+            "draft_expired",
+            "This draft has expired. Please submit the question for review again.",
+        ));
+    }
+    rate_limit(context.session, now, &format!("publish:{user_id}"), 10, DAY_MS).await?;
+    let specification: forecast_domain::models::ForecastSpecification =
+        serde_json::from_str(text(&draft, "specification").unwrap_or("")).map_err(|_| invalid())?;
+    let assessment: forecast_domain::models::ValidationAssessment =
+        serde_json::from_str(text(&draft, "assessment").unwrap_or("")).map_err(|_| invalid())?;
+    // The freshness gate again, at the moment of publication: a draft made an hour ago may name an
+    // event a retained article has since established.
+    let coordinator = crate::application::coordinator(context.env);
+    let collector = crate::application::text_fetcher();
+    let reader = crate::ai::early::Retained(&db);
+    crate::automation::Automation::new(
+        &db,
+        Some(&collector),
+        Some(&coordinator),
+        &reader,
+        now,
+        &random_token,
+        var(context.env, "SOURCE_WATCH_ENABLED") == "true",
+    )
+    .check_creation(&specification)
+    .await
+    .map_err(|error| {
+        RouteError::Failed(
+            400,
+            "source_temporarily_unavailable",
+            Box::leak(error.message().into_boxed_str()),
+        )
+    })?;
+    let forecast_id = format!("f_{}", &random_token()[..24]);
+    let created = forecast_domain::lifecycle::create_forecast(
+        &forecast_id,
+        user_id,
+        specification.clone(),
+        int(&draft, "created_at").unwrap_or(now),
+    )
+    .map_err(|_| invalid())?;
+    let snapshot = forecast_domain::lifecycle::Snapshot::V1(created);
+    let validated = forecast_domain::lifecycle::apply_command(
+        &snapshot,
+        &forecast_domain::lifecycle::Command {
+            schema_version: 1,
+            idempotency_key: "begin-validation".to_string(),
+            expected_revision: 0,
+            payload: Payload::BeginValidation { schema_version: 1 },
+        },
+        now,
+        None,
+    )
+    .map_err(|_| invalid())?;
+    let published = forecast_domain::lifecycle::apply_command(
+        &validated.forecast,
+        &forecast_domain::lifecycle::Command {
+            schema_version: 1,
+            idempotency_key: "publish".to_string(),
+            expected_revision: 1,
+            payload: Payload::Publish {
+                schema_version: 1,
+                assessment: assessment.clone(),
+            },
+        },
+        now,
+        None,
+    )
+    .map_err(|_| invalid())?;
+    let forecast = published.forecast.base().clone();
+    let mut statements: Vec<Statement> = vec![
+        (
+            "INSERT INTO forecasts(id,creator_id,draft_id,snapshot,revision,state,category,title,question,             normalized_question,specification_hash,open_at,close_at,created_at,updated_at,ai_forecast,mutation_key)              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                .to_string(),
+            vec![
+                json!(forecast_id),
+                json!(user_id),
+                json!(draft_id),
+                json!(crate::mutate::canonical_text(&published.forecast)?),
+                json!(forecast.revision),
+                json!(forecast.state),
+                json!(specification.category),
+                json!(specification.share_title),
+                json!(specification.canonical_question),
+                json!(crate::automation::casefold(&specification.canonical_question)
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ")),
+                json!(specification.specification_hash().map_err(|_| invalid())?),
+                json!(specification.open_at_ms),
+                json!(specification.close_at_ms),
+                json!(now),
+                json!(now),
+                draft.get("ai_forecast").cloned().unwrap_or(Value::Null),
+                json!(key),
+            ],
+        ),
+        (
+            "UPDATE drafts SET published_id=? WHERE id=? AND user_id=? AND published_id IS NULL".to_string(),
+            vec![json!(forecast_id), json!(draft_id), json!(user_id)],
+        ),
+    ];
+    statements.extend(crate::mutate::event_statements(&validated)?);
+    statements.extend(crate::mutate::event_statements(&published)?);
+    if var(context.env, "SOLANA_REGISTRY_ENABLED").to_lowercase() == "true" {
+        statements.push(crate::registry_chain::registry_enable_sql(&forecast_id));
+    }
+    statements.push(operation(user_id, key, &request, &forecast_id, &json!({}), now)?);
+    // The title is the fixed phrase and the *body* is the share title — read the SELECT against the
+    // column list, because the two are in the opposite order to what the names suggest.
+    statements.push((
+        "INSERT OR IGNORE INTO activity(id,user_id,forecast_id,kind,title,body,created_at) \
+         SELECT ?||':'||follower_id,follower_id,?,'creator_published',?,?,? FROM follows WHERE creator_id=?"
+            .to_string(),
+        vec![
+            json!(format!("published:{forecast_id}")),
+            json!(forecast_id),
+            json!("New forecast from a creator you follow"),
+            json!(specification.share_title),
+            json!(now),
+            json!(user_id),
+        ],
+    ));
+    if crate::db::Database::batch(&db, &statements).await.is_err() {
+        if let Some(prior) = prior_row(&db, user_id, key, &request).await? {
+            let forecast_id = text(&prior, "forecast_id").unwrap_or("").to_string();
+            return Ok(api_response(
+                json!({"forecast": card_row(&db, &forecast_id, context.now_ms).await?}),
+                200,
+                false,
+            )?);
+        }
+        let duplicate = crate::db::Database::first(
+            &db,
+            "SELECT id FROM forecasts WHERE specification_hash=? OR (normalized_question=? AND close_at=?)",
+            &[
+                json!(specification.specification_hash().map_err(|_| invalid())?),
+                json!(crate::automation::casefold(&specification.canonical_question)
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ")),
+                json!(specification.close_at_ms),
+            ],
+        )
+        .await?;
+        if duplicate.is_some() {
+            return Err(RouteError::Failed(
+                409,
+                "duplicate_forecast",
+                "A forecast with the same resolution criteria already exists. Please join the existing forecast.",
+            ));
+        }
+        return Err(crate::mutate::conflict());
+    }
+    Ok(api_response(
+        json!({"forecast": card_row(&db, &forecast_id, context.now_ms).await?}),
+        201,
+        false,
+    )?)
+}
+
 /// `POST /api/forecasts/{id}/disputes`: a participant challenges the proposed resolution.
 ///
 /// The evidence is *collected here*, under the application's own AI lease, and only then is the
