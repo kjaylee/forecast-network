@@ -1,0 +1,66 @@
+{
+  "date": "2026-09-21",
+  "subject": "Write-surface flip of forecast.eastsea.xyz from the LEGACY binding to the Rust edge",
+  "tree": "f1f34f7 plus scripts/http_parity.py",
+  "preview": "https://forecast-network-edge-preview.k-jaylee.workers.dev (version 8fca8df1)",
+  "reference": "https://forecast-network.k-jaylee.workers.dev (Python, 0.12.22)",
+  "httpParity": {
+    "command": "python3 scripts/http_parity.py --edge <preview> --reference <python>",
+    "cases": 167,
+    "matched": 167,
+    "byCase": {
+      "anonymous": 26,
+      "no-bearer": 22,
+      "no-origin": 26,
+      "not-an-object": 26,
+      "read": 19,
+      "wrong-bearer": 22,
+      "wrong-content-type": 26
+    },
+    "runtimeFailuresRetried": {
+      "edge": 2,
+      "reference": 24
+    },
+    "note": "Every case is a refusal or an anonymous answer; no credential, nothing mutated. The reference answered Cloudflare's 1101 page 24 times in one sequential pass and was retried each time \u2014 the Pyodide failure the port removes. The edge's two were on its own first requests after deploy."
+  },
+  "schedulerRoutes": {
+    "note": "One real tick and one real sweep through the preview with the scheduler credential, before the flip.",
+    "operate": {
+      "httpStatus": 200,
+      "seconds": 3.2,
+      "published": 6271,
+      "phaseMs": {
+        "episodes": 930,
+        "list": 237,
+        "publish": 1256,
+        "stale": 286
+      }
+    },
+    "sweep": {
+      "httpStatus": 200,
+      "seconds": 9.99,
+      "phaseMs": {
+        "automation": 6827,
+        "registry": 2999,
+        "total": 9826
+      },
+      "lifecycle": {
+        "effects": 0,
+        "failed": 0,
+        "processed": 0
+      },
+      "registry": {
+        "confirmed": 0,
+        "considered": 0
+      },
+      "sources": {
+        "enabled": true,
+        "failed": 0,
+        "polled": 0,
+        "reviewed": 0
+      }
+    },
+    "publicationVerified": "risk_feed_publications_v2 sequence 6271 read back from D1: payload_hash matches content_hash(payload), Ed25519 signature verifies under key forecast-relayer-67a5b5a42ed9a813, the same key id as the Python-published 6270 and 6272 either side of it."
+  },
+  "rollback": "python3 scripts/deploy_edge.py --take-domain from the previous edge commit (fc72a4a); the Python Worker keeps serving through the LEGACY binding for every route the older edge does not claim."
+}
