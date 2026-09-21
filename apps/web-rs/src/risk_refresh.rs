@@ -168,12 +168,32 @@ pub trait Refresher {
 ///
 /// Two traits rather than one, because they are two different calls a caller may satisfy
 /// differently: a lease is acquired once and released in a `finally` however the work ended.
+/// The lease is *named*: the refresh derives the owner from the row it just read, and a seam that
+/// took no argument would leave a production implementation unable to know what it is leasing —
+/// which is exactly what a first draft of this could not do. `_release_ai` takes both, so this does.
 pub trait LeaseSource {
-    fn lease<'a>(&'a self) -> BorrowedFuture<'a, Result<String, ()>>;
+    fn lease<'a>(&'a self, owner: &'a str) -> BorrowedFuture<'a, Result<String, ()>>;
 }
 
 pub trait LeaseRelease {
-    fn release<'a>(&'a self, token: String) -> BorrowedFuture<'a, Result<(), ()>>;
+    fn release<'a>(&'a self, owner: &'a str, token: String) -> BorrowedFuture<'a, Result<(), ()>>;
+}
+
+/// A lease that refuses, for a caller with no AI budget to spend.
+pub struct NoLease;
+
+impl LeaseSource for NoLease {
+    fn lease<'a>(&'a self, _owner: &'a str) -> BorrowedFuture<'a, Result<String, ()>> {
+        Box::pin(async { Err(()) })
+    }
+}
+
+pub struct NoRelease;
+
+impl LeaseRelease for NoRelease {
+    fn release<'a>(&'a self, _owner: &'a str, _token: String) -> BorrowedFuture<'a, Result<(), ()>> {
+        Box::pin(async { Ok(()) })
+    }
 }
 
 /// The artifact statements, injected for the same reason `source_watch` injects them: they are the
@@ -224,7 +244,7 @@ pub async fn refresh(
     let forecast = Forecast::from_json(db::text(&row, "snapshot").unwrap_or("")).map_err(|_| conflict())?;
     let specification = forecast.specification.clone();
     let owner = format!("risk-prediction:{forecast_id}");
-    let token = lease.lease().await.map_err(|_| conflict())?;
+    let token = lease.lease(&owner).await.map_err(|_| conflict())?;
     let outcome = prepare(
         db,
         &row,
@@ -241,7 +261,7 @@ pub async fn refresh(
         &token,
     )
     .await;
-    release.release(token).await.map_err(|_| conflict())?;
+    release.release(&owner, token).await.map_err(|_| conflict())?;
     outcome
 }
 
@@ -380,12 +400,15 @@ mod tests {
     }
 
     impl LeaseSource for RecordedLease<'_> {
-        fn lease<'a>(&'a self) -> BorrowedFuture<'a, Result<String, ()>> {
+        fn lease<'a>(&'a self, owner: &'a str) -> BorrowedFuture<'a, Result<String, ()>> {
             let token = "lease-token".to_string();
+            // The owner is the refresh's, checked against the fixture's: a seam that leased under
+            // a name of its own choosing would let a refresh hold a lease nobody looked at.
+            assert_eq!(owner, self.owner);
             self.db
                 .run(
                     "INSERT INTO ai_leases(owner,token,expires_at) VALUES(?,?,?)",
-                    &[json!(self.owner), json!(token), json!(self.expires_at)],
+                    &[json!(owner), json!(token), json!(self.expires_at)],
                 )
                 .expect("the lease");
             Box::pin(async move { Ok(token) })
@@ -395,7 +418,7 @@ mod tests {
     struct NoRelease;
 
     impl LeaseRelease for NoRelease {
-        fn release<'a>(&'a self, _token: String) -> BorrowedFuture<'a, Result<(), ()>> {
+        fn release<'a>(&'a self, _owner: &'a str, _token: String) -> BorrowedFuture<'a, Result<(), ()>> {
             Box::pin(async { Ok(()) })
         }
     }
