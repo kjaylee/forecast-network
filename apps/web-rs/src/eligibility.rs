@@ -5,7 +5,6 @@ use worker::*;
 
 use crate::db::{get, int, text, Database};
 
-#[allow(dead_code)]
 pub const PAGE_SIZE: i64 = 100;
 
 pub const POLICY_VERSION: &str = "evidence-cutoff-v1";
@@ -140,7 +139,6 @@ pub async fn status(db: &dyn Database, forecast_id: &str, user_id: Option<&str>)
 /// A published instant is an inclusive cutoff, so a receipt at exactly that moment is void.
 /// An observation bound is not a cutoff at all: it cannot prove the receipt came first, so the
 /// receipt goes to review rather than being called eligible.
-#[allow(dead_code)]
 pub fn receipt_status(submitted_at: &Value, cutoff_at: &Value, time_basis: &str) -> Result<String, String> {
     let (Some(submitted_at), Some(cutoff_at)) = (submitted_at.as_i64(), cutoff_at.as_i64()) else {
         return Err("Receipt timestamps must be nonnegative integers".to_string());
@@ -162,7 +160,6 @@ pub fn receipt_status(submitted_at: &Value, cutoff_at: &Value, time_basis: &str)
 }
 
 /// The completion the scheduler looks for before a timing review stops blocking resolution.
-#[allow(dead_code)]
 pub fn completion_sql(trigger_hash: &str, now_ms: i64) -> (String, Vec<Value>) {
     (
         "INSERT OR IGNORE INTO forecast_eligibility_completions(decision_id,created_at) VALUES(?,?)".to_string(),
@@ -364,7 +361,6 @@ impl EligibilityError {
 
 /// The trigger is checked against the forecast it claims and the bytes it cites, before any of
 /// it is written. A trigger whose evidence was not retained is not a trigger.
-#[allow(dead_code)]
 pub async fn validate(
     db: &dyn Database,
     trigger: &EarlyResolutionTrigger,
@@ -414,7 +410,6 @@ pub async fn validate(
 /// Write the cutoff, once. The guard is what makes it once: `mutation_guards` is `CHECK(valid=1)`,
 /// so a forecast that has already finalized, scored, settled or decided a different cutoff
 /// inserts a zero and aborts the batch.
-#[allow(dead_code)]
 pub async fn decide(
     db: &dyn Database,
     trigger: &EarlyResolutionTrigger,
@@ -506,7 +501,6 @@ pub async fn decide(
 }
 
 /// Classify a page of accepted receipts. Returns whether the history is exhausted.
-#[allow(dead_code)]
 pub async fn receipts(db: &dyn Database, trigger: &EarlyResolutionTrigger) -> Result<bool, EligibilityError> {
     let trigger_hash = trigger
         .trigger_hash()
@@ -617,7 +611,6 @@ pub async fn receipts(db: &dyn Database, trigger: &EarlyResolutionTrigger) -> Re
 }
 
 /// Finish the deciding half: classify a page, then adjust what it classified.
-#[allow(dead_code)]
 pub async fn apply(
     db: &dyn Database,
     trigger: &EarlyResolutionTrigger,
@@ -666,7 +659,6 @@ pub async fn apply(
 }
 
 /// Run after active-market corrections; the database guards reject partial work.
-#[allow(dead_code)]
 pub async fn finish(
     db: &dyn Database,
     trigger: &EarlyResolutionTrigger,

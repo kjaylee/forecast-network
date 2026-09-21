@@ -280,7 +280,6 @@ pub async fn positions(
 /// Nothing calls the reward yet: `automation.accept` is the caller, and the orchestration half of
 /// `automation.py` waits on the application layer. The same shape as `eligibility`'s deciding half,
 /// which carried `allow(dead_code)` until the early-resolution automation landed.
-#[allow(dead_code)]
 pub const EVIDENCE_REWARD_POINTS: i64 = 100;
 
 /// `Application.reward_evidence_report`: credit the *earliest* held report whose retained evidence
@@ -290,7 +289,6 @@ pub const EVIDENCE_REWARD_POINTS: i64 = 100;
 /// reviewed is not evidence. The `NOT EXISTS` guard makes the reward once-per-forecast rather than
 /// once-per-report, so a second qualifying report cannot pay twice. And the earliest is chosen by
 /// `created_at, id`, which is what makes the payout deterministic when two arrived together.
-#[allow(dead_code)]
 pub async fn reward_evidence_report(
     db: &dyn Database,
     forecast_id: &str,

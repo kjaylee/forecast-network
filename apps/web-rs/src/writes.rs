@@ -2327,7 +2327,6 @@ pub async fn submit_forecast(
     }
 }
 
-#[allow(dead_code)]
 fn _snapshot_kind(snapshot: &Snapshot) -> &'static str {
     match snapshot {
         Snapshot::V1(_) => "v1",
@@ -2335,7 +2334,6 @@ fn _snapshot_kind(snapshot: &Snapshot) -> &'static str {
     }
 }
 
-#[allow(dead_code)]
 fn _row_get(row: &Row) -> &Value {
     get(row, "id")
 }

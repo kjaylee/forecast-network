@@ -174,7 +174,6 @@ LEFT JOIN forecast_translations t ON t.forecast_id=f.id AND t.language='en' AND 
 /// what makes `asOf` a statement about one read rather than about a sequence of them.
 /// Nothing calls the card yet: `profile_cards::snapshot` is the caller, and the publish route is
 /// part of the write phase this Worker still forwards to the Python Worker.
-#[allow(dead_code)]
 pub const PROFILE_CARD_SQL: &str = concat!(
     "\nWITH target AS (\n",
     " SELECT id,display_name,handle,created_at FROM users WHERE id=?\n",
@@ -231,7 +230,6 @@ pub const PROFILE_CARD_SQL: &str = concat!(
 );
 
 /// `profile_card_payload`. Only the documented public fields — no account secret, no wallet.
-#[allow(dead_code)]
 pub fn profile_card_payload(row: &Row, as_of: i64) -> Value {
     let count = int(row, "resolved_forecasts").unwrap_or(0);
     let mut history: Vec<Value> = serde_json::from_str(text(row, "history_json").unwrap_or("[]")).unwrap_or_default();
@@ -285,7 +283,6 @@ pub fn profile_card_payload(row: &Row, as_of: i64) -> Value {
 /// `profile_card_json`: the versioned display encoding, which is the *commitment* rule — non-ASCII
 /// raw, keys sorted, compact. `forecast_domain`'s integer-only rules do not apply to a payload whose
 /// accuracy is a float.
-#[allow(dead_code)]
 pub fn profile_card_json(payload: &Value) -> String {
     crate::source_watch::compact(payload)
 }

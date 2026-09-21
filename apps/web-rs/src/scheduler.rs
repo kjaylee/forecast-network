@@ -1138,10 +1138,8 @@ pub fn workflow_timeout() -> (u16, &'static str, &'static str) {
 /// otherwise wait forever.
 /// Nothing calls this yet either: `_wait_for_chain` answers a `ChainDeadlineNotReached` that
 /// `registry_chain` raises, and the chain-write path is the write phase this Worker still forwards.
-#[allow(dead_code)]
 pub const CHAIN_RETRY_MS: i64 = 300_000;
 
-#[allow(dead_code)]
 pub async fn wait_for_chain(db: &dyn Database, forecast_id: &str, token: &str, now_ms: i64) -> Result<(), String> {
     let row = db
         .first(
