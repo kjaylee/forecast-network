@@ -886,10 +886,22 @@ impl SolanaRegistry<'_> {
             let record = self
                 .artifact(event.artifact_hash.as_deref(), ArtifactKind::Resolution, base)
                 .await?;
-            let resolution =
+            let resolution: forecast_domain::lifecycle::AnyResolution =
                 serde_json::from_value(record).map_err(|_| RegistryError::new("history_artifact_invalid"))?;
+            // The reference decodes the artifact as a `Resolution` and then asks whether it is in
+            // fact an `EarlyResolution`, building `ProposeEarlyResolution` or `ProposeResolution`
+            // accordingly. Here the union answers that already — `Resolution` denies unknown fields,
+            // so a body carrying a trigger falls to `Early` — and the *command's* schema version
+            // follows from it, which the domain requires to be 2 for an early payload. Replaying an
+            // early proposal with a version of 1 is a command the domain refuses, so the reference
+            // succeeded and this did not.
+            let schema_version = if matches!(resolution, forecast_domain::lifecycle::AnyResolution::Early(_)) {
+                2
+            } else {
+                1
+            };
             return Ok(Payload::ProposeResolution {
-                schema_version: 1,
+                schema_version,
                 resolution,
             });
         }
@@ -1396,13 +1408,13 @@ mod tests {
         futures_lite::future::block_on(future)
     }
 
-    const ADMIN: [u8; 32] = [13u8; 32];
-    const RELAYER: [u8; 32] = [12u8; 32];
-    const PROGRAM: [u8; 32] = [11u8; 32];
+    pub(super) const ADMIN: [u8; 32] = [13u8; 32];
+    pub(super) const RELAYER: [u8; 32] = [12u8; 32];
+    pub(super) const PROGRAM: [u8; 32] = [11u8; 32];
 
-    struct Fake {
-        accounts: Mutex<BTreeMap<String, RegistryAccount>>,
-        chain_time: Mutex<i64>,
+    pub(super) struct Fake {
+        pub(super) accounts: Mutex<BTreeMap<String, RegistryAccount>>,
+        pub(super) chain_time: Mutex<i64>,
     }
 
     impl RegistryTransport for Fake {
@@ -1665,5 +1677,81 @@ mod tests {
             block(reserve_daily_spend(&db, 1, 0, 100)).unwrap_err().code,
             "daily_budget_exhausted"
         );
+    }
+}
+
+#[cfg(test)]
+mod v2_history_tests {
+    use super::*;
+    use crate::db::Sqlite;
+    use std::collections::BTreeMap;
+    use std::sync::Mutex;
+
+    use super::tests::{Fake, PROGRAM, RELAYER};
+
+    /// A replayed *early* proposal rebuilds a `ProposeEarlyResolution`, and the command it names
+    /// carries schema version 2.
+    ///
+    /// The reference decodes the artifact as a `Resolution` and then asks whether it is in fact an
+    /// `EarlyResolution`, choosing the payload class from the answer. The command's version follows
+    /// from that choice — the domain requires 2 for an early payload — so a replay that hardcodes 1
+    /// builds a command the domain refuses: the reference's history check passes and this one
+    /// raises `registry_error` on a question that was in fact intact.
+    ///
+    /// The fixture is the scheduler's own vector: `sweep-early-golden.json` ends with the early
+    /// proposal's resolution artifact and the `propose_resolution` event that named it, which is
+    /// exactly what a replay reads.
+    #[test]
+    fn a_replayed_early_proposal_carries_schema_version_two() {
+        let document = crate::golden::load("sweep-early-golden.json");
+        let rows = &document["expect"]["rows"];
+        let db: &'static Sqlite = crate::golden::static_database(rows);
+        let event = rows["events"]
+            .as_array()
+            .and_then(|events| events.first())
+            .and_then(|row| row["event"].as_str())
+            .expect("the proposal event");
+        let event: DomainEvent = serde_json::from_str(event).expect("a decodable event");
+        assert_eq!(event.command_name, "propose_resolution");
+        let receipt = rows["command_receipts"]
+            .as_array()
+            .and_then(|receipts| receipts.first())
+            .and_then(|row| row["receipt"].as_str())
+            .expect("the proposal receipt");
+        let receipt: CommandReceipt = serde_json::from_str(receipt).expect("a decodable receipt");
+        let current = Snapshot::from_json(
+            rows["forecasts"][0]["snapshot"]
+                .as_str()
+                .expect("the fixture's snapshot"),
+        )
+        .expect("a decodable snapshot");
+
+        let fake = Fake {
+            accounts: Mutex::new(BTreeMap::new()),
+            chain_time: Mutex::new(0),
+        };
+        let now = Mutex::new(1_000_000i64);
+        let clock = || *now.lock().unwrap();
+        let token = || "token".to_string();
+        let registry = SolanaRegistry::new(db, &fake, &PROGRAM, &RELAYER, &clock, &token).expect("a registry");
+
+        let payload = crate::golden::block(registry.payload(&event, &receipt, &current))
+            .expect("an early proposal must be reconstructible");
+        match payload {
+            Payload::ProposeResolution {
+                schema_version,
+                resolution,
+            } => {
+                assert!(
+                    matches!(resolution, forecast_domain::lifecycle::AnyResolution::Early(_)),
+                    "the resolution decoded as the ordinary one"
+                );
+                assert_eq!(
+                    schema_version, 2,
+                    "an early proposal's command carries schema version 2"
+                );
+            }
+            other => panic!("a different payload: {}", other.kind()),
+        }
     }
 }
