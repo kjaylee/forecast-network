@@ -288,9 +288,29 @@ mod tests {
 pub type BoxFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T>>>;
 /// `verify_signature(public_key, message, signature)`, injected so the protocol stays testable.
 pub type SignatureVerifier = dyn Fn(Vec<u8>, Vec<u8>, Vec<u8>) -> BoxFuture<Result<bool, ()>>;
-/// `PointsService.summary`, injected rather than reached for: `points.rs` still speaks the D1
-/// session directly, and migrating it is a change to live read routes rather than to this module.
-pub type PointsSummary = dyn Fn(&str) -> BoxFuture<Result<Value, ()>>;
+/// A future that borrows for as long as its caller does.
+pub type BorrowedFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
+
+/// `PointsService.summary`, injected rather than reached for.
+///
+/// A **trait** rather than a boxed closure, and the reason is a real one rather than taste: `Fn`'s
+/// `Output` is an associated type, and a trait object over `Fn` is *invariant* in it. So a
+/// `Box<dyn Fn(String) -> Pin<Box<dyn Future + 'static>>>` does not coerce to the same box with a
+/// shorter future — which means a closure that reads the request's own database cannot be passed
+/// where this seam is wanted, however the aliases are written. A method can name its own lifetime,
+/// and the future it returns can borrow `&self`, which is what the summary actually needs.
+pub trait PointsSummary {
+    fn summary<'a>(&'a self, user_id: String) -> BorrowedFuture<'a, Result<Value, ()>>;
+}
+
+/// A summary that answers with nothing, for the paths whose subject has no ledger.
+pub struct NullPoints;
+
+impl PointsSummary for NullPoints {
+    fn summary<'a>(&'a self, _user_id: String) -> BorrowedFuture<'a, Result<Value, ()>> {
+        Box::pin(async { Ok(Value::Null) })
+    }
+}
 
 /// `WalletService`.
 pub struct WalletService<'a> {
@@ -298,7 +318,7 @@ pub struct WalletService<'a> {
     pub now_ms: &'a dyn Fn() -> i64,
     pub random_token: &'a dyn Fn() -> String,
     pub verify_signature: &'a SignatureVerifier,
-    pub points: &'a PointsSummary,
+    pub points: &'a dyn PointsSummary,
     pub origin: String,
 }
 
@@ -311,7 +331,7 @@ impl<'a> WalletService<'a> {
         now_ms: &'a dyn Fn() -> i64,
         random_token: &'a dyn Fn() -> String,
         verify_signature: &'a SignatureVerifier,
-        points: &'a PointsSummary,
+        points: &'a dyn PointsSummary,
         origin: &str,
     ) -> Result<Self, String> {
         let complaint = "Wallet origin must be an exact HTTPS origin or local development origin".to_string();
@@ -417,7 +437,7 @@ impl<'a> WalletService<'a> {
                                 "linkedAt": int(row, "linked_at")}),
             None => Value::Null,
         };
-        Ok(json!({"wallet": wallet, "points": (self.points)(user_id).await.unwrap_or(Value::Null)}))
+        Ok(json!({"wallet": wallet, "points": self.points.summary(user_id.to_string()).await.unwrap_or(Value::Null)}))
     }
 
     /// `challenge`: the exact text a wallet is asked to sign.
@@ -744,7 +764,7 @@ impl WalletService<'_> {
                 return Err(storage_unavailable());
             }
             return Ok(json!({"wallet": Value::Null,
-                             "points": (self.points)(user_id).await.unwrap_or(Value::Null)}));
+                             "points": self.points.summary(user_id.to_string()).await.unwrap_or(Value::Null)}));
         };
 
         let revision = int(&row, "revision").unwrap_or(0);
@@ -795,7 +815,7 @@ impl WalletService<'_> {
                 .map_err(|_| storage_unavailable())?;
             let Some(current) = current else {
                 return Ok(json!({"wallet": Value::Null,
-                                 "points": (self.points)(user_id).await.unwrap_or(Value::Null)}));
+                                 "points": self.points.summary(user_id.to_string()).await.unwrap_or(Value::Null)}));
             };
             if int(&current, "revision") == Some(revision) && text(&current, "generation") == Some(generation.as_str())
             {
@@ -804,7 +824,7 @@ impl WalletService<'_> {
             return Err(conflict());
         }
         Ok(json!({"wallet": Value::Null,
-                  "points": (self.points)(user_id).await.unwrap_or(Value::Null)}))
+                  "points": self.points.summary(user_id.to_string()).await.unwrap_or(Value::Null)}))
     }
 }
 
@@ -847,7 +867,7 @@ mod service_tests {
         let now = || 0i64;
         let token = || "t".repeat(32);
         let verifier: Box<SignatureVerifier> = Box::new(|_, _, _| Box::pin(async { Ok(true) }));
-        let points: Box<PointsSummary> = Box::new(|_| Box::pin(async { Ok(Value::Null) }));
+        let points = NullPoints;
         let make = |origin: &str| WalletService::new(&db, &now, &token, &verifier, &points, origin);
         for origin in ["https://forecast.eastsea.xyz", "http://localhost", "http://127.0.0.1"] {
             assert!(make(origin).is_ok(), "{origin}");
@@ -880,7 +900,7 @@ mod service_tests {
         let now = || 1_000i64;
         let token = || "a".repeat(40);
         let verifier: Box<SignatureVerifier> = Box::new(|_, _, _| Box::pin(async { Ok(true) }));
-        let points: Box<PointsSummary> = Box::new(|_| Box::pin(async { Ok(Value::Null) }));
+        let points = NullPoints;
         let registry = WalletService::new(&db, &now, &token, &verifier, &points, "https://forecast.eastsea.xyz")
             .expect("a service");
         // A real Ed25519 point, since the challenge decodes the address before writing anything.

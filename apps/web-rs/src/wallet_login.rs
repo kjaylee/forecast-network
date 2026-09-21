@@ -35,9 +35,8 @@ fn challenge_invalid(message: &'static str) -> WalletError {
     WalletError::new(400, "wallet_challenge_invalid", message)
 }
 
-/// `PointsService(self.db).summary(uid)`, injected: `points.rs` still speaks the D1 session
-/// directly, so the summary arrives through a seam rather than from a second storage client here.
-pub type PointsSummary = wallets::PointsSummary;
+// `PointsService(self.db).summary(uid)` arrives through `wallets::PointsSummary` rather than from
+// a second storage client here.
 
 /// `verify_signature` with the reference's own ten-second deadline already applied by the seam that
 /// makes the call, which is the only place a timer can exist at all.
@@ -50,7 +49,7 @@ pub struct WalletLogin<'a> {
     pub token_hash: &'a dyn Fn(&str) -> String,
     pub random_token: &'a dyn Fn() -> String,
     pub verify_signature: &'a Verifier,
-    pub points: &'a PointsSummary,
+    pub points: &'a dyn wallets::PointsSummary,
     pub origin: String,
     /// `on_create`, awaited only after ownership has been proven.
     pub on_create: Option<&'a dyn Fn() -> BoxFuture<Result<(), ()>>>,
@@ -67,7 +66,7 @@ impl<'a> WalletLogin<'a> {
         token_hash: &'a dyn Fn(&str) -> String,
         random_token: &'a dyn Fn() -> String,
         verify_signature: &'a Verifier,
-        points: &'a PointsSummary,
+        points: &'a dyn wallets::PointsSummary,
         origin: &str,
     ) -> Result<Self, String> {
         WalletService::new(db, now_ms, random_token, verify_signature, points, origin)?;
@@ -769,7 +768,7 @@ impl<'a> WalletLogin<'a> {
             "user": auth::public_user(&saved),
             "sessionToken": session,
             "wallet": {"address": address, "chain": CHAIN, "linkedAt": now},
-            "points": (self.points)(&uid).await.map_err(|_| storage_unavailable())?,
+            "points": self.points.summary(uid.clone()).await.map_err(|_| storage_unavailable())?,
         }))
     }
 
@@ -932,13 +931,26 @@ mod tests {
         }
     }
 
+    /// The summaries the vector recorded, handed out in the order the sign-ins produced them. A
+    /// sign-in that returned an earlier one's points is caught here rather than papered over.
+    struct RecordedPoints {
+        state: Rc<State>,
+    }
+
+    impl wallets::PointsSummary for RecordedPoints {
+        fn summary<'a>(&'a self, _user_id: String) -> wallets::BorrowedFuture<'a, Result<Value, ()>> {
+            let value = self.state.points.borrow_mut().pop_front().unwrap_or(Value::Null);
+            Box::pin(async move { Ok(value) })
+        }
+    }
+
     /// The six injected effects, each owning a handle on the shared state.
     struct Effects {
         clock: Box<dyn Fn() -> i64>,
         hash: Box<dyn Fn(&str) -> String>,
         token: Box<dyn Fn() -> String>,
         verifier: Box<SignatureVerifier>,
-        points: Box<PointsSummary>,
+        points: RecordedPoints,
         on_create: Box<dyn Fn() -> BoxFuture<Result<(), ()>>>,
     }
 
@@ -965,10 +977,7 @@ mod tests {
                     let valid = signature == vec![1u8; 64];
                     Box::pin(async move { Ok(valid) })
                 }),
-                points: Box::new(move |_uid| {
-                    let value = points.points.borrow_mut().pop_front().unwrap_or(Value::Null);
-                    Box::pin(async move { Ok(value) })
-                }),
+                points: RecordedPoints { state: points },
                 on_create: Box::new(move || {
                     on_create.creations.set(on_create.creations.get() + 1);
                     Box::pin(async { Ok(()) })
@@ -983,7 +992,7 @@ mod tests {
                 &*self.hash,
                 &*self.token,
                 &*self.verifier,
-                &*self.points,
+                &self.points,
                 origin,
             )
         }
