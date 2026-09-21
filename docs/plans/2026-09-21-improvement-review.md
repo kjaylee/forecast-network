@@ -187,12 +187,15 @@ the review had not:
   every attempt at the 2026-09-20T04:00Z episode the series answered `episodes: []` for 33
   hours and the health read reported a past instant as "next". Fixed in the reference, the
   golden and the port; proved by mutation.
-- **`/api/admin/ai/health` answers 503 from both Workers** while the relay answers the same
-  probe from outside Cloudflare with 200. Seen on the reference as a proxied HTTP 404, and on
-  the edge as the route calling the provider directly rather than through the relay rewrite the
-  coordinator uses (`admin_ops::ai_health_route` uses `post_json`, not `json_fetcher`). The
-  first is not explained yet and blocks the series' compile step on both Workers; it predates
-  the flip and is the open item.
+- **`/api/admin/ai/health` answered 503 from both Workers**, for two different reasons, both
+  found by tailing the relay while each side probed it. The reference's request never reached
+  the relay: a `fetch()` to another Worker's `workers.dev` hostname on the same account is
+  answered 404 before the relay sees it, and the path between Workers is a service binding —
+  `AI_RELAY` is bound on both now (`59f795e`). The edge's request was never *sent*: its
+  allowlist ran after the relay rewrite and refused the relay's own hostname (`562009d`). Both probes answer
+  `ok: true, proxied: true` since 12:20Z. The 12:00Z episodes were missed by the outage and
+  are skipped under the corrected rule; the next start is 2026-09-22T00:00Z, attempted from
+  21:00Z.
 
 Finding 9 (the v2 arm's vector) and finding 10 (recorded as a decision in the plan: the
 Python package stays as the generator) remain as written.

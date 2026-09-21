@@ -105,6 +105,12 @@ its values. Use a dedicated free port; do not stop another project's server on 8
 
 ## The edge Worker — what serves the domain
 
+Both Workers reach the Gemini relay through the `AI_RELAY` service binding, never by its
+`workers.dev` URL: a fetch to another Worker's `workers.dev` hostname on the same account is
+answered 404 before that Worker runs (observed 2026-09-21 by tailing the relay). The URL in
+`AI_PROXY_URL` is only the binding's fallback. `GET /api/admin/ai/health` proves the path.
+
+
 `apps/web-rs` is the Worker on `forecast.eastsea.xyz`. It is built with
 `worker-build` (rustup toolchain; Homebrew cargo lacks the `wasm32` target) and
 deployed by:
