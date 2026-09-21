@@ -424,10 +424,20 @@ class Default(WorkerEntrypoint):
             fetch_url = relay[0]
             fetch_headers = {name: value for name, value in fetch_headers.items() if name.lower() != "x-goog-api-key"}
             fetch_headers.update({"X-Forecast-Proxy-Target": url, "Authorization": "Bearer " + relay[1]})
+        # The relay is another Worker on this account, and a fetch to its workers.dev hostname is
+        # answered 404 by the platform before the relay sees it (tailed 2026-09-21: a request from
+        # outside reached the relay, this Worker's never did). A service binding is the path
+        # between Workers; the URL is what it falls back to when the binding is not bound.
+        relay_binding = getattr(self.env, "AI_RELAY", None) if fetch_url != url else None
         try:
-            response = await js_fetch(fetch_url, javascript({
-                "method": method, "headers": fetch_headers, "body": json.dumps(body), "redirect": "manual",
-            }))
+            if relay_binding is not None:
+                # The SDK service-binding wrapper takes Python keyword fetch options.
+                response = await relay_binding.fetch(fetch_url, method=method, headers=fetch_headers,
+                                                     body=json.dumps(body), redirect="manual")
+            else:
+                response = await js_fetch(fetch_url, javascript({
+                    "method": method, "headers": fetch_headers, "body": json.dumps(body), "redirect": "manual",
+                }))
         except JsException as exc:
             raise RuntimeError("AI transport could not complete the request") from exc
         if not 200 <= response.status < 300:

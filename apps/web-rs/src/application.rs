@@ -95,33 +95,75 @@ fn approved(url: &str) -> bool {
 /// credential, and a request that carried both would send the placeholder for no reason.
 pub fn json_fetcher(env: &Env) -> JsonFetcher {
     let relay = gemini_relay(env);
-    // The binding is a JavaScript handle and not `Clone`; the closure owns one reference to it
-    // and hands it out per call. A Worker is single-threaded, so `Rc` is the right sharing here.
+    // The bindings are JavaScript handles and not `Clone`; the closure owns one reference to
+    // each and hands it out per call. A Worker is single-threaded, so `Rc` is the right sharing.
     let ai = env.get_binding::<worker::Ai>("AI").ok().map(std::rc::Rc::new);
+    // The relay is another Worker on this account. A `fetch()` to its `workers.dev` hostname is
+    // answered 404 by the platform before the relay sees it — observed 2026-09-21 by tailing the
+    // relay while both Workers reported it unreachable and a request from outside reached it —
+    // so the relay is called through its service binding when one is bound, and the URL is only
+    // what `AI_RELAY` falls back to.
+    let relay_binding = env.service("AI_RELAY").ok().map(std::rc::Rc::new);
     Box::new(move |url, headers, body| {
         let relay = relay.clone();
         let ai = ai.clone();
+        let relay_binding = relay_binding.clone();
         Box::pin(async move {
             if let Some(model) = url.strip_prefix(WORKERS_AI_SCHEME) {
                 return workers_ai(ai.as_deref(), model, &body).await;
             }
             let mut url = url;
             let mut headers = headers;
+            let mut through_binding = None;
             if let Some((relay_url, token)) = relay {
                 if url.contains(GEMINI_HOST) {
                     headers.retain(|(name, _)| name.to_lowercase() != "x-goog-api-key");
                     headers.push(("X-Forecast-Proxy-Target".to_string(), url.clone()));
                     headers.push(("Authorization".to_string(), format!("Bearer {token}")));
                     url = relay_url;
+                    through_binding = relay_binding;
                 }
             }
             if !approved(&url) {
                 return Err(());
             }
-            let text = post_json(&url, &headers, &body).await?;
+            let text = match through_binding {
+                Some(binding) => post_json_via(&binding, &url, &headers, &body).await?,
+                None => post_json(&url, &headers, &body).await?,
+            };
             serde_json::from_str(&text).map_err(|_| ())
         })
     })
+}
+
+/// `post_json`, sent through a service binding rather than the network.
+///
+/// The URL still names the relay: a service binding takes a whole request, and the relay reads
+/// nothing from the path, so the same request is built and only its route differs.
+#[cfg(target_arch = "wasm32")]
+async fn post_json_via(
+    binding: &worker::Fetcher,
+    url: &str,
+    headers: &[(String, String)],
+    body: &Value,
+) -> Result<String, ()> {
+    let init = request_init(Method::Post, headers, Some(body.to_string())).map_err(|_| ())?;
+    let request = Request::new_with_init(url, &init).map_err(|_| ())?;
+    let mut response = binding.fetch_request(request).await.map_err(|_| ())?;
+    if !(200..300).contains(&response.status_code()) {
+        return Err(());
+    }
+    response.text().await.map_err(|_| ())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+async fn post_json_via(
+    _binding: &worker::Fetcher,
+    _url: &str,
+    _headers: &[(String, String)],
+    _body: &Value,
+) -> Result<String, ()> {
+    Err(())
 }
 
 /// The Workers AI binding, when one is configured.
