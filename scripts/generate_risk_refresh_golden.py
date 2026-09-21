@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import sys
+import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,14 +41,18 @@ from forecast_application.risk_refresh import (  # noqa: E402
 )
 from forecast_application.sources import Artifact  # noqa: E402
 from forecast_domain.serialization import content_hash  # noqa: E402
-from golden_cli import golden_main  # noqa: E402
+from golden_cli import golden_main, skipped  # noqa: E402
 
 from tests.risk_feed_fixtures import GENESIS  # noqa: E402
-from tests.test_risk_feed_v2_producer import (  # noqa: E402
-    RiskFeedV2ProducerTests,  # noqa: E402
-)
 
 GOLDEN = ROOT / "tests/golden/risk-refresh-golden.json"
+
+try:
+    # The producer fixture signs with a real Ed25519 key; without `cryptography` the vector
+    # cannot be built, and the check passes here so that the full job is where it is held.
+    from tests.test_risk_feed_v2_producer import RiskFeedV2ProducerTests  # noqa: E402
+except unittest.SkipTest as reason:  # pragma: no cover
+    raise SystemExit(skipped(GOLDEN, reason))
 
 # The tables the refresh writes, and the ones its currency query reads. `users` is in the list
 # because `forecasts.creator_id` references it: a port replaying the fixture has to restore the
