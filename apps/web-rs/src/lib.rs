@@ -163,6 +163,15 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let native_read = method == Method::Get && (routes::owns(path) || routes::owns_admin_read(path));
     let native_write = routes::owns_write(&method, path);
     if !native_read && !native_write {
+        // `route_parity.py` proves every route the Python Worker serves is claimed here, so this
+        // branch should now be unreachable for a route that exists — and reachable only for a path
+        // neither Worker serves. It is left in place as the rollback path, and every request that
+        // takes it is logged: those logs are the evidence for retiring the binding, and without
+        // them "nothing forwards any more" is a belief rather than an observation.
+        console_log!(
+            "{}",
+            json!({"event": "forwarded_to_legacy", "path": &path[..path.len().min(100)], "method": format!("{method:?}")})
+        );
         return env.service("LEGACY")?.fetch_request(req).await;
     }
     let mut req = req;

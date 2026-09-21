@@ -16,6 +16,20 @@ literals left exactly as written, since whitespace inside a literal is meaningfu
 
 No dependencies: the Python side is read through `ast`, which has already folded implicit
 concatenation, so it sees the statement Python builds rather than the pieces in the file.
+
+**What this proves, and what it does not.** Every Rust statement is shown to be one Python
+runs, so the edge Worker cannot silently invent a query. The converse — that every Python
+statement has a Rust counterpart — is *not* checked, and cannot be with this machinery: a
+Rust statement is written as adjacent literals around `format!` holes, so the file holds
+pieces and not statements, and each piece is a substring of the Python statement rather than
+the other way round. Running the comparison in reverse was tried and reported 123
+"unmatched" statements, every one of which is present in the crate — spot-checked against
+`wallet_links`, `wallet_unlinked`, `sessions`, `point_evidence_rewards` and
+`resolution_timing_closures`. A check that fails on all of them is not a check.
+
+The evidence for the other direction is different: `scripts/route_parity.py` compares the
+*route surface*, the goldens compare behaviour, and every table the Python Worker touches was
+audited against the crate's text once by hand.
 """
 
 from __future__ import annotations
