@@ -144,7 +144,7 @@ pub async fn forecast_detail(
     item["earlyResolution"] = early_projection(&forecast)?;
     let env = context.env;
     let var = |name: &str| env.var(name).map(|v| v.to_string()).unwrap_or_default();
-    let registry_enabled = var("SOLANA_REGISTRY_ENABLED") == "true" && !var("SOLANA_PROGRAM_ID").is_empty();
+    let registry_enabled = crate::admin::flag(env, "SOLANA_REGISTRY_ENABLED") && !var("SOLANA_PROGRAM_ID").is_empty();
     if registry_enabled {
         let program: [u8; 32] = bs58::decode(var("SOLANA_PROGRAM_ID"))
             .into_vec()
@@ -159,7 +159,7 @@ pub async fn forecast_detail(
         &[id.clone(), user.clone(), id],
     )
     .await?;
-    let live_enabled = var("LIVE_MARKETS_ENABLED") == "true";
+    let live_enabled = crate::admin::flag(env, "LIVE_MARKETS_ENABLED");
     let attestation_available = registry_enabled && !var("SOLANA_RELAYER").is_empty();
     let points = match user_id {
         // The missing-account refusal belongs to the read model, which is where the reference puts

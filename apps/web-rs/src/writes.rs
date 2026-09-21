@@ -361,8 +361,8 @@ pub async fn adjudicate(context: &Context<'_>, forecast_id: &str, body: &Map<Str
         now_ms: context.now_ms,
         token: &random_token,
         daily_limit: AI_DAILY_LIMIT,
-        source_watch_enabled: var(context.env, "SOURCE_WATCH_ENABLED") == "true",
-        live_markets_enabled: var(context.env, "LIVE_MARKETS_ENABLED") == "true",
+        source_watch_enabled: crate::admin::flag(context.env, "SOURCE_WATCH_ENABLED"),
+        live_markets_enabled: crate::admin::flag(context.env, "LIVE_MARKETS_ENABLED"),
         // An adjudication enters PROPOSED and never finalizes, so no chain gate is consulted.
         registry: None,
     };
@@ -386,7 +386,7 @@ pub async fn adjudicate(context: &Context<'_>, forecast_id: &str, body: &Map<Str
 /// The switch is a *deployment* decision and it is checked before anything else: an installation
 /// that requires wallet sign-in must not leave a second way in open.
 pub async fn register(context: &Context<'_>, req: &Request, body: &Map<String, Value>) -> Handler {
-    if var(context.env, "WALLET_LOGIN_REQUIRED").to_lowercase() != "false" {
+    if crate::admin::switch(context.env, "WALLET_LOGIN_REQUIRED", true) {
         return Err(RouteError::Failed(
             409,
             "wallet_login_required",
@@ -785,7 +785,7 @@ async fn compile(
         &reader,
         now_ms,
         &random_token,
-        var(env, "SOURCE_WATCH_ENABLED") == "true",
+        crate::admin::flag(env, "SOURCE_WATCH_ENABLED"),
     );
     automation
         .check_creation(&compiled.specification)
@@ -935,7 +935,7 @@ async fn publish(
         &reader,
         now,
         &random_token,
-        var(context.env, "SOURCE_WATCH_ENABLED") == "true",
+        crate::admin::flag(context.env, "SOURCE_WATCH_ENABLED"),
     )
     .check_creation(&specification)
     .await
@@ -1017,7 +1017,7 @@ async fn publish(
     ];
     statements.extend(crate::mutate::event_statements(&validated)?);
     statements.extend(crate::mutate::event_statements(&published)?);
-    if var(context.env, "SOLANA_REGISTRY_ENABLED").to_lowercase() == "true" {
+    if crate::admin::flag(context.env, "SOLANA_REGISTRY_ENABLED") {
         statements.push(crate::registry_chain::registry_enable_sql(&forecast_id));
     }
     statements.push(operation(user_id, key, &request, &forecast_id, &json!({}), now)?);
@@ -1101,7 +1101,7 @@ pub async fn wallet(
     user_id: &str,
     body: &Map<String, Value>,
 ) -> Handler {
-    if var(context.env, "WALLET_LOGIN_REQUIRED").to_lowercase() == "true" {
+    if crate::admin::switch(context.env, "WALLET_LOGIN_REQUIRED", true) {
         return Err(RouteError::Failed(
             409,
             "wallet_migration_required",
@@ -1639,8 +1639,8 @@ pub async fn run_automation(context: &Context<'_>) -> Handler {
         now_ms: context.now_ms,
         token: &random_token,
         daily_limit: AI_DAILY_LIMIT,
-        source_watch_enabled: var(context.env, "SOURCE_WATCH_ENABLED") == "true",
-        live_markets_enabled: var(context.env, "LIVE_MARKETS_ENABLED") == "true",
+        source_watch_enabled: crate::admin::flag(context.env, "SOURCE_WATCH_ENABLED"),
+        live_markets_enabled: crate::admin::flag(context.env, "LIVE_MARKETS_ENABLED"),
         registry: registry
             .as_ref()
             .map(|registry| registry as &dyn crate::mutate::FinalizationGate),
@@ -1696,8 +1696,8 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
         now_ms: context.now_ms,
         token: &random_token,
         daily_limit: AI_DAILY_LIMIT,
-        source_watch_enabled: var(context.env, "SOURCE_WATCH_ENABLED") == "true",
-        live_markets_enabled: var(context.env, "LIVE_MARKETS_ENABLED") == "true",
+        source_watch_enabled: crate::admin::flag(context.env, "SOURCE_WATCH_ENABLED"),
+        live_markets_enabled: crate::admin::flag(context.env, "LIVE_MARKETS_ENABLED"),
         registry: registry
             .as_ref()
             .map(|registry| registry as &dyn crate::mutate::FinalizationGate),
@@ -1710,7 +1710,7 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
         .map_err(|detail| RouteError::Worker(worker::Error::from(detail)))?;
     let automation_ms = clock_ms() - started;
     if let Some(registry) = &registry {
-        if var(context.env, "SOLANA_REGISTRY_RELAY_ENABLED").to_lowercase() == "true" {
+        if crate::admin::flag(context.env, "SOLANA_REGISTRY_RELAY_ENABLED") {
             let registry_started = clock_ms();
             // A delivery that fails is a retry, not a failed sweep: the local half has already
             // completed, and reporting the whole pass as failed would re-run it.
@@ -1764,8 +1764,8 @@ pub async fn report_evidence(context: &Context<'_>, user_id: &str, forecast_id: 
         now_ms: context.now_ms,
         token: &random_token,
         daily_limit: AI_DAILY_LIMIT,
-        source_watch_enabled: var(context.env, "SOURCE_WATCH_ENABLED") == "true",
-        live_markets_enabled: var(context.env, "LIVE_MARKETS_ENABLED") == "true",
+        source_watch_enabled: crate::admin::flag(context.env, "SOURCE_WATCH_ENABLED"),
+        live_markets_enabled: crate::admin::flag(context.env, "LIVE_MARKETS_ENABLED"),
         // A report never commits anything to a chain, so no adapter is consulted on this path.
         registry: None,
     };

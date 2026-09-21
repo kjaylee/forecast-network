@@ -86,11 +86,27 @@ pub fn refused() -> RouteError {
 /// `str(getattr(env, NAME, "false")).lower() == "true"`: the shape every switch in this Worker is
 /// read with, case-insensitively because a var set to `TRUE` is a var somebody meant to set.
 pub fn flag(env: &Env, name: &str) -> bool {
-    env.var(name)
-        .map(|value| value.to_string())
-        .unwrap_or_default()
-        .to_lowercase()
-        == "true"
+    switch(env, name, false)
+}
+
+/// `str(getattr(env, NAME, DEFAULT)).lower() == "true"`: a switch with the reference's own default.
+///
+/// One reading per switch, and this is it. `WALLET_LOGIN_REQUIRED` was once read as `!= "false"`
+/// at one site and `== "true"` at another; unset, the first refused and the second permitted, and
+/// the reference — default `"true"`, compared as `== "true"` — did neither of those at both. A
+/// value that is present but is not `true` is *false* whatever the default says: the default is
+/// what an absent var means, not what an unrecognised one means.
+pub fn switch(env: &Env, name: &str, default: bool) -> bool {
+    let value = env.var(name).ok().map(|value| value.to_string());
+    switch_value(value.as_deref(), default)
+}
+
+/// The comparison `switch` makes, on the value it read.
+pub fn switch_value(value: Option<&str>, default: bool) -> bool {
+    match value {
+        Some(value) => value.to_lowercase() == "true",
+        None => default,
+    }
 }
 
 /// The exact key set a route accepts.
@@ -132,5 +148,19 @@ mod tests {
         assert!(!scheduler_may_trigger("/api/admin/forecasts/f_1/adjudicate"));
         assert!(!scheduler_may_trigger("/api/admin/automation/run"));
         assert!(!scheduler_may_trigger("/api/admin/risk/v2/health"));
+    }
+
+    #[test]
+    fn a_switch_has_one_reading_and_the_default_is_for_absence_only() {
+        // `str(getattr(env, NAME, DEFAULT)).lower() == "true"`
+        assert!(switch_value(None, true));
+        assert!(!switch_value(None, false));
+        assert!(switch_value(Some("true"), false));
+        assert!(switch_value(Some("TRUE"), false));
+        // Present but unrecognised is false under either default: the default is what an absent
+        // var means, not what "yes" means.
+        assert!(!switch_value(Some("yes"), true));
+        assert!(!switch_value(Some(""), true));
+        assert!(!switch_value(Some("false"), true));
     }
 }

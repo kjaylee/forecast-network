@@ -327,7 +327,7 @@ impl<'a, 'b> SolanaRpcTransport<'a, 'b> {
 ///
 /// `worker::console_log!` panics off the wasm target rather than doing nothing, which the port's
 /// own tests would meet the moment a refusal path was exercised natively.
-fn log_event(event: Value) {
+pub(crate) fn log_event(event: Value) {
     #[cfg(target_arch = "wasm32")]
     worker::console_log!("{}", event);
     #[cfg(not(target_arch = "wasm32"))]

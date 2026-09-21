@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import base64
 import json
 import shutil
 import subprocess
@@ -12,7 +11,8 @@ import sys
 from pathlib import Path
 
 from build_web import ROOT, STAGE, build
-from cloudflare_keychain import KEYCHAIN_SERVICES, deployment_environment, secret
+from cloudflare_keychain import deployment_environment, secret
+from worker_secrets import secret_payload
 
 
 def run(command: list[str], *, cwd: Path, env: dict[str, str], input_text: str | None = None) -> None:
@@ -56,28 +56,12 @@ def main() -> None:
     # The bound database is the migration target; the name lives only in wrangler.jsonc.
     run([str(wrangler), "d1", "migrations", "apply", config["d1_databases"][0]["database_name"], "--remote"],
         cwd=STAGE, env=env)
-    payload = {name: secret(name) for name in (
-        "SESSION_SECRET", "ADMIN_TOKEN", "AI_PROXY_TOKEN", "SCHEDULER_TOKEN", "SOLANA_DEVNET_RPC_KEYED")}
     # The Gemini relay is a separate region-placed Worker; it alone holds the Gemini key.
     proxy = ROOT / "apps/ai-proxy"
     run([str(wrangler), "deploy"], cwd=proxy, env=env)
     run([str(wrangler), "secret", "bulk"], cwd=proxy, env=env,
-        input_text=json.dumps({"PROXY_TOKEN": payload["AI_PROXY_TOKEN"], "GEMINI_API_KEY": secret("GEMINI_API_KEY")}))
-    if config.get("vars", {}).get("SOLANA_REGISTRY_ENABLED") == "true":
-        from solana_keychain import Keychain, base58, public_bytes
-        seed = Keychain().read("relayer")
-        if seed is None or base58(public_bytes(seed)) != config["vars"]["SOLANA_RELAYER"]:
-            raise RuntimeError("Devnet relayer Keychain identity does not match deployment")
-        payload["SOLANA_RELAYER_SEED"] = base64.b64encode(seed).decode("ascii")
-        if config.get("vars", {}).get("SOLANA_RPC_PROXY_URL"):
-            proxy_seed = Keychain(services={"gateway": "forecast-network-devnet-rpc-gateway-v1"},
-                                  account=b"forecast-rpc").read("gateway")
-            if proxy_seed is None:
-                raise RuntimeError("Scoped Devnet RPC gateway credential must be provisioned first")
-            payload["SOLANA_RPC_PROXY_TOKEN"] = proxy_seed.hex()
-    # Optional keyed mainnet RPC (Helius/QuickNode/...): public endpoints throttle Cloudflare.
-    if "SOLANA_MAINNET_RPC_KEYED" in KEYCHAIN_SERVICES:
-        payload["SOLANA_MAINNET_RPC_KEYED"] = secret("SOLANA_MAINNET_RPC_KEYED")
+        input_text=json.dumps({"PROXY_TOKEN": secret("AI_PROXY_TOKEN"), "GEMINI_API_KEY": secret("GEMINI_API_KEY")}))
+    payload = secret_payload(config)
     run([str(wrangler), "secret", "bulk"], cwd=STAGE, env=env, input_text=json.dumps(payload))
     del payload
     run([*cli, "deploy"], cwd=STAGE, env=env)

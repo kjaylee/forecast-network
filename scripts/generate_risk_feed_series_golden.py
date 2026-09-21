@@ -42,7 +42,6 @@ from forecast_application.risk_feed_series import (  # noqa: E402
     create_due_episodes,
     episode_question,
     next_episode_start,
-    spell,
 )
 from forecast_application.risk_feed_v2 import (  # noqa: E402
     admit_definition,
@@ -51,10 +50,14 @@ from forecast_application.risk_feed_v2 import (  # noqa: E402
 )
 from forecast_domain.errors import ValidationError  # noqa: E402
 from forecast_domain.models import Category  # noqa: E402
-from forecast_domain.risk_feed import RiskFeedSeriesV2  # noqa: E402
 from forecast_domain.serialization import to_dict  # noqa: E402
+
 from tests import test_web_application as fixtures  # noqa: E402
-from tests.test_risk_feed_v2_contract import golden_definition, golden_profile, golden_series  # noqa: E402
+from tests.test_risk_feed_v2_contract import (  # noqa: E402
+    golden_definition,
+    golden_profile,
+    golden_series,
+)
 from tests.test_web_ai import specification  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/risk-feed-series-golden.json"

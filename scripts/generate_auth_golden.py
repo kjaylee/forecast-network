@@ -36,7 +36,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/application/src"), str(ROOT)]
 
-from forecast_application.auth import SESSION_LIFETIME_MS, Authentication, public_user, text  # noqa: E402
+from forecast_application.auth import (  # noqa: E402
+    SESSION_LIFETIME_MS,
+    Authentication,
+    public_user,
+    text,
+)
 from forecast_application.database import SQLiteDatabase  # noqa: E402
 from forecast_application.errors import AppError  # noqa: E402
 

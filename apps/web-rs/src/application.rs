@@ -264,61 +264,88 @@ pub const DAILY_SPEND_LIMIT: i64 = 50_000_000;
 pub const RPC_RESPONSE_BYTES: usize = 262_144;
 pub const RPC_TIMEOUT_MS: i32 = 20_000;
 
-/// `registry_rpc_urls`: the endpoints this Worker will call, with their headers.
+/// The public Devnet endpoint the reference pins `SOLANA_RPC_URL` to. Anything else is refused,
+/// even though the pinned endpoint is the one that answers Cloudflare with 403: the pin is what
+/// proves the deployment is configured for *this* chain before an override is considered.
+pub const PINNED_RPC_URL: &str = "https://api.devnet.solana.com";
+pub const REGISTRY_USER_AGENT: &str = "Forecast-Registry/0.9 (+https://forecast.eastsea.xyz)";
+
+/// The four values `registry_rpc` reads, under the reference's own names.
 ///
-/// Ordered: the owned gateway if its credential is present, then an authenticated provider, then
-/// the public list. The gateway's token is a *64-hex* string — a shorter one is not a credential
-/// and is refused rather than sent.
-pub fn registry_urls(env: &Env) -> Vec<(String, Vec<(String, String)>)> {
-    let mut urls = Vec::new();
-    let proxy = var(env, "SOLANA_RPC_PROXY");
-    if !proxy.is_empty() {
-        let token = env
-            .secret("SOLANA_RPC_PROXY_TOKEN")
-            .ok()
-            .map(|value| value.to_string())
-            .unwrap_or_default();
+/// They were once `SOLANA_DEVNET_RPC` and `SOLANA_RPC_PROXY` here — names that exist in neither
+/// Worker's configuration — and a failover list where the reference has exactly one endpoint.
+/// `scripts/config_parity.py` now holds the names to the reference.
+pub struct RegistryRpcConfig {
+    /// `SOLANA_RPC_URL`
+    pub url: String,
+    /// `SOLANA_RPC_PROXY_URL`
+    pub proxy: String,
+    /// `SOLANA_RPC_PROXY_TOKEN`
+    pub proxy_token: String,
+    /// `SOLANA_DEVNET_RPC_KEYED`
+    pub keyed: String,
+}
+
+impl RegistryRpcConfig {
+    pub fn from_env(env: &Env) -> Self {
+        Self {
+            url: var(env, "SOLANA_RPC_URL"),
+            proxy: var(env, "SOLANA_RPC_PROXY_URL"),
+            proxy_token: env
+                .secret("SOLANA_RPC_PROXY_TOKEN")
+                .ok()
+                .map(|value| value.to_string())
+                .unwrap_or_default(),
+            keyed: var(env, "SOLANA_DEVNET_RPC_KEYED"),
+        }
+    }
+}
+
+/// `registry_rpc`'s endpoint: the one URL the reference calls, with its headers.
+///
+/// The reference resolves *one* endpoint and raises on a misconfiguration; it does not fail over.
+/// In order: the pinned public URL is required; the owned gateway replaces it when configured (and
+/// must be the owned one, with a 64-lowercase-hex credential); the keyed provider replaces *that*
+/// when configured (and must be under `rpc.ankr.com/`). The keyed provider wins because the
+/// gateway is the rollback path — an edge that tried the gateway first would call a tunnel that is
+/// deliberately stopped on every registry request.
+/// A URL and the headers it is called with.
+pub type Endpoint = (String, Vec<(String, String)>);
+
+pub fn registry_endpoint(config: &RegistryRpcConfig) -> Result<Endpoint, &'static str> {
+    if config.url != PINNED_RPC_URL {
+        return Err("Registry RPC must use pinned Devnet endpoint");
+    }
+    let mut url = config.url.clone();
+    let mut headers = vec![
+        ("Content-Type".to_string(), "application/json".to_string()),
+        ("User-Agent".to_string(), REGISTRY_USER_AGENT.to_string()),
+    ];
+    if !config.proxy.is_empty() {
+        if config.proxy != REGISTRY_GATEWAY {
+            return Err("Unapproved registry RPC gateway");
+        }
+        let token = &config.proxy_token;
         let valid = token.len() == 64
             && token
                 .bytes()
                 .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase());
-        if proxy != REGISTRY_GATEWAY || !valid {
-            // The reference refuses rather than falling through: a configured gateway that is not
-            // the owned one, or one without its credential, is a configuration error and calling
-            // the public endpoint instead would hide it.
-            return Vec::new();
+        if !valid {
+            return Err("Registry RPC gateway credential unavailable");
         }
-        urls.push((
-            proxy,
-            vec![
-                ("X-Forecast-RPC-Token".to_string(), token),
-                ("Content-Type".to_string(), "application/json".to_string()),
-            ],
-        ));
+        url = config.proxy.clone();
+        headers.push(("X-Forecast-RPC-Token".to_string(), token.clone()));
     }
-    let keyed = var(env, "SOLANA_DEVNET_RPC_KEYED");
-    if !keyed.is_empty() {
-        if !keyed.starts_with(KEYED_PROVIDER_PREFIX) {
-            return Vec::new();
+    if !config.keyed.is_empty() {
+        if !config.keyed.starts_with(KEYED_PROVIDER_PREFIX) {
+            return Err("Unapproved keyed Devnet provider");
         }
-        urls.push((
-            keyed,
-            vec![("Content-Type".to_string(), "application/json".to_string())],
-        ));
+        url = config.keyed.clone();
     }
-    for url in var(env, "SOLANA_DEVNET_RPC").split(',') {
-        let url = url.trim();
-        if !url.is_empty() {
-            urls.push((
-                url.to_string(),
-                vec![("Content-Type".to_string(), "application/json".to_string())],
-            ));
-        }
-    }
-    urls
+    Ok((url, headers))
 }
 
-/// `registry_rpc`: one JSON-RPC call, with the failover the reference does.
+/// `registry_rpc`: one JSON-RPC call to the one endpoint the configuration resolves to.
 ///
 /// The envelope is *checked*, not merely parsed: `jsonrpc`, the id, a present `result` and an
 /// absent `error`. A provider that answers with something else has not answered, and accepting it
@@ -326,33 +353,34 @@ pub fn registry_urls(env: &Env) -> Vec<(String, Vec<(String, String)>)> {
 ///
 /// The id is fixed at 1 and a reply carrying another one is refused for the same reason: this call
 /// has exactly one outstanding request, and a mismatched id is a reply to a question nobody asked.
+/// A misconfigured endpoint is logged once here and refused on every call, as the reference raises.
 pub fn registry_rpc<'a>(env: &Env) -> Box<Rpc<'a>> {
-    let urls = registry_urls(env);
+    let endpoint = match registry_endpoint(&RegistryRpcConfig::from_env(env)) {
+        Ok(endpoint) => Some(endpoint),
+        Err(reason) => {
+            crate::solana_rpc::log_event(json!({"event": "registry_rpc_misconfigured", "reason": reason}));
+            None
+        }
+    };
     Box::new(move |method, params| {
-        let urls = urls.clone();
+        let endpoint = endpoint.clone();
         Box::pin(async move {
-            for (url, headers) in urls {
-                let body = json!({"jsonrpc": "2.0", "id": 1, "method": method, "params": params});
-                let Ok(text) = post_json(&url, &headers, &body).await else {
-                    continue;
-                };
-                if text.len() > RPC_RESPONSE_BYTES {
-                    continue;
-                }
-                let Ok(reply) = serde_json::from_str::<Value>(&text) else {
-                    continue;
-                };
-                if reply.get("jsonrpc") != Some(&json!("2.0"))
-                    || reply.get("id") != Some(&json!(1))
-                    || reply.get("error").is_some()
-                {
-                    continue;
-                }
-                if let Some(result) = reply.get("result") {
-                    return Ok(result.clone());
-                }
+            let Some((url, headers)) = endpoint else {
+                return Err(());
+            };
+            let body = json!({"jsonrpc": "2.0", "id": 1, "method": method, "params": params});
+            let text = post_json(&url, &headers, &body).await?;
+            if text.len() > RPC_RESPONSE_BYTES {
+                return Err(());
             }
-            Err(())
+            let reply = serde_json::from_str::<Value>(&text).map_err(|_| ())?;
+            if reply.get("jsonrpc") != Some(&json!("2.0"))
+                || reply.get("id") != Some(&json!(1))
+                || reply.get("error").is_some()
+            {
+                return Err(());
+            }
+            reply.get("result").cloned().ok_or(())
         })
     })
 }
@@ -568,7 +596,7 @@ impl<'a> ChainParts<'a> {
 /// `None` is a real configuration — a deployment with no registry does not finalize anything on a
 /// chain — and the enabled flag plus a decodable program and relayer are what make it `Some`.
 pub fn chain_parts<'a>(env: &Env, db: &'a dyn Database, now_ms: &'a dyn Fn() -> i64) -> Option<ChainParts<'a>> {
-    if var(env, "SOLANA_REGISTRY_ENABLED").to_lowercase() != "true" {
+    if !crate::admin::flag(env, "SOLANA_REGISTRY_ENABLED") {
         return None;
     }
     let program = bs58::decode(var(env, "SOLANA_PROGRAM_ID")).into_vec().ok()?;
@@ -716,5 +744,76 @@ mod tests {
             "666f7265636173742d6e6574776f726b2d72656c617965722d6b657933326162"
         );
         assert_eq!(identity.key_id, "forecast-relayer-d14649b3c9d5bad6");
+    }
+
+    fn rpc(url: &str, proxy: &str, token: &str, keyed: &str) -> RegistryRpcConfig {
+        RegistryRpcConfig {
+            url: url.to_string(),
+            proxy: proxy.to_string(),
+            proxy_token: token.to_string(),
+            keyed: keyed.to_string(),
+        }
+    }
+
+    #[test]
+    fn the_registry_endpoint_is_the_reference_s_one_url_under_the_reference_s_names() {
+        let token = "0123456789abcdef".repeat(4);
+        // The pin is required even when an override will replace it.
+        assert_eq!(
+            rpc("", "", "", "").map_endpoint(),
+            Err("Registry RPC must use pinned Devnet endpoint")
+        );
+        assert_eq!(
+            rpc("https://api.devnet.solana.com/", "", "", "").map_endpoint(),
+            Err("Registry RPC must use pinned Devnet endpoint")
+        );
+        let (url, headers) = rpc(PINNED_RPC_URL, "", "", "").map_endpoint().unwrap();
+        assert_eq!(url, PINNED_RPC_URL);
+        assert_eq!(headers.len(), 2, "content type and the reference's user agent");
+        assert!(headers
+            .iter()
+            .any(|(name, value)| name == "User-Agent" && value == REGISTRY_USER_AGENT));
+        // The gateway must be the owned one, with its credential.
+        assert_eq!(
+            rpc(PINNED_RPC_URL, "https://other.example/rpc", &token, "").map_endpoint(),
+            Err("Unapproved registry RPC gateway")
+        );
+        assert_eq!(
+            rpc(PINNED_RPC_URL, REGISTRY_GATEWAY, "", "").map_endpoint(),
+            Err("Registry RPC gateway credential unavailable")
+        );
+        assert_eq!(
+            rpc(PINNED_RPC_URL, REGISTRY_GATEWAY, &token.to_uppercase(), "").map_endpoint(),
+            Err("Registry RPC gateway credential unavailable")
+        );
+        let (url, headers) = rpc(PINNED_RPC_URL, REGISTRY_GATEWAY, &token, "")
+            .map_endpoint()
+            .unwrap();
+        assert_eq!(url, REGISTRY_GATEWAY);
+        assert!(headers
+            .iter()
+            .any(|(name, value)| name == "X-Forecast-RPC-Token" && *value == token));
+        // The keyed provider replaces the gateway rather than following it: the gateway is the
+        // rollback path and its tunnel is deliberately stopped.
+        let keyed = "https://rpc.ankr.com/solana_devnet/key";
+        let (url, _) = rpc(PINNED_RPC_URL, REGISTRY_GATEWAY, &token, keyed)
+            .map_endpoint()
+            .unwrap();
+        assert_eq!(url, keyed);
+        assert_eq!(
+            rpc(PINNED_RPC_URL, "", "", "https://rpc.ankr.com.evil.test/x").map_endpoint(),
+            Err("Unapproved keyed Devnet provider")
+        );
+        // A gateway misconfiguration is refused even when a valid keyed provider would replace it.
+        assert_eq!(
+            rpc(PINNED_RPC_URL, REGISTRY_GATEWAY, "short", keyed).map_endpoint(),
+            Err("Registry RPC gateway credential unavailable")
+        );
+    }
+
+    impl RegistryRpcConfig {
+        fn map_endpoint(&self) -> Result<Endpoint, &'static str> {
+            registry_endpoint(self)
+        }
     }
 }

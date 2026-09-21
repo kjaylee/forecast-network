@@ -36,15 +36,32 @@ sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/applicat
 from forecast_application.solana_rpc import SolanaRpcError, SolanaRpcTransport  # noqa: E402
 from forecast_application.solana_wire import (  # noqa: E402
     base58_encode,
-    config_address,
     encode_advance,
     encode_register,
     forecast_address,
 )
+
 from tests.test_solana_rpc import (  # noqa: E402
-    ADMIN, CLOCK_ADDRESS, CLOCK_DATA, CLOCK_OWNER, CONFIG, CONFIG_DATA, CREATOR, EVENT, FORECAST_DATA,
-    GENESIS, IDENTITY, PROGRAM, PUBLICATION, RELAYER, SIGNATURE, SNAPSHOT, SPEC, TARGET, RpcFixture,
-    account, context,
+    ADMIN,
+    CLOCK_ADDRESS,
+    CLOCK_DATA,
+    CLOCK_OWNER,
+    CONFIG,
+    CONFIG_DATA,
+    CREATOR,
+    EVENT,
+    FORECAST_DATA,
+    GENESIS,
+    PROGRAM,
+    PUBLICATION,
+    RELAYER,
+    SIGNATURE,
+    SNAPSHOT,
+    SPEC,
+    TARGET,
+    RpcFixture,
+    account,
+    context,
 )
 
 GOLDEN = ROOT / "tests/golden/solana-rpc-golden.json"

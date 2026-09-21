@@ -28,17 +28,15 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import sqlite3
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/application/src"), str(ROOT)]
 
-from forecast_application.database import SQLiteDatabase  # noqa: E402
 from forecast_application.errors import AppError  # noqa: E402
-from forecast_application.points import PointsService  # noqa: E402
 from forecast_application.service import Application  # noqa: E402
+
 from tests.test_points import PointsTests  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/points-golden.json"

@@ -51,6 +51,7 @@ from forecast_domain.errors import ValidationError  # noqa: E402
 from forecast_domain.models import Category  # noqa: E402
 from forecast_domain.risk_feed import RiskFeedBinding  # noqa: E402
 from forecast_domain.serialization import to_dict  # noqa: E402
+
 from tests import test_web_application as fixtures  # noqa: E402
 
 # Not `risk-feed-golden.json`: that name belongs to the domain crate's record contract, which

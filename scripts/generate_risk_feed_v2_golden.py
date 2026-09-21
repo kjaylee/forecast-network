@@ -60,6 +60,7 @@ from forecast_domain.errors import ValidationError  # noqa: E402
 from forecast_domain.models import Category  # noqa: E402
 from forecast_domain.risk_feed import RiskFeedBindingV2  # noqa: E402
 from forecast_domain.serialization import content_hash, to_dict  # noqa: E402
+
 from tests import test_web_application as fixtures  # noqa: E402
 from tests.test_risk_feed_contract import GENESIS  # noqa: E402
 from tests.test_risk_feed_v2_contract import golden_definition, golden_profile  # noqa: E402

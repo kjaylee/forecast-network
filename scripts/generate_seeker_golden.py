@@ -26,9 +26,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "packages/application/src"), str(ROOT / "packages/domain/src"), str(ROOT)]
 
 from forecast_application.seeker import (  # noqa: E402
+    SGT_GROUP,
     SKR_DECIMALS,
     SKR_MINT,
-    SGT_GROUP,
     _mint_accounts,
     _parsed_info,
     _token_accounts,

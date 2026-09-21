@@ -34,12 +34,23 @@ sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/applicat
 from forecast_application.ai import AIRejected, AIUnavailable, ProviderConfig  # noqa: E402
 from forecast_application.source_watch import article_content  # noqa: E402
 from forecast_domain.early_resolution import LockEarly  # noqa: E402
-from forecast_domain.lifecycle import BeginResolution, BeginValidation, Publish, create_forecast  # noqa: E402
+from forecast_domain.lifecycle import (  # noqa: E402
+    BeginResolution,
+    BeginValidation,
+    Publish,
+    create_forecast,
+)
 from forecast_domain.serialization import to_dict  # noqa: E402
+
 from tests.model_fixtures import validation  # noqa: E402
 from tests.test_early_resolution_domain import step  # noqa: E402
 from tests.test_source_watch import URL, digest  # noqa: E402
-from tests.test_web_ai import Transport, coordinator, resolution_outputs, specification  # noqa: E402
+from tests.test_web_ai import (  # noqa: E402
+    Transport,
+    coordinator,
+    resolution_outputs,
+    specification,
+)
 
 GOLDEN = ROOT / "tests/golden/ai-early-golden.json"
 # The article the early-resolution tests use. The watched-feed fixture's own body carries a

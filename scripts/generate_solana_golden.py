@@ -27,11 +27,11 @@ Regenerate with `--write`; CI runs `--check`.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import hashlib
 import json
 import struct
 import sys
-import dataclasses
 from dataclasses import replace
 from pathlib import Path
 

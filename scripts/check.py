@@ -62,6 +62,12 @@ def main() -> int:
                 # forwarded through the service binding and works, which is exactly why nothing
                 # else would ever say so.
                 [sys.executable, "scripts/route_parity.py", "--check"],
+                # Every configuration name a Worker reads is one it is deployed with, and the
+                # same name the other Worker reads. An environment read is neither a statement
+                # nor a route, so the two gates above could not see a var read under a name that
+                # exists in neither wrangler.jsonc, or a crate reading seven secrets where its
+                # deploy script pushed two.
+                [sys.executable, "scripts/config_parity.py", "--check"],
                 # The reference's v2 records differ from v1 by *virtual method overrides*. A port
                 # that models them as an enum has to dispatch on the variant, and one that did not
                 # refused every early proposal — an override is not an isinstance, so the audit that

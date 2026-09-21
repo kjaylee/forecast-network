@@ -17,7 +17,8 @@ import sys
 from pathlib import Path
 
 from build_web import ROOT, STAGE, build
-from cloudflare_keychain import deployment_environment, secret
+from cloudflare_keychain import deployment_environment
+from worker_secrets import secret_payload
 
 SOURCE = ROOT / "apps/web-rs"
 EDGE_STAGE = ROOT / "tmp/edge-build"
@@ -62,9 +63,10 @@ def main() -> None:
     link.symlink_to(ROOT / "tmp/cloudflare-tools/node_modules", target_is_directory=True)
     run([str(wrangler), "whoami"], cwd=EDGE_STAGE, env=env)
     run([str(wrangler), "deploy"], cwd=EDGE_STAGE, env=env)
-    # Session hashing and provider presence only; every other secret stays with the Python Worker.
-    run([str(wrangler), "secret", "bulk"], cwd=EDGE_STAGE, env=env,
-        input_text=json.dumps({"AI_PROXY_TOKEN": secret("AI_PROXY_TOKEN"), "SESSION_SECRET": secret("SESSION_SECRET")}))
+    # The edge serves the whole surface now, so it is deployed with the whole secret set — the
+    # same one the Python Worker has, held in `worker_secrets.py` where `config_parity.py` can
+    # compare it with what the crate reads.
+    run([str(wrangler), "secret", "bulk"], cwd=EDGE_STAGE, env=env, input_text=json.dumps(secret_payload(config)))
     print("Edge Worker deployed; compare /api/status, /api/health and /api/risk/v2/feeds/* against the Python Worker.")
 
 

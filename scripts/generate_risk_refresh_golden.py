@@ -29,16 +29,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import sqlite3
 import sys
-from dataclasses import replace
 from pathlib import Path
-from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/application/src"), str(ROOT)]
 
-from forecast_application.ai import AIRejected  # noqa: E402
 from forecast_application.errors import AppError  # noqa: E402
 from forecast_application.risk_refresh import (  # noqa: E402
     _clock_statements,
@@ -46,11 +42,11 @@ from forecast_application.risk_refresh import (  # noqa: E402
 )
 from forecast_application.sources import Artifact  # noqa: E402
 from forecast_domain.serialization import content_hash  # noqa: E402
-from tests import test_web_application as fixtures  # noqa: E402
+
 from tests.test_risk_feed_contract import GENESIS  # noqa: E402
-from tests.test_risk_feed_v2_contract import golden_definition, golden_profile  # noqa: E402
-from tests.test_risk_feed_v2_producer import HOUR, spell  # noqa: E402
-from tests.test_risk_feed_v2_producer import RiskFeedV2ProducerTests  # noqa: E402
+from tests.test_risk_feed_v2_producer import (  # noqa: E402
+    RiskFeedV2ProducerTests,  # noqa: E402
+    )
 
 GOLDEN = ROOT / "tests/golden/risk-refresh-golden.json"
 

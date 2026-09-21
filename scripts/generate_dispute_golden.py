@@ -35,6 +35,7 @@ from forecast_application.ai import ProviderConfig  # noqa: E402
 from forecast_application.sources import Artifact  # noqa: E402
 from forecast_domain.models import Dispute  # noqa: E402
 from forecast_domain.serialization import content_hash, to_dict  # noqa: E402
+
 from tests.test_web_ai import BODY, Transport, challenge_fixture, coordinator  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/ai-dispute-golden.json"

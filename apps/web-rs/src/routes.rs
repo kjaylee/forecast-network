@@ -481,7 +481,7 @@ pub async fn dispatch(
         }
         _ if identifier(path, "/api/forecasts/", "/market").is_some() => {
             let id = identifier(path, "/api/forecasts/", "/market").expect("matched");
-            let live = var(context.env, "LIVE_MARKETS_ENABLED") == "true";
+            let live = crate::admin::flag(context.env, "LIVE_MARKETS_ENABLED");
             let view = crate::markets::market(context.session, &id, live).await.map_err(|e| {
                 if e.to_string().contains("invalid_input") {
                     RouteError::Input
@@ -540,7 +540,7 @@ pub async fn dispatch(
 
 /// `GET /api/admin/automation`: the operator's view of source watching.
 async fn automation_status(context: &Context<'_>) -> std::result::Result<Response, RouteError> {
-    let enabled = var(context.env, "SOURCE_WATCH_ENABLED") == "true";
+    let enabled = crate::admin::flag(context.env, "SOURCE_WATCH_ENABLED");
     let status = crate::automation::status(&crate::db::D1(context.session), enabled)
         .await
         .map_err(|detail| RouteError::Worker(worker::Error::from(detail)))?;
@@ -555,14 +555,15 @@ async fn health(context: &Context<'_>) -> std::result::Result<Response, RouteErr
 
 fn status(context: &Context<'_>) -> std::result::Result<Response, RouteError> {
     let env = context.env;
-    let mut providers = Vec::new();
-    if !var(env, "AI_PROXY_URL").is_empty() && env.secret("AI_PROXY_TOKEN").is_ok() {
-        providers.push("gemini");
-    }
-    if !var(env, "CLOUDFLARE_AI_MODEL").is_empty() {
-        providers.push("cloudflare");
-    }
-    let registry = var(env, "SOLANA_REGISTRY_ENABLED") == "true" && !var(env, "SOLANA_PROGRAM_ID").is_empty();
+    // `app.ai.configured_providers`: the list the coordinator was *built* with, so a provider is
+    // reported when it can be called — the Cloudflare one when the `AI` binding exists, not when a
+    // model name is set. A status that named a fallback the Worker cannot reach would be a status
+    // that lied precisely when the fallback was needed.
+    let providers: Vec<String> = crate::application::providers(env)
+        .into_iter()
+        .map(|provider| provider.provider)
+        .collect();
+    let registry = crate::admin::flag(env, "SOLANA_REGISTRY_ENABLED") && !var(env, "SOLANA_PROGRAM_ID").is_empty();
     Ok(api_response(
         json!({
             "serverTime": context.now_ms, "version": VERSION, "providers": providers, "challengeHours": CHALLENGE_HOURS,
@@ -570,12 +571,12 @@ fn status(context: &Context<'_>) -> std::result::Result<Response, RouteError> {
                 "status": if registry { "configured" } else { "unconnected" },
                 "network": if registry { Some("devnet") } else { None },
                 "programId": if registry { Some(var(env, "SOLANA_PROGRAM_ID")) } else { None },
-                "relayEnabled": var(env, "SOLANA_REGISTRY_RELAY_ENABLED").to_lowercase() == "true",
+                "relayEnabled": crate::admin::flag(env, "SOLANA_REGISTRY_RELAY_ENABLED"),
                 "transaction": Value::Null,
             },
             "features": {
-                "sourceWatch": var(env, "SOURCE_WATCH_ENABLED") == "true",
-                "liveMarkets": var(env, "LIVE_MARKETS_ENABLED") == "true",
+                "sourceWatch": crate::admin::flag(env, "SOURCE_WATCH_ENABLED"),
+                "liveMarkets": crate::admin::flag(env, "LIVE_MARKETS_ENABLED"),
                 "billing": {"billable": false, "mode": "sandbox"},
             },
         }),

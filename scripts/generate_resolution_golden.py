@@ -26,10 +26,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/application/src"), str(ROOT)]
 
-from forecast_domain.lifecycle import BeginResolution, BeginValidation, Lock, Publish, create_forecast  # noqa: E402
+from forecast_domain.lifecycle import (  # noqa: E402
+    BeginResolution,
+    BeginValidation,
+    Lock,
+    Publish,
+    create_forecast,
+)
 from forecast_domain.serialization import to_dict  # noqa: E402
+
 from tests.lifecycle_fixtures import step  # noqa: E402
-from tests.test_web_ai import BODY, NOW, Transport, compile_outputs, coordinator, resolution_outputs  # noqa: E402
+from tests.test_web_ai import (  # noqa: E402
+    BODY,
+    NOW,
+    Transport,
+    compile_outputs,
+    coordinator,
+    resolution_outputs,
+)
 
 GOLDEN = ROOT / "tests/golden/ai-resolution-golden.json"
 RESOLVED_AT_MS = 400000

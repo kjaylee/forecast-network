@@ -28,9 +28,18 @@ sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/applicat
 from forecast_application.ai import AIRejected  # noqa: E402
 from forecast_domain.lifecycle import create_forecast  # noqa: E402
 from forecast_domain.serialization import to_dict  # noqa: E402
+
 from tests import model_fixtures as model  # noqa: E402
-from tests.test_web_ai import (BODY, NOW, Transport, compile_outputs, compiler_wire,  # noqa: E402
-                              coordinator, measurement_compile_outputs, specification)
+from tests.test_web_ai import (  # noqa: E402
+    BODY,
+    NOW,
+    Transport,
+    compile_outputs,
+    compiler_wire,
+    coordinator,
+    measurement_compile_outputs,
+    specification,
+)
 
 GOLDEN = ROOT / "tests/golden/ai-compile-golden.json"
 QUESTION = "Will Apple announce Product X before the stated deadline?"

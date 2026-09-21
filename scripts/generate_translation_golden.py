@@ -40,6 +40,7 @@ from forecast_application.display_translations import (  # noqa: E402
     validate_translation,
 )
 from forecast_application.errors import AppError  # noqa: E402
+
 from tests.test_web_ai import Transport, coordinator  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/display-translation-golden.json"
@@ -91,7 +92,6 @@ async def generated_cases() -> list:
     rejects — because the validator above cannot see a dropped negation, and the review is the
     only check that can.
     """
-    from forecast_domain.serialization import to_dict
 
     base = source()
     faithful = {

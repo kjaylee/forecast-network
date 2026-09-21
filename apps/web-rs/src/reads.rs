@@ -134,7 +134,7 @@ pub async fn integrity(context: &Context<'_>, forecast_id: &str) -> Handler {
     };
     let env = context.env;
     let var = |name: &str| env.var(name).map(|v| v.to_string()).unwrap_or_default();
-    let chain = if var("SOLANA_REGISTRY_ENABLED") == "true" && !var("SOLANA_PROGRAM_ID").is_empty() {
+    let chain = if crate::admin::flag(env, "SOLANA_REGISTRY_ENABLED") && !var("SOLANA_PROGRAM_ID").is_empty() {
         let program: [u8; 32] = bs58::decode(var("SOLANA_PROGRAM_ID"))
             .into_vec()
             .ok()

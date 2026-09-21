@@ -61,7 +61,7 @@ from tests.test_automation_integration import (  # noqa: E402
     SOURCE_BODY,
     AutomationIntegrationTests,
 )
-from tests.test_source_watch import URL, BODY, SourceWatchAITests  # noqa: E402
+from tests.test_source_watch import URL, SourceWatchAITests  # noqa: E402
 from tests.test_web_ai import specification  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/automation-run-golden.json"

@@ -43,6 +43,7 @@ from forecast_application.automation import (  # noqa: E402
 )
 from forecast_application.database import SQLiteDatabase  # noqa: E402
 from forecast_domain.serialization import to_dict  # noqa: E402
+
 from tests.test_web_ai import specification  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/automation-golden.json"

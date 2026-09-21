@@ -239,7 +239,7 @@ fn sandbox<'a>(db: &'a dyn Database, now_ms: &'a dyn Fn() -> i64, env: &Env) -> 
     SandboxServiceBilling {
         db,
         now_ms,
-        enabled: var(env, "BILLING_SANDBOX_ENABLED").to_lowercase() == "true",
+        enabled: crate::admin::flag(env, "BILLING_SANDBOX_ENABLED"),
     }
 }
 

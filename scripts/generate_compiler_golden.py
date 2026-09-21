@@ -38,6 +38,7 @@ from forecast_application.ai import (  # noqa: E402
 )
 from forecast_domain.lifecycle import create_forecast  # noqa: E402
 from forecast_domain.serialization import content_hash, to_dict  # noqa: E402
+
 from tests import model_fixtures as model  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/ai-compiler-golden.json"

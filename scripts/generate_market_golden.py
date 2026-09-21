@@ -32,8 +32,7 @@ sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/applicat
 from forecast_application.database import SQLiteDatabase  # noqa: E402
 from forecast_application.errors import AppError  # noqa: E402
 from forecast_application.markets import SCALE, PointMarkets  # noqa: E402
-from forecast_domain.serialization import dumps, loads  # noqa: E402
-from forecast_domain.lifecycle import Forecast  # noqa: E402
+
 from tests import test_points  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/market-golden.json"

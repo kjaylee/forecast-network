@@ -43,6 +43,7 @@ sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/applicat
 from forecast_application.ai import ProviderConfig  # noqa: E402
 from forecast_application.database import SQLiteDatabase  # noqa: E402
 from forecast_application.service import Application  # noqa: E402
+
 from tests.test_web_ai import Transport, coordinator  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/sweep-early-golden.json"

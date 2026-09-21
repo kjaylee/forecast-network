@@ -39,6 +39,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/application/src"), str(ROOT)]
 
 from forecast_application.errors import AppError  # noqa: E402
+
 from tests import test_web_application as fixtures  # noqa: E402
 
 GOLDEN = ROOT / "tests/golden/profile-card-golden.json"
