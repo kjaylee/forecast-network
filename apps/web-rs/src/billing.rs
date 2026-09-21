@@ -33,26 +33,24 @@ pub const MAX_QUOTE_AGE_MS: i64 = 3_600_000;
 pub type Statement = (String, Vec<Value>);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// Every message here is a fixed local description — no provider body, no caller value. That is a
+/// property of the reference too, and the `&'static str` is what holds this port to it.
 pub struct BillingError {
     pub status: u16,
     pub code: &'static str,
-    pub message: String,
+    pub message: &'static str,
 }
 
 impl BillingError {
     fn fixed(status: u16, code: &'static str, message: &'static str) -> Self {
-        Self {
-            status,
-            code,
-            message: message.to_string(),
-        }
+        Self { status, code, message }
     }
 
-    fn conflict(message: &str) -> Self {
+    fn conflict(message: &'static str) -> Self {
         Self {
             status: 409,
             code: "billing_state_conflict",
-            message: message.to_string(),
+            message,
         }
     }
 }
@@ -130,7 +128,7 @@ fn commitment(value: &str) -> Result<(), BillingError> {
     Ok(())
 }
 
-fn require(condition: bool, message: &str) -> Result<(), BillingError> {
+fn require(condition: bool, message: &'static str) -> Result<(), BillingError> {
     if condition {
         Ok(())
     } else {
@@ -414,8 +412,8 @@ impl SandboxServiceBilling<'_> {
 
 impl SandboxServiceBilling<'_> {
     /// `fund_capital`: add to the operator's side of the ledger.
-    pub async fn fund_capital(&self, amount_cents: i64, key: &str) -> Result<Value, BillingError> {
-        let amount = integer(Some(amount_cents), MAX_CENTS, 1)?;
+    pub async fn fund_capital(&self, amount_cents: Option<i64>, key: &str) -> Result<Value, BillingError> {
+        let amount = integer(amount_cents, MAX_CENTS, 1)?;
         self.mutate(
             "fund",
             key,
@@ -440,19 +438,21 @@ impl SandboxServiceBilling<'_> {
         invoice_id: &str,
         owner_hash: &str,
         scope_hash: &str,
-        price_cents: i64,
-        cost_cap_cents: i64,
-        max_attempts: i64,
-        expires_at: i64,
-        refund_until: i64,
+        price_cents: Option<i64>,
+        cost_cap_cents: Option<i64>,
+        max_attempts: Option<i64>,
+        expires_at: Option<i64>,
+        refund_until: Option<i64>,
         key: &str,
     ) -> Result<Value, BillingError> {
-        let price = integer(Some(price_cents), MAX_CENTS, 1)?;
-        let cap = integer(Some(cost_cap_cents), MAX_CENTS, 1)?;
-        let attempts = integer(Some(max_attempts), MAX_ATTEMPTS, 1)?;
+        let price = integer(price_cents, MAX_CENTS, 1)?;
+        let cap = integer(cost_cap_cents, MAX_CENTS, 1)?;
+        let attempts = integer(max_attempts, MAX_ATTEMPTS, 1)?;
         commitment(scope_hash)?;
-        integer(Some(expires_at), 9_000_000_000_000_000, 0)?;
-        integer(Some(refund_until), 9_000_000_000_000_000, 0)?;
+        // Validated and then shadowed, so the closure below carries numbers that were checked
+        // rather than the `Option`s that were checked.
+        let expires_at = integer(expires_at, 9_000_000_000_000_000, 0)?;
+        let refund_until = integer(refund_until, 9_000_000_000_000_000, 0)?;
         let payload = json!({
             "scopeHash": scope_hash, "priceCents": price, "costCapCents": cap,
             "maxAttempts": attempts, "expiresAt": expires_at, "refundUntil": refund_until,
@@ -501,13 +501,15 @@ impl SandboxServiceBilling<'_> {
         &self,
         invoice_id: &str,
         owner_hash: &str,
-        reference: &str,
-        amount_cents: i64,
-        scope_hash: &str,
+        reference: Option<&str>,
+        amount_cents: Option<i64>,
+        scope_hash: Option<&str>,
         key: &str,
     ) -> Result<Value, BillingError> {
+        let reference = reference.ok_or_else(reference_required)?;
         identifier(reference)?;
-        let amount = integer(Some(amount_cents), MAX_CENTS, 1)?;
+        let amount = integer(amount_cents, MAX_CENTS, 1)?;
+        let scope_hash = scope_hash.ok_or_else(input_invalid)?;
         commitment(scope_hash)?;
         let scope = scope_hash.to_string();
         let reference = reference.to_string();
@@ -867,21 +869,36 @@ mod tests {
         check(calls, &mut index, SandboxServiceBilling::estimate(200, 115));
         check(calls, &mut index, block(billing.summary()));
 
-        check(calls, &mut index, block(billing.fund_capital(1000, &key(&counter))));
+        check(
+            calls,
+            &mut index,
+            block(billing.fund_capital(Some(1000), &key(&counter))),
+        );
         // The same key with the same request is the same grant; with a different one it is a
         // collision, and the audit row is what tells them apart.
         let fund_key = key(&counter);
         check(
             calls,
             &mut index,
-            Ok(block(billing.fund_capital(500, &fund_key)).unwrap()),
+            Ok(block(billing.fund_capital(Some(500), &fund_key)).unwrap()),
         );
-        check(calls, &mut index, block(billing.fund_capital(500, &fund_key)));
-        check(calls, &mut index, block(billing.fund_capital(600, &fund_key)));
+        check(calls, &mut index, block(billing.fund_capital(Some(500), &fund_key)));
+        check(calls, &mut index, block(billing.fund_capital(Some(600), &fund_key)));
 
         let quote_key = key(&counter);
-        let quote =
-            |key: &str| block(billing.quote(INVOICE, &owner, &scope, 200, 115, 5, now + 600_000, now + 900_000, key));
+        let quote = |key: &str| {
+            block(billing.quote(
+                INVOICE,
+                &owner,
+                &scope,
+                Some(200),
+                Some(115),
+                Some(5),
+                Some(now + 600_000),
+                Some(now + 900_000),
+                key,
+            ))
+        };
         check(calls, &mut index, quote(&quote_key));
         check(calls, &mut index, quote(&quote_key));
         check(calls, &mut index, block(billing.invoice(INVOICE, &owner)));
@@ -890,7 +907,14 @@ mod tests {
         check(
             calls,
             &mut index,
-            block(billing.accept_sandbox_receipt(INVOICE, &owner, "sandbox:receipt-1", 200, &scope, &key(&counter))),
+            block(billing.accept_sandbox_receipt(
+                INVOICE,
+                &owner,
+                Some("sandbox:receipt-1"),
+                Some(200),
+                Some(&scope),
+                &key(&counter),
+            )),
         );
 
         let attempt = |action: &str, pairs: &[(&str, Value)]| {
@@ -1021,7 +1045,11 @@ mod tests {
         };
         let mut index = 0usize;
         let calls = disabled["disabledCalls"].as_array().expect("disabled calls");
-        check(calls, &mut index, block(billing.fund_capital(1000, "sandbox:key-1")));
+        check(
+            calls,
+            &mut index,
+            block(billing.fund_capital(Some(1000), "sandbox:key-1")),
+        );
         check(calls, &mut index, block(billing.summary()));
         assert_eq!(index, calls.len());
     }

@@ -54,6 +54,18 @@ impl From<crate::points::PointsError> for RouteError {
     }
 }
 
+impl From<crate::billing::BillingError> for RouteError {
+    fn from(error: crate::billing::BillingError) -> Self {
+        RouteError::Failed(error.status, error.code, error.message)
+    }
+}
+
+impl From<crate::participation_holds::HoldError> for RouteError {
+    fn from(error: crate::participation_holds::HoldError) -> Self {
+        RouteError::Failed(error.status, error.code, error.message)
+    }
+}
+
 pub struct Context<'a> {
     pub env: &'a Env,
     pub session: &'a D1DatabaseSession,
@@ -105,6 +117,8 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || path == "/api/admin/automation/run"
                 || path == "/api/admin/sweep"
                 || path == "/api/admin/seed"
+                || path == "/api/admin/billing/sandbox"
+                || identifier(path, "/api/admin/forecasts/", "/participation").is_some()
                 || path.starts_with("/api/admin/risk/")
         }
         _ => false,
@@ -139,6 +153,12 @@ pub async fn dispatch_write(
             let question = body.get("question").and_then(Value::as_str).unwrap_or("");
             let result = crate::writes::seed(context, question, "Forecast Editorial", Some((15, 85)), false).await?;
             return Ok(api_response(result, 201, false)?);
+        }
+        if let Some(id) = identifier(path, "/api/admin/forecasts/", "/participation") {
+            return crate::admin_ops::change_participation_route(context, &id, body).await;
+        }
+        if path == "/api/admin/billing/sandbox" {
+            return crate::admin_ops::billing_action_route(context, body).await;
         }
         // The v2 registry, in the reference's own order: the exact paths first, then the two
         // families of identifier paths. Its fallthrough is its own message, and a caller that
@@ -316,8 +336,12 @@ pub async fn dispatch_write(
 /// than by being a public GET, and the entry applies that check to every path this returns.
 pub fn owns_admin_read(path: &str) -> bool {
     path == "/api/admin/automation"
+        || path == "/api/admin/analytics"
+        || path == "/api/admin/ai/health"
+        || path == "/api/admin/billing/sandbox"
         || path == "/api/admin/risk/v2/health"
         || identifier(path, "/api/admin/risk/v2/feeds/", "/training").is_some()
+        || identifier(path, "/api/admin/forecasts/", "/participation").is_some()
 }
 
 pub fn owns(path: &str) -> bool {
@@ -356,6 +380,16 @@ pub async fn dispatch(
         "/api/health" => health(context).await,
         "/api/status" => status(context),
         "/api/admin/automation" => automation_status(context).await,
+        "/api/admin/analytics" => crate::admin_ops::analytics_route(context, url).await,
+        "/api/admin/ai/health" => crate::admin_ops::ai_health_route(context).await,
+        "/api/admin/billing/sandbox" => crate::admin_ops::billing_route(context).await,
+        _ if identifier(path, "/api/admin/forecasts/", "/participation").is_some() => {
+            crate::admin_ops::participation_route(
+                context,
+                &identifier(path, "/api/admin/forecasts/", "/participation").expect("matched"),
+            )
+            .await
+        }
         "/api/admin/risk/v2/health" => crate::admin_risk::health_route(context).await,
         _ if identifier(path, "/api/admin/risk/v2/feeds/", "/training").is_some() => {
             crate::admin_risk::training_route(

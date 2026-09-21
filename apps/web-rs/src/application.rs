@@ -192,6 +192,13 @@ pub(crate) async fn post_json(url: &str, headers: &[(String, String)], body: &Va
     let init = request_init(Method::Post, headers, Some(body.to_string())).map_err(|_| ())?;
     let request = Request::new_with_init(url, &init).map_err(|_| ())?;
     let mut response = Fetch::Request(request).send().await.map_err(|_| ())?;
+    // An unsuccessful response is not a response. `request_json` raises on one before it parses
+    // anything, and a port that parsed the error body would hand a provider's rejection to the
+    // coordinator as if the model had answered — the difference between a retryable transport
+    // failure and a wrong answer that looks like a right one.
+    if !(200..300).contains(&response.status_code()) {
+        return Err(());
+    }
     return response.text().await.map_err(|_| ());
 }
 

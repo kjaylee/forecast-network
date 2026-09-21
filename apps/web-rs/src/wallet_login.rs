@@ -822,7 +822,9 @@ fn audit_body(sign_in: &SignIn) -> String {
 
 /// Python truthiness for the values that reach these checks: an empty string and a null both read
 /// as absent, and a number or an object as present.
-fn truthy(value: &Value) -> bool {
+///
+/// The crate's one copy, because a second would be a second set of rules for what "present" means.
+pub(crate) fn truthy(value: &Value) -> bool {
     match value {
         Value::Null => false,
         Value::Bool(flag) => *flag,
