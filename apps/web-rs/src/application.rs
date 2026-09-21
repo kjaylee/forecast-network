@@ -80,7 +80,8 @@ pub fn providers(env: &Env) -> Vec<ProviderConfig> {
     providers
 }
 
-/// `request_json`'s endpoint allowlist, applied to the URL that is actually fetched.
+/// `request_json`'s endpoint allowlist, applied to the URL that was asked for — before the relay
+/// rewrite, whose hostname is not a provider's.
 fn approved(url: &str) -> bool {
     let Some(rest) = url.strip_prefix("https://") else {
         return false;
@@ -112,6 +113,13 @@ pub fn json_fetcher(env: &Env) -> JsonFetcher {
             if let Some(model) = url.strip_prefix(WORKERS_AI_SCHEME) {
                 return workers_ai(ai.as_deref(), model, &body).await;
             }
+            // The allowlist is applied to the URL that was *asked for*, before the relay rewrite,
+            // as the reference applies it: applied after, it refused every relayed call, because
+            // the relay's own hostname is not a provider's — and the edge answered `ai_unavailable`
+            // for a relay it had never contacted.
+            if !approved(&url) {
+                return Err(());
+            }
             let mut url = url;
             let mut headers = headers;
             let mut through_binding = None;
@@ -123,9 +131,6 @@ pub fn json_fetcher(env: &Env) -> JsonFetcher {
                     url = relay_url;
                     through_binding = relay_binding;
                 }
-            }
-            if !approved(&url) {
-                return Err(());
             }
             let text = match through_binding {
                 Some(binding) => post_json_via(&binding, &url, &headers, &body).await?,
