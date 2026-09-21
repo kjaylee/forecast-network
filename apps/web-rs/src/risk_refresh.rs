@@ -11,7 +11,6 @@ use crate::ai::coordinator::CoordinatorError;
 use crate::ai::error::ai_error;
 use crate::db::{self, Database, Row};
 use crate::scheduler::{retain_rejected, workflow_deadline_passed, workflow_timeout};
-use crate::wallets::BoxFuture;
 use forecast_domain::lifecycle::Forecast;
 use forecast_domain::models::ForecastSpecification;
 use forecast_domain::risk_feed::{RiskFeedBinding, RiskFeedBindingV2};
@@ -153,7 +152,29 @@ pub struct RefreshFailure {
 
 /// `AiCoordinator.refresh_prediction`. Injected because it is the one effect here with a network
 /// behind it.
-pub type Refresher = dyn Fn(ForecastSpecification, i64) -> BoxFuture<Result<(Value, Vec<Artifact>), RefreshFailure>>;
+/// A future that borrows for as long as its caller does.
+pub type BorrowedFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
+
+/// The AI's own prediction refresh, injected for the same reason the JSON transport is.
+pub trait Refresher {
+    fn refresh<'a>(
+        &'a self,
+        specification: ForecastSpecification,
+        started_ms: i64,
+    ) -> BorrowedFuture<'a, Result<(Value, Vec<Artifact>), RefreshFailure>>;
+}
+
+/// `_ai_lease`, and its release.
+///
+/// Two traits rather than one, because they are two different calls a caller may satisfy
+/// differently: a lease is acquired once and released in a `finally` however the work ended.
+pub trait LeaseSource {
+    fn lease<'a>(&'a self) -> BorrowedFuture<'a, Result<String, ()>>;
+}
+
+pub trait LeaseRelease {
+    fn release<'a>(&'a self, token: String) -> BorrowedFuture<'a, Result<(), ()>>;
+}
 
 /// The artifact statements, injected for the same reason `source_watch` injects them: they are the
 /// application's, and reaching for them here would make this module untestable against a fixture.
@@ -166,11 +187,11 @@ pub async fn refresh(
     binding_id: &str,
     current: &str,
     v2: bool,
-    refresh_prediction: &Refresher,
+    refresh_prediction: &dyn Refresher,
     artifact_sql: &ArtifactSql,
     now_ms: &dyn Fn() -> i64,
-    lease: &dyn Fn() -> BoxFuture<Result<String, ()>>,
-    release: &dyn Fn(String) -> BoxFuture<Result<(), ()>>,
+    lease: &dyn LeaseSource,
+    release: &dyn LeaseRelease,
 ) -> Result<Value, RefreshError> {
     let started = now_ms();
     let row = db
@@ -203,7 +224,7 @@ pub async fn refresh(
     let forecast = Forecast::from_json(db::text(&row, "snapshot").unwrap_or("")).map_err(|_| conflict())?;
     let specification = forecast.specification.clone();
     let owner = format!("risk-prediction:{forecast_id}");
-    let token = lease().await.map_err(|_| conflict())?;
+    let token = lease.lease().await.map_err(|_| conflict())?;
     let outcome = prepare(
         db,
         &row,
@@ -220,7 +241,7 @@ pub async fn refresh(
         &token,
     )
     .await;
-    release(token).await.map_err(|_| conflict())?;
+    release.release(token).await.map_err(|_| conflict())?;
     outcome
 }
 
@@ -233,7 +254,7 @@ async fn prepare(
     forecast_id: &str,
     specification_hash: &str,
     started: i64,
-    refresh_prediction: &Refresher,
+    refresh_prediction: &dyn Refresher,
     artifact_sql: &ArtifactSql,
     now_ms: &dyn Fn() -> i64,
     current: &str,
@@ -241,7 +262,7 @@ async fn prepare(
     owner: &str,
     token: &str,
 ) -> Result<Value, RefreshError> {
-    let (estimate, artifacts) = match refresh_prediction(specification.clone(), started).await {
+    let (estimate, artifacts) = match refresh_prediction.refresh(specification.clone(), started).await {
         Ok(value) => value,
         Err(failure) => {
             // The refusal is retained whichever kind it is: those artifacts are what a later
@@ -349,6 +370,53 @@ pub fn object(value: Value) -> Map<String, Value> {
 mod tests {
     use super::*;
     use crate::db::Sqlite;
+
+    /// The lease the refresh guard reads back *inside the batch*: a token with no row behind it
+    /// refuses every refresh, which is the guard doing its job.
+    struct RecordedLease<'a> {
+        db: &'a Sqlite,
+        owner: &'a str,
+        expires_at: i64,
+    }
+
+    impl LeaseSource for RecordedLease<'_> {
+        fn lease<'a>(&'a self) -> BorrowedFuture<'a, Result<String, ()>> {
+            let token = "lease-token".to_string();
+            self.db
+                .run(
+                    "INSERT INTO ai_leases(owner,token,expires_at) VALUES(?,?,?)",
+                    &[json!(self.owner), json!(token), json!(self.expires_at)],
+                )
+                .expect("the lease");
+            Box::pin(async move { Ok(token) })
+        }
+    }
+
+    struct NoRelease;
+
+    impl LeaseRelease for NoRelease {
+        fn release<'a>(&'a self, _token: String) -> BorrowedFuture<'a, Result<(), ()>> {
+            Box::pin(async { Ok(()) })
+        }
+    }
+
+    /// The estimate the vector recorded, and the artifacts retained with it.
+    struct RecordedRefresh {
+        answer: std::rc::Rc<Value>,
+        retained: std::rc::Rc<Vec<Artifact>>,
+    }
+
+    impl Refresher for RecordedRefresh {
+        fn refresh<'a>(
+            &'a self,
+            _specification: ForecastSpecification,
+            _started_ms: i64,
+        ) -> BorrowedFuture<'a, Result<(Value, Vec<Artifact>), RefreshFailure>> {
+            let answer = std::rc::Rc::clone(&self.answer);
+            let retained = std::rc::Rc::clone(&self.retained);
+            Box::pin(async move { Ok(((*answer).clone(), (*retained).clone())) })
+        }
+    }
 
     fn block<F: std::future::Future>(future: F) -> F::Output {
         futures_lite::future::block_on(future)
@@ -458,29 +526,15 @@ mod tests {
         // The guard checks the lease *inside the batch*, so the seam has to take one the way the
         // reference's `_ai_lease` does — a token with no row behind it refuses every refresh, which
         // is the guard doing its job.
-        let lease = || -> BoxFuture<Result<String, ()>> {
-            let token = "lease-token".to_string();
-            db.run(
-                "INSERT INTO ai_leases(owner,token,expires_at) VALUES(?,?,?)",
-                &[
-                    json!("risk-prediction:f_19581e27de7ced00ff1ce50b"),
-                    json!(token),
-                    json!(now + 300_000),
-                ],
-            )
-            .expect("the lease");
-            Box::pin(async move { Ok(token) })
+        let lease = RecordedLease {
+            db: &db,
+            owner: "risk-prediction:f_19581e27de7ced00ff1ce50b",
+            expires_at: now + 300_000,
         };
-        let release = |_token: String| -> BoxFuture<Result<(), ()>> { Box::pin(async { Ok(()) }) };
+        let release = NoRelease;
         // The artifacts the reference retained alongside this estimate are read back from the store
         // it wrote them to, so the clock the port derives is the clock that was recorded.
-        let refresh_prediction = move |_specification: ForecastSpecification,
-                                       _started: i64|
-              -> BoxFuture<Result<(Value, Vec<Artifact>), RefreshFailure>> {
-            let answer = std::rc::Rc::clone(&answer);
-            let retained = std::rc::Rc::clone(&retained);
-            Box::pin(async move { Ok(((*answer).clone(), (*retained).clone())) })
-        };
+        let refresh_prediction = RecordedRefresh { answer, retained };
         // The reference's `_artifact_sql` is the application's, so the test supplies *its* output
         // rather than a stub of it: the rows the refresh wrote, which are the difference between
         // the state it started from and the state it left. A stub that inserted only the two

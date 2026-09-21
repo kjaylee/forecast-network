@@ -8,12 +8,22 @@
 use crate::ai::window::measurement_window;
 use crate::db::{self, Database};
 use crate::risk_feed_v2::{actor, approve_binding_v2, feed, storage_unavailable, FeedError};
-use crate::wallets::BoxFuture;
 
 /// `seed`: `Application.compile_forecast` then `publish_forecast`, or whatever the operator wires
 /// in. Its failure travels with the error the seed raised, because the reference records *that*
 /// type and message in the series log.
-pub type SeedCallback = dyn Fn(String) -> BoxFuture<Result<Value, AttemptError>>;
+/// A future that borrows for as long as its caller does.
+pub type BorrowedFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
+
+/// `app.seed`, as the series tick takes it.
+///
+/// A trait rather than a boxed closure, for the reason the other seams are: `Fn`'s `Output` is an
+/// associated type and a trait object over `Fn` is invariant in it, so a closure that publishes —
+/// and therefore reads the request's own database — cannot be passed where a `'static` box is
+/// wanted. A method can name its own lifetime.
+pub trait SeedCallback {
+    fn seed<'a>(&'a self, question: String) -> BorrowedFuture<'a, Result<Value, AttemptError>>;
+}
 use forecast_domain::risk_feed::{RiskFeedBindingV2, RiskFeedSeriesV2};
 use forecast_domain::{canonical_bytes, content_hash, require, Record};
 use serde::Serialize;
@@ -280,7 +290,11 @@ pub fn episode_binding(
 ///
 /// A failure is recorded and retried on the *next* tick rather than inside this one, because what
 /// fails here costs AI budget — the retry pace is the budget's, not the loop's.
-pub async fn create_due_episodes(db: &dyn Database, now_ms: i64, seed: &SeedCallback) -> Result<Vec<Value>, FeedError> {
+pub async fn create_due_episodes(
+    db: &dyn Database,
+    now_ms: i64,
+    seed: &dyn SeedCallback,
+) -> Result<Vec<Value>, FeedError> {
     let mut outcomes = Vec::new();
     let rows = db
         .all(
@@ -401,7 +415,7 @@ async fn attempt(
     row: &crate::db::Row,
     start: i64,
     now_ms: i64,
-    seed: &SeedCallback,
+    seed: &dyn SeedCallback,
 ) -> Result<(String, String), AttemptError> {
     let profile = db
         .first(
@@ -418,7 +432,7 @@ async fn attempt(
     };
     let decoded: Value = serde_json::from_str(db::text(&profile, "profile_json").unwrap_or("")).unwrap_or(Value::Null);
     let question = episode_question(series, start).map_err(AttemptError::from)?;
-    let card = seed(question).await?;
+    let card = seed.seed(question).await?;
     let card = card.get("forecast").cloned().unwrap_or(card);
     let binding = episode_binding(
         series,
@@ -455,6 +469,38 @@ mod tests {
     use crate::db::Sqlite;
     use crate::risk_feed_v2::operational_bindings_v2;
     use std::cell::RefCell;
+
+    /// The seed path, answering from the vector.
+    struct Seeded {
+        asked: std::rc::Rc<RefCell<Vec<String>>>,
+        seeded: std::rc::Rc<Vec<Value>>,
+        failure: std::rc::Rc<Value>,
+    }
+
+    impl SeedCallback for Seeded {
+        fn seed<'a>(&'a self, question: String) -> BorrowedFuture<'a, Result<Value, AttemptError>> {
+            self.asked.borrow_mut().push(question.clone());
+            // A question the vector has no card for is the seed path refusing it, which is what the
+            // failing series is. The error travels with the type and message the reference recorded,
+            // because that is what its log holds.
+            let card = self
+                .seeded
+                .iter()
+                .find(|entry| entry["question"] == json!(question) && !entry["card"].is_null())
+                .map(|entry| entry["card"].clone());
+            let failure = self.failure.clone();
+            Box::pin(async move {
+                match card {
+                    Some(card) => Ok(json!({"forecast": card})),
+                    None => Err(AttemptError {
+                        code: failure["code"].as_str().map(str::to_string),
+                        kind: failure["kind"].as_str().unwrap_or("Error").to_string(),
+                        message: failure["message"].as_str().unwrap_or("").to_string(),
+                    }),
+                }
+            })
+        }
+    }
 
     fn block<F: std::future::Future>(future: F) -> F::Output {
         futures_lite::future::block_on(future)
@@ -609,33 +655,10 @@ mod tests {
         let seeded = std::rc::Rc::new(document["seeded"].as_array().cloned().unwrap_or_default());
         let failure = std::rc::Rc::new(document["failedSeed"].clone());
         let asked = std::rc::Rc::new(RefCell::new(Vec::<String>::new()));
-        // Kept outside the closure, which takes its own handle by move; reading the moved one
-        // afterwards is a use-after-move however the error is worded.
+        // The handle is kept outside the struct so the questions asked can be read back afterwards:
+        // a struct that owned the only handle could not be inspected once it was moved.
         let observed = std::rc::Rc::clone(&asked);
-        let seed = move |question: String| -> BoxFuture<Result<Value, AttemptError>> {
-            asked.borrow_mut().push(question.clone());
-            // A question the vector has no card for is the seed path refusing it, which is what the
-            // failing series is. The error travels with the type and message the reference recorded,
-            // because that is what its log holds — a port that named its own here would log a
-            // failure nobody can act on.
-            // The card has to be *there*: an entry with the question and no card is the failing
-            // seed, which recorded what it was asked and refused it.
-            let card = seeded
-                .iter()
-                .find(|entry| entry["question"] == json!(question) && !entry["card"].is_null())
-                .map(|entry| entry["card"].clone());
-            let failure = failure.clone();
-            Box::pin(async move {
-                match card {
-                    Some(card) => Ok(json!({"forecast": card})),
-                    None => Err(AttemptError {
-                        code: failure["code"].as_str().map(str::to_string),
-                        kind: failure["kind"].as_str().unwrap_or("Error").to_string(),
-                        message: failure["message"].as_str().unwrap_or("").to_string(),
-                    }),
-                }
-            })
-        };
+        let seed = Seeded { asked, seeded, failure };
         let tick = |position: usize| -> Result<Value, FeedError> {
             let at = calls[position]["input"]["nowMs"].as_i64().unwrap_or(0);
             block(create_due_episodes(&db, at, &seed)).map(|outcomes| json!(outcomes))

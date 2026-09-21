@@ -18,7 +18,6 @@ use crate::risk_ops::{
     clock_is_stale, coverage_status, order_operational, profile_set_hash, signal_is_admissible, worth_clock_check,
     DEFINED_CHANNELS_SQL, LATEST_CLOCK_SQL, MAX_BINDINGS, OPERATIONAL_SQL, PROFILE_SET_SQL, STALE_CANDIDATE_SQL,
 };
-use crate::wallets::BoxFuture;
 use forecast_domain::risk_feed::{
     freshness_as_of_ms, signing_bytes_v2, CanonicalRiskDefinitionV2, ChannelCoverageV2, RiskFeedBindingV2,
     RiskFeedPayloadV2, RiskFeedSignalV2, RiskMappingProfileV2, SignedRiskFeedV2, FEED_TTL_MS,
@@ -607,7 +606,7 @@ pub async fn publish_feed_v2(
     genesis_hash: &str,
     key_id: &str,
     public_key_hex: &str,
-    signer: &dyn Fn(Vec<u8>) -> BoxFuture<Result<Vec<u8>, ()>>,
+    signer: &dyn Signer,
     now_ms: i64,
     weight_set_hash: &str,
     weight_set_version: &str,
@@ -734,7 +733,8 @@ pub async fn publish_feed_v2(
         calibration_cohort_id: calibration_cohort_id.to_string(),
     };
     payload.validate().map_err(FeedError::from)?;
-    let signature = signer(signing_bytes_v2(&payload).map_err(FeedError::from)?)
+    let signature = signer
+        .sign(signing_bytes_v2(&payload).map_err(FeedError::from)?)
         .await
         .map_err(|_| FeedError("risk feed signer unavailable".to_string()))?;
     require_that(signature.len() == 64, "signer returned invalid Ed25519 signature")?;
@@ -909,8 +909,34 @@ pub async fn stale_bindings_v2(db: &dyn Database, feed_id: &str, now_ms: i64) ->
 /// `seed`: `risk_feed_series.create_due_episodes`' seeder. `publish`: the feed's own publication
 /// call. Both are injected because each reaches outside this module, and a tick that reached for
 /// them directly could not be run against a fixture.
-pub type SeedCallback = crate::risk_feed_series::SeedCallback;
-pub type PublishCallback = dyn Fn(&str, &str, &str, &str) -> BoxFuture<Result<SignedRiskFeedV2, ()>>;
+pub use crate::risk_feed_series::SeedCallback;
+/// A future that borrows for as long as its caller does.
+pub type BorrowedFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
+
+/// The relayer's Ed25519 signature, as the feed publisher takes it.
+///
+/// A trait rather than a boxed closure, for the reason the other seams are: `Fn`'s `Output` is an
+/// associated type, a trait object over `Fn` is invariant in it, and the production signer reads
+/// what it needs from the request.
+pub trait Signer {
+    fn sign<'a>(&'a self, message: Vec<u8>) -> BorrowedFuture<'a, Result<Vec<u8>, ()>>;
+}
+
+/// `publish_risk_v2`: sign and store one feed envelope.
+pub trait PublishCallback {
+    fn publish<'a>(
+        &'a self,
+        feed_id: &'a str,
+        weight_set_hash: &'a str,
+        weight_set_version: &'a str,
+        calibration_cohort_id: &'a str,
+    ) -> BorrowedFuture<'a, Result<SignedRiskFeedV2, ()>>;
+}
+
+/// `refresh_bound_prediction_v2`: bring one binding's forecast up to date.
+pub trait RefreshCallback {
+    fn refresh<'a>(&'a self, binding_id: String) -> BorrowedFuture<'a, Result<(), ()>>;
+}
 
 /// `operate_feeds_v2`: one scheduled tick — due episodes, at most one budgeted refresh per feed,
 /// then a signed publication.
@@ -922,9 +948,9 @@ pub type PublishCallback = dyn Fn(&str, &str, &str, &str) -> BoxFuture<Result<Si
 pub async fn operate_feeds_v2(
     db: &dyn Database,
     now_ms: i64,
-    refresh: &dyn Fn(String) -> BoxFuture<Result<(), ()>>,
-    publish: &PublishCallback,
-    seed: Option<&SeedCallback>,
+    refresh: &dyn RefreshCallback,
+    publish: &dyn PublishCallback,
+    seed: Option<&dyn SeedCallback>,
 ) -> Result<Vec<Value>, FeedError> {
     let started = instant();
     let episodes = match seed {
@@ -958,7 +984,7 @@ pub async fn operate_feeds_v2(
         outcome["phaseMs"]["stale"] = json!(instant() - mark);
         if let Some(first) = stale.first() {
             let mark = instant();
-            match refresh(first.clone()).await {
+            match refresh.refresh(first.clone()).await {
                 Ok(()) => outcome["refreshed"] = json!(first),
                 // Budget, lease or provider failure: the publication still reports honestly.
                 Err(()) => outcome["refreshFailure"] = json!("RefreshUnavailable"),
@@ -966,13 +992,14 @@ pub async fn operate_feeds_v2(
             outcome["phaseMs"]["refresh"] = json!(instant() - mark);
         }
         let mark = instant();
-        let published = publish(
-            &feed_id,
-            db::text(&feed, "weight_set_hash").unwrap_or(""),
-            db::text(&feed, "weight_set_version").unwrap_or(""),
-            db::text(&feed, "calibration_cohort_id").unwrap_or(""),
-        )
-        .await;
+        let published = publish
+            .publish(
+                &feed_id,
+                db::text(&feed, "weight_set_hash").unwrap_or(""),
+                db::text(&feed, "weight_set_version").unwrap_or(""),
+                db::text(&feed, "calibration_cohort_id").unwrap_or(""),
+            )
+            .await;
         match published {
             Ok(envelope) => {
                 outcome["published"] = json!(envelope.payload.sequence);
@@ -1258,6 +1285,20 @@ mod tests {
 
     const GENESIS: &str = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1";
 
+    /// The relayer's signature, recording every message it was handed — which is the only place
+    /// the bytes the reference signed can be compared.
+    struct RecordedSigner<'a> {
+        signed: &'a RefCell<Vec<Value>>,
+    }
+
+    impl Signer for RecordedSigner<'_> {
+        fn sign<'a>(&'a self, data: Vec<u8>) -> BorrowedFuture<'a, Result<Vec<u8>, ()>> {
+            self.signed.borrow_mut().push(json!(hex::encode(&data)));
+            let signature = sign(&data);
+            Box::pin(async move { Ok(signature) })
+        }
+    }
+
     fn block<F: std::future::Future>(future: F) -> F::Output {
         futures_lite::future::block_on(future)
     }
@@ -1369,10 +1410,7 @@ mod tests {
             serde_json::from_value(after["result"][0].clone()).expect("the admitted binding");
 
         let signed: RefCell<Vec<Value>> = RefCell::new(Vec::new());
-        let signer = |data: Vec<u8>| -> BoxFuture<Result<Vec<u8>, ()>> {
-            signed.borrow_mut().push(json!(hex::encode(&data)));
-            Box::pin(async move { Ok(sign(&data)) })
-        };
+        let signer = RecordedSigner { signed: &signed };
         let mut index = 0usize;
 
         // --- admission.
