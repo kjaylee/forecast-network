@@ -15,7 +15,6 @@ use crate::solana::{
     assemble_transaction, base58_decode, base58_encode, compile_message, config_address, decode_config,
     decode_forecast, encode_advance, encode_register, forecast_address, AccountMeta, Instruction, RegisterParts,
 };
-use crate::wallets::BoxFuture;
 use serde_json::{json, Value};
 
 /// `_MAX_INTEGER`.
@@ -79,35 +78,44 @@ fn context(response: &Value) -> Result<(i64, Value), SolanaRpcError> {
     Ok((slot, response["value"].clone()))
 }
 
-pub type Rpc = dyn Fn(String, Value) -> BoxFuture<Result<Value, ()>>;
-pub type Signer = dyn Fn(Vec<u8>) -> BoxFuture<Result<[u8; 64], ()>>;
+/// A boxed future that borrows for as long as its caller does. Distinct from `wallets`' own alias,
+/// which is `'static`: this module's seams reach a database handle that belongs to the request.
+pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
+
+/// The three seams the transport is built from, each carrying the lifetime of what it borrows.
+///
+/// They are *not* `'static`, and cannot be: the spend authorizer reads the database it reserves
+/// against, and that handle belongs to the request. A `'static` alias would force every caller to
+/// own a database it does not own — or to leak one per request.
+pub type Rpc<'a> = dyn Fn(String, Value) -> BoxFuture<'a, Result<Value, ()>> + 'a;
+pub type Signer<'a> = dyn Fn(Vec<u8>) -> BoxFuture<'a, Result<[u8; 64], ()>> + 'a;
 /// The authorizer's refusal travels with its own message: in the reference it is an exception the
 /// transport does not catch, and `daily spend limit` is what the caller reads.
-pub type SpendAuthorizer = dyn Fn(i64) -> BoxFuture<Result<(), String>>;
+pub type SpendAuthorizer<'a> = dyn Fn(i64) -> BoxFuture<'a, Result<(), String>> + 'a;
 
 /// `SolanaRpcTransport`.
-pub struct SolanaRpcTransport<'a> {
+pub struct SolanaRpcTransport<'a, 'b> {
     program_id: [u8; 32],
     relayer: [u8; 32],
     expected_genesis_hash: String,
-    rpc: &'a Rpc,
-    sign: &'a Signer,
-    authorize_spend: &'a SpendAuthorizer,
+    rpc: &'a Rpc<'b>,
+    sign: &'a Signer<'b>,
+    authorize_spend: &'a SpendAuthorizer<'b>,
     max_fee_lamports: i64,
     max_rent_lamports: i64,
     balance_floor_lamports: i64,
     config: [u8; 32],
 }
 
-impl<'a> SolanaRpcTransport<'a> {
+impl<'a, 'b> SolanaRpcTransport<'a, 'b> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        rpc: &'a Rpc,
-        sign: &'a Signer,
+        rpc: &'a Rpc<'b>,
+        sign: &'a Signer<'b>,
         program_id: &[u8],
         relayer: &[u8],
         expected_genesis_hash: &str,
-        authorize_spend: &'a SpendAuthorizer,
+        authorize_spend: &'a SpendAuthorizer<'b>,
         max_fee_lamports: i64,
         max_rent_lamports: i64,
         balance_floor_lamports: i64,
@@ -399,7 +407,7 @@ pub fn check_instruction(
     Ok(())
 }
 
-impl SolanaRpcTransport<'_> {
+impl SolanaRpcTransport<'_, '_> {
     /// `send`. The whole method is an ordering, and the ordering is the safety property: nothing is
     /// signed until the program is known to be executable, the relayer's authority has been read
     /// out of the *program's* configuration, the fee and rent are inside their caps, the relayer's
@@ -671,7 +679,7 @@ mod tests {
         // stay usable after the moves.
         let cursor_for_rpc = Rc::clone(&cursor);
         let name_for_rpc = name.clone();
-        let rpc = move |method: String, params: Value| -> BoxFuture<Result<Value, ()>> {
+        let rpc = move |method: String, params: Value| -> BoxFuture<'static, Result<Value, ()>> {
             let index = cursor_for_rpc.get();
             cursor_for_rpc.set(index + 1);
             let name = &name_for_rpc;
@@ -705,7 +713,7 @@ mod tests {
         };
         let signer = {
             let configured = Rc::clone(&configured);
-            move |message: Vec<u8>| -> BoxFuture<Result<[u8; 64], ()>> {
+            move |message: Vec<u8>| -> BoxFuture<'static, Result<[u8; 64], ()>> {
                 configured.borrow_mut().push(json!(base64_encode(&message)));
                 Box::pin(async move { Ok(returned) })
             }
@@ -714,7 +722,7 @@ mod tests {
         let authorize = {
             let spend = Rc::clone(&spend);
             let name = name.clone();
-            move |amount: i64| -> BoxFuture<Result<(), String>> {
+            move |amount: i64| -> BoxFuture<'static, Result<(), String>> {
                 spend.borrow_mut().push(json!(amount));
                 // `send:spend-rejected` is the one case whose authorizer refuses, and its message
                 // is the authorizer's own rather than something this layer chose.

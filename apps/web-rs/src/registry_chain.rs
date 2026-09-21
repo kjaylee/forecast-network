@@ -33,7 +33,13 @@ use crate::eligibility::{receipt_status, POLICY_VERSION};
 use crate::registry::{identity_hash, DEVNET_GENESIS};
 use crate::solana;
 
-pub type BoxFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T>>>;
+/// A boxed future that borrows its transport for as long as the call takes.
+///
+/// `+ '_` rather than `'static`, because the real transport is borrowed: it holds a signature
+/// function and a spend authorizer that belong to the request. A `'static` box here would mean no
+/// implementation could ever borrow anything, which is exactly why the only one that existed was a
+/// test fake.
+pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
 pub const CHALLENGE_MS: i64 = 48 * 3_600_000;
 pub const LEASE_MS: i64 = 120_000;
 pub const ZERO: [u8; 32] = [0u8; 32];
@@ -76,11 +82,59 @@ pub struct RegistryAccount {
 
 /// The cluster, injected. `send` is the only method that writes.
 pub trait RegistryTransport {
-    fn genesis_hash(&self) -> BoxFuture<Outcome<String>>;
-    fn account(&self, address: &[u8]) -> BoxFuture<Outcome<Option<RegistryAccount>>>;
-    fn send(&self, instruction: &[u8], forecast_address: &[u8], register: bool) -> BoxFuture<Outcome<String>>;
-    fn signature_finalized(&self, signature: &str) -> BoxFuture<Outcome<bool>>;
-    fn finalized_time_ms(&self) -> BoxFuture<Outcome<i64>>;
+    fn genesis_hash<'a>(&'a self) -> BoxFuture<'a, Outcome<String>>;
+    fn account<'a>(&'a self, address: &'a [u8]) -> BoxFuture<'a, Outcome<Option<RegistryAccount>>>;
+    fn send<'a>(
+        &'a self,
+        instruction: &'a [u8],
+        forecast_address: &'a [u8],
+        register: bool,
+    ) -> BoxFuture<'a, Outcome<String>>;
+    fn signature_finalized<'a>(&'a self, signature: &'a str) -> BoxFuture<'a, Outcome<bool>>;
+    fn finalized_time_ms<'a>(&'a self) -> BoxFuture<'a, Outcome<i64>>;
+}
+
+/// The real transport, as the registry asks for it.
+///
+/// Every failure becomes `registry_unavailable` carrying the transport's own message: the registry
+/// does not act differently on a fee cap than on a refused RPC, and a code nobody branches on is a
+/// code that would go stale. The messages are the transport's and they name what happened.
+impl RegistryTransport for crate::solana_rpc::SolanaRpcTransport<'_, '_> {
+    fn genesis_hash<'a>(&'a self) -> BoxFuture<'a, Outcome<String>> {
+        Box::pin(async move { self.genesis_hash().await.map_err(unavailable) })
+    }
+
+    fn account<'a>(&'a self, address: &'a [u8]) -> BoxFuture<'a, Outcome<Option<RegistryAccount>>> {
+        Box::pin(async move { self.account(address).await.map_err(unavailable) })
+    }
+
+    fn send<'a>(
+        &'a self,
+        instruction: &'a [u8],
+        forecast_address: &'a [u8],
+        register: bool,
+    ) -> BoxFuture<'a, Outcome<String>> {
+        Box::pin(async move {
+            self.send(instruction, forecast_address, register)
+                .await
+                .map_err(unavailable)
+        })
+    }
+
+    fn signature_finalized<'a>(&'a self, signature: &'a str) -> BoxFuture<'a, Outcome<bool>> {
+        Box::pin(async move { self.signature_finalized(signature).await.map_err(unavailable) })
+    }
+
+    fn finalized_time_ms<'a>(&'a self) -> BoxFuture<'a, Outcome<i64>> {
+        Box::pin(async move { self.finalized_time_ms().await.map_err(unavailable) })
+    }
+}
+
+fn unavailable(error: crate::solana_rpc::SolanaRpcError) -> RegistryError {
+    RegistryError {
+        code: error.0,
+        not_before_ms: None,
+    }
 }
 
 /// `registry_intent_sql`: append after the event insert, in the same aggregate transaction.
@@ -1350,21 +1404,26 @@ mod tests {
     }
 
     impl RegistryTransport for Fake {
-        fn genesis_hash(&self) -> BoxFuture<Outcome<String>> {
+        fn genesis_hash<'a>(&'a self) -> BoxFuture<'a, Outcome<String>> {
             Box::pin(async { Ok(DEVNET_GENESIS.to_string()) })
         }
-        fn account(&self, address: &[u8]) -> BoxFuture<Outcome<Option<RegistryAccount>>> {
+        fn account<'a>(&'a self, address: &'a [u8]) -> BoxFuture<'a, Outcome<Option<RegistryAccount>>> {
             let key = wire::to_hex(address);
             let found = self.accounts.lock().unwrap().get(&key).cloned();
             Box::pin(async move { Ok(found) })
         }
-        fn send(&self, _instruction: &[u8], _forecast: &[u8], _register: bool) -> BoxFuture<Outcome<String>> {
+        fn send<'a>(
+            &'a self,
+            _instruction: &'a [u8],
+            _forecast: &'a [u8],
+            _register: bool,
+        ) -> BoxFuture<'a, Outcome<String>> {
             Box::pin(async { Err(RegistryError::new("not_used")) })
         }
-        fn signature_finalized(&self, _signature: &str) -> BoxFuture<Outcome<bool>> {
+        fn signature_finalized<'a>(&'a self, _signature: &'a str) -> BoxFuture<'a, Outcome<bool>> {
             Box::pin(async { Ok(false) })
         }
-        fn finalized_time_ms(&self) -> BoxFuture<Outcome<i64>> {
+        fn finalized_time_ms<'a>(&'a self) -> BoxFuture<'a, Outcome<i64>> {
             let time = *self.chain_time.lock().unwrap();
             Box::pin(async move { Ok(time) })
         }

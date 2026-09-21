@@ -383,6 +383,61 @@ pub async fn adjudicate(context: &Context<'_>, forecast_id: &str, body: &Map<Str
     Ok(api_response(result, 200, false)?)
 }
 
+/// `POST /api/admin/automation/run`: one automation pass, on demand.
+///
+/// This is the path that *needs* the chain adapter: `run_automation` sweeps the lifecycle, and a
+/// finalize consults the chain before it commits. Wiring it without an adapter would finalize
+/// locally and differ from the reference in exactly the way that is hardest to notice.
+pub async fn run_automation(context: &Context<'_>) -> Handler {
+    let db = crate::db::D1(context.session);
+    let now = || context.now_ms;
+    let parts = crate::application::chain_parts(context.env, &db, &now);
+    let program = bs58::decode(var(context.env, "SOLANA_PROGRAM_ID"))
+        .into_vec()
+        .unwrap_or_default();
+    let relayer = bs58::decode(var(context.env, "SOLANA_RELAYER"))
+        .into_vec()
+        .unwrap_or_default();
+    let transport = match &parts {
+        Some(parts) => Some(
+            parts
+                .transport(&program, &relayer)
+                .map_err(|error| RouteError::Worker(worker::Error::from(error.0)))?,
+        ),
+        None => None,
+    };
+    let registry = match (&transport, &parts) {
+        (Some(transport), Some(_)) => Some(
+            crate::registry_chain::SolanaRegistry::new(&db, transport, &program, &relayer, &now, &random_token)
+                .map_err(|error| RouteError::Worker(worker::Error::from(error.code)))?,
+        ),
+        _ => None,
+    };
+    let coordinator = crate::application::coordinator(context.env);
+    let evidence = crate::application::evidence_fetcher();
+    let collector = crate::application::text_fetcher();
+    let application = crate::application::Application {
+        db: &db,
+        ai: &coordinator,
+        evidence: &evidence,
+        collector: &collector,
+        reader: crate::ai::early::Retained(&db),
+        now_ms: context.now_ms,
+        token: &random_token,
+        daily_limit: AI_DAILY_LIMIT,
+        source_watch_enabled: var(context.env, "SOURCE_WATCH_ENABLED") == "true",
+        live_markets_enabled: var(context.env, "LIVE_MARKETS_ENABLED") == "true",
+        registry: registry
+            .as_ref()
+            .map(|registry| registry as &dyn crate::mutate::FinalizationGate),
+    };
+    let result = application
+        .run_automation(1)
+        .await
+        .map_err(|detail| RouteError::Worker(worker::Error::from(detail)))?;
+    Ok(api_response(result, 200, false)?)
+}
+
 /// `POST /api/forecasts/{id}/evidence`: a forecaster reports an official announcement.
 ///
 /// The application is assembled here rather than held on the route context, because every transport

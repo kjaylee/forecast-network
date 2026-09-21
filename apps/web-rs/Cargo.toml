@@ -26,6 +26,10 @@ num-traits = "0.2"
 getrandom = { version = "0.2", features = ["js"] }
 base64 = "0.22"
 regex = "1"
+# `worker` does not enable the WebCrypto features, and the relayer's Ed25519 signature has to come
+# from the runtime: a hand-rolled Ed25519 is not a thing this crate will contain. Cargo unions
+# features, so this only adds what is missing.
+web-sys = { version = "0.3", features = ["Crypto", "SubtleCrypto", "CryptoKey"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 rusqlite = { version = "0.32", features = ["bundled"] }
