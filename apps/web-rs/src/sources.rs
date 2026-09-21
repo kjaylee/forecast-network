@@ -10,6 +10,7 @@ use sha2::Digest;
 use worker::Url;
 
 use crate::html_parse::{tokenize, Event};
+use forecast_domain::models::ForecastSpecification;
 
 /// Publisher pages can include large inline assets; retain complete bytes within the same
 /// 512 KiB ceiling the immutable artifact store enforces.
@@ -179,6 +180,56 @@ impl TextResponse {
             .find(|(key, _)| key.eq_ignore_ascii_case(name))
             .map(|(_, value)| value.as_str())
     }
+}
+
+/// `SourceCollector.collect_dispute`: one page a disputant named.
+///
+/// The publisher is looked up in the question's *published* policy first, and only if it is not
+/// there is a source invented for it — named from the host catalogues when the host is one this
+/// application knows, and marked official on the same test. A disputant may name a page the
+/// question does not cite; what they may not do is name a page that is not a public https URL.
+pub async fn collect_dispute<F, Fut>(
+    fetch: F,
+    specification: &ForecastSpecification,
+    url: &str,
+    now_ms: i64,
+) -> Result<CollectedSource, SourceError>
+where
+    F: Fn(String) -> Fut,
+    Fut: std::future::Future<Output = Result<TextResponse, ()>>,
+{
+    let host = validate_public_url(url, false)?;
+    let known = specification
+        .source_policy
+        .sources()
+        .find(|source| crate::sources::host_of(&source.url).as_deref() == Some(host.as_str()));
+    let (source_id, name, official) = match known {
+        Some(source) => (source.source_id.clone(), source.name.clone(), source.is_official),
+        None => {
+            let digest = hex::encode(sha2::Sha256::digest(host.as_bytes()));
+            (
+                format!("dispute-{}", &digest[..20]),
+                catalogued_name(&host).unwrap_or_else(|| host.clone()),
+                catalogued_name(&host).is_some() && OFFICIAL_HOSTS.iter().any(|(h, _)| *h == host),
+            )
+        }
+    };
+    let _ = name;
+    collect(fetch, &source_id, url, official, None, now_ms).await
+}
+
+/// The hostname of a URL, as `urlsplit(...).hostname` reports it.
+pub fn host_of(url: &str) -> Option<String> {
+    split_url(url).and_then(|parsed| parsed.host)
+}
+
+/// The catalogue name for a host, official first — `OFFICIAL_HOSTS.get(host, FALLBACK_HOSTS.get(host, host))`.
+fn catalogued_name(host: &str) -> Option<String> {
+    OFFICIAL_HOSTS
+        .iter()
+        .chain(FALLBACK_HOSTS.iter())
+        .find(|(registered, _)| *registered == host)
+        .map(|(_, name)| (*name).to_string())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

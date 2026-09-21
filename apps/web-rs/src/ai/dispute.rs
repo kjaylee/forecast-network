@@ -16,10 +16,11 @@ use super::coordinator::{artifact, Artifact, Coordinator, CoordinatorError, Deci
 use super::schema::schemas;
 use crate::source_watch::hash_hex;
 use crate::sources::{evidence_excerpt, validate_public_url, MAX_SOURCE_BYTES};
+use crate::sources::{CollectedSource, SourceError};
 use forecast_domain::lifecycle::Forecast;
 use forecast_domain::models::{
     dispute_analysis_output_hash, dispute_evidence_output_hash, dispute_review_input_hash, dispute_review_output_hash,
-    AIProvenance, Dispute, DisputeReview, EvidenceSnapshot,
+    AIProvenance, Dispute, DisputeReview, EvidenceSnapshot, ForecastSpecification,
 };
 
 /// The reader is the same one the early-resolution path uses: retained bytes by hash, and one
@@ -30,6 +31,57 @@ pub use super::early::ArtifactReader;
 pub struct DisputeResult {
     pub review: DisputeReview,
     pub artifacts: Vec<Artifact>,
+}
+
+/// The evidence collector, injected for the same reason the JSON transport is: it is I/O, and what
+/// this layer decides is what to do with its answer.
+pub type DisputeCollector = dyn Fn(
+    &ForecastSpecification,
+    String,
+    i64,
+) -> super::early::BoxFuture<'static, Result<CollectedSource, SourceError>>;
+
+/// `collect_dispute_evidence`: the page a dispute cites, reduced to its snapshot and the artifact
+/// that retains it.
+///
+/// The two failures are told apart because the caller shows a different thing for each: a page that
+/// is not usable is the disputant's to fix, and one that could not be reached is not.
+pub async fn collect_dispute_evidence(
+    collector: &DisputeCollector,
+    specification: &ForecastSpecification,
+    url: &str,
+    now_ms: i64,
+) -> Result<(EvidenceSnapshot, Artifact), CoordinatorError> {
+    let collected = collector(specification, url.to_string(), now_ms)
+        .await
+        .map_err(|error| match error {
+            SourceError::Unavailable => CoordinatorError::Unavailable {
+                providers: Vec::new(),
+                artifacts: Vec::new(),
+            },
+            SourceError::Rejected(rejection) => CoordinatorError::Rejected {
+                code: "source_rejected".to_string(),
+                message: rejection.message(),
+                artifacts: Vec::new(),
+            },
+        })?;
+    let snapshot = EvidenceSnapshot {
+        schema_version: 1,
+        evidence_id: collected.evidence_id.clone(),
+        source_id: collected.source_id.clone(),
+        url: collected.url.clone(),
+        content_sha256: collected.content_sha256.clone(),
+        snapshot_uri: collected.snapshot_uri.clone(),
+        collected_at_ms: collected.collected_at_ms,
+        // The collecting model is not retained here; the verifier's provenance is.
+        collector: None,
+    };
+    let artifact = Artifact {
+        hash: collected.content_sha256.clone(),
+        kind: collected.artifact_kind,
+        body: collected.artifact_body.clone(),
+    };
+    Ok((snapshot, artifact))
 }
 
 /// The model answered, and the answer was refused before any of it was believed.

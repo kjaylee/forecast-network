@@ -86,7 +86,7 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
         Method::Post => {
             path == "/api/activity/read"
                 || identifier(path, "/api/creators/", "/follow").is_some()
-                || ["/forecast", "/comments", "/share", "/evidence"]
+                || ["/forecast", "/comments", "/share", "/evidence", "/disputes"]
                     .iter()
                     .any(|suffix| identifier(path, "/api/forecasts/", suffix).is_some())
                 || identifier(path, "/api/admin/forecasts/", "/adjudicate").is_some()
@@ -173,6 +173,9 @@ pub async fn dispatch_write(
     }
     if let Some(id) = identifier(path, "/api/forecasts/", "/evidence") {
         return crate::writes::report_evidence(context, user_id, &id, body.get("url").unwrap_or(&null)).await;
+    }
+    if let Some(id) = identifier(path, "/api/forecasts/", "/disputes") {
+        return crate::writes::submit_dispute(context, user_id, &id, body).await;
     }
     Err(RouteError::NotFound("not_found", "This page could not be found."))
 }

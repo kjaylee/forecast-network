@@ -379,6 +379,159 @@ pub async fn adjudicate(context: &Context<'_>, forecast_id: &str, body: &Map<Str
     Ok(api_response(result, 200, false)?)
 }
 
+/// `POST /api/forecasts/{id}/disputes`: a participant challenges the proposed resolution.
+///
+/// The evidence is *collected here*, under the application's own AI lease, and only then is the
+/// dispute built: a dispute whose evidence could not be retained is not a dispute anybody can
+/// review, and recording one would put an unreviewable claim in the record. The two failures are
+/// told apart because the adjudication shows a different thing for each.
+pub async fn submit_dispute(
+    context: &Context<'_>,
+    user_id: &str,
+    forecast_id: &str,
+    body: &Map<String, Value>,
+) -> Handler {
+    user_row(context.session, user_id).await?;
+    let invalid = || RouteError::Failed(400, "invalid_input", "Please check your input.");
+    let claim = crate::auth::checked_text(body.get("claim"), 1000, 1).map_err(|_| invalid())?;
+    let explanation = crate::auth::checked_text(body.get("explanation"), 3000, 1).map_err(|_| invalid())?;
+    let evidence_url = crate::auth::checked_text(body.get("evidenceUrl"), 2000, 1).map_err(|_| invalid())?;
+    let rule_clause_id = crate::auth::checked_text(body.get("ruleClauseId"), 128, 1).map_err(|_| invalid())?;
+    let revision = match body.get("revision").and_then(Value::as_i64) {
+        Some(revision) if revision >= 0 => revision,
+        _ => return Err(crate::writes::invalid()),
+    };
+    let key = body.get("idempotencyKey").and_then(Value::as_str).unwrap_or("");
+    let request = json!({
+        "kind": "dispute", "forecastId": forecast_id, "claim": claim,
+        "evidenceUrl": evidence_url, "ruleClauseId": rule_clause_id,
+        "explanation": explanation, "revision": revision,
+    });
+    let db = crate::db::D1(context.session);
+    if let Some(prior) = prior_row(&db, user_id, key, &request).await? {
+        let mut receipt = prior_result(&prior)?;
+        receipt["forecast"] = card_row(&db, forecast_id, context.now_ms).await?;
+        return Ok(api_response(receipt, 200, false)?);
+    }
+    let snapshot = load_snapshot(&db, forecast_id).await?;
+    let forecast = snapshot.base().clone();
+    if forecast.revision != revision {
+        return Err(crate::mutate::conflict());
+    }
+    // A dispute is a challenge, so it may only be filed inside the challenge window — and the
+    // window is the *record's* own, not a fresh one.
+    if !matches!(forecast.state.as_str(), "CHALLENGE" | "DISPUTED")
+        || forecast.challenge_until_ms.is_none_or(|until| until <= context.now_ms)
+    {
+        return Err(RouteError::Failed(
+            409,
+            "challenge_closed",
+            "The challenge window is closed.",
+        ));
+    }
+    if !forecast.specification.clause_ids().contains(&rule_clause_id.as_str()) {
+        return Err(invalid());
+    }
+    rate_limit(
+        context.session,
+        context.now_ms,
+        &format!("dispute:{user_id}"),
+        10,
+        DAY_MS,
+    )
+    .await?;
+    let owner = format!("user:{user_id}");
+    let lease = random_token();
+    crate::scheduler::ai_lease(&db, &owner, &lease, context.now_ms, AI_DAILY_LIMIT)
+        .await
+        .map_err(|code| RouteError::Failed(503, "ai_unavailable", Box::leak(code.into_boxed_str())))?;
+    // The collector owns the transport: `DisputeCollector`'s future is `'static`, so the closure
+    // cannot borrow one that lives in this frame.
+    let fetch = std::rc::Rc::new(crate::application::text_fetcher());
+    let collector: Box<crate::ai::dispute::DisputeCollector> = Box::new(
+        move |specification: &forecast_domain::models::ForecastSpecification, url: String, now_ms: i64| {
+            let fetch = fetch.clone();
+            let specification = specification.clone();
+            Box::pin(async move {
+                crate::sources::collect_dispute(|target| fetch(target, Vec::new()), &specification, &url, now_ms).await
+            })
+        },
+    );
+    let started = context.now_ms;
+    let outcome = crate::ai::dispute::collect_dispute_evidence(
+        &collector,
+        &forecast.specification,
+        &evidence_url,
+        context.now_ms,
+    )
+    .await;
+    crate::scheduler::release_ai(&db, &owner, &lease).await;
+    let (evidence, artifact) = outcome.map_err(|error| {
+        let mapped = crate::ai::error::ai_error(
+            &error,
+            matches!(error, crate::ai::coordinator::CoordinatorError::Unavailable { .. }),
+        );
+        RouteError::Failed(mapped.status, mapped.code, mapped.message)
+    })?;
+    let _ = started;
+    let now = context.now_ms;
+    let Some(resolution) = forecast.resolution.as_ref() else {
+        return Err(crate::mutate::conflict());
+    };
+    let dispute = forecast_domain::models::Dispute {
+        schema_version: 1,
+        dispute_id: format!("d_{}", &random_token()[..24]),
+        disputant_id: user_id.to_string(),
+        forecast_id: forecast_id.to_string(),
+        specification_hash: forecast.specification_hash.clone(),
+        resolution_hash: resolution.resolution_hash().map_err(|_| invalid())?,
+        claim,
+        evidence: vec![evidence],
+        rule_clause_id,
+        explanation,
+        submitted_at_ms: now,
+    };
+    let response = json!({"dispute": {"id": dispute.dispute_id, "claim": dispute.claim,
+                                      "submittedAt": now, "hash": dispute.dispute_hash().map_err(|_| invalid())?}});
+    let retained = vec![(
+        artifact.hash.clone(),
+        artifact.kind.to_string(),
+        artifact.body.clone(),
+        "application/json".to_string(),
+    )];
+    let mut extra = crate::source_watch::artifact_sql(&retained, now)
+        .map_err(|refusal| RouteError::Failed(refusal.status(), refusal.code(), refusal.message()))?;
+    extra.push(record_artifact(&dispute, "dispute", None, now)?);
+    let operation_key = format!(
+        "user:{}",
+        forecast_domain::content_hash(&json!({"user": user_id, "key": key}))
+            .map_err(|error| RouteError::Worker(error.to_string().into()))?
+    );
+    extra.push(operation(user_id, key, &request, forecast_id, &response, now)?);
+    mutate(
+        &db,
+        Mutation {
+            snapshot: &snapshot,
+            payload: Payload::SubmitDispute {
+                schema_version: 1,
+                dispute,
+            },
+            key: operation_key,
+            now_ms: now,
+            extra,
+            job_token: None,
+            timing_artifacts: Vec::new(),
+        },
+        now,
+        &random_token,
+        None,
+    )
+    .await?;
+    let mut result = response;
+    result["forecast"] = card_row(&db, forecast_id, context.now_ms).await?;
+    Ok(api_response(result, 200, false)?)
+}
+
 /// `POST /api/admin/automation/run`: one automation pass, on demand.
 ///
 /// This is the path that *needs* the chain adapter: `run_automation` sweeps the lifecycle, and a
