@@ -271,12 +271,13 @@ pub async fn ai_health_route(context: &Context<'_>) -> Result<Response, RouteErr
         "contents": [{"parts": [{"text": "Reply with the single word OK."}]}],
         "generationConfig": {"maxOutputTokens": 8},
     });
-    // A transport failure and an unsuccessful response are the same answer here — the reference
-    // raises for both, and the entry turns either into `service_unavailable`.
-    let probe = match crate::application::post_json(&url, &headers, &body).await {
-        Ok(text) => serde_json::from_str::<Value>(&text).ok().filter(Value::is_object),
-        Err(()) => None,
-    };
+    // Through `request_json`'s own path — the relay rewrite and the endpoint allowlist — not the
+    // raw transport: a probe that called the provider directly from the edge measured a route
+    // the pipeline never takes, and answered 503 for a relay that was fine. A transport failure
+    // and an unsuccessful response are the same answer here; the reference raises for both, and
+    // the entry turns either into `service_unavailable`.
+    let fetch = crate::application::json_fetcher(context.env);
+    let probe = fetch(url, headers, body).await.ok().filter(Value::is_object);
     let Some(probe) = probe else {
         return Err(refused());
     };
