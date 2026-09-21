@@ -176,6 +176,27 @@ and `admin.rs`; `api_response` and `api_response_with` build the same header set
 (`api_response` is `api_response_with(…, Cookies::None)`). Cosmetic, but each is a place two
 values can drift.
 
+## What was done the same day
+
+Findings 1–8 and 11–16 landed in `f1f34f7`…`a73d4ec`, and the write surface, the schedule
+and the operator host's jobs moved as the order below says. Two things the work found that
+the review had not:
+
+- **The episode series was stalled** (`386448e`): `next_episode_start` returned
+  `latest + cadence` even when that instant had passed, so after the D1 read limit failed
+  every attempt at the 2026-09-20T04:00Z episode the series answered `episodes: []` for 33
+  hours and the health read reported a past instant as "next". Fixed in the reference, the
+  golden and the port; proved by mutation.
+- **`/api/admin/ai/health` answers 503 from both Workers** while the relay answers the same
+  probe from outside Cloudflare with 200. Seen on the reference as a proxied HTTP 404, and on
+  the edge as the route calling the provider directly rather than through the relay rewrite the
+  coordinator uses (`admin_ops::ai_health_route` uses `post_json`, not `json_fetcher`). The
+  first is not explained yet and blocks the series' compile step on both Workers; it predates
+  the flip and is the open item.
+
+Finding 9 (the v2 arm's vector) and finding 10 (recorded as a decision in the plan: the
+Python package stays as the generator) remain as written.
+
 ## Suggested order
 
 1. Decide the secret boundary (finding 1's last paragraph). Nothing below it can ship without

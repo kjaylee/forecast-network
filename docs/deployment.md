@@ -103,6 +103,39 @@ Local testing may use an owner-readable tmp/web-build/.dev.vars populated from
 Keychain. The deployment script removes it before uploading. Never commit or print
 its values. Use a dedicated free port; do not stop another project's server on 8787.
 
+## The edge Worker — what serves the domain
+
+`apps/web-rs` is the Worker on `forecast.eastsea.xyz`. It is built with
+`worker-build` (rustup toolchain; Homebrew cargo lacks the `wasm32` target) and
+deployed by:
+
+    python3 scripts/deploy_edge.py --preview       # forecast-network-edge-preview, workers.dev only
+    python3 scripts/deploy_edge.py --take-domain   # the custom domain
+
+The script runs fmt, clippy on wasm32 and `check.py` first (unless `--skip-checks`),
+renders the same assets the Python build renders, deploys, then pushes the secret
+set from Keychain. That set is data in `scripts/worker_secrets.py` and is the same
+set the Python Worker is deployed with; `scripts/config_parity.py --check` (in
+`check.py`) fails when the crate reads a var, secret or binding that the edge's
+`wrangler.jsonc` or that list does not provide, or that the reference reads under
+another name. The edge's `wrangler.jsonc` declares both crons; the Python Worker's
+declares none since 2026-09-21 (`wrangler triggers deploy` from the stage removes
+a trigger without a redeploy). `head_sampling_rate` stays 1.0 while the `LEGACY`
+binding exists, and the deploy script asserts it.
+
+Before a surface moves, compare answers, not claims:
+
+    python3 scripts/deploy_edge.py --preview --skip-checks
+    python3 scripts/http_parity.py --edge https://forecast-network-edge-preview.k-jaylee.workers.dev \
+                                   --reference https://forecast-network.k-jaylee.workers.dev
+
+Rollback is a redeploy of the previous edge commit with `--take-domain`; the
+Python Worker keeps serving through the binding for whatever that edge does not
+claim. The operator host's launchd jobs for the tick and the sweep
+(`com.forecast-network.risk-v2-operator`, `com.forecast-network.sweep-trigger`)
+were booted out on 2026-09-21 and their plists kept; `launchctl bootstrap` restores
+them if the edge's schedule has to be taken off.
+
 ## Operator actions
 
 Operator routes require a Bearer ADMIN_TOKEN and are not public account privileges.

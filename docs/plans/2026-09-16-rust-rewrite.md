@@ -105,6 +105,14 @@ Strangler by route on the same hostname (Cloudflare routes or a router Worker):
    producer needs the same treatment before any route flips.
 4. AI pipeline (compiler/judges via the Gemini relay), lifecycle scheduler, source watch.
 5. Retire the Python Worker; keep it deployable until one full 48-hour cycle ran on Rust.
+- **Status 2026-09-21:** steps 2–4 live. The edge owns every route the reference serves
+  (`route_parity.py`, 59 routes), its configuration surface (`config_parity.py`), and both
+  schedules as scheduled events; the operator host's tick and sweep jobs are stopped and the
+  Python Worker's cron removed. Evidence:
+  `docs/evidence/completion/rust-edge/write-flip-2026-09-21.json`. Step 5 waits on a 48-hour
+  window of `forwarded_to_legacy` silence at full log sampling, and on the decision recorded in
+  `2026-09-21-improvement-review.md` (finding 10): the Python package stays in the tree as the
+  golden generator after the Worker is retired.
 - **Status 2026-09-16:** step 1 partially live. `apps/web-rs` (`forecast-network-edge`) owns
   `forecast.eastsea.xyz`: native `/api/health`, `/api/status`, `/api/risk/feeds/*`,
   `/api/risk/v2/feeds/*` and static assets; everything else is forwarded untouched through the

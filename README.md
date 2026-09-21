@@ -10,23 +10,28 @@ The product and architecture handoff (maintained privately) is the source of tru
 ## How it is deployed (0.13.0)
 
 `forecast.eastsea.xyz` is served by [`apps/web-rs`](apps/web-rs), a Rust Worker
-compiled to `wasm32` with workers-rs. It answers every public read natively —
-health, status, risk feeds, forecast list and detail, profile cards, integrity,
-market, translation, me, creators, points, activity, wallet and the billing
-estimate — and serves the static assets. Everything else is forwarded untouched
-through a service binding to the Python Worker, which keeps cron, secrets, the AI
-pipeline, D1 writes and every POST and PATCH.
+compiled to `wasm32` with workers-rs. Since 2026-09-21 it owns the whole surface:
+every public read, every POST and PATCH, the operator routes, the AI pipeline,
+the registry delivery, and both schedules — the per-minute risk tick and the
+five-minute sweep run as its own scheduled events, in-process, with no bearer
+and no operator host in the path. The Python Worker stays deployed behind a
+`LEGACY` service binding as the rollback; nothing is forwarded to it, and every
+request that would be is logged so retiring it is decided on evidence.
 
 The Python Worker moved behind the Rust edge because Pyodide cannot run
 concurrent promising tasks: it returned an empty 500 at roughly 25 concurrent
 requests and could not hold a per-minute cron. Python remains the reference
 implementation and its test suite remains the acceptance suite.
 
-Reads were ported behind measured route parity before the cutover — 18/18
-forecast query combinations, 17/17 detail ids and 39/43 read paths byte-equal.
-The [cutover record](docs/evidence/completion/rust-edge/cutover-2026-09-16.json)
-holds the measurements and the rollback. The
-[strangler plan](docs/plans/2026-09-16-rust-rewrite.md) holds what remains.
+Reads were ported behind measured route parity before the first cutover — 18/18
+forecast query combinations, 17/17 detail ids and 39/43 read paths byte-equal
+([cutover record](docs/evidence/completion/rust-edge/cutover-2026-09-16.json)).
+The writes followed behind three source-level gates (`scripts/sql_parity.py`,
+`route_parity.py`, `config_parity.py`) and one live one: `scripts/http_parity.py`
+compared 167/167 answers between a preview edge and the Python Worker before the
+flip ([write-flip record](docs/evidence/completion/rust-edge/write-flip-2026-09-21.json)).
+The [strangler plan](docs/plans/2026-09-16-rust-rewrite.md) holds the history and
+the [improvement review](docs/plans/2026-09-21-improvement-review.md) what remains.
 
 The web service supports wallet-authenticated profiles, multilingual
 input compiled into English for preview/publication, discovery, probability forecasts and history,

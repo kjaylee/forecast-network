@@ -2,7 +2,7 @@
 
 What ships, and what must be verified before it is complete.
 
-Version 0.11 · Updated September 14, 2026
+Version 0.13 · Updated September 21, 2026
 
 **Web beta deployed:** [forecast.eastsea.xyz](https://forecast.eastsea.xyz) ·
 [Deployment and verification record](https://forecast.eastsea.xyz/docs/verification-web)
@@ -54,9 +54,12 @@ earlier release counts do not certify it.
 
 The `0.9.0` baseline passed **555 Python tests, 131 frontend tests, 23 Rust guard
 tests and 52 schemas**, plus Ruff and strict mypy across 28 source files. The
-tree has since moved to **923 Python tests, 275 browser-module tests and 64
-schemas**, and the public reads are now served by a Rust edge Worker while the
-Python Worker stays behind it for writes, cron and the AI pipeline.
+tree has since moved to **1,043 Python tests, 224 edge-crate tests, 275
+browser-module tests and 64 schemas**, and since 2026-09-21 the whole service —
+reads, writes, operator routes, the AI pipeline, registry delivery and both
+schedules — is served by the Rust edge Worker (`0.13.0`). The Python Worker stays
+deployed as the rollback and as the reference that regenerates every golden
+vector; it serves no request.
 
 The Devnet program is real, and all three current public revisions were confirmed
 through a one-time Mac operator run of the durable adapter, and a later
