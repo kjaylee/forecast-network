@@ -180,11 +180,18 @@ pub async fn latest_episode_start(db: &dyn Database, series_id: &str) -> Result<
     Ok(row.as_ref().and_then(|row| db::int(row, "start")))
 }
 
-/// `next_episode_start`: the next cadence-aligned start after the latest episode, else the next
+/// `next_episode_start`: the start after the latest episode if it is still ahead, else the next
 /// boundary strictly after now.
+///
+/// A missed start is not the next start. When every attempt at an episode failed until its start
+/// passed (2026-09-19: the D1 daily read limit), `latest + cadence` was an instant in the past,
+/// the lead window could never hold again, and the series stalled for 33 hours answering
+/// `episodes: []`. The episode that can still be published before it starts is the next one.
 pub fn next_episode_start(series: &RiskFeedSeriesV2, latest_start_ms: Option<i64>, now_ms: i64) -> i64 {
     if let Some(latest) = latest_start_ms {
-        return latest + series.cadence_ms;
+        if latest + series.cadence_ms > now_ms {
+            return latest + series.cadence_ms;
+        }
     }
     // `-((-now) // cadence) * cadence`: the next cadence boundary at or after now, which is
     // `ceil(now / cadence) * cadence`. Written the way Python writes it, because the sign of the
@@ -632,9 +639,11 @@ mod tests {
             block(configure_series(&db, &series, true, "a", now)).map(|d| json!(d)),
         );
 
-        // --- the cadence arithmetic, against the instants the vector fixed.
-        for position in 4..7 {
-            let entry = &calls[position];
+        // --- the cadence arithmetic, against the instants the vector fixed. Every call of the
+        // kind is replayed, however many the vector carries: a case added to the reference's
+        // generator reaches this test without a position being edited.
+        while calls[index]["kind"] == json!("next_episode_start") {
+            let entry = &calls[index];
             let decided = next_episode_start(
                 &series,
                 plain_int(entry, "latestStartMs"),
@@ -643,7 +652,7 @@ mod tests {
             check(&calls, &mut index, Ok(json!(decided)));
         }
         // --- the templated question.
-        let start = calls[7]["input"]["startMs"].as_i64().unwrap();
+        let start = calls[index]["input"]["startMs"].as_i64().unwrap();
         check(&calls, &mut index, episode_question(&series, start).map(|q| json!(q)));
 
         // --- the tick. The seed path is the application's, so it is replayed from the vector: the
@@ -657,13 +666,16 @@ mod tests {
         // a struct that owned the only handle could not be inspected once it was moved.
         let observed = std::rc::Rc::clone(&asked);
         let seed = Seeded { asked, seeded, failure };
+        // A tick is replayed at the instant the *next* unchecked call recorded, so the replay
+        // follows the vector's own order rather than positions that move when a case is added.
         let tick = |position: usize| -> Result<Value, FeedError> {
             let at = calls[position]["input"]["nowMs"].as_i64().unwrap_or(0);
             block(create_due_episodes(&db, at, &seed)).map(|outcomes| json!(outcomes))
         };
         // The vector's order is the reference's: the tick that creates the episode, then the
         // listing that shows it, then the ticks that must not create a second one.
-        check(&calls, &mut index, tick(8));
+        let produced = tick(index);
+        check(&calls, &mut index, produced);
         check(
             &calls,
             &mut index,
@@ -674,7 +686,8 @@ mod tests {
                     .collect::<Vec<_>>())
             }),
         );
-        check(&calls, &mut index, tick(10));
+        let produced = tick(index);
+        check(&calls, &mut index, produced);
         // The second series is written by the vector rather than by this module: its seed always
         // fails, which is what the backoff is measured against.
         restore(
@@ -685,8 +698,9 @@ mod tests {
                 .unwrap_or(&Vec::new())[1..]
                 .as_ref(),
         );
-        for position in 11..13 {
-            check(&calls, &mut index, tick(position));
+        for _ in 0..2 {
+            let produced = tick(index);
+            check(&calls, &mut index, produced);
         }
 
         assert_eq!(index, calls.len(), "every recorded call is replayed");

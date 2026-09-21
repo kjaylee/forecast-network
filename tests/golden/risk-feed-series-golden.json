@@ -70,6 +70,24 @@
       "result": 1800043200000
     },
     {
+      "call": "next:after-latest-missed",
+      "input": {
+        "latestStartMs": 1800000000000,
+        "nowMs": 1800086405000
+      },
+      "kind": "next_episode_start",
+      "result": 1800100800000
+    },
+    {
+      "call": "next:after-latest-at-successor",
+      "input": {
+        "latestStartMs": 1800000000000,
+        "nowMs": 1800043200000
+      },
+      "kind": "next_episode_start",
+      "result": 1800057600000
+    },
+    {
       "call": "question:first",
       "input": {
         "startMs": 1800014400000

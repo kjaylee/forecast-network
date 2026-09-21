@@ -113,6 +113,34 @@ class RiskFeedSeriesTests(unittest.IsolatedAsyncioTestCase):
         log = await self.db.all("SELECT outcome FROM risk_feed_series_log_v2 ORDER BY attempted_at")
         self.assertEqual([r["outcome"] for r in log], ["published", "published"])
 
+    async def test_a_missed_episode_is_skipped_rather_than_stalling_the_series(self):
+        # Production, 2026-09-19: the D1 daily read limit failed every attempt at the episode
+        # starting 2026-09-20T04:00Z, the start passed, and for the next 33 hours every tick
+        # answered `episodes: []`. `latest + cadence` was an instant in the past, the lead window
+        # `start - lead <= now < start` could never hold again, and the health read reported the
+        # same past instant as "next". A missed start is not the next start; the next boundary
+        # strictly after now is.
+        await configure_series(self.db, series=self.series, enabled=True, configured_by="a", now_ms=self.now)
+        first = next_episode_start(self.series, latest_start_ms=None, now_ms=self.now)
+        self.now = first - self.series.lead_ms + 1000
+        await create_due_episodes(self.db, now_ms=self.now, seed=self.seed)
+        cadence = self.series.cadence_ms
+        # Two cadences later, the episode at first + cadence was never created.
+        self.now = first + 2 * cadence + 5_000
+        self.assertEqual(next_episode_start(self.series, latest_start_ms=first, now_ms=self.now), first + 3 * cadence)
+        outcomes = await create_due_episodes(self.db, now_ms=self.now, seed=self.seed)
+        self.assertEqual((outcomes[0]["nextStartMs"], outcomes[0]["created"]), (first + 3 * cadence, None))
+        # Its lead window opens, and it is the episode that gets published — not the missed one.
+        self.now = first + 3 * cadence - self.series.lead_ms + 1000
+        outcomes = await create_due_episodes(self.db, now_ms=self.now, seed=self.seed)
+        self.assertEqual(outcomes[0]["created"], f"{self.series.series_id}-{spell(first + 3 * cadence)}")
+        # A latest start whose successor is still ahead is unchanged by the rule.
+        self.assertEqual(next_episode_start(self.series, latest_start_ms=first, now_ms=first + cadence - 1),
+                         first + cadence)
+        # And exactly at the successor, the successor has started: the one after it is next.
+        self.assertEqual(next_episode_start(self.series, latest_start_ms=first, now_ms=first + cadence),
+                         first + 2 * cadence)
+
     async def test_failed_seed_is_logged_and_retried_without_partial_binding(self):
         await configure_series(self.db, series=self.series, enabled=True, configured_by="a", now_ms=self.now)
         first = next_episode_start(self.series, latest_start_ms=None, now_ms=self.now)

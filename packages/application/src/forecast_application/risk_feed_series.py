@@ -65,8 +65,14 @@ async def latest_episode_start(db: Database, *, series_id: str) -> int | None:
 
 
 def next_episode_start(series: RiskFeedSeriesV2, *, latest_start_ms: int | None, now_ms: int) -> int:
-    """The next cadence-aligned start after the latest episode, else the next boundary strictly after now."""
-    if latest_start_ms is not None:
+    """The start after the latest episode if it is still ahead, else the next boundary strictly after now.
+
+    A missed start is not the next start. When every attempt at an episode failed until its start
+    passed (2026-09-19: the D1 daily read limit), `latest + cadence` was an instant in the past,
+    the lead window could never hold again, and the series stalled for 33 hours answering
+    `episodes: []`. The episode that can still be published before it starts is the next one.
+    """
+    if latest_start_ms is not None and latest_start_ms + series.cadence_ms > now_ms:
         return latest_start_ms + series.cadence_ms
     boundary = -((-now_ms) // series.cadence_ms) * series.cadence_ms
     return boundary + series.cadence_ms if boundary == now_ms else boundary

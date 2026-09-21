@@ -20,7 +20,7 @@ use crate::risk_ops::{
 };
 use forecast_domain::risk_feed::{
     freshness_as_of_ms, signing_bytes_v2, CanonicalRiskDefinitionV2, ChannelCoverageV2, RiskFeedBindingV2,
-    RiskFeedPayloadV2, RiskFeedSignalV2, RiskMappingProfileV2, SignedRiskFeedV2, FEED_TTL_MS,
+    RiskFeedPayloadV2, RiskFeedSeriesV2, RiskFeedSignalV2, RiskMappingProfileV2, SignedRiskFeedV2, FEED_TTL_MS,
 };
 use forecast_domain::{canonical_bytes, content_hash, require, Record, ValidationError};
 use serde_json::{json, Value};
@@ -1214,15 +1214,22 @@ pub async fn operations_health(db: &dyn Database, now_ms: i64) -> Result<Value, 
             )
             .await
             .map_err(|_| storage())?;
-        let cadence = serde_json::from_str::<Value>(db::text(&row, "series_json").unwrap_or(""))
-            .ok()
-            .and_then(|body| body["cadence_ms"].as_i64());
+        // The same rule the scheduler applies, so the health read names the start the next tick
+        // will actually try for — `latest + cadence` reported a start 33 hours in the past as
+        // "next" while the scheduler had nothing it could do about it.
+        let decoded = RiskFeedSeriesV2::from_json(db::text(&row, "series_json").unwrap_or("")).ok();
         let start = latest_start.as_ref().and_then(|row| db::int(row, "start"));
+        let next = match (start, decoded.as_ref()) {
+            (Some(start), Some(series)) => {
+                Some(crate::risk_feed_series::next_episode_start(series, Some(start), now_ms))
+            }
+            _ => None,
+        };
         series.push(json!({
             "seriesId": series_id,
             "enabled": db::int(&row, "enabled").unwrap_or(0) != 0,
             "latestEpisodeStartMs": start,
-            "nextEpisodeStartMs": start.and_then(|start| cadence.map(|cadence| start + cadence)),
+            "nextEpisodeStartMs": next,
             "failedUnpublishedAttemptsLast24h": failures.as_ref().and_then(|row| db::int(row, "n")).unwrap_or(0),
         }));
     }

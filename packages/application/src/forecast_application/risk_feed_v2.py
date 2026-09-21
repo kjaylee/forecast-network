@@ -20,6 +20,7 @@ from forecast_domain.risk_feed import (
     ChannelCoverageV2,
     RiskFeedBindingV2,
     RiskFeedPayloadV2,
+    RiskFeedSeriesV2,
     RiskFeedSignalV2,
     RiskMappingProfileV2,
     SignedRiskFeedV2,
@@ -492,10 +493,16 @@ async def operations_health(db: Database, *, now_ms: int) -> dict[str, Any]:
             "WHERE json_extract(b.binding_json,'$.series_id')=l.series_id "
             "AND json_extract(b.binding_json,'$.target_start_ms')=l.target_start_ms)",
             (row["series_id"], now_ms - 86_400_000))
-        cadence = json.loads(row["series_json"])["cadence_ms"]
+        # The same rule the scheduler applies, so the health read names the start the next tick
+        # will actually try for — `latest + cadence` reported a start 33 hours in the past as
+        # "next" while the scheduler had nothing it could do about it.
+        from .risk_feed_series import next_episode_start
+        decoded = loads(RiskFeedSeriesV2, row["series_json"])
+        latest_ms = int(latest_start["start"]) if latest_start and latest_start["start"] else None
         series.append({"seriesId": row["series_id"], "enabled": bool(row["enabled"]),
-                       "latestEpisodeStartMs": latest_start["start"] if latest_start else None,
-                       "nextEpisodeStartMs": (latest_start["start"] + cadence) if latest_start and latest_start["start"] else None,
+                       "latestEpisodeStartMs": latest_ms,
+                       "nextEpisodeStartMs": next_episode_start(decoded, latest_start_ms=latest_ms, now_ms=now_ms)
+                       if latest_ms is not None else None,
                        "failedUnpublishedAttemptsLast24h": failures["n"] if failures else 0})
     # The grace is a quarter of each source's own interval, never less than five minutes. A
     # flat five minutes on a sixty-minute article is a jitter detector rather than a health

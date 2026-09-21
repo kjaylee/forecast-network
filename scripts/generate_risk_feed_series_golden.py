@@ -8,7 +8,8 @@ that a failure is recorded and retried on the next tick rather than inside the t
 
 Four things the vector is built to expose:
 
-  * `next_episode_start`. With a latest episode it is that start plus one cadence; without one it is
+  * `next_episode_start`. With a latest episode it is that start plus one cadence while that is still
+    ahead — a missed successor is skipped for the next boundary after now; without one it is
     the next cadence boundary, and a `now` that already *is* a boundary advances rather than
     returning itself. Off-by-one here publishes an episode a cadence early or repeats one.
   * `episode_question`. The template's four named fields are filled from the episode's own window,
@@ -136,6 +137,11 @@ async def build() -> dict:
         ("next:no-latest-mid", None, 1_800_000_000_123),
         ("next:no-latest-boundary", None, 1_800_000_000_000 - (1_800_000_000_000 % cadence)),
         ("next:after-latest", 1_800_000_000_000, 1_800_000_000_123),
+        # The successor of the latest start has itself passed: the next boundary after now, not
+        # the missed one. The instant is two cadences and a bit past the latest start.
+        ("next:after-latest-missed", 1_800_000_000_000, 1_800_000_000_000 + 2 * cadence + 5_000),
+        # Exactly at the successor, the successor has started.
+        ("next:after-latest-at-successor", 1_800_000_000_000, 1_800_000_000_000 + cadence),
     ]:
         decision = next_episode_start(series, latest_start_ms=latest, now_ms=now)
         fixture.calls.append({"call": name, "kind": "next_episode_start",
