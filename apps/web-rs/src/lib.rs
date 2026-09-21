@@ -5,6 +5,7 @@
 use serde_json::{json, Value};
 use worker::*;
 
+pub mod adjudication;
 pub mod admin;
 pub mod admin_markets;
 pub mod admin_ops;
@@ -17,6 +18,7 @@ pub mod application;
 pub mod article;
 pub mod attestation;
 pub mod auth;
+pub mod auth_routes;
 pub mod automation;
 pub mod billing;
 mod db;
@@ -34,6 +36,7 @@ pub mod html_parse;
 mod market_trades;
 mod markets;
 mod mutate;
+pub mod operator_routes;
 pub mod participation_holds;
 pub mod point_markets;
 mod points;
@@ -60,7 +63,7 @@ pub mod translation_admin;
 pub mod translations;
 pub mod wallet_login;
 pub mod wallets;
-mod writes;
+pub mod writes;
 
 pub const VERSION: &str = "0.13.0";
 pub const BOOKMARK_COOKIE: &str = "__Host-forecast_d1";
@@ -318,7 +321,7 @@ pub async fn scheduled(event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
         };
         let body = serde_json::Map::new();
         let response = if path == "/api/admin/sweep" {
-            writes::sweep(&context).await
+            operator_routes::sweep(&context).await
         } else {
             admin_risk::operate_route(&context, &body).await
         };

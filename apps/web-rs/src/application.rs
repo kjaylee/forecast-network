@@ -23,6 +23,7 @@ use serde_json::{json, Value};
 use worker::wasm_bindgen::JsCast;
 use worker::*;
 
+use crate::adjudication::Adjudication;
 use crate::ai::coordinator::{Coordinator, JsonFetcher, ProviderConfig};
 use crate::ai::early::Retained;
 use crate::ai::resolution::EvidenceFetcher;
@@ -31,7 +32,6 @@ use crate::scheduler::Scheduler;
 use crate::solana_rpc::{Rpc, Signer, SpendAuthorizer};
 use crate::source_watch::{Fetcher, WatchError};
 use crate::sources::TextResponse;
-use crate::writes::Adjudication;
 
 pub const GEMINI_HOST: &str = "generativelanguage.googleapis.com";
 pub const OPENAI_HOST: &str = "api.openai.com";
@@ -712,7 +712,7 @@ impl<'a> Application<'a> {
         &self,
         adjudication: Adjudication<'a>,
     ) -> Result<Value, crate::routes::RouteError> {
-        crate::writes::adjudicate_forecast(self.db, self.now_ms, adjudication).await
+        crate::adjudication::adjudicate_forecast(self.db, self.now_ms, adjudication).await
     }
 }
 

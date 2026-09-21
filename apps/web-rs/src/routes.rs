@@ -159,19 +159,20 @@ pub async fn dispatch_write(
     // that needed both would be a route no operator could reach.
     if path.starts_with("/api/admin/") {
         if let Some(id) = identifier(path, "/api/admin/forecasts/", "/adjudicate") {
-            return crate::writes::adjudicate(context, &id, body).await;
+            return crate::adjudication::adjudicate(context, &id, body).await;
         }
         if path == "/api/admin/automation/run" {
-            return crate::writes::run_automation(context).await;
+            return crate::operator_routes::run_automation(context).await;
         }
         if path == "/api/admin/sweep" {
-            return crate::writes::sweep(context).await;
+            return crate::operator_routes::sweep(context).await;
         }
         if path == "/api/admin/seed" {
             // An editorial seed is genuinely open by default: the band is the route's, and the
             // canonical-series flag is what tells the compiler this is a declared series.
             let question = body.get("question").and_then(Value::as_str).unwrap_or("");
-            let result = crate::writes::seed(context, question, "Forecast Editorial", Some((15, 85)), false).await?;
+            let result =
+                crate::operator_routes::seed(context, question, "Forecast Editorial", Some((15, 85)), false).await?;
             return Ok(api_response(result, 201, false)?);
         }
         if let Some(id) = identifier(path, "/api/admin/forecasts/", "/participation") {
@@ -251,16 +252,16 @@ pub async fn dispatch_write(
     // The routes that *make* a session come before the session requirement, for the obvious
     // reason: a caller with no session is exactly who they are for.
     if path == "/api/auth/register" {
-        return crate::writes::register(context, req, body).await;
+        return crate::auth_routes::register(context, req, body).await;
     }
     if path == "/api/auth/login" {
-        return crate::writes::login(context, req, body).await;
+        return crate::auth_routes::login(context, req, body).await;
     }
     if path == "/api/auth/logout" {
-        return crate::writes::logout(context, req).await;
+        return crate::auth_routes::logout(context, req).await;
     }
     if path.starts_with("/api/auth/wallet/") {
-        return crate::writes::wallet_login(context, req, path, body).await;
+        return crate::auth_routes::wallet_login(context, req, path, body).await;
     }
     // A market quote is the one trade a caller without a session may reach, because it binds
     // nothing — and a market fill needs a session with a message of its own. Both come before the
@@ -294,10 +295,10 @@ pub async fn dispatch_write(
         return crate::writes::share_card(context, user_id, body).await;
     }
     if path == "/api/seeker/verify" {
-        return crate::writes::seeker_verify(context, user_id, body).await;
+        return crate::auth_routes::seeker_verify(context, user_id, body).await;
     }
     if ["/api/wallet/challenge", "/api/wallet/link", "/api/wallet/unlink"].contains(&path) {
-        return crate::writes::wallet(context, req, path, user_id, body).await;
+        return crate::auth_routes::wallet(context, req, path, user_id, body).await;
     }
     if path == "/api/forecasts" {
         return crate::writes::publish_forecast(context, user_id, body).await;
@@ -311,7 +312,7 @@ pub async fn dispatch_write(
                     .chars()
                     .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | ':' | '-'));
             if shaped && matches!(action, "prepare" | "confirm") {
-                return crate::writes::attest(context, user_id, forecast_id, action, body).await;
+                return crate::operator_routes::attest(context, user_id, forecast_id, action, body).await;
             }
         }
     }

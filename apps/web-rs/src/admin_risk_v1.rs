@@ -40,7 +40,7 @@ pub async fn seed_route(context: &Context<'_>, body: &serde_json::Map<String, Va
     };
     // Rare tail events are useful risk questions even below the ordinary editorial uncertainty band.
     // Compiler, validation, publication and later explicit binding approval still apply.
-    let result = crate::writes::seed(context, question, "Forecast Editorial", None, true).await?;
+    let result = crate::operator_routes::seed(context, question, "Forecast Editorial", None, true).await?;
     Ok(api_response(result, 201, false)?)
 }
 

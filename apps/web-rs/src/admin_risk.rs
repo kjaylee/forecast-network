@@ -265,7 +265,7 @@ impl SeedCallback for Editorial<'_> {
             // explicit measurement interval as a distinct contract. The uncertainty band is *not*
             // applied: these questions are chosen to be open by construction, and the band exists
             // for editorial questions a person wrote.
-            crate::writes::seed(self.context, &question, "Forecast Editorial", None, true)
+            crate::operator_routes::seed(self.context, &question, "Forecast Editorial", None, true)
                 .await
                 .map_err(|error| {
                     // The error travels with the reference's own type and message, because that is
