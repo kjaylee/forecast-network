@@ -7,6 +7,7 @@ use worker::*;
 
 pub mod admin;
 pub mod admin_risk;
+pub mod admin_risk_v1;
 pub mod ai;
 pub mod analytics;
 pub mod application;

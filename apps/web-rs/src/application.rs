@@ -350,6 +350,35 @@ pub fn registry_rpc<'a>(env: &Env) -> Box<Rpc<'a>> {
     })
 }
 
+/// The relayer's identity: the bytes it signs as, and the key id the feed names it by.
+///
+/// One struct rather than two fields, because the key id is the hash of *those* bytes and a caller
+/// that could pair one identity's name with another's key would be signing under a name nobody
+/// verified. Both feed versions name their key this way, so it lives here rather than with either.
+pub struct Identity {
+    pub public_key_hex: String,
+    pub key_id: String,
+}
+
+impl Identity {
+    /// `publish_risk_v2`'s and `publish_feed`'s key id: `"forecast-relayer-" + sha256(key)[:16]`.
+    /// The reference's `relayer_public_key()` is `base58_decode(SOLANA_RELAYER)`, and it is the
+    /// *bytes* that are hashed — hashing the address that spells them is a different key id.
+    pub fn of(public_key: &[u8]) -> Self {
+        use sha2::{Digest, Sha256};
+        let digest = hex::encode(Sha256::digest(public_key));
+        Self {
+            public_key_hex: hex::encode(public_key),
+            key_id: format!("forecast-relayer-{}", &digest[..16]),
+        }
+    }
+}
+
+/// The relayer, both halves at once: the signer and the name it signs under.
+pub fn relayer_identity(env: &Env) -> Option<Identity> {
+    relayer_public_key(env).as_deref().map(Identity::of)
+}
+
 /// `relayer_public_key`: the address the relayer signs as, or `None` when it is not configured.
 ///
 /// The seed is required as well as the address, because an address without a key is an operator who
@@ -649,5 +678,36 @@ impl<'a> Application<'a> {
         adjudication: Adjudication<'a>,
     ) -> Result<Value, crate::routes::RouteError> {
         crate::writes::adjudicate_forecast(self.db, self.now_ms, adjudication).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The key id is the hash of the *key*, not of the address that spells it.
+    ///
+    /// The reference writes `"forecast-relayer-" + sha256(relayer_public_key()).hexdigest()[:16]`,
+    /// where `relayer_public_key()` is `base58_decode(SOLANA_RELAYER)`. Hashing the address string
+    /// instead is a plausible-looking port and a different key id, which would name a key that no
+    /// verifier can find. The expected values below are that expression, run:
+    ///
+    /// ```text
+    /// >>> base58_encode(b"forecast-network-relayer-key32ab!")   # 32 bytes
+    /// '7ts9fNsa3obSDTBSHexSZFGJeWKzFTcB6e8mXoGgxbjo'
+    /// >>> hashlib.sha256(key).hexdigest()[:16]
+    /// 'd14649b3c9d5bad6'
+    /// ```
+    #[test]
+    fn the_key_id_is_the_hash_of_the_key_not_of_its_address() {
+        let address = "7ts9fNsa3obSDTBSHexSZFGJeWKzFTcB6e8mXoGgxbjo";
+        let public_key = bs58::decode(address).into_vec().expect("a base58 address");
+        assert_eq!(public_key.len(), 32);
+        let identity = Identity::of(&public_key);
+        assert_eq!(
+            identity.public_key_hex,
+            "666f7265636173742d6e6574776f726b2d72656c617965722d6b657933326162"
+        );
+        assert_eq!(identity.key_id, "forecast-relayer-d14649b3c9d5bad6");
     }
 }

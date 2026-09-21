@@ -32,6 +32,7 @@
 use serde_json::{json, Value};
 use worker::*;
 
+use crate::admin::exact;
 use crate::api_response;
 use crate::application::DEVNET_GENESIS;
 use crate::risk_feed_series::SeedCallback;
@@ -70,22 +71,10 @@ pub fn feed_error(error: FeedError) -> RouteError {
 /// export sees the same number of rows here as there.
 const TRAINING_LIMIT: i64 = 500;
 
-/// The exact key set a route accepts.
-///
-/// `set(body) != {...}` in the reference, and the *set* is the check: a body with a right key
-/// missing and a wrong one added has the same length and is still refused.
-fn exact(body: &serde_json::Map<String, Value>, keys: &[&str]) -> std::result::Result<(), RouteError> {
-    let present: Vec<&str> = body.keys().map(String::as_str).collect();
-    if present.len() != keys.len() || !keys.iter().all(|key| present.contains(key)) {
-        return Err(feed_error(FeedError::refused("invalid operator body")));
-    }
-    Ok(())
-}
-
 /// The relayer's signature, as the feed publisher takes it, with the identity it signs as.
 struct Relayer<'a, 'b> {
     inner: &'a crate::solana_rpc::Signer<'b>,
-    identity: &'a Identity,
+    identity: &'a crate::application::Identity,
 }
 
 impl Signer for Relayer<'_, '_> {
@@ -214,8 +203,11 @@ impl LeaseRelease for ProductionRelease<'_> {
     }
 }
 
-/// `refresh_bound_prediction_v2`: bring one binding's forecast up to date.
+/// `refresh_bound_prediction_v2` and its v1 twin `refresh_bound_prediction`: bring one binding's
+/// forecast up to date. The two differ only in which view they read and which record they decode,
+/// so they are one seam with a flag rather than two that could drift.
 struct BindingRefresh<'a> {
+    v2: bool,
     session: &'a D1DatabaseSession,
     coordinator: &'a crate::ai::coordinator::Coordinator,
     fetch: &'a crate::ai::resolution::EvidenceFetcher,
@@ -233,8 +225,12 @@ impl RefreshCallback for BindingRefresh<'_> {
             crate::risk_refresh::refresh(
                 &crate::db::D1(self.session),
                 &binding_id,
-                crate::risk_refresh::CURRENT_V2,
-                true,
+                if self.v2 {
+                    crate::risk_refresh::CURRENT_V2
+                } else {
+                    crate::risk_refresh::CURRENT
+                },
+                self.v2,
                 &Prediction {
                     coordinator: self.coordinator,
                     fetch: self.fetch,
@@ -288,42 +284,10 @@ impl SeedCallback for Editorial<'_> {
 // ---------------------------------------------------------------------------------------------
 // The chain, and the seams over it.
 // ---------------------------------------------------------------------------------------------
-/// The relayer's identity: the bytes it signs as, and the key id the feed names it by.
-///
-/// One struct rather than two fields, because the key id is the hash of *those* bytes and a chain
-/// that could pair one identity's name with another's key would be signing under a name nobody
-/// verified.
-struct Identity {
-    public_key_hex: String,
-    key_id: String,
-}
-
-impl Identity {
-    /// `publish_risk_v2`'s key id: `"forecast-relayer-" + sha256(public_key).hexdigest()[:16]`.
-    fn of(public_key: &[u8]) -> Self {
-        use sha2::{Digest, Sha256};
-        let digest = hex::encode(Sha256::digest(public_key));
-        Self {
-            public_key_hex: hex::encode(public_key),
-            key_id: format!("forecast-relayer-{}", &digest[..16]),
-        }
-    }
-}
-
-/// The operator's chain adapter, over the session the request was served with.
-///
-/// Every seam below holds the *session* rather than a database value: a `D1` borrows a session that
-/// lives in the request frame, and a struct that owned one would outlive it. Constructing `D1` at
-/// each use is what keeps the seams `'a`-bounded rather than `'static`.
-///
-/// The signer is optional, and that is the reference's shape rather than a convenience: an operator
-/// with no relayer can still refresh a binding — the refresh never signs — and a tick with no
-/// relayer records a per-feed `publishFailure` instead of failing the whole tick. Only `publisher`
-/// requires it, because only a publication does.
 struct Chain<'a> {
     pub session: &'a D1DatabaseSession,
     signer: Option<Box<crate::solana_rpc::Signer<'a>>>,
-    identity: Option<Identity>,
+    identity: Option<crate::application::Identity>,
     pub now_ms: i64,
     pub daily_limit: i64,
 }
@@ -331,11 +295,10 @@ struct Chain<'a> {
 impl<'a> Chain<'a> {
     /// `app.registry`'s signer and `app.relayer_public_key()`, as the publish path takes them.
     fn from(context: &'a Context<'_>) -> Self {
-        let public_key = crate::application::relayer_public_key(context.env);
         Self {
             session: context.session,
             signer: crate::application::relayer_signer(context.env),
-            identity: public_key.as_deref().map(Identity::of),
+            identity: crate::application::relayer_identity(context.env),
             now_ms: context.now_ms,
             daily_limit: crate::writes::AI_DAILY_LIMIT,
         }
@@ -359,11 +322,13 @@ impl<'a> Chain<'a> {
     /// A refresh over this chain, with the AI the caller supplies.
     fn refresher<'b>(
         &'b self,
+        v2: bool,
         coordinator: &'b crate::ai::coordinator::Coordinator,
         fetch: &'b crate::ai::resolution::EvidenceFetcher,
         artifact_sql: &'b ArtifactSql,
     ) -> BindingRefresh<'b> {
         BindingRefresh {
+            v2,
             session: self.session,
             coordinator,
             fetch,
@@ -404,7 +369,9 @@ struct Tick<'a, 'b> {
 impl Tick<'_, '_> {
     /// `operate_feeds_v2`, with this tick's three callbacks.
     async fn run(&self, now_ms: i64) -> std::result::Result<Vec<Value>, FeedError> {
-        let refresh = self.chain.refresher(self.coordinator, self.fetch, self.artifact_sql);
+        let refresh = self
+            .chain
+            .refresher(true, self.coordinator, self.fetch, self.artifact_sql);
         let publisher = self.chain.publisher();
         let seed = Editorial { context: self.context };
         operate_feeds_v2(
@@ -584,7 +551,30 @@ pub async fn refresh_binding_route(
     let services = Services::build(context);
     let result = services
         .chain
-        .refresher(&services.coordinator, &services.fetch, &services.artifact_sql)
+        .refresher(true, &services.coordinator, &services.fetch, &services.artifact_sql)
+        .refresh(binding_id.to_string())
+        .await
+        .map_err(|error| RouteError::Failed(error.status, error.code, error.message))?;
+    Ok(api_response(result, 200, false)?)
+}
+
+/// `POST /api/admin/risk/bindings/{id}/refresh`: the v1 twin of the v2 refresh.
+///
+/// The same machinery over the frozen v1 view. It lives here rather than beside the rest of the v1
+/// registry because the refresh is the one v1 route that needs the chain and the AI, and splitting
+/// the seam across two modules would be the way the two versions drift apart.
+pub async fn refresh_legacy_binding_route(
+    context: &Context<'_>,
+    binding_id: &str,
+    body: &serde_json::Map<String, Value>,
+) -> Result<Response, RouteError> {
+    if !body.is_empty() {
+        return Err(crate::admin::refused());
+    }
+    let services = Services::build(context);
+    let result = services
+        .chain
+        .refresher(false, &services.coordinator, &services.fetch, &services.artifact_sql)
         .refresh(binding_id.to_string())
         .await
         .map_err(|error| RouteError::Failed(error.status, error.code, error.message))?;
@@ -739,32 +729,6 @@ pub async fn training_route(context: &Context<'_>, feed_id: &str) -> Result<Resp
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// The key id is the hash of the *key*, not of the address that spells it.
-    ///
-    /// The reference writes `"forecast-relayer-" + sha256(relayer_public_key()).hexdigest()[:16]`,
-    /// where `relayer_public_key()` is `base58_decode(SOLANA_RELAYER)`. Hashing the address string
-    /// instead is a plausible-looking port and a different key id, which would name a key that no
-    /// verifier can find. The expected values below are that expression, run:
-    ///
-    /// ```text
-    /// >>> base58_encode(b"forecast-network-relayer-key32ab!")   # 32 bytes
-    /// '7ts9fNsa3obSDTBSHexSZFGJeWKzFTcB6e8mXoGgxbjo'
-    /// >>> hashlib.sha256(key).hexdigest()[:16]
-    /// 'd14649b3c9d5bad6'
-    /// ```
-    #[test]
-    fn the_key_id_is_the_hash_of_the_key_not_of_its_address() {
-        let address = "7ts9fNsa3obSDTBSHexSZFGJeWKzFTcB6e8mXoGgxbjo";
-        let public_key = bs58::decode(address).into_vec().expect("a base58 address");
-        assert_eq!(public_key.len(), 32);
-        let identity = Identity::of(&public_key);
-        assert_eq!(
-            identity.public_key_hex,
-            "666f7265636173742d6e6574776f726b2d72656c617965722d6b657933326162"
-        );
-        assert_eq!(identity.key_id, "forecast-relayer-d14649b3c9d5bad6");
-    }
 
     fn body(pairs: &[(&str, Value)]) -> serde_json::Map<String, Value> {
         pairs

@@ -105,7 +105,7 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                 || path == "/api/admin/automation/run"
                 || path == "/api/admin/sweep"
                 || path == "/api/admin/seed"
-                || path.starts_with("/api/admin/risk/v2/")
+                || path.starts_with("/api/admin/risk/")
         }
         _ => false,
     }
@@ -172,6 +172,27 @@ pub async fn dispatch_write(
                 return crate::admin_risk::operate_route(context, body).await;
             }
             return Err(RouteError::NotFound("not_found", "Unknown risk v2 route."));
+        }
+        // The frozen v1 registry, in the reference's order: the seed, the refresh, the weight
+        // admission, then the binding gate and the publication. Its fallthrough is the generic one,
+        // because that is what the reference's fallthrough is.
+        if path == "/api/admin/risk/seed" {
+            return crate::admin_risk_v1::seed_route(context, body).await;
+        }
+        if let Some(id) = identifier(path, "/api/admin/risk/bindings/", "/refresh") {
+            return crate::admin_risk::refresh_legacy_binding_route(context, &id, body).await;
+        }
+        if path == "/api/admin/risk/weights" {
+            return crate::admin_risk_v1::retain_weights_route(context, body).await;
+        }
+        if path == "/api/admin/risk/bindings" {
+            return crate::admin_risk_v1::approve_binding_route(context, body).await;
+        }
+        if let Some(id) = identifier(path, "/api/admin/risk/bindings/", "/revoke") {
+            return crate::admin_risk_v1::revoke_binding_route(context, &id, body).await;
+        }
+        if let Some(id) = identifier(path, "/api/admin/risk/feeds/", "/publish") {
+            return crate::admin_risk_v1::publish_feed_route(context, &id, body).await;
         }
         return Err(RouteError::NotFound("not_found", "This page could not be found."));
     }

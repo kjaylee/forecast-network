@@ -15,6 +15,8 @@
 
 use worker::*;
 
+use crate::routes::RouteError;
+
 /// A credential shorter than this is not a credential. The reference's own floor.
 pub const MIN_TOKEN_LENGTH: usize = 32;
 pub const MAX_BODY_BYTES: usize = 16 * 1024;
@@ -69,6 +71,28 @@ pub fn authorized(env: &Env, req: &Request, scheduler_allowed: bool) -> bool {
 /// The two paths a scheduler credential may reach, and no others.
 pub fn scheduler_may_trigger(path: &str) -> bool {
     path == "/api/admin/risk/v2/operate" || path == "/api/admin/sweep"
+}
+
+/// What the entry answers a raised `ValueError` with.
+///
+/// An operator route that refuses its input does so by raising, and a `ValueError` is not an
+/// `AppError` — so it falls through the entry's `except Exception` and becomes this. Every operator
+/// route here refuses this way, which is why the shape is one function rather than a literal in
+/// each handler.
+pub fn refused() -> RouteError {
+    crate::routes::RouteError::Failed(503, "service_unavailable", "Please try again shortly.")
+}
+
+/// The exact key set a route accepts.
+///
+/// `set(body) != {...}` in the reference, and the *set* is the check: a body with one right key
+/// missing and a wrong one added has the same length and is still refused.
+pub fn exact(body: &serde_json::Map<String, serde_json::Value>, keys: &[&str]) -> Result<(), RouteError> {
+    let present: Vec<&str> = body.keys().map(String::as_str).collect();
+    if present.len() != keys.len() || !keys.iter().all(|key| present.contains(key)) {
+        return Err(refused());
+    }
+    Ok(())
 }
 
 #[cfg(test)]
