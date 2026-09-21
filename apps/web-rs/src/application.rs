@@ -415,6 +415,15 @@ async fn web_crypto_sign(_pkcs8: &[u8], _message: &[u8]) -> Option<Vec<u8>> {
     None
 }
 
+/// `WalletLogin.verify_signature`: the same WebCrypto verification, exposed as the seam the wallet
+/// sign-in takes. A wallet's signature is checked by the runtime's own implementation for the same
+/// reason the relayer's is: no part of this crate hand-rolls Ed25519.
+pub fn signature_verifier() -> Box<crate::wallets::SignatureVerifier> {
+    Box::new(|public_key: Vec<u8>, message: Vec<u8>, signature: Vec<u8>| {
+        Box::pin(async move { Ok(web_crypto_verify(&public_key, &message, &signature).await) })
+    })
+}
+
 /// The signing identity check. A signature nobody can verify against the configured relayer is
 /// worse than no signature: it would be *accepted* by this Worker and rejected by the chain.
 #[cfg(target_arch = "wasm32")]
