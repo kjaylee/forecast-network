@@ -303,6 +303,23 @@ pub trait PointsSummary {
     fn summary<'a>(&'a self, user_id: String) -> BorrowedFuture<'a, Result<Value, ()>>;
 }
 
+/// `on_create`, awaited only after ownership has been proven.
+///
+/// A trait for the same reason `PointsSummary` is one, and with the same consequence: a hook that
+/// applies a rate limit reads the request's own database, so its future cannot be `'static`.
+pub trait CreateHook {
+    fn created<'a>(&'a self) -> BorrowedFuture<'a, Result<(), ()>>;
+}
+
+/// A hook that does nothing, for the paths where creating a profile is not a counted event.
+pub struct NoHook;
+
+impl CreateHook for NoHook {
+    fn created<'a>(&'a self) -> BorrowedFuture<'a, Result<(), ()>> {
+        Box::pin(async { Ok(()) })
+    }
+}
+
 /// A summary that answers with nothing, for the paths whose subject has no ledger.
 pub struct NullPoints;
 

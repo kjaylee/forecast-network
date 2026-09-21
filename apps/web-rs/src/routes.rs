@@ -87,6 +87,7 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
             path == "/api/auth/register"
                 || path == "/api/auth/login"
                 || path == "/api/auth/logout"
+                || path.starts_with("/api/auth/wallet/")
                 || path == "/api/activity/read"
                 || identifier(path, "/api/creators/", "/follow").is_some()
                 || ["/forecast", "/comments", "/share", "/evidence", "/disputes"]
@@ -134,6 +135,9 @@ pub async fn dispatch_write(
     }
     if path == "/api/auth/logout" {
         return crate::writes::logout(context, req).await;
+    }
+    if path.starts_with("/api/auth/wallet/") {
+        return crate::writes::wallet_login(context, req, path, body).await;
     }
     let Some(user_id) = user_id else {
         return Err(RouteError::Unauthorized(

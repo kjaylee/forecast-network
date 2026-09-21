@@ -530,6 +530,189 @@ fn refused_from_points(error: crate::points::PointsError) -> RouteError {
     RouteError::Failed(error.status, error.code, error.message)
 }
 
+/// The wallet sign-in routes: one service, reached four ways.
+///
+/// Two of them refuse a body outright. A bootstrap that accepted client identity, or a cancellation
+/// that did, would be a way to influence a flow whose whole point is that the client supplies only
+/// a wallet and a signature — and only at the two moments the server asks for them.
+pub async fn wallet_login(context: &Context<'_>, req: &Request, path: &str, body: &Map<String, Value>) -> Handler {
+    let fingerprint = crate::auth::fingerprint(context.env, req)?;
+    // The reference puts no counter on cancellation, because a cancellation a rate limit refused
+    // would leave a half-finished sign-in the caller cannot clear.
+    if let Some(limit) = wallet_rate_limit(path) {
+        rate_limit(
+            context.session,
+            context.now_ms,
+            &format!("{}:{fingerprint}", wallet_scope(path)),
+            limit,
+            HOUR_MS,
+        )
+        .await?;
+    }
+    let origin = origin_of(req)?;
+    let context_token = crate::auth::cookie(req, crate::AUTH_CONTEXT_COOKIE);
+    let session_token = crate::auth::cookie(req, crate::SESSION_COOKIE);
+    let db = crate::db::D1(context.session);
+    let now = || context.now_ms;
+    let secret = session_secret(context)?;
+    let hash = |token: &str| crate::auth::token_hash(&secret, token);
+    let verifier = crate::application::signature_verifier();
+    let points = ProductionPoints {
+        session: context.session,
+    };
+    let hook = RegisterHook {
+        fingerprint: fingerprint.clone(),
+        session: context.session,
+        now_ms: context.now_ms,
+    };
+    let login = crate::wallet_login::WalletLogin {
+        db: &db,
+        now_ms: &now,
+        token_hash: &hash,
+        random_token: &random_token,
+        verify_signature: &verifier,
+        points: &points,
+        origin,
+        on_create: Some(&hook),
+    };
+    let context_value = context_token.as_ref().map(|token| json!(token));
+    match path {
+        "/api/auth/wallet/context" => {
+            if !body.is_empty() {
+                return Err(RouteError::Failed(
+                    400,
+                    "invalid_input",
+                    "Context bootstrap does not accept client identity.",
+                ));
+            }
+            let mut result = login
+                .context(context_value.as_ref())
+                .await
+                .map_err(refused_from_wallet)?;
+            let token = take_context_token(&mut result);
+            Ok(api_response_with(result, 200, false, crate::Cookies::Context(&token))?)
+        }
+        "/api/auth/wallet/challenge" => {
+            let result = login
+                .challenge(
+                    context_value.as_ref(),
+                    &Value::Object(body.clone()),
+                    session_token.as_deref(),
+                )
+                .await
+                .map_err(refused_from_wallet)?;
+            Ok(api_response(result, 200, false)?)
+        }
+        "/api/auth/wallet/verify" => {
+            let mut result = login
+                .verify(
+                    context_value.as_ref(),
+                    &Value::Object(body.clone()),
+                    session_token.as_deref(),
+                )
+                .await
+                .map_err(refused_from_wallet)?;
+            let token = take_session_token(&mut result);
+            Ok(api_response_with(result, 200, false, crate::Cookies::Session(&token))?)
+        }
+        _ => {
+            if !body.is_empty() {
+                return Err(RouteError::Failed(
+                    400,
+                    "invalid_input",
+                    "Cancellation does not accept client identity.",
+                ));
+            }
+            let result = login
+                .cancel(context_value.as_ref())
+                .await
+                .map_err(refused_from_wallet)?;
+            Ok(api_response(result, 200, false)?)
+        }
+    }
+}
+
+/// `PointsService.summary`, over the session the request was served with.
+struct ProductionPoints<'a> {
+    session: &'a D1DatabaseSession,
+}
+
+impl crate::wallets::PointsSummary for ProductionPoints<'_> {
+    fn summary<'a>(&'a self, user_id: String) -> crate::wallets::BorrowedFuture<'a, Result<Value, ()>> {
+        Box::pin(async move {
+            crate::points::summary(&crate::db::D1(self.session), &user_id)
+                .await
+                .map_err(|_| ())
+        })
+    }
+}
+
+/// The `wallet-register` bound, applied where the reference applies it: *after* ownership is proven,
+/// which is the only moment at which this is a registration rather than an attempt.
+struct RegisterHook<'a> {
+    fingerprint: String,
+    session: &'a D1DatabaseSession,
+    now_ms: i64,
+}
+
+impl crate::wallets::CreateHook for RegisterHook<'_> {
+    fn created<'a>(&'a self) -> crate::wallets::BorrowedFuture<'a, Result<(), ()>> {
+        Box::pin(async move {
+            rate_limit(
+                self.session,
+                self.now_ms,
+                &format!("wallet-register:{}", self.fingerprint),
+                5,
+                DAY_MS,
+            )
+            .await
+            .map_err(|_| ())
+        })
+    }
+}
+
+/// The rate-limit scope and its bound, per phase. Named rather than positional because two integers
+/// that look alike are exactly how a bound ends up on the wrong route.
+fn wallet_scope(path: &str) -> &'static str {
+    match path {
+        "/api/auth/wallet/context" => "wallet-context",
+        "/api/auth/wallet/challenge" => "wallet-login-challenge",
+        _ => "wallet-login-verify",
+    }
+}
+
+fn wallet_rate_limit(path: &str) -> Option<i64> {
+    match path {
+        "/api/auth/wallet/context" => Some(60),
+        "/api/auth/wallet/challenge" => Some(30),
+        "/api/auth/wallet/verify" => Some(40),
+        _ => None,
+    }
+}
+
+/// The origin, which the sign-in message quotes verbatim: a wallet signs the exact origin it was
+/// shown, so a loose spelling here would compare two different sites.
+fn origin_of(req: &Request) -> std::result::Result<String, RouteError> {
+    let url = req.url()?;
+    Ok(match url.port() {
+        Some(port) => format!("{}://{}:{port}", url.scheme(), url.host_str().unwrap_or("")),
+        None => format!("{}://{}", url.scheme(), url.host_str().unwrap_or("")),
+    })
+}
+
+/// `contextToken` is the cookie, not part of the body — the same rule as the session token.
+fn take_context_token(result: &mut Value) -> String {
+    result
+        .as_object_mut()
+        .and_then(|object| object.remove("contextToken"))
+        .and_then(|token| token.as_str().map(str::to_string))
+        .unwrap_or_default()
+}
+
+fn refused_from_wallet(error: crate::wallets::WalletError) -> RouteError {
+    RouteError::Failed(error.status, error.code, error.message)
+}
+
 /// `POST /api/forecasts/{id}/disputes`: a participant challenges the proposed resolution.
 ///
 /// The evidence is *collected here*, under the application's own AI lease, and only then is the

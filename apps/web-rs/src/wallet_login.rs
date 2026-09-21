@@ -9,8 +9,7 @@
 use crate::auth::{self, Authentication};
 use crate::db::{self, Database, Row};
 use crate::wallets::{
-    self, decode_address, decode_signature, BoxFuture, SignatureVerifier, WalletError, WalletService, CHAIN,
-    CHALLENGE_LIFETIME_MS,
+    self, decode_address, decode_signature, SignatureVerifier, WalletError, WalletService, CHAIN, CHALLENGE_LIFETIME_MS,
 };
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -52,7 +51,7 @@ pub struct WalletLogin<'a> {
     pub points: &'a dyn wallets::PointsSummary,
     pub origin: String,
     /// `on_create`, awaited only after ownership has been proven.
-    pub on_create: Option<&'a dyn Fn() -> BoxFuture<Result<(), ()>>>,
+    pub on_create: Option<&'a dyn wallets::CreateHook>,
 }
 
 impl<'a> WalletLogin<'a> {
@@ -529,7 +528,7 @@ impl<'a> WalletLogin<'a> {
             if let Some(on_create) = self.on_create {
                 // Account-creation quota is charged only after ownership is proven, so failed
                 // signatures and ordinary returning-wallet logins cannot exhaust it.
-                on_create().await.map_err(|_| storage_unavailable())?;
+                on_create.created().await.map_err(|_| storage_unavailable())?;
                 // The callback may await a remote limiter, and cancellation and expiry still take
                 // precedence — so everything is read again before the guarded batch.
                 row = self._challenge(identifier, context_token, address).await?;
@@ -931,6 +930,19 @@ mod tests {
         }
     }
 
+    /// The create hook, counting the profiles that were actually created — which is a fact about
+    /// when ownership was proven, not about how many times the route was reached.
+    struct RecordedHook {
+        state: Rc<State>,
+    }
+
+    impl wallets::CreateHook for RecordedHook {
+        fn created<'a>(&'a self) -> wallets::BorrowedFuture<'a, Result<(), ()>> {
+            self.state.creations.set(self.state.creations.get() + 1);
+            Box::pin(async { Ok(()) })
+        }
+    }
+
     /// The summaries the vector recorded, handed out in the order the sign-ins produced them. A
     /// sign-in that returned an earlier one's points is caught here rather than papered over.
     struct RecordedPoints {
@@ -951,7 +963,7 @@ mod tests {
         token: Box<dyn Fn() -> String>,
         verifier: Box<SignatureVerifier>,
         points: RecordedPoints,
-        on_create: Box<dyn Fn() -> BoxFuture<Result<(), ()>>>,
+        on_create: RecordedHook,
     }
 
     impl Effects {
@@ -978,10 +990,7 @@ mod tests {
                     Box::pin(async move { Ok(valid) })
                 }),
                 points: RecordedPoints { state: points },
-                on_create: Box::new(move || {
-                    on_create.creations.set(on_create.creations.get() + 1);
-                    Box::pin(async { Ok(()) })
-                }),
+                on_create: RecordedHook { state: on_create },
             }
         }
 
@@ -1108,7 +1117,7 @@ mod tests {
         let state = State::new(now, &calls);
         let effects = Effects::new(&state);
         let mut login = effects.login(&db, ORIGIN).expect("the reference origin is exact");
-        login.on_create = Some(&*effects.on_create);
+        login.on_create = Some(&effects.on_create);
         let auth = Authentication {
             db: &db,
             now_ms: &*effects.clock,
@@ -1283,7 +1292,7 @@ mod tests {
         let mut login = effects
             .login(&db, ESCAPED)
             .expect("a non-ASCII origin is still an exact origin");
-        login.on_create = Some(&*effects.on_create);
+        login.on_create = Some(&effects.on_create);
 
         let mut replay = Replay {
             calls: &calls,
