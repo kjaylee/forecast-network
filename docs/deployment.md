@@ -140,7 +140,21 @@ Python Worker keeps serving through the binding for whatever that edge does not
 claim. The operator host's launchd jobs for the tick and the sweep
 (`com.forecast-network.risk-v2-operator`, `com.forecast-network.sweep-trigger`)
 were booted out on 2026-09-21 and their plists kept; `launchctl bootstrap` restores
-them if the edge's schedule has to be taken off.
+them if the edge's schedule has to be taken off. The plists carry `RunAtLoad`, so a
+reboot of the host restores them too — which happened on 2026-09-22. They are left
+running on purpose until the scheduled tick fits the plan's CPU limit (see
+`docs/plans/2026-09-22-todo.md`); an HTTP tick is allowed more CPU than a
+scheduled one on the Free plan, so today the host's tick is the one that publishes
+more often. Retiring them for good means moving the plists out of
+`~/Library/LaunchAgents/`, not only booting them out.
+
+The GitHub `Feed fallback` workflow, which POSTed an operation tick from a runner
+once the public feed was stale, was removed on 2026-09-22. It existed because
+nothing but the operator's Mac drove the feed; the edge's own `* * * * *` schedule
+now retries the tick every minute in-process, so a runner retrying the same POST
+against the same failure (a D1 daily read limit, a CPU limit) added a failing run
+every five minutes and no publication. Rescue is the schedule's; observation stays
+with the `Watchdog` workflow and `scripts/monitor_risk_pipeline.py`.
 
 ## Operator actions
 
