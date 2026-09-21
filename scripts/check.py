@@ -62,6 +62,11 @@ def main() -> int:
                 # forwarded through the service binding and works, which is exactly why nothing
                 # else would ever say so.
                 [sys.executable, "scripts/route_parity.py", "--check"],
+                # The reference's v2 records differ from v1 by *virtual method overrides*. A port
+                # that models them as an enum has to dispatch on the variant, and one that did not
+                # refused every early proposal — an override is not an isinstance, so the audit that
+                # found the other v2 defect would not have found this one.
+                [sys.executable, "scripts/v2_overrides.py", "--check"],
                 # One scheduler pass over an *upgraded* question: the arm no other vector
                 # reaches, compared on the conversation rather than on the outcome.
                 [sys.executable, "scripts/generate_sweep_early_golden.py", "--check"],
