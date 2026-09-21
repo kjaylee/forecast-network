@@ -218,7 +218,7 @@ pub struct Job<'a> {
     pub clock: &'a dyn Fn() -> i64,
     /// Reading retained bytes. A dispute review re-reads the evidence it was filed against, so the
     /// reader travels with the job rather than being invented where it is used.
-    pub reader: &'a crate::ai::early::ArtifactReader,
+    pub reader: &'a dyn crate::ai::early::ArtifactReader,
 }
 
 /// What a failed attempt carries that a bare code does not.
@@ -583,7 +583,7 @@ struct Recovery<'a> {
     token: &'a dyn Fn() -> String,
     gate: Option<&'a dyn crate::mutate::FinalizationGate>,
     clock: &'a dyn Fn() -> i64,
-    reader: &'a crate::ai::early::ArtifactReader,
+    reader: &'a dyn crate::ai::early::ArtifactReader,
 }
 
 /// The work the paused task was doing, re-attempted. Named, because eight positional arguments
@@ -592,7 +592,7 @@ struct Work<'a> {
     db: &'a dyn Database,
     coordinator: &'a Coordinator,
     fetch: &'a EvidenceFetcher,
-    reader: &'a crate::ai::early::ArtifactReader,
+    reader: &'a dyn crate::ai::early::ArtifactReader,
     forecast: &'a forecast_domain::lifecycle::Forecast,
     previous: &'a str,
     now_ms: i64,
@@ -1034,7 +1034,7 @@ pub struct Scheduler<'a> {
     /// finalize is a purely local decision.
     pub registry: Option<&'a dyn crate::mutate::FinalizationGate>,
     /// Reading retained bytes, for the dispute review a recovery may have to run.
-    pub reader: &'a crate::ai::early::ArtifactReader,
+    pub reader: &'a dyn crate::ai::early::ArtifactReader,
 }
 
 impl Scheduler<'_> {
@@ -1228,7 +1228,7 @@ mod tests {
                 clock: &|| close_at,
                 daily_limit: 100,
                 registry: None,
-                reader: &crate::golden::refusing_reader(),
+                reader: &crate::golden::Refusing,
             },
             5,
             &mut tokens,
@@ -1266,7 +1266,7 @@ mod tests {
             token: &crate::mutate::random_token,
             gate: None,
             clock: &|| 0,
-            reader: &crate::golden::refusing_reader(),
+            reader: &crate::golden::Refusing,
         }));
         // The lease carries several transitions and reports success only if all of them succeed,
         // so this ends at the first thing needing a provider. What matters is that the lock
@@ -1311,7 +1311,7 @@ mod tests {
                 clock: &|| close_at + 1,
                 daily_limit: 100,
                 registry: None,
-                reader: &crate::golden::refusing_reader(),
+                reader: &crate::golden::Refusing,
             },
             5,
             &mut tokens,
@@ -1362,7 +1362,7 @@ mod tests {
                 clock: &|| until,
                 daily_limit: 100,
                 registry: None,
-                reader: &crate::golden::refusing_reader(),
+                reader: &crate::golden::Refusing,
             },
             5,
             &mut tokens,
@@ -1386,7 +1386,7 @@ mod tests {
                 clock: &|| until,
                 daily_limit: 100,
                 registry: None,
-                reader: &crate::golden::refusing_reader(),
+                reader: &crate::golden::Refusing,
             },
             5,
             &mut tokens,
@@ -1563,7 +1563,7 @@ mod outbox_tests {
                 clock: &|| now_ms,
                 daily_limit: 100,
                 registry,
-                reader: &crate::golden::refusing_reader(),
+                reader: &crate::golden::Refusing,
             },
             limit,
             &mut source,
@@ -1721,9 +1721,7 @@ mod outage_tests {
 #[cfg(test)]
 mod dispute_sweep_tests {
     use super::*;
-    use crate::golden::{
-        assert_all_cases_known, assert_case, block, entry, load, refusing_reader, static_database, Tokens,
-    };
+    use crate::golden::{assert_all_cases_known, assert_case, block, entry, load, static_database, Tokens};
 
     const REPLAYED: [&str; 2] = ["dispute:escalate", "dispute:retain"];
 
@@ -1758,7 +1756,7 @@ mod dispute_sweep_tests {
                     clock: &|| now_ms,
                     daily_limit: 100,
                     registry: None,
-                    reader: &refusing_reader(),
+                    reader: &crate::golden::Refusing,
                 },
                 3,
                 &mut source,

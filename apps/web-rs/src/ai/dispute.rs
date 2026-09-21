@@ -22,9 +22,9 @@ use forecast_domain::models::{
     AIProvenance, Dispute, DisputeReview, EvidenceSnapshot,
 };
 
-pub type BoxFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T>>>;
-/// Reading retained bytes by hash. `None` means the artifact is not there.
-pub type ArtifactReader = Box<dyn Fn(String) -> BoxFuture<Result<Option<String>, ()>>>;
+/// The reader is the same one the early-resolution path uses: retained bytes by hash, and one
+/// meaning for "not there". A second alias would be a second thing to keep in step.
+pub use super::early::ArtifactReader;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DisputeResult {
@@ -91,14 +91,14 @@ fn provenance(decision: &Decision, task: &str, input_hash: &str, output_hash: &s
 /// original bytes — but the URL is re-checked even though it was checked when it was collected: a
 /// retained artifact is evidence of what a page said, not a standing permission to have read it.
 async fn retained_documents(
-    reader: &ArtifactReader,
+    reader: &dyn ArtifactReader,
     snapshots: &[EvidenceSnapshot],
 ) -> Result<Vec<Value>, RetainedFailure> {
     let mut documents = Vec::new();
     for snapshot in snapshots {
         validate_public_url(&snapshot.url, false)
             .map_err(|error| RetainedFailure::Rejected(error.message().to_string()))?;
-        let Ok(Some(body)) = reader(snapshot.content_sha256.clone()).await else {
+        let Ok(Some(body)) = reader.read(snapshot.content_sha256.clone()).await else {
             return Err(RetainedFailure::Unavailable);
         };
         if body.trim().is_empty() || body.len() > MAX_SOURCE_BYTES || hash_hex(&body) != snapshot.content_sha256 {
@@ -133,7 +133,7 @@ impl From<RetainedFailure> for CoordinatorError {
 /// `review_dispute`.
 pub async fn review_dispute(
     coordinator: &Coordinator,
-    reader: &ArtifactReader,
+    reader: &dyn ArtifactReader,
     forecast: &Forecast,
     dispute: &Dispute,
     now_ms: i64,
@@ -343,7 +343,7 @@ mod tests {
 
     struct Harness {
         coordinator: Coordinator,
-        reader: ArtifactReader,
+        reader: crate::ai::early::Held,
         forecast: Forecast,
         dispute: Dispute,
         asked: Arc<Mutex<Vec<Value>>>,
@@ -398,10 +398,7 @@ mod tests {
             })
             .collect();
 
-        let reader: ArtifactReader = Box::new(move |digest| {
-            let body = bodies.get(&digest).cloned();
-            Box::pin(async move { Ok(body) })
-        });
+        let reader = crate::ai::early::Held(bodies);
         Harness {
             coordinator: Coordinator { providers, fetch },
             reader,
@@ -520,15 +517,11 @@ mod tests {
             let original = harness.forecast.resolution.as_ref().unwrap().base().evidence[0]
                 .content_sha256
                 .clone();
-            let bodies: BTreeMap<String, String> = serde_json::from_value(document["bodies"].clone()).unwrap();
-            let reader: ArtifactReader = Box::new(move |digest| {
-                let body = if digest == original {
-                    broken.clone()
-                } else {
-                    bodies.get(&digest).cloned()
-                };
-                Box::pin(async move { Ok(body) })
-            });
+            // The one body this case breaks, under the name it is retained by: the reader answers
+            // from what the vector recorded, with that single substitution.
+            let mut bodies: BTreeMap<String, String> = serde_json::from_value(document["bodies"].clone()).unwrap();
+            bodies.insert(original, broken.clone().unwrap_or_default());
+            let reader = crate::ai::early::Held(bodies);
             let error = block(review_dispute(
                 &harness.coordinator,
                 &reader,

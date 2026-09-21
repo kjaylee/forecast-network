@@ -35,8 +35,12 @@ pub fn refusing_coordinator() -> crate::ai::coordinator::Coordinator {
 }
 
 /// A reader that refuses every digest. For a path a case drives that never reads retained bytes.
-pub fn refusing_reader() -> crate::ai::early::ArtifactReader {
-    Box::new(|_digest: String| Box::pin(async { Err(()) }))
+pub struct Refusing;
+
+impl crate::ai::early::ArtifactReader for Refusing {
+    fn read<'a>(&'a self, _digest: String) -> crate::ai::early::BoxFuture<'a, Result<Option<String>, ()>> {
+        Box::pin(async { Err(()) })
+    }
 }
 
 pub fn block<F: std::future::Future>(future: F) -> F::Output {

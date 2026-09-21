@@ -149,7 +149,7 @@ pub struct Automation<'a> {
     /// The collector. Absent means the watcher cannot fetch, which is what `enabled` records.
     pub fetch: Option<&'a source_watch::Fetcher>,
     pub ai: Option<&'a Coordinator>,
-    pub reader: &'a ArtifactReader,
+    pub reader: &'a dyn ArtifactReader,
     pub now_ms: i64,
     pub token: &'a dyn Fn() -> String,
     pub enabled: bool,
@@ -163,7 +163,7 @@ impl<'a> Automation<'a> {
         db: &'a dyn Database,
         fetch: Option<&'a source_watch::Fetcher>,
         ai: Option<&'a Coordinator>,
-        reader: &'a ArtifactReader,
+        reader: &'a dyn ArtifactReader,
         now_ms: i64,
         token: &'a dyn Fn() -> String,
         enabled: bool,
@@ -422,7 +422,7 @@ impl<'a> Automation<'a> {
                 message: "The forecast changed while the event was reviewed.".to_string(),
             })?;
         for evidence in &trigger.evidence {
-            let retained = (self.reader)(evidence.content_sha256.clone()).await.ok().flatten();
+            let retained = self.reader.read(evidence.content_sha256.clone()).await.ok().flatten();
             let matches = retained.is_some_and(|body| source_watch::hash_hex(&body) == evidence.content_sha256);
             if !matches {
                 return Err(WatchError::Refused {
@@ -1301,10 +1301,8 @@ mod orchestration_tests {
     ///
     /// The leak is deliberate: an artifact reader's future is `'static`, and a test database is
     /// exactly the thing that *should* outlive the test.
-    fn artifact_reader(db: &'static crate::db::Sqlite) -> ArtifactReader {
-        Box::new(move |digest| {
-            Box::pin(async move { crate::scheduler::read_artifact(db, &digest).await.map_err(|_| ()) })
-        })
+    fn artifact_reader(db: &'static crate::db::Sqlite) -> crate::ai::early::Retained<'static> {
+        crate::ai::early::Retained(db)
     }
 
     /// The reference's collector, over the responses the vector recorded.
@@ -1473,7 +1471,7 @@ mod orchestration_tests {
                     clock: &|| now_ms,
                     daily_limit: 100,
                     registry: None,
-                    reader: &crate::golden::refusing_reader(),
+                    reader: &crate::golden::Refusing,
                 };
                 let limit = input["limit"].as_i64().unwrap_or(2);
                 let mut cron = Cron {
@@ -1599,7 +1597,7 @@ mod evidence_report_tests {
         let now_ms = case["now"].as_i64().unwrap_or(0);
         let enabled = name != "report:disabled";
         let (fetch, log) = collector(document, case);
-        let reader: ArtifactReader = Box::new(|_digest: String| Box::pin(async move { Err(()) }));
+        let reader = crate::golden::Refusing;
         let token = || tokens.next();
         // A report never asks a model, so the coordinator is never reached; it is present because
         // the watcher's shape requires one to be configured.

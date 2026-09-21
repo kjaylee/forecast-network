@@ -44,9 +44,44 @@ const FRESHNESS_EXCERPT_BYTES: usize = 16_000;
 const FRESHNESS_CONTEXT_BYTES: usize = 65_536;
 const FRESHNESS_CANDIDATES: usize = 3;
 
-pub type BoxFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T>>>;
+pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a>>;
+
 /// Reading retained bytes by hash. `None` means the artifact is not there.
-pub type ArtifactReader = Box<dyn Fn(String) -> BoxFuture<Result<Option<String>, ()>>>;
+///
+/// A trait rather than a boxed closure, because the future has to *borrow* the reader: in
+/// production the bytes come from the session the request was served with, which is a local rather
+/// than a `'static` handle. A closure boxed for `'static` would have to own a database it cannot
+/// own, and leaking one per request is how a Worker grows without bound.
+pub trait ArtifactReader {
+    fn read<'a>(&'a self, digest: String) -> BoxFuture<'a, Result<Option<String>, ()>>;
+}
+
+/// The retained store, read through whatever database the caller holds.
+pub struct Retained<'a>(pub &'a dyn crate::db::Database);
+
+impl ArtifactReader for Retained<'_> {
+    fn read<'a>(&'a self, digest: String) -> BoxFuture<'a, Result<Option<String>, ()>> {
+        Box::pin(async move {
+            let row = self
+                .0
+                .first("SELECT body FROM artifacts WHERE hash=?", &[serde_json::json!(digest)])
+                .await
+                .map_err(|_| ())?;
+            Ok(row.and_then(|row| crate::db::text(&row, "body").map(str::to_string)))
+        })
+    }
+}
+
+/// Bytes the caller already holds, for a replay that must answer from what the vector recorded.
+#[derive(Default)]
+pub struct Held(pub std::collections::BTreeMap<String, String>);
+
+impl ArtifactReader for Held {
+    fn read<'a>(&'a self, digest: String) -> BoxFuture<'a, Result<Option<String>, ()>> {
+        let found = self.0.get(&digest).cloned();
+        Box::pin(async move { Ok(found) })
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct ObservationReview {
@@ -299,14 +334,14 @@ fn stamps_in(text: &str) -> Vec<String> {
 
 /// Read every snapshot back from the bytes retained for it, or say the record is broken.
 async fn retained_documents(
-    reader: &ArtifactReader,
+    reader: &dyn ArtifactReader,
     snapshots: &[EvidenceSnapshot],
     message: &str,
 ) -> Result<Vec<Value>, CoordinatorError> {
     let mut documents = Vec::new();
     for snapshot in snapshots {
         validate_public_url(&snapshot.url, true).map_err(|_| unavailable(message))?;
-        let Ok(Some(body)) = reader(snapshot.content_sha256.clone()).await else {
+        let Ok(Some(body)) = reader.read(snapshot.content_sha256.clone()).await else {
             return Err(unavailable(message));
         };
         if body.trim().is_empty() || body.len() > MAX_SOURCE_BYTES || hash_hex(&body) != snapshot.content_sha256 {
@@ -357,7 +392,7 @@ fn content_commitment(body: &str) -> Result<(String, String, Option<String>, &'s
 /// `review_source_observation`.
 pub async fn review_source_observation(
     coordinator: &Coordinator,
-    reader: &ArtifactReader,
+    reader: &dyn ArtifactReader,
     forecast: &Value,
     observation: &Value,
     now_ms: i64,
@@ -410,7 +445,7 @@ pub async fn review_source_observation(
         ));
     };
     let artifact_hash = observation["artifactHash"].as_str().unwrap_or_default().to_string();
-    let Ok(Some(body)) = reader(artifact_hash.clone()).await else {
+    let Ok(Some(body)) = reader.read(artifact_hash.clone()).await else {
         return Err(unavailable("Original official article is missing or corrupted"));
     };
     if body.trim().is_empty() || body.len() > MAX_SOURCE_BYTES || hash_hex(&body) != artifact_hash {
@@ -778,7 +813,7 @@ const FRESHNESS_POLICY: &str = "Check whether the exact immutable YES event is a
 /// `propose_early_resolution`.
 pub async fn propose_early_resolution(
     coordinator: &Coordinator,
-    reader: &ArtifactReader,
+    reader: &dyn ArtifactReader,
     forecast: &ForecastV2,
     now_ms: i64,
 ) -> Result<EarlyResolutionResult, CoordinatorError> {
@@ -957,7 +992,7 @@ pub async fn propose_early_resolution(
 /// would be a way to publish a question on evidence nobody has seen.
 pub async fn check_question_freshness(
     coordinator: &Coordinator,
-    reader: &ArtifactReader,
+    reader: &dyn ArtifactReader,
     specification: &ForecastSpecification,
     observations: &[Value],
     now_ms: i64,
@@ -988,7 +1023,7 @@ pub async fn check_question_freshness(
         if !hosts.iter().any(|known| known.as_deref() == Some(host.as_str())) || seen.contains(&artifact_hash) {
             continue;
         }
-        let Ok(Some(body)) = reader(artifact_hash.clone()).await else {
+        let Ok(Some(body)) = reader.read(artifact_hash.clone()).await else {
             return Err(unavailable("Cached official article is missing or corrupted"));
         };
         if body.trim().is_empty() || body.len() > MAX_SOURCE_BYTES || hash_hex(&body) != artifact_hash {
@@ -1105,7 +1140,7 @@ mod tests {
 
     struct Harness {
         coordinator: Coordinator,
-        reader: ArtifactReader,
+        reader: Held,
         asked: Arc<Mutex<Vec<Value>>>,
     }
 
@@ -1149,14 +1184,11 @@ mod tests {
             })
             .collect();
         let retained = body.to_string();
-        let reader: ArtifactReader = Box::new(move |digest| {
-            let body = if digest == crate::source_watch::hash_hex(&retained) {
-                Some(retained.clone())
-            } else {
-                None
-            };
-            Box::pin(async move { Ok(body) })
-        });
+        // The one body this harness retains, under the name it is retained by.
+        let reader = Held(std::collections::BTreeMap::from([(
+            crate::source_watch::hash_hex(&retained),
+            retained.clone(),
+        )]));
         Harness {
             coordinator: Coordinator { providers, fetch },
             reader,
