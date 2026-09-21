@@ -36,6 +36,15 @@
 //! event was reviewed`. A fixture that reaches this arm therefore needs `reviewed_trigger`'s shape
 //! rebuilt for that forecast — evidence, verification, event times, qualification, qualifier and
 //! counter-qualifier provenance — which is the next unit of work rather than a line of setup.
+//!
+//! And a third thing, found by experiment rather than by reading: **reaching the arm is not enough
+//! to test it.** A pass was driven over that fixture in both languages, and the *ordinary* pipeline
+//! produces byte-identical results — the same `LOCKED` → `RESOLVING` step, the same sweep counts,
+//! and the same refusal, because the fixture's early pipeline refuses at the source gate before it
+//! builds a payload. The branch was then removed from this crate and the pass run again: the same
+//! output, character for character. A test built on that fixture would pass whether or not the
+//! branch is correct, which is worse than no test, so it was deleted. What a vector needs is a
+//! fixture where the early pipeline *succeeds*.
 
 use serde_json::{json, Value};
 
