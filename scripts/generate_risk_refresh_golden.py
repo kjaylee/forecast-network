@@ -26,8 +26,6 @@ Regenerate with `--write`; CI runs `--check`.
 
 from __future__ import annotations
 
-import argparse
-import asyncio
 import json
 import sys
 from pathlib import Path
@@ -42,11 +40,12 @@ from forecast_application.risk_refresh import (  # noqa: E402
 )
 from forecast_application.sources import Artifact  # noqa: E402
 from forecast_domain.serialization import content_hash  # noqa: E402
+from golden_cli import golden_main  # noqa: E402
 
 from tests.test_risk_feed_contract import GENESIS  # noqa: E402
 from tests.test_risk_feed_v2_producer import (  # noqa: E402
     RiskFeedV2ProducerTests,  # noqa: E402
-    )
+)
 
 GOLDEN = ROOT / "tests/golden/risk-refresh-golden.json"
 
@@ -154,27 +153,5 @@ async def build() -> dict:
     }
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--write", action="store_true", help="rewrite the golden file")
-    parser.add_argument("--check", action="store_true", help="fail if the golden file is stale")
-    arguments = parser.parse_args()
-    document = json.dumps(asyncio.run(build()), indent=2, sort_keys=True, ensure_ascii=False,
-                          default=lambda value: getattr(value, "body", str(value))) + "\n"
-    if arguments.write:
-        GOLDEN.write_text(document)
-        print(f"wrote {GOLDEN.relative_to(ROOT)}")
-        return 0
-    if arguments.check:
-        current = GOLDEN.read_text() if GOLDEN.exists() else ""
-        if current != document:
-            print(f"{GOLDEN.relative_to(ROOT)} is stale; regenerate with --write", file=sys.stderr)
-            return 1
-        print(f"{GOLDEN.relative_to(ROOT)} is current")
-        return 0
-    print(document)
-    return 0
-
-
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(golden_main(build, GOLDEN, description=__doc__, default=lambda value: getattr(value, "body", str(value))))

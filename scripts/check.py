@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -175,11 +176,22 @@ def main() -> int:
             ["ruff", "check", "packages", "tests", "scripts", "apps/web/src"],
             ["mypy", "--strict", "packages/domain/src", "packages/application/src"],
         ])
-    for command in commands:
-        completed = subprocess.run(command, cwd=ROOT, check=False)
-        if completed.returncode:
-            return completed.returncode
-    return 0
+    # The generator checks are independent processes that each import the application and
+    # build their fixture from scratch; run one at a time they took as long as the test suite.
+    # They run a few at a time, each one's output printed whole as it finishes so the log
+    # reads as before, and every one runs even after a failure so one stale vector does not
+    # hide another.
+    failed = 0
+    with ThreadPoolExecutor(max_workers=max(2, min(4, (os.cpu_count() or 2) // 2))) as pool:
+        for completed in pool.map(lambda command: subprocess.run(command, cwd=ROOT, check=False,
+                                                                capture_output=True, text=True), commands):
+            sys.stdout.write(completed.stdout)
+            sys.stderr.write(completed.stderr)
+            sys.stdout.flush()
+            if completed.returncode:
+                failed += 1
+                print(f"failed ({completed.returncode}): {' '.join(completed.args[1:])}", file=sys.stderr)
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

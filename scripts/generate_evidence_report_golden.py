@@ -24,9 +24,6 @@ Regenerate with `--write`; CI runs `--check`.
 
 from __future__ import annotations
 
-import argparse
-import asyncio
-import json
 import sys
 from pathlib import Path
 
@@ -34,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "packages/domain/src"), str(ROOT / "packages/application/src"), str(ROOT)]
 
 from forecast_application.errors import AppError  # noqa: E402
+from golden_cli import golden_main  # noqa: E402
 
 from tests import test_automation_integration as fixtures  # noqa: E402
 from tests.test_automation_integration import EvidenceReportTests  # noqa: E402
@@ -225,26 +223,5 @@ async def build() -> dict:
     }
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--write", action="store_true", help="rewrite the golden file")
-    parser.add_argument("--check", action="store_true", help="fail if the golden file is stale")
-    arguments = parser.parse_args()
-    document = json.dumps(asyncio.run(build()), indent=2, sort_keys=True, ensure_ascii=False) + "\n"
-    if arguments.write:
-        GOLDEN.write_text(document)
-        print(f"wrote {GOLDEN.relative_to(ROOT)}")
-        return 0
-    if arguments.check:
-        current = GOLDEN.read_text() if GOLDEN.exists() else ""
-        if current != document:
-            print(f"{GOLDEN.relative_to(ROOT)} is stale; regenerate with --write", file=sys.stderr)
-            return 1
-        print(f"{GOLDEN.relative_to(ROOT)} is current")
-        return 0
-    print(document)
-    return 0
-
-
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(golden_main(build, GOLDEN, description=__doc__))
