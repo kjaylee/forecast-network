@@ -904,9 +904,11 @@ mod tests {
                 counter: Cell::new(0),
                 verified: RefCell::new(Vec::new()),
                 creations: Cell::new(0),
-                // `PointsService(self.db).summary(uid)` is unported, so each summary arrives from
-                // the vector, in the order the sign-ins produced them. A sign-in that returned an
-                // earlier one's points would be caught here rather than papered over.
+                // The summaries arrive from the vector rather than from `PointsService.summary`,
+                // which *is* ported — this fixture answers from what the reference produced so the
+                // comparison is against the reference's own numbers, in the order the sign-ins
+                // produced them. A sign-in that returned an earlier one's points is caught here
+                // rather than papered over.
                 points: RefCell::new(
                     recorded
                         .iter()

@@ -91,9 +91,6 @@ pub async fn rate_limit(
 }
 
 /// `Application._card`: the quality card for one forecast.
-// The route that dispatches adjudication is the `Application` composition root, which is not
-// ported yet; this path is reachable from its own golden and from nothing else so far.
-#[allow(dead_code)]
 async fn card_row(
     db: &dyn crate::db::Database,
     forecast_id: &str,
@@ -131,7 +128,6 @@ pub struct Adjudication<'a> {
     pub token: &'a dyn Fn() -> String,
 }
 
-#[allow(dead_code)]
 pub async fn adjudicate_forecast(
     db: &dyn crate::db::Database,
     now_ms: i64,
@@ -635,7 +631,6 @@ async fn prior(
 
 /// `_prior`, over the `Database` trait rather than a session: the adjudication path is reachable
 /// from tests, and a helper that demanded a D1 session would make the path unreachable there.
-#[allow(dead_code)]
 async fn prior_row(
     db: &dyn crate::db::Database,
     user_id: &str,

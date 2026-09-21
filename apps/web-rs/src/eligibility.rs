@@ -297,10 +297,9 @@ mod tests {
 
 // --------------------------------------------------------------------------- the deciding half
 //
-// Nothing calls these yet, and that is a fact about the port rather than about the code: the
-// early-resolution automation that would is not ported, and it needs the AI pipeline to produce
-// the trigger these take. The marker is here so the warning does not have to be read as a
-// mistake, and it goes when the caller lands.
+// The caller is `automation::Automation::accept`, which reads the trigger out of a reviewed
+// observation and holds it to retained bytes before this runs. These were marked `allow(dead_code)`
+// while that half was missing; the marker is gone, and their caller is one `grep` away.
 
 use forecast_domain::content_hash;
 use forecast_domain::lifecycle::{Command, CommandReceipt, DomainEvent, EarlyResolutionTrigger, Payload, Snapshot};
