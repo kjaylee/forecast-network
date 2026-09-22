@@ -1,0 +1,188 @@
+apps/web-rs/src/analytics.rs:656
+    SCAN users USING INDEX sqlite_autoindex_users_1
+    SELECT id,created_at FROM users WHERE created_at<? ORDER BY id LIMIT ?
+apps/web-rs/src/analytics.rs:660
+    SCAN f USING INDEX sqlite_autoindex_forecasts_1
+    SELECT f.id,f.creator_id,f.created_at,f.open_at,f.close_at,f.finalized_outcome,f.ai_forecast IS NOT NULL AS has_ai,CASE WHEN json_type(f.snapshot,'$.specification.ambiguity_score_bp')='integer' AND js
+apps/web-rs/src/analytics.rs:703
+    SCAN e
+    SELECT e.forecast_id,e.created_at,json_extract(e.event,'$.command_name') AS command_name,a.hash AS artifact_hash,json_extract(a.body,'$.disputant_id') AS user_id,json_extract(a.body,'$.dispute_hash') 
+apps/web-rs/src/analytics.rs:712
+    SCAN product_analytics_exclusions USING INDEX sqlite_autoindex_product_analytics_exclusions_1
+    SELECT * FROM product_analytics_exclusions ORDER BY subject_kind,subject_id,reason LIMIT ?
+apps/web-rs/src/analytics.rs:716
+    SCAN product_analytics_identity_links USING INDEX sqlite_autoindex_product_analytics_identity_links_1
+    SELECT alias_user_id,canonical_user_id FROM product_analytics_identity_links ORDER BY alias_user_id LIMIT ?
+apps/web-rs/src/analytics.rs:734
+    SCAN registry_delivery
+    SELECT forecast_id,signature,submitted_at,status FROM registry_delivery WHERE submitted_at>=? AND submitted_at<? AND signature IS NOT NULL ORDER BY signature LIMIT ?
+apps/web-rs/src/automation.rs:109
+    SCAN official_watch_sources USING COVERING INDEX official_watch_due
+    SELECT COUNT(*) AS sources, SUM(enabled) AS enabled FROM official_watch_sources
+apps/web-rs/src/automation.rs:116
+    SCAN official_source_reviews USING COVERING INDEX official_review_due
+    SELECT state,COUNT(*) AS count FROM official_source_reviews GROUP BY state
+apps/web-rs/src/automation.rs:629
+    SCAN official_source_reviews
+    SELECT 1 FROM official_source_reviews WHERE forecast_id=? AND specification_hash=? AND id!=? AND json_extract(result,'$.dismissible') IS NOT 1 LIMIT 1
+apps/web-rs/src/billing.rs:179
+    SCAN service_billing_sandbox_invoices
+    SELECT body FROM service_billing_sandbox_invoices
+apps/web-rs/src/forecasts.rs:134
+    SCAN forecasts
+    SCAN f
+    SCAN r
+    SCAN eligible_user_forecasts
+    SELECT COUNT(*) AS total,SUM(CASE WHEN state='OPEN' AND open_at<=? AND close_at>? AND NOT EXISTS(SELECT 1 FROM active_participation_holds h WHERE h.forecast_id=forecasts.id) THEN 1 ELSE 0 END) AS acti
+apps/web-rs/src/golden.rs:78
+    SCAN sqlite_master
+    SELECT name,sql FROM sqlite_master WHERE type='trigger'
+apps/web-rs/src/golden.rs:121
+    SCAN sqlite_master
+    SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name
+apps/web-rs/src/point_markets.rs:195
+    SCAN point_markets
+    SELECT COALESCE(SUM(reserve_atomic),0) amount FROM point_markets WHERE mode=?
+apps/web-rs/src/point_markets.rs:1104
+    SCAN s USING COVERING INDEX sqlite_autoindex_market_settlements_2
+    SCAN p
+    SELECT 1 FROM market_eligibility_anomalies WHERE forecast_id=?
+apps/web-rs/src/point_markets.rs:1170
+    SCAN s USING COVERING INDEX sqlite_autoindex_market_settlements_2
+    SCAN p
+    SELECT 1 FROM market_eligibility_anomalies WHERE forecast_id=?
+apps/web-rs/src/point_markets.rs:1247
+    SCAN market_positions USING INDEX sqlite_autoindex_market_positions_1
+    SELECT * FROM market_positions WHERE forecast_id=? AND settled=0 ORDER BY user_id LIMIT ?
+apps/web-rs/src/point_markets.rs:1358
+    SCAN market_positions
+    SELECT COUNT(*) n FROM market_positions WHERE forecast_id=? AND settled=0
+apps/web-rs/src/point_markets.rs:1386
+    SCAN market_positions
+    SELECT COUNT(*) n FROM market_positions WHERE forecast_id=? AND settled=0
+apps/web-rs/src/points.rs:129
+    SCAN json_each VIRTUAL TABLE INDEX 1:
+    SELECT * FROM point_positions WHERE user_id=? AND forecast_id IN (SELECT value FROM json_each(?))
+apps/web-rs/src/points.rs:142
+    SCAN sqlite_master
+    SELECT name FROM sqlite_master WHERE type='table' AND name IN ('market_account_ledger','point_eligibility_adjustments','market_fill_voids','point_evidence_rewards')
+apps/web-rs/src/points.rs:266
+    SCAN json_each VIRTUAL TABLE INDEX 1:
+    SELECT * FROM point_positions WHERE user_id=? AND forecast_id IN (SELECT value FROM json_each(?))
+apps/web-rs/src/projections.rs:177
+    SCAN u
+    SCAN f
+    SCAN r
+    SCAN v
+    SCAN e USING INDEX events_finalization_quality
+    SCAN ledger
+    SCAN scored
+    SCAN scored
+    SCAN ledger
+    SCAN scored
+    SCAN scored
+    SCAN calibration_bins
+    SCAN scored
+    SCAN newest
+    SCAN scored
+    SCAN highlight
+    WITH target AS ( SELECT id,display_name,handle,created_at FROM users WHERE id=? ), finalizations AS ( SELECT e.forecast_id,MIN(e.created_at) AS finalized_at FROM events e JOIN eligible_reputation_scor
+apps/web-rs/src/reads.rs:530
+    SCAN r
+    SCAN eligible_user_forecasts
+    SELECT forecast_id,body,revision FROM eligible_user_forecasts WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1000
+apps/web-rs/src/reads.rs:608
+    SCAN follows USING COVERING INDEX sqlite_autoindex_follows_1
+    SELECT COUNT(*) AS n FROM follows WHERE creator_id=?
+apps/web-rs/src/reads.rs:657
+    SCAN point_markets
+    SELECT forecast_id FROM point_markets ORDER BY created_at DESC LIMIT 100
+apps/web-rs/src/registry_chain.rs:1095
+    SCAN ev VIRTUAL TABLE INDEX 3:
+    SCAN r
+    SCAN forecast_resolution_blockers
+    SELECT 1 FROM forecast_resolution_blockers WHERE forecast_id=?
+apps/web-rs/src/reputation.rs:402
+    SCAN events USING INDEX events_finalization_quality
+    SCAN events USING INDEX events_finalization_quality
+    SELECT * FROM forecast_quality_history WHERE user_id=? AND finalized_at<=? AND eligibility_at<=?
+apps/web-rs/src/reputation.rs:414
+    SCAN r
+    SCAN eligible_user_forecasts
+    SELECT COUNT(*) AS n FROM eligible_user_forecasts WHERE user_id=?
+apps/web-rs/src/reputation.rs:435
+    SCAN e
+    SELECT DISTINCT a.hash FROM events e JOIN artifacts a ON a.hash=json_extract(e.event,'$.artifact_hash') WHERE json_extract(e.event,'$.command_name')='submit_dispute' AND json_extract(a.body,'$.disputa
+apps/web-rs/src/reputation.rs:442
+    SCAN e
+    SELECT DISTINCT r.hash,r.body FROM events e JOIN artifacts r ON r.hash=json_extract(e.event,'$.artifact_hash') JOIN artifacts d ON d.hash=json_extract(r.body,'$.dispute_hash') WHERE json_extract(e.eve
+apps/web-rs/src/risk_feed.rs:21
+    SCAN u
+    SCAN events USING INDEX events_finalization_quality
+    SCAN events USING INDEX events_finalization_quality
+    SCAN h
+    SELECT json_object('id',f.id,'specification_hash',f.specification_hash,'category',f.category, 'state',f.state,'open_at',f.open_at,'close_at',f.close_at,'revision',f.revision, 'ai', (SELECT body FROM a
+apps/web-rs/src/risk_feed.rs:465
+    SCAN mutation_guards
+    DELETE FROM mutation_guards WHERE token=? OR token LIKE ?
+apps/web-rs/src/risk_feed_series.rs:306
+    SCAN risk_feed_series_v2 USING INDEX sqlite_autoindex_risk_feed_series_v2_1
+    SELECT * FROM risk_feed_series_v2 WHERE enabled=1 ORDER BY series_id LIMIT 16
+apps/web-rs/src/risk_feed_v2.rs:1039
+    SCAN risk_feed_operations_v2 USING INDEX sqlite_autoindex_risk_feed_operations_v2_1
+    SELECT * FROM risk_feed_operations_v2 WHERE enabled=1 ORDER BY feed_id LIMIT 8
+apps/web-rs/src/risk_feed_v2.rs:1148
+    SCAN risk_feed_operations_v2 USING INDEX sqlite_autoindex_risk_feed_operations_v2_1
+    SELECT * FROM risk_feed_operations_v2 ORDER BY feed_id LIMIT 8
+apps/web-rs/src/risk_feed_v2.rs:1205
+    SCAN risk_feed_series_v2 USING INDEX sqlite_autoindex_risk_feed_series_v2_1
+    SELECT series_id,enabled,series_json FROM risk_feed_series_v2 ORDER BY series_id LIMIT 16
+apps/web-rs/src/risk_feed_v2.rs:1225
+    SCAN b
+    SELECT COUNT(*) AS n FROM risk_feed_series_log_v2 l WHERE l.series_id=? AND l.attempted_at>? AND l.outcome LIKE 'failed:%' AND NOT EXISTS(SELECT 1 FROM risk_feed_bindings_v2 b WHERE json_extract(b.bin
+apps/web-rs/src/risk_feed_v2.rs:1266
+    SCAN forecasts
+    SELECT COUNT(*) AS n FROM forecasts WHERE job_error IS NOT NULL
+apps/web-rs/src/risk_feed_v2.rs:1295
+    SCAN events USING INDEX events_finalization_quality
+    SELECT b.binding_id,b.binding_json,f.id AS forecast_id,f.finalized_outcome,z.finalized_at, MAX(z.finalized_at,COALESCE(c.created_at,0)) AS eligibility_at FROM risk_feed_bindings_v2 b JOIN forecasts f 
+apps/web-rs/src/scheduler.rs:81
+    SCAN outbox
+    UPDATE outbox SET status='processed',processed_at=? WHERE kind='RESOLUTION_COMMITMENT_REQUIRED' AND status='awaiting_adapter' AND EXISTS (SELECT 1 FROM registry_delivery d JOIN registry_intents i USIN
+apps/web-rs/src/scheduler.rs:89
+    SCAN outbox
+    SCAN f
+    SCAN ev VIRTUAL TABLE INDEX 3:
+    SCAN r
+    SCAN r
+    SELECT * FROM outbox WHERE status='pending' AND NOT EXISTS (SELECT 1 FROM forecast_resolution_blockers b WHERE b.forecast_id=outbox.forecast_id) ORDER BY created_at,id LIMIT ?
+apps/web-rs/src/scheduler.rs:336
+    SCAN ev VIRTUAL TABLE INDEX 3:
+    SCAN r
+    SCAN forecast_resolution_blockers
+    SELECT 1 FROM forecast_resolution_blockers WHERE forecast_id=?
+apps/web-rs/src/scheduler.rs:1028
+    SCAN ai_leases
+    DELETE FROM ai_leases WHERE expires_at<=?
+apps/web-rs/src/scheduler.rs:1030
+    SCAN rate_limits
+    DELETE FROM rate_limits WHERE expires_at<=?
+apps/web-rs/src/source_watch.rs:258
+    SCAN official_watch_sources
+    SELECT COUNT(*) AS n FROM official_watch_sources WHERE pinned=1 AND id<>?
+apps/web-rs/src/source_watch.rs:479
+    SCAN official_source_observations
+    SELECT body FROM official_source_observations ORDER BY observed_at DESC LIMIT 100
+apps/web-rs/src/source_watch.rs:625
+    SCAN official_watch_sources
+    UPDATE official_watch_sources SET enabled=0 WHERE parent_id=? AND pinned=0 AND id NOT IN ({placeholders})
+apps/web-rs/src/source_watch.rs:693
+    SCAN official_watch_bindings
+    SELECT * FROM official_watch_bindings WHERE source_id=? LIMIT ?
+apps/web-rs/src/source_watch.rs:1125
+    SCAN official_source_observations
+    SELECT body FROM official_source_observations WHERE url=? ORDER BY observed_at DESC LIMIT 1
+apps/web-rs/src/wallet_login.rs:696
+    SCAN sessions
+    DELETE FROM sessions WHERE user_id=? AND EXISTS(SELECT 1 FROM wallet_identities WHERE address=? AND converted_at IS NULL)
+51 statements scan a table
