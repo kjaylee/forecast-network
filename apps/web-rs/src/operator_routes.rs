@@ -240,6 +240,7 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
     let db = crate::db::D1(context.session);
     let now = || context.now_ms;
     let started = clock_ms();
+    let opened = crate::db::usage();
     let parts = crate::application::chain_parts(context.env, &db, &now);
     let program = bs58::decode(var(context.env, "SOLANA_PROGRAM_ID"))
         .into_vec()
@@ -287,9 +288,11 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
         .await
         .map_err(|detail| RouteError::Worker(worker::Error::from(detail)))?;
     let automation_ms = clock_ms() - started;
+    let automation_rows = crate::db::usage().0 - opened.0;
     if let Some(registry) = &registry {
         if crate::admin::flag(context.env, "SOLANA_REGISTRY_RELAY_ENABLED") {
             let registry_started = clock_ms();
+            let registry_read = crate::db::usage().0;
             // A delivery that fails is a retry, not a failed sweep: the local half has already
             // completed, and reporting the whole pass as failed would re-run it.
             result["registry"] = match registry.sync(3).await {
@@ -297,12 +300,19 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
                 Err(_) => json!({"status": "retry_pending"}),
             };
             result["phaseMs"]["registry"] = json!(clock_ms() - registry_started);
+            result["rowsRead"]["registry"] = json!(crate::db::usage().0 - registry_read);
         } else {
             result["registry"] = json!({"status": "relay_paused"});
         }
     }
     result["phaseMs"]["automation"] = json!(automation_ms);
     result["phaseMs"]["total"] = json!(clock_ms() - started);
+    // The sweep runs four source polls and the registry pass; the same budget question as the
+    // tick's, asked of the job that runs alongside it.
+    let (rows, queries) = crate::db::usage();
+    result["rowsRead"]["automation"] = json!(automation_rows);
+    result["rowsRead"]["total"] = json!(rows - opened.0);
+    result["queries"] = json!(queries - opened.1);
     Ok(api_response(result, 200, false)?)
 }
 

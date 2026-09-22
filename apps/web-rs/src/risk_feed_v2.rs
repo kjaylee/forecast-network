@@ -1012,6 +1012,11 @@ pub trait RefreshCallback {
 /// refresh and no episode due, so the time was not being spent where the work was and there was no
 /// way to tell where it was. These phases say where, from inside the Worker, which is the only
 /// place that can see a cold start.
+///
+/// Each phase also reports the rows it read, for the same reason at a different scale: on
+/// 2026-09-22 the day's 5,000,000 D1 rows were gone by 06:29Z and nothing said which statement
+/// spent them, because a fast scan and a fast lookup look alike in milliseconds. `rowsRead` is
+/// the budget made visible in the line the operator already reads every minute.
 pub async fn operate_feeds_v2(
     db: &dyn Database,
     now_ms: i64,
@@ -1020,12 +1025,15 @@ pub async fn operate_feeds_v2(
     seed: Option<&dyn SeedCallback>,
 ) -> Result<Vec<Value>, FeedError> {
     let started = instant();
+    let opened = db.usage();
     let episodes = match seed {
         Some(seed) => crate::risk_feed_series::create_due_episodes(db, now_ms, seed).await?,
         None => Vec::new(),
     };
     let episodes_ms = instant() - started;
+    let episodes_rows = db.usage().0 - opened.0;
     let listed = instant();
+    let listing = db.usage();
     let feeds = db
         .all(
             "SELECT * FROM risk_feed_operations_v2 WHERE enabled=1 ORDER BY feed_id LIMIT 8",
@@ -1045,20 +1053,26 @@ pub async fn operate_feeds_v2(
             "feedId": feed_id, "refreshed": Value::Null, "published": Value::Null,
             "episodes": interesting,
             "phaseMs": {"episodes": episodes_ms, "list": instant() - listed},
+            "rowsRead": {"episodes": episodes_rows, "list": db.usage().0 - listing.0},
         });
         let mark = instant();
+        let read = db.usage();
         let stale = stale_bindings_v2(db, &feed_id, now_ms).await?;
         outcome["phaseMs"]["stale"] = json!(instant() - mark);
+        outcome["rowsRead"]["stale"] = json!(db.usage().0 - read.0);
         if let Some(first) = stale.first() {
             let mark = instant();
+            let read = db.usage();
             match refresh.refresh(first.clone()).await {
                 Ok(_) => outcome["refreshed"] = json!(first),
                 // Budget, lease or provider failure: the publication still reports honestly.
                 Err(error) => outcome["refreshFailure"] = json!(error.kind()),
             }
             outcome["phaseMs"]["refresh"] = json!(instant() - mark);
+            outcome["rowsRead"]["refresh"] = json!(db.usage().0 - read.0);
         }
         let mark = instant();
+        let read = db.usage();
         let published = publish
             .publish(
                 &feed_id,
@@ -1081,6 +1095,10 @@ pub async fn operate_feeds_v2(
             Err(error) => outcome["publishFailure"] = json!(error.kind()),
         }
         outcome["phaseMs"]["publish"] = json!(instant() - mark);
+        outcome["rowsRead"]["publish"] = json!(db.usage().0 - read.0);
+        let (rows, queries) = db.usage();
+        outcome["rowsRead"]["total"] = json!(rows - opened.0);
+        outcome["queries"] = json!(queries - opened.1);
         db.execute(
             "INSERT OR IGNORE INTO risk_feed_operation_log_v2(feed_id,tick_at,outcome,detail) VALUES(?,?,?,?)",
             &[
@@ -1375,6 +1393,157 @@ mod tests {
 
     fn block<F: std::future::Future>(future: F) -> F::Output {
         futures_lite::future::block_on(future)
+    }
+
+    /// A database that serves a fixed answer and counts what it served, so the tick's own
+    /// accounting can be checked against a number the test chose.
+    ///
+    /// The point is not the fake: it is that `rowsRead` is a *delta around a phase*, and a
+    /// delta is the kind of arithmetic that is wrong by one phase and still looks plausible
+    /// in production. Here the rows each statement costs are known, so a phase that claims
+    /// someone else's rows fails.
+    struct Counting {
+        feed: String,
+        rows: RefCell<i64>,
+        queries: RefCell<i64>,
+    }
+
+    impl Counting {
+        fn new(feed: &str) -> Self {
+            Self {
+                feed: feed.to_string(),
+                rows: RefCell::new(0),
+                queries: RefCell::new(0),
+            }
+        }
+
+        /// Every statement is charged what it is worth here: the listing 11 rows, the stale
+        /// candidate scan 500, anything else 1.
+        fn serve(&self, sql: &str) -> Vec<crate::db::Row> {
+            let (cost, rows) = if sql.contains("risk_feed_operations_v2") && sql.contains("SELECT") {
+                (
+                    11,
+                    vec![
+                        json!({"feed_id": self.feed, "weight_set_hash": "", "weight_set_version": "", "calibration_cohort_id": ""}),
+                    ],
+                )
+            } else if sql == STALE_CANDIDATE_SQL {
+                (500, vec![])
+            } else {
+                (1, vec![])
+            };
+            *self.rows.borrow_mut() += cost;
+            *self.queries.borrow_mut() += 1;
+            rows.into_iter()
+                .map(|row| row.as_object().cloned().expect("object"))
+                .collect()
+        }
+    }
+
+    impl Database for Counting {
+        fn first<'a>(
+            &'a self,
+            sql: &'a str,
+            _params: &'a [Value],
+        ) -> crate::db::BoxFuture<'a, worker::Result<Option<crate::db::Row>>> {
+            let served = self.serve(sql);
+            Box::pin(async move { Ok(served.into_iter().next()) })
+        }
+
+        fn all<'a>(
+            &'a self,
+            sql: &'a str,
+            _params: &'a [Value],
+        ) -> crate::db::BoxFuture<'a, worker::Result<Vec<crate::db::Row>>> {
+            let served = self.serve(sql);
+            Box::pin(async move { Ok(served) })
+        }
+
+        fn execute<'a>(
+            &'a self,
+            sql: &'a str,
+            _params: &'a [Value],
+        ) -> crate::db::BoxFuture<'a, worker::Result<Vec<crate::db::Row>>> {
+            let served = self.serve(sql);
+            Box::pin(async move { Ok(served) })
+        }
+
+        fn batch<'a>(
+            &'a self,
+            statements: &'a [(String, Vec<Value>)],
+        ) -> crate::db::BoxFuture<'a, worker::Result<Vec<Vec<crate::db::Row>>>> {
+            let served: Vec<Vec<crate::db::Row>> = statements.iter().map(|(sql, _)| self.serve(sql)).collect();
+            Box::pin(async move { Ok(served) })
+        }
+
+        fn usage(&self) -> (i64, i64) {
+            (*self.rows.borrow(), *self.queries.borrow())
+        }
+    }
+
+    struct NoRefresh;
+
+    impl RefreshCallback for NoRefresh {
+        fn refresh<'a>(
+            &'a self,
+            _binding_id: String,
+        ) -> BorrowedFuture<'a, Result<Value, crate::risk_refresh::RefreshError>> {
+            Box::pin(async move { Ok(json!({})) })
+        }
+    }
+
+    struct NoPublish;
+
+    impl PublishCallback for NoPublish {
+        fn publish<'a>(
+            &'a self,
+            _feed_id: &'a str,
+            _weight_set_hash: &'a str,
+            _weight_set_version: &'a str,
+            _calibration_cohort_id: &'a str,
+        ) -> BorrowedFuture<'a, Result<SignedRiskFeedV2, FeedError>> {
+            Box::pin(async move { Err(FeedError::storage()) })
+        }
+    }
+
+    /// A tick reports the rows each phase read, and the phases account for the whole tick.
+    ///
+    /// The day's D1 budget was being spent by 06:29Z with nothing to say by which statement.
+    /// The stale candidate scan is charged 500 rows here against the listing's 11, which is
+    /// the shape the outage had: a cheap-looking millisecond hiding a scan.
+    #[test]
+    fn a_tick_reports_the_rows_each_phase_read() {
+        let db = Counting::new("devnet-stable-risk-v2");
+        let outcomes = block(operate_feeds_v2(&db, 1_790_000_000_000, &NoRefresh, &NoPublish, None)).expect("tick");
+        let outcome = &outcomes[0];
+
+        // No seed callback, so the episode phase ran no statement and must claim no rows.
+        assert_eq!(outcome["rowsRead"]["episodes"], json!(0));
+        assert_eq!(outcome["rowsRead"]["list"], json!(11));
+        assert_eq!(outcome["rowsRead"]["stale"], json!(500));
+        // Publication is the callback's work, not the database's, and it failed here.
+        assert_eq!(outcome["rowsRead"]["publish"], json!(0));
+        assert!(
+            outcome["rowsRead"].get("refresh").is_none(),
+            "nothing was stale, so nothing refreshed"
+        );
+
+        // The whole tick, including the log write the phases do not own, and every statement.
+        let (rows, queries) = db.usage();
+        assert_eq!(
+            outcome["rowsRead"]["total"],
+            json!(rows - 1),
+            "the log write lands after the total"
+        );
+        assert_eq!(outcome["queries"], json!(queries - 1));
+        assert_eq!(
+            outcome["rowsRead"]["episodes"].as_i64().unwrap()
+                + outcome["rowsRead"]["list"].as_i64().unwrap()
+                + outcome["rowsRead"]["stale"].as_i64().unwrap()
+                + outcome["rowsRead"]["publish"].as_i64().unwrap(),
+            outcome["rowsRead"]["total"].as_i64().unwrap(),
+            "every row the tick read belongs to a phase"
+        );
     }
 
     fn golden() -> Value {

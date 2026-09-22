@@ -21,16 +21,58 @@ pub fn statement(session: &D1DatabaseSession, sql: &str, params: &[Value]) -> Re
     session.prepare(sql).bind(&bound)
 }
 
+// ------------------------------------------------------------------- what a query costs
+
+// D1's free tier grants 5,000,000 rows read per day, and on 2026-09-22 the service was
+// spending them by 06:29Z: the feed then answered `stale` until midnight. Nothing in the
+// Worker said which statement was doing it, because a row count was never reported — only
+// a duration, and a scan that is fast is still a scan. Every D1 result carries
+// `meta.rows_read`, so the tick can say what it spent in the same line it says what it
+// took, and the budget becomes something the operator's own log shows every minute.
+//
+// One isolate runs one request at a time, so a counter here is that request's counter. It
+// is reset by whoever is about to measure, and read as a delta around each phase.
+//
+// `first()` is absent from this count on purpose: D1's `.first()` resolves to the row
+// itself and carries no meta, so it contributes to `queries` and not to `rows`. If the
+// phases ever fail to account for the day, that gap is where to look next.
+thread_local! {
+    static ROWS_READ: std::cell::Cell<i64> = const { std::cell::Cell::new(0) };
+    static QUERIES: std::cell::Cell<i64> = const { std::cell::Cell::new(0) };
+}
+
+fn note(result: &D1Result) {
+    let read = result
+        .meta()
+        .ok()
+        .flatten()
+        .and_then(|meta| meta.rows_read)
+        .unwrap_or(0);
+    ROWS_READ.with(|total| total.set(total.get() + read as i64));
+}
+
+fn note_query() {
+    QUERIES.with(|total| total.set(total.get() + 1));
+}
+
+/// Rows this isolate has read since the counter was last reset, and statements it has run.
+pub fn usage() -> (i64, i64) {
+    (ROWS_READ.with(|t| t.get()), QUERIES.with(|t| t.get()))
+}
+
 pub fn rows_of(result: &D1Result) -> Result<Vec<Row>> {
+    note(result);
     let rows: Vec<Value> = result.results()?;
     Ok(rows.into_iter().filter_map(|row| row.as_object().cloned()).collect())
 }
 
 pub async fn all(session: &D1DatabaseSession, sql: &str, params: &[Value]) -> Result<Vec<Row>> {
+    note_query();
     rows_of(&statement(session, sql, params)?.all().await?)
 }
 
 pub async fn first(session: &D1DatabaseSession, sql: &str, params: &[Value]) -> Result<Option<Row>> {
+    note_query();
     let row: Option<Value> = statement(session, sql, params)?.first(None).await?;
     Ok(row.and_then(|r| r.as_object().cloned()))
 }
@@ -40,6 +82,9 @@ pub async fn batch(session: &D1DatabaseSession, statements: Vec<(String, Vec<Val
         .iter()
         .map(|(sql, params)| statement(session, sql, params))
         .collect::<Result<_>>()?;
+    for _ in &prepared {
+        note_query();
+    }
     let results = session.batch(prepared).await?;
     results.iter().map(rows_of).collect()
 }
@@ -74,6 +119,13 @@ pub trait Database {
     /// reference's `execute` returns under `results`.
     fn execute<'a>(&'a self, sql: &'a str, params: &'a [Value]) -> BoxFuture<'a, Result<Vec<Row>>>;
     fn batch<'a>(&'a self, statements: &'a [(String, Vec<Value>)]) -> BoxFuture<'a, Result<Vec<Vec<Row>>>>;
+
+    /// Rows read and statements run so far, for a caller that wants to report what a phase
+    /// cost. An implementation that cannot count says zero, and a phase that reports zero
+    /// rows is reporting that it does not know — not that it read none.
+    fn usage(&self) -> (i64, i64) {
+        (0, 0)
+    }
 }
 
 pub struct D1<'a>(pub &'a D1DatabaseSession);
@@ -88,11 +140,18 @@ impl Database for D1<'_> {
     }
 
     fn execute<'a>(&'a self, sql: &'a str, params: &'a [Value]) -> BoxFuture<'a, Result<Vec<Row>>> {
-        Box::pin(async move { rows_of(&statement(self.0, sql, params)?.all().await?) })
+        Box::pin(async move {
+            note_query();
+            rows_of(&statement(self.0, sql, params)?.all().await?)
+        })
     }
 
     fn batch<'a>(&'a self, statements: &'a [(String, Vec<Value>)]) -> BoxFuture<'a, Result<Vec<Vec<Row>>>> {
         Box::pin(batch(self.0, statements.to_vec()))
+    }
+
+    fn usage(&self) -> (i64, i64) {
+        usage()
     }
 }
 
