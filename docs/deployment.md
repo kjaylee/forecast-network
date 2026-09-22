@@ -124,9 +124,23 @@ set from Keychain. That set is data in `scripts/worker_secrets.py` and is the sa
 set the Python Worker is deployed with; `scripts/config_parity.py --check` (in
 `check.py`) fails when the crate reads a var, secret or binding that the edge's
 `wrangler.jsonc` or that list does not provide, or that the reference reads under
-another name. The edge's `wrangler.jsonc` declares both crons; the Python Worker's
-declares none since 2026-09-21 (`wrangler triggers deploy` from the stage removes
-a trigger without a redeploy). `head_sampling_rate` stays 1.0 while the `LEGACY`
+another name. The edge's `wrangler.jsonc` declares `*/5` only; the per-minute tick
+was removed on 2026-09-22 because a scheduled event is killed at 10 ms of CPU on
+the Free plan — it performed its D1 reads and died before publishing, spending the
+daily row budget for nothing, and with the operator host also ticking the budget
+was gone by 06:29Z instead of 20:00Z. The host's HTTP tick is allowed more CPU and
+publishes, so it holds the job until the scheduled one fits. The Python Worker
+declares no crons since 2026-09-21.
+
+Triggers move without a redeploy:
+
+    python3.11 scripts/deploy_edge.py --triggers-only --take-domain
+
+`wrangler triggers deploy` applies the config's *entire* trigger set, routes
+included, so `--triggers-only` refuses to run without `--take-domain`: the base
+config carries no `routes`, and applying it alone would detach
+`forecast.eastsea.xyz` from the Worker serving it. The command prints a dry run
+first. `head_sampling_rate` stays 1.0 while the `LEGACY`
 binding exists, and the deploy script asserts it.
 
 Before a surface moves, compare answers, not claims:

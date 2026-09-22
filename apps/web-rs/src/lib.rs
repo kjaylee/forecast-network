@@ -291,6 +291,14 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
 /// Pyodide (an invocation awaiting its own fetch collided with the next request on the isolate).
 /// A scheduled event is not an HTTP request: it carries no bearer, needs none, and the work is
 /// called here directly against a primary session. Each cron pattern owns one job, as before.
+///
+/// **The per-minute pattern is not declared in `wrangler.jsonc` as of 2026-09-22, and the arm
+/// below is kept for when it is.** A scheduled event on the Free plan is killed at 10 ms of
+/// CPU. The tick performed its D1 reads and was killed before publishing, so it spent the
+/// day's row budget and delivered nothing: with this cron and the operator host both running,
+/// the 5M rows granted at midnight were gone by 06:29Z, against 20:00Z on the day the host was
+/// off. An HTTP invocation is allowed more CPU, so the host's tick is the publisher until this
+/// one fits the limit. Restoring the cron is how it comes back — the code does not change.
 #[event(scheduled)]
 pub async fn scheduled(event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
     console_error_panic_hook::set_once();
