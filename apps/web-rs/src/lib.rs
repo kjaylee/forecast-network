@@ -237,6 +237,7 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         session: &session,
         now_ms: now_ms(),
     };
+    let opened = db::usage();
     let outcome = match &body {
         Some(body) => {
             // An administrative request is not rate-limited by the *client* bucket: it is one
@@ -257,6 +258,22 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         }
         None => routes::dispatch(&context, path, &req, &url).await,
     };
+    // Which request spends the day's D1 rows, named by the request itself.
+    //
+    // The tick was the obvious suspect and it is not: measured live, one tick reads 51 rows
+    // over 20 statements, some 73,000 a day against a budget of 5,000,000 that runs out
+    // before lunch. The rest is ordinary traffic, and an average of ~300 rows a statement
+    // says at least one route scans. A threshold rather than every request, because a log
+    // line per request is itself a cost and a request reading a few rows is not the question.
+    let (rows, queries) = db::usage();
+    let (rows, queries) = (rows - opened.0, queries - opened.1);
+    if rows > ROWS_WORTH_NAMING {
+        console_log!(
+            "{}",
+            json!({"event": "request_rows", "path": &path[..path.len().min(100)],
+                   "method": format!("{method:?}"), "rows": rows, "queries": queries})
+        );
+    }
     let mut response = match outcome {
         Ok(response) => response,
         Err(routes::RouteError::Invalid) => api_error(400, "invalid_request", "Check the input format and length.")?,
@@ -299,6 +316,11 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
 /// the 5M rows granted at midnight were gone by 06:29Z, against 20:00Z on the day the host was
 /// off. An HTTP invocation is allowed more CPU, so the host's tick is the publisher until this
 /// one fits the limit. Restoring the cron is how it comes back — the code does not change.
+/// A request that reads more rows than this names itself in the log. One D1 page is 4 KB and a
+/// lookup on an index reads single digits, so a request over this figure either returned a large
+/// page or scanned — and both are worth being able to point at.
+const ROWS_WORTH_NAMING: i64 = 500;
+
 #[event(scheduled)]
 pub async fn scheduled(event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
     console_error_panic_hook::set_once();
