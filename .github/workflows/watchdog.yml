@@ -12,6 +12,11 @@ name: Watchdog
 #
 # Five minutes is GitHub's floor and is free on a public repository. Offset off
 # the round minutes so this does not queue behind every other scheduled job.
+#
+# The issue is the alert. A run that observed an outage and filed it did its job,
+# so it ends green; only a watchdog that could not observe or could not report
+# ends red. Ending red on every observation turned a single outage into a failure
+# mail every five minutes, which is how a pager stops being read.
 on:
   schedule:
     - cron: '3-58/5 * * * *'
@@ -52,8 +57,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           title='[watchdog] the public service is not answering correctly'
-          number=$(gh issue list --state open --limit 100 --json number,title \
-            --jq '.[] | select(.title == "'"$title"'") | .number' | head -1)
+          read -r number since <<<"$(gh issue list --state open --limit 100 \
+            --json number,title,createdAt \
+            --jq '.[] | select(.title == "'"$title"'") | "\(.number) \(.createdAt)"' | head -1)"
 
           if [ "${{ steps.service.outputs.status }}" = "0" ]; then
             if [ -n "$number" ]; then
@@ -62,8 +68,12 @@ jobs:
             exit 0
           fi
 
+          # An open issue already carries when this started; keep that and say how
+          # long it has run, rather than overwriting the start with the latest poll.
           {
-            printf 'Observed %s by a GitHub runner, outside the operator host and outside Cloudflare.\n\n' "$(date -u +%FT%TZ)"
+            printf 'Observed by a GitHub runner, outside the operator host and outside Cloudflare.\n\n'
+            printf -- '- First observed: %s\n' "${since:-$(date -u +%FT%TZ)}"
+            printf -- '- Still failing at: %s\n\n' "$(date -u +%FT%TZ)"
             python3 -c 'import json; print("\n".join("- " + p for p in json.load(open("watchdog.json"))["problems"]))'
             printf '\nRun: %s/%s/actions/runs/%s\n' "${{ github.server_url }}" "${{ github.repository }}" "${{ github.run_id }}"
           } > alert.md
@@ -73,7 +83,6 @@ jobs:
           else
             gh issue create --title "$title" --body-file alert.md
           fi
-          exit 1
 
       - name: Raise, update or clear the checks alert
         if: always()
@@ -102,4 +111,3 @@ jobs:
           else
             gh issue create --title "$title" --body-file alert.md
           fi
-          exit 1
