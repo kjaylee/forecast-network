@@ -349,6 +349,11 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
 /// table and never the detail behind it: a step name says where to look without disclosing a
 /// query or a secret, which is the distinction the reference's logging rule draws.
 fn automation_code(detail: &str) -> &'static str {
+    // The budget outranks the step: which statement ran out of reads is not the question when
+    // the account has none left.
+    if crate::routes::is_row_limit(detail) {
+        return "d1_row_limit_reached";
+    }
     let mut steps = detail.split(':');
     match (steps.next().unwrap_or(""), steps.next().unwrap_or("")) {
         // The source step is two halves that fail differently: `bootstrap` loads open forecasts
@@ -411,5 +416,11 @@ mod sweep_step_tests {
             "sweep_automation_unavailable"
         );
         assert_eq!(automation_code(""), "sweep_automation_unavailable");
+        // The account's budget is named wherever it appears, because it is not this service
+        // failing and the person reading it can do nothing about the step.
+        assert_eq!(
+            automation_code("lifecycle:D1_ERROR: Your account has exceeded D1's free tier daily row read limit."),
+            "d1_row_limit_reached"
+        );
     }
 }

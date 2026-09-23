@@ -9,6 +9,21 @@ use crate::{api_response, VERSION};
 
 pub const CHALLENGE_HOURS: i64 = 48;
 
+/// Cloudflare's text for a D1 account that has spent its day.
+///
+/// The free tier grants 5,000,000 rows read a day and this service reaches it; when it does,
+/// every statement fails and every route that folds a database error into one code answers
+/// `service_unavailable`, which reads as "the service is broken" rather than "the account is
+/// out of reads until midnight". Those need different responses from a person, so they get
+/// different codes. Matching text is fragile by nature, and the fallback is the general code,
+/// so the worst a changed message costs is the clarity this adds.
+pub const D1_ROW_LIMIT: &str = "daily row read limit";
+
+/// Whether a failure is the account's daily row budget rather than a fault in this service.
+pub fn is_row_limit(detail: &str) -> bool {
+    detail.contains(D1_ROW_LIMIT)
+}
+
 #[derive(Debug)]
 pub enum RouteError {
     Invalid,

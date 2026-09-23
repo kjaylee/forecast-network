@@ -283,11 +283,22 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         Err(routes::RouteError::Unauthorized(code, message)) => api_error(401, code, message)?,
         Err(routes::RouteError::Failed(status, code, message)) => api_error(status, code, message)?,
         Err(routes::RouteError::Worker(error)) => {
+            let detail = error.to_string();
             console_error!(
                 "{}",
-                json!({"event": "request_failed", "path": &path[..path.len().min(100)], "errorType": error.to_string()})
+                json!({"event": "request_failed", "path": &path[..path.len().min(100)], "errorType": &detail})
             );
-            api_error(503, "service_unavailable", "Please try again shortly.")?
+            // An account out of reads until midnight is not a broken service, and answering both
+            // the same way is what made a day of outages look like one unexplained fault.
+            if routes::is_row_limit(&detail) {
+                api_error(
+                    503,
+                    "d1_row_limit_reached",
+                    "The database's daily read budget is spent.",
+                )?
+            } else {
+                api_error(503, "service_unavailable", "Please try again shortly.")?
+            }
         }
     };
     if let Ok(Some(current)) = session.get_bookmark() {
