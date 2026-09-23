@@ -349,11 +349,18 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
 /// table and never the detail behind it: a step name says where to look without disclosing a
 /// query or a secret, which is the distinction the reference's logging rule draws.
 fn automation_code(detail: &str) -> &'static str {
-    match detail.split(':').next().unwrap_or("") {
-        "sources" => "sweep_sources_unavailable",
-        "eligibility" => "sweep_eligibility_unavailable",
-        "lifecycle" => "sweep_lifecycle_unavailable",
-        "settlement" => "sweep_settlement_unavailable",
+    let mut steps = detail.split(':');
+    match (steps.next().unwrap_or(""), steps.next().unwrap_or("")) {
+        // The source step is two halves that fail differently: `bootstrap` loads open forecasts
+        // with no per-forecast tolerance — one it cannot load stops everything after it — while
+        // `poll` already tolerates a publisher being down. Answering both as one code is what
+        // made a day and a half of sweeps indistinguishable.
+        ("sources", "bootstrap") => "sweep_bootstrap_unavailable",
+        ("sources", "poll") => "sweep_poll_unavailable",
+        ("sources", _) => "sweep_sources_unavailable",
+        ("eligibility", _) => "sweep_eligibility_unavailable",
+        ("lifecycle", _) => "sweep_lifecycle_unavailable",
+        ("settlement", _) => "sweep_settlement_unavailable",
         _ => "sweep_automation_unavailable",
     }
 }
@@ -392,6 +399,11 @@ mod sweep_step_tests {
             automation_code("eligibility:retry failed"),
             "sweep_eligibility_unavailable"
         );
+        assert_eq!(
+            automation_code("sources:bootstrap:refused"),
+            "sweep_bootstrap_unavailable"
+        );
+        assert_eq!(automation_code("sources:poll:database"), "sweep_poll_unavailable");
         assert_eq!(automation_code("lifecycle:D1_ERROR"), "sweep_lifecycle_unavailable");
         assert_eq!(automation_code("settlement:D1_ERROR"), "sweep_settlement_unavailable");
         assert_eq!(

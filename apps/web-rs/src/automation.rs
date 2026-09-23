@@ -700,8 +700,17 @@ impl<'a> Automation<'a> {
         let Some(watch) = self.watcher() else {
             return Ok(json!({"enabled": false, "polled": 0, "reviewed": 0, "failed": 0}));
         };
-        self.bootstrap().await?;
-        let summary = source_watch::run(&watch, limit.clamp(1, 6)).await?;
+        // The two halves refuse under different names. `bootstrap` loads up to thirty open
+        // forecasts and has no per-forecast tolerance — one that cannot be loaded stops the
+        // pass, and therefore stops eligibility, the lifecycle scheduler and settlement, which
+        // all run after it. `source_watch::run` does tolerate a single publisher failing. So
+        // the two are not the same kind of failure and must not answer under one code.
+        self.bootstrap()
+            .await
+            .map_err(|error| WatchError::Rejected(error.named("bootstrap")))?;
+        let summary = source_watch::run(&watch, limit.clamp(1, 6))
+            .await
+            .map_err(|error| WatchError::Rejected(error.named("poll")))?;
         // `unchanged` is deliberately absent: the reference's summary is three counters, and a
         // caller that started seeing a fourth would be reading a number nothing defines.
         Ok(json!({
@@ -941,7 +950,9 @@ impl Cron<'_> {
             markets
                 .settle(forecast_id, point_markets::MAX_BATCH)
                 .await
-                .map_err(|error| error.message.to_string())?;
+                // The settlement of one market failing stops the pass, and did: this is the `?`
+                // that answered a day and a half of sweeps without saying so.
+                .map_err(|error| format!("settlement:{}", error.message))?;
         }
         Ok(json!({
             "sources": sources,

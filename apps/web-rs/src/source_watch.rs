@@ -66,6 +66,27 @@ impl From<worker::Error> for WatchError {
 }
 
 impl WatchError {
+    /// This failure as `step:kind`, for a caller that answers several steps under one code.
+    ///
+    /// The *kind* and not the message: a message can carry a URL or a row, and the reference's
+    /// rule is that a trace names the class rather than the content. A caller that needs to
+    /// know which step stopped needs exactly this much.
+    pub fn named(&self, step: &str) -> String {
+        let kind = match self {
+            WatchError::Invalid(_) => "invalid",
+            WatchError::Rejected(_) => "rejected",
+            WatchError::Unavailable => "unavailable",
+            WatchError::NotModified => "not_modified",
+            WatchError::BudgetExhausted => "budget_exhausted",
+            WatchError::Missing(_) => "missing",
+            WatchError::Database(_) => "database",
+            WatchError::Refused { .. } => "refused",
+            WatchError::AiRejected(_) => "ai_rejected",
+            WatchError::AiUnavailable(_) => "ai_unavailable",
+        };
+        format!("{step}:{kind}")
+    }
+
     pub fn message(&self) -> String {
         match self {
             WatchError::Invalid(message) => (*message).to_string(),
