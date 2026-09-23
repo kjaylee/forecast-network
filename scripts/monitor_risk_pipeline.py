@@ -67,6 +67,28 @@ def fetch_health(origin: str, timeout: float, attempts: int = HEALTH_ATTEMPTS) -
     raise last
 
 
+def fetch_row_budget(origin: str, timeout: float) -> dict[str, object] | None:
+    """What the edge has read, by route, as one isolate saw it.
+
+    D1's free tier grants 5,000,000 rows read a day and the service was exhausting them before
+    noon, with the per-minute tick measured at 61 rows — so the rows were going somewhere the
+    tick could not see. The edge counts them per route and serves them here; this brings the
+    answer into the operator's own log, where it can be read without a dashboard.
+
+    One isolate's view, so it is reported and never alerted on: a quiet isolate is not a quiet
+    service. It is evidence for a person, which is why a failure here returns None rather than
+    joining the problems list.
+    """
+    try:
+        request = urllib.request.Request(origin + "/api/admin/ops/d1", headers={
+            "User-Agent": "forecast-risk-monitor/1", "Authorization": "Bearer " + secret("ADMIN_TOKEN")})
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            data = json.load(response)["data"]
+        return data if isinstance(data, dict) else None
+    except (urllib.error.URLError, TimeoutError, ValueError, KeyError):
+        return None
+
+
 def keeper_status(journal: Path, now_ms: int) -> dict[str, object]:
     if not journal.exists():
         return {"available": False}
@@ -180,8 +202,10 @@ def main() -> int:
         notify("Forecast risk pipeline", ("DEGRADED: " + "; ".join(problems)) if degraded else "recovered")
     args.state.parent.mkdir(parents=True, exist_ok=True)
     args.state.write_text(json.dumps({"degraded": degraded, "at": now_ms, "problems": problems, "warnings": warned}))
+    budget = fetch_row_budget(args.origin, 20.0)
     print(json.dumps({"event": "risk_pipeline_monitor", "at": now_ms, "degraded": degraded, "problems": problems,
-                      "warnings": warned, "keeper": keeper, "feeds": (health or {}).get("feeds")}, sort_keys=True))
+                      "warnings": warned, "keeper": keeper, "feeds": (health or {}).get("feeds"),
+                      "rowBudget": budget}, sort_keys=True))
     # Report this monitor's own liveness. Without it, this process stopping and the
     # pipeline being quiet look exactly the same from anywhere else — which is how
     # a two-day outage went unnoticed. No-op until a check URL is configured.
