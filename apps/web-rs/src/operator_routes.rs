@@ -312,7 +312,7 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
             "{}",
             json!({"event": "sweep_step_failed", "step": "automation", "errorType": &detail})
         );
-        RouteError::Failed(503, "sweep_automation_unavailable", "Please try again shortly.")
+        RouteError::Failed(503, automation_code(&detail), "Please try again shortly.")
     })?;
     let automation_ms = clock_ms() - started;
     let automation_rows = crate::db::usage().0 - opened.0;
@@ -343,6 +343,21 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
     Ok(api_response(result, 200, false)?)
 }
 
+/// Which of the automation pass's four steps refused, as a code.
+///
+/// `Cron::run` prefixes its failure with the step's name. The code is a fixed word from this
+/// table and never the detail behind it: a step name says where to look without disclosing a
+/// query or a secret, which is the distinction the reference's logging rule draws.
+fn automation_code(detail: &str) -> &'static str {
+    match detail.split(':').next().unwrap_or("") {
+        "sources" => "sweep_sources_unavailable",
+        "eligibility" => "sweep_eligibility_unavailable",
+        "lifecycle" => "sweep_lifecycle_unavailable",
+        "settlement" => "sweep_settlement_unavailable",
+        _ => "sweep_automation_unavailable",
+    }
+}
+
 /// A monotonic-enough millisecond clock for the phase timings. It is the wall clock, which is what
 /// this runtime offers; a phase that takes a negative number of milliseconds would mean the clock
 /// moved, and the reference's `time.monotonic` is the only thing that would have hidden it.
@@ -354,5 +369,35 @@ fn clock_ms() -> i64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         0
+    }
+}
+
+#[cfg(test)]
+mod sweep_step_tests {
+    use super::automation_code;
+
+    /// The step the pass names is the code the operator reads.
+    ///
+    /// The sweep refused every call for a day and a half under one code, so expiry, review,
+    /// challenge completion and the outbox were all down with one symptom between them. This
+    /// is the mapping that separates them; a detail that names no step keeps the general code
+    /// rather than inventing one.
+    #[test]
+    fn each_step_of_the_automation_pass_refuses_under_its_own_code() {
+        assert_eq!(
+            automation_code("sources:watch is unavailable"),
+            "sweep_sources_unavailable"
+        );
+        assert_eq!(
+            automation_code("eligibility:retry failed"),
+            "sweep_eligibility_unavailable"
+        );
+        assert_eq!(automation_code("lifecycle:D1_ERROR"), "sweep_lifecycle_unavailable");
+        assert_eq!(automation_code("settlement:D1_ERROR"), "sweep_settlement_unavailable");
+        assert_eq!(
+            automation_code("something nobody named"),
+            "sweep_automation_unavailable"
+        );
+        assert_eq!(automation_code(""), "sweep_automation_unavailable");
     }
 }

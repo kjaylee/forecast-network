@@ -893,14 +893,29 @@ pub struct Cron<'a> {
 }
 
 impl Cron<'_> {
+    /// Each step's failure carries its own name, as `step:detail`.
+    ///
+    /// The pass is four steps over the same tables and its caller answered all four as one
+    /// `service_unavailable`. That cost 2026-09-22 and most of 2026-09-23: the sweep refused
+    /// every call in under a second and nothing said which of the four had stopped, so expiry,
+    /// review, challenge completion and the outbox were all down with one symptom between them.
+    /// A step name is not query data and not a secret, which is the line the reference draws.
     pub async fn run(&mut self, limit: i64) -> Result<Value, String> {
-        let sources = self.automation.run(limit).await.map_err(|error| error.message())?;
+        let sources = self
+            .automation
+            .run(limit)
+            .await
+            .map_err(|error| format!("sources:{}", error.message()))?;
         let eligibility = self
             .automation
             .retry_eligibility(3)
             .await
-            .map_err(|error| error.message())?;
-        let lifecycle = self.scheduler.run(3, self.tokens).await?;
+            .map_err(|error| format!("eligibility:{}", error.message()))?;
+        let lifecycle = self
+            .scheduler
+            .run(3, self.tokens)
+            .await
+            .map_err(|error| format!("lifecycle:{error}"))?;
         // A market whose question has finalized but whose settlement has not run is exactly the
         // kind of thing that stays broken quietly, so the pass looks for them rather than waiting
         // for someone to notice.
@@ -914,7 +929,7 @@ impl Cron<'_> {
                 &[],
             )
             .await
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| format!("settlement:{error}"))?;
         let markets = point_markets::PointMarkets {
             db: self.automation.db,
             clock: &|| self.automation.now_ms,
