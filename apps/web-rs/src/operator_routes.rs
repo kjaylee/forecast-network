@@ -191,17 +191,25 @@ pub async fn run_automation(context: &Context<'_>) -> Handler {
         .into_vec()
         .unwrap_or_default();
     let transport = match &parts {
-        Some(parts) => Some(
-            parts
-                .transport(&program, &relayer)
-                .map_err(|error| RouteError::Worker(worker::Error::from(error.0)))?,
-        ),
+        Some(parts) => Some(parts.transport(&program, &relayer).map_err(|error| {
+            console_error!(
+                "{}",
+                json!({"event": "sweep_step_failed", "step": "transport", "errorType": error.0})
+            );
+            RouteError::Failed(503, "sweep_transport_unavailable", "Please try again shortly.")
+        })?),
         None => None,
     };
     let registry = match (&transport, &parts) {
         (Some(transport), Some(_)) => Some(
             crate::registry_chain::SolanaRegistry::new(&db, transport, &program, &relayer, &now, &random_token)
-                .map_err(|error| RouteError::Worker(worker::Error::from(error.code)))?,
+                .map_err(|error| {
+                    console_error!(
+                        "{}",
+                        json!({"event": "sweep_step_failed", "step": "registry", "errorType": error.code})
+                    );
+                    RouteError::Failed(503, "sweep_registry_unavailable", "Please try again shortly.")
+                })?,
         ),
         _ => None,
     };
@@ -236,6 +244,14 @@ pub async fn run_automation(context: &Context<'_>) -> Handler {
 /// chain owes. The phase timings are returned because this route was once failing with a platform
 /// error and nothing recorded where the time went — the failure was being attributed to whatever
 /// seemed likeliest, which is the same reason the operate tick got them.
+///
+/// Each step also refuses under its own code. Every failure here used to fold into
+/// `RouteError::Worker`, which the entry answers as `service_unavailable` and logs with only the
+/// error's class — the reference's rule, and the right one, since a message can carry query data
+/// or a secret. A *step name* carries neither, and without it this route spent 2026-09-22 and
+/// most of 2026-09-23 refusing every sweep in under half a second with no way to tell the
+/// transport, the registry and the automation half apart from outside. `feed_error` already names
+/// a missing signer this way; this is the same idea applied to the job that stopped.
 pub async fn sweep(context: &Context<'_>) -> Handler {
     let db = crate::db::D1(context.session);
     let now = || context.now_ms;
@@ -249,17 +265,25 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
         .into_vec()
         .unwrap_or_default();
     let transport = match &parts {
-        Some(parts) => Some(
-            parts
-                .transport(&program, &relayer)
-                .map_err(|error| RouteError::Worker(worker::Error::from(error.0)))?,
-        ),
+        Some(parts) => Some(parts.transport(&program, &relayer).map_err(|error| {
+            console_error!(
+                "{}",
+                json!({"event": "sweep_step_failed", "step": "transport", "errorType": error.0})
+            );
+            RouteError::Failed(503, "sweep_transport_unavailable", "Please try again shortly.")
+        })?),
         None => None,
     };
     let registry = match (&transport, &parts) {
         (Some(transport), Some(_)) => Some(
             crate::registry_chain::SolanaRegistry::new(&db, transport, &program, &relayer, &now, &random_token)
-                .map_err(|error| RouteError::Worker(worker::Error::from(error.code)))?,
+                .map_err(|error| {
+                    console_error!(
+                        "{}",
+                        json!({"event": "sweep_step_failed", "step": "registry", "errorType": error.code})
+                    );
+                    RouteError::Failed(503, "sweep_registry_unavailable", "Please try again shortly.")
+                })?,
         ),
         _ => None,
     };
@@ -283,10 +307,13 @@ pub async fn sweep(context: &Context<'_>) -> Handler {
     };
     // Four source polls per five-minute sweep keeps every watched publisher and article current;
     // one per tick starved the market source gate.
-    let mut result = application
-        .run_automation(4)
-        .await
-        .map_err(|detail| RouteError::Worker(worker::Error::from(detail)))?;
+    let mut result = application.run_automation(4).await.map_err(|detail| {
+        console_error!(
+            "{}",
+            json!({"event": "sweep_step_failed", "step": "automation", "errorType": &detail})
+        );
+        RouteError::Failed(503, "sweep_automation_unavailable", "Please try again shortly.")
+    })?;
     let automation_ms = clock_ms() - started;
     let automation_rows = crate::db::usage().0 - opened.0;
     if let Some(registry) = &registry {

@@ -390,6 +390,10 @@ pub fn owns_admin_read(path: &str) -> bool {
         || path == "/api/admin/markets/treasury"
         || path == "/api/admin/registry/health"
         || path == "/api/admin/risk/v2/health"
+        // Edge-only: the reference has no equivalent, and `route_parity` holds the reference's
+        // surface to this one rather than the other way round. It answers a question only this
+        // Worker can: which route is spending the database's daily row budget.
+        || path == "/api/admin/ops/d1"
         || identifier(path, "/api/admin/risk/v2/feeds/", "/training").is_some()
         || identifier(path, "/api/admin/forecasts/", "/participation").is_some()
 }
@@ -436,6 +440,7 @@ pub async fn dispatch(
         "/api/admin/billing/sandbox" => crate::admin_ops::billing_route(context).await,
         "/api/admin/markets/treasury" => crate::admin_markets::budget_route(context, url).await,
         "/api/admin/registry/health" => crate::admin_registry::health_route(context).await,
+        "/api/admin/ops/d1" => Ok(crate::api_response(crate::db::report(context.now_ms), 200, false)?),
         _ if identifier(path, "/api/admin/forecasts/", "/participation").is_some() => {
             crate::admin_ops::participation_route(
                 context,

@@ -60,6 +60,99 @@ pub fn usage() -> (i64, i64) {
     (ROWS_READ.with(|t| t.get()), QUERIES.with(|t| t.get()))
 }
 
+// ------------------------------------------------- which path spends the day, read from here
+//
+// The per-request delta was already being logged, and that log goes where only a dashboard can
+// read it — which is the same mistake as asking the dashboard in the first place. This keeps
+// the totals in the isolate and serves them from an operator route, so the host that already
+// polls every five minutes writes them to its own log file and the question is answered from
+// a machine we own.
+//
+// One isolate's view, and it says so: `sinceMs` is how long this isolate has been answering.
+// Cloudflare runs many, and a path heavy enough to matter shows up in any of them within
+// minutes — a path that reads three hundred rows a request cannot hide behind sampling.
+
+/// At most this many distinct paths are tracked. Paths are normalised, so this is a bound on
+/// the route table, not on traffic; a burst of unknown paths cannot grow it without limit.
+const TRACKED_PATHS: usize = 64;
+
+thread_local! {
+    static BY_PATH: std::cell::RefCell<std::collections::BTreeMap<String, [i64; 3]>> =
+        const { std::cell::RefCell::new(std::collections::BTreeMap::new()) };
+    static SINCE: std::cell::Cell<i64> = const { std::cell::Cell::new(0) };
+}
+
+/// The path with its identifiers replaced, so one route is one row rather than one per forecast.
+///
+/// The rule is what a *route word* looks like in this service rather than what an identifier
+/// looks like, because identifiers vary and route words do not: either all lowercase letters,
+/// or a version — two or three characters of letters then digits. That keeps `v2` and `d1` as
+/// themselves, where "carries a digit" would have turned `/api/risk/v2/feeds/…` into
+/// `/api/risk/{id}/feeds/{id}` and merged every versioned route with every other.
+///
+/// A two-character identifier is indistinguishable from a version and is read as a version.
+/// Nothing separates `v2` from `x9` by shape, and the cost of choosing wrong is one row in a
+/// diagnostic, so it is chosen in favour of the routes that exist.
+fn normalised(path: &str) -> String {
+    let mut out = String::with_capacity(path.len());
+    for segment in path.split('/').skip(1) {
+        out.push('/');
+        let letters = segment.chars().take_while(char::is_ascii_lowercase).count();
+        // Route words are short: the longest this service serves is `participation`, at 13.
+        // Without the cap a 32-character lowercase hash reads as a word and every profile
+        // gets its own row, which is the failure this function exists to prevent.
+        let word = letters == segment.len() && (1..=16).contains(&letters);
+        let version = letters > 0 && segment.len() <= 3 && segment[letters..].chars().all(|c| c.is_ascii_digit());
+        out.push_str(if word || version { segment } else { "{id}" });
+    }
+    out
+}
+
+/// Record what one request read, against the route it took.
+pub fn record(path: &str, rows: i64, queries: i64, now_ms: i64) {
+    SINCE.with(|since| {
+        if since.get() == 0 {
+            since.set(now_ms);
+        }
+    });
+    BY_PATH.with(|by_path| {
+        let mut by_path = by_path.borrow_mut();
+        let key = normalised(path);
+        if !by_path.contains_key(&key) && by_path.len() >= TRACKED_PATHS {
+            return;
+        }
+        let entry = by_path.entry(key).or_insert([0; 3]);
+        entry[0] += rows;
+        entry[1] += queries;
+        entry[2] += 1;
+    });
+}
+
+/// What this isolate has read, by route, heaviest first.
+pub fn report(now_ms: i64) -> Value {
+    let since = SINCE.with(|since| since.get());
+    let mut paths: Vec<Value> = BY_PATH.with(|by_path| {
+        by_path
+            .borrow()
+            .iter()
+            .map(|(path, [rows, queries, requests])| {
+                serde_json::json!({
+                    "path": path, "rows": rows, "queries": queries, "requests": requests,
+                    // The number that decides where to put an index.
+                    "rowsPerRequest": if *requests > 0 { rows / requests } else { 0 },
+                })
+            })
+            .collect()
+    });
+    paths.sort_by_key(|row| -row["rows"].as_i64().unwrap_or(0));
+    let (rows, queries) = usage();
+    serde_json::json!({
+        "sinceMs": if since > 0 { now_ms - since } else { 0 },
+        "isolateRows": rows, "isolateQueries": queries,
+        "paths": paths,
+    })
+}
+
 pub fn rows_of(result: &D1Result) -> Result<Vec<Row>> {
     note(result);
     let rows: Vec<Value> = result.results()?;
@@ -152,6 +245,79 @@ impl Database for D1<'_> {
 
     fn usage(&self) -> (i64, i64) {
         usage()
+    }
+}
+
+#[cfg(test)]
+mod accounting_tests {
+    use super::*;
+
+    /// One route is one row, whatever identifier it carried.
+    ///
+    /// Without this the map fills with a row per forecast and the heaviest *route* is invisible
+    /// behind a thousand rows of one request each — which is the opposite of the question.
+    #[test]
+    fn a_path_is_recorded_as_its_route_and_not_its_identifier() {
+        assert_eq!(normalised("/api/forecasts/abc123def456"), "/api/forecasts/{id}");
+        assert_eq!(
+            normalised("/api/risk/v2/feeds/devnet-stable-risk-v2"),
+            "/api/risk/v2/feeds/{id}"
+        );
+        assert_eq!(normalised("/api/admin/risk/v2/health"), "/api/admin/risk/v2/health");
+        assert_eq!(normalised("/api/health"), "/api/health");
+        // Long opaque segments are identifiers even without a digit.
+        assert_eq!(
+            normalised("/api/profiles/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+            "/api/profiles/{id}"
+        );
+        // A hyphenated feed id is an identifier at any length.
+        assert_eq!(
+            normalised("/api/risk/v2/feeds/devnet-stable"),
+            "/api/risk/v2/feeds/{id}"
+        );
+    }
+
+    /// The report ranks by rows, because that is the budget being spent.
+    #[test]
+    fn the_report_names_the_heaviest_route_first() {
+        BY_PATH.with(|by_path| by_path.borrow_mut().clear());
+        SINCE.with(|since| since.set(0));
+        record("/api/health", 1, 1, 1_000);
+        record("/api/health", 1, 1, 1_100);
+        record("/api/forecasts/xyz789abc", 900, 3, 1_200);
+        let report = report(2_000);
+        assert_eq!(report["paths"][0]["path"], "/api/forecasts/{id}");
+        assert_eq!(report["paths"][0]["rows"], 900);
+        assert_eq!(report["paths"][0]["rowsPerRequest"], 900);
+        assert_eq!(report["paths"][1]["requests"], 2);
+        // The isolate says how long its view covers, so a small number is not read as a small day.
+        assert_eq!(report["sinceMs"], 1_000);
+    }
+
+    /// A version segment is part of the route, not an identifier.
+    ///
+    /// `v2` and `d1` carry a digit and are route words; merging them into `{id}` would have
+    /// collapsed every versioned route onto one row and hidden exactly what this is for.
+    #[test]
+    fn a_version_segment_stays_part_of_the_route() {
+        assert_eq!(
+            normalised("/api/risk/v2/feeds/devnet-stable-risk-v2"),
+            "/api/risk/v2/feeds/{id}"
+        );
+        assert_eq!(normalised("/api/admin/ops/d1"), "/api/admin/ops/d1");
+        assert_eq!(normalised("/api/admin/risk/v1/feeds"), "/api/admin/risk/v1/feeds");
+    }
+
+    /// A burst of unknown paths cannot grow the map without limit.
+    #[test]
+    fn the_map_is_bounded_by_the_route_table_and_not_by_traffic() {
+        BY_PATH.with(|by_path| by_path.borrow_mut().clear());
+        for n in 0..(TRACKED_PATHS * 4) {
+            // Route-word shaped — letters only — so each is its own row rather than `{id}`.
+            let word: String = (0..4).map(|p| (b'a' + ((n >> (p * 2)) & 3) as u8) as char).collect();
+            record(&format!("/api/probe{word}"), 1, 1, 1_000);
+        }
+        assert_eq!(BY_PATH.with(|by_path| by_path.borrow().len()), TRACKED_PATHS);
     }
 }
 

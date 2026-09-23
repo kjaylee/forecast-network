@@ -267,6 +267,7 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     // line per request is itself a cost and a request reading a few rows is not the question.
     let (rows, queries) = db::usage();
     let (rows, queries) = (rows - opened.0, queries - opened.1);
+    db::record(path, rows, queries, context.now_ms);
     if rows > ROWS_WORTH_NAMING {
         console_log!(
             "{}",
