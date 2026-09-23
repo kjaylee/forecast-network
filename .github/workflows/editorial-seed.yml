@@ -3,6 +3,13 @@ name: Daily editorial seed
 # Publishes a few operator-curated questions every day so the feed never stalls.
 # Every candidate still passes the service's own compilation and independent AI
 # review; the run log lists what was published or skipped for operator review.
+#
+# A day on which the service refused every candidate is the service's alarm, not
+# this job's, so the run ends green and the standing issue below carries it. Red
+# is kept for what this job is answerable for — producing nothing to offer, or
+# missing its credentials. For six of nine days in September the refusals were
+# 409 ai_work_in_progress and 5xx from the publication path, and a red run a day
+# for that is an alarm nobody reads.
 on:
   schedule:
     - cron: '0 0 * * *'   # 09:00 KST
@@ -17,6 +24,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   seed:
@@ -28,10 +36,46 @@ jobs:
         with:
           python-version: '3.12'
       - name: Propose and publish editorial questions
+        id: seed
         env:
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
+          # The default shell is `bash -e`, which takes a pipeline's *last* status: without
+          # this, `tee` succeeding would hide the script failing, and the one thing this job
+          # is answerable for would stop being reported.
+          set -o pipefail
           ARGS="--count ${{ github.event.inputs.count || '3' }}"
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
-          python scripts/editorial_seed.py $ARGS
+          python scripts/editorial_seed.py $ARGS | tee seed.log
+
+      - name: Raise, update or clear the publication alert
+        if: always() && github.event.inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title='[editorial] the service is refusing every candidate'
+          read -r number since <<<"$(gh issue list --state open --limit 100 \
+            --json number,title,createdAt \
+            --jq '.[] | select(.title == "'"$title"'") | "\(.number) \(.createdAt)"' | head -1)"
+
+          if ! grep -q 'the service refused every candidate' seed.log; then
+            if [ -n "$number" ]; then
+              gh issue close "$number" --comment "Published again $(date -u +%FT%TZ)."
+            fi
+            exit 0
+          fi
+
+          {
+            printf 'The daily seed produced candidates and the service refused every one.\n\n'
+            printf -- '- First observed: %s\n' "${since:-$(date -u +%FT%TZ)}"
+            printf -- '- Still refusing at: %s\n\n' "$(date -u +%FT%TZ)"
+            grep '  skipped' seed.log | sed 's/^  /- /' || true
+            printf '\nRun: %s/%s/actions/runs/%s\n' "${{ github.server_url }}" "${{ github.repository }}" "${{ github.run_id }}"
+          } > alert.md
+
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file alert.md
+          else
+            gh issue create --title "$title" --body-file alert.md
+          fi

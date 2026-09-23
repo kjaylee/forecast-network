@@ -10,8 +10,11 @@ name: Watchdog
 # That makes this a backstop, not a pager. It is here to make an outage last
 # minutes instead of the days one just lasted.
 #
-# Five minutes is GitHub's floor and is free on a public repository. Offset off
-# the round minutes so this does not queue behind every other scheduled job.
+# Fifteen minutes since 2026-09-22, offset off the round minutes so this does not
+# queue behind every other scheduled job. Five was GitHub's floor and free, but it
+# is 288 runs a day to shorten the blind spot from fifteen minutes to five, and the
+# operator host's own monitor already polls on the minute — this exists to see what
+# that monitor cannot, from outside both it and Cloudflare, not to see it sooner.
 #
 # The issue is the alert. A run that observed an outage and filed it did its job,
 # so it ends green; only a watchdog that could not observe or could not report
@@ -19,7 +22,7 @@ name: Watchdog
 # mail every five minutes, which is how a pager stops being read.
 on:
   schedule:
-    - cron: '3-58/5 * * * *'
+    - cron: '8,23,38,53 * * * *'
   workflow_dispatch:
 
 permissions:
