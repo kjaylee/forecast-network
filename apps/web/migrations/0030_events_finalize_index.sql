@@ -1,0 +1,28 @@
+-- The finalization view reads the whole event log, once per feed publication.
+--
+-- `forecast_quality_finalizations` selects the finalize events out of `events`:
+--
+--   WHERE json_extract(event,'$.command_name')='finalize' GROUP BY forecast_id
+--
+-- and the only index over `events` is `events_finalization_quality(forecast_id,created_at)`,
+-- which orders the grouping but cannot answer the predicate. Every row of the log is therefore
+-- examined to test its JSON, and the view is materialised twice inside `SNAPSHOT_SQL`, which
+-- the per-minute tick runs once per binding while publishing.
+--
+-- Measured on the live service 2026-09-23: one tick read 8,100 rows, of which 8,018 were the
+-- publish phase — about twice the event log. At 1,440 ticks a day that is some 11.7 million
+-- rows against D1's free-tier budget of 5,000,000, which the account was exhausting before
+-- mid-morning; after that every statement fails and the feed, the sweep and the AI publication
+-- path stop together. The cost grows with the log, which is why this became fatal recently
+-- rather than at launch: an append-only log is the one table that never stops growing.
+--
+-- A partial index carrying the view's own predicate makes the scan a scan of the finalize
+-- events alone — one row per finalized forecast instead of one per command ever issued. It
+-- changes no schema semantics, no published hash and no statement: the view, the queries and
+-- the signed payload are exactly what they were, and only the number of rows the database
+-- examines to produce them changes.
+--
+-- The existing index stays. It serves lookups by forecast that this partial one, restricted to
+-- finalize events, cannot.
+CREATE INDEX events_finalize_command ON events(forecast_id,created_at)
+ WHERE json_extract(event,'$.command_name')='finalize';
