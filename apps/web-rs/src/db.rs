@@ -33,9 +33,13 @@ pub fn statement(session: &D1DatabaseSession, sql: &str, params: &[Value]) -> Re
 // One isolate runs one request at a time, so a counter here is that request's counter. It
 // is reset by whoever is about to measure, and read as a delta around each phase.
 //
-// `first()` is absent from this count on purpose: D1's `.first()` resolves to the row
-// itself and carries no meta, so it contributes to `queries` and not to `rows`. If the
-// phases ever fail to account for the day, that gap is where to look next.
+// `first()` was absent from this count at first, and the phases then failed to account for
+// the day by two orders of magnitude — because 235 of the crate's reads are `first()` and 99
+// are `all()`. D1's `.first()` resolves to the row itself and carries no meta; `.run()` runs
+// the same statement and returns the result with its meta, so `first` takes that and keeps
+// the first row. The database reads the same rows either way: what changes is that they are
+// now counted, and that a statement matching many rows serialises them all — which is the
+// pathology this is looking for, not a cost it introduces.
 thread_local! {
     static ROWS_READ: std::cell::Cell<i64> = const { std::cell::Cell::new(0) };
     static QUERIES: std::cell::Cell<i64> = const { std::cell::Cell::new(0) };
@@ -166,8 +170,8 @@ pub async fn all(session: &D1DatabaseSession, sql: &str, params: &[Value]) -> Re
 
 pub async fn first(session: &D1DatabaseSession, sql: &str, params: &[Value]) -> Result<Option<Row>> {
     note_query();
-    let row: Option<Value> = statement(session, sql, params)?.first(None).await?;
-    Ok(row.and_then(|r| r.as_object().cloned()))
+    let result = statement(session, sql, params)?.run().await?;
+    Ok(rows_of(&result)?.into_iter().next())
 }
 
 pub async fn batch(session: &D1DatabaseSession, statements: Vec<(String, Vec<Value>)>) -> Result<Vec<Vec<Row>>> {
