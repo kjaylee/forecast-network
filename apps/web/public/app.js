@@ -11,6 +11,7 @@ import {createWalletAuthClient} from './wallet-auth-client.mjs';
 import {initializeMobileWallet} from './mobile-wallet.mjs';
 import {registerNativeWallet,nativePluginAvailable,attestForecast} from './native-wallet.mjs';
 import {installNativeShare} from './native-share.mjs';
+import {shareCode, shareUrl} from './share-link.mjs';
 import {installNativeLinks} from './native-links.mjs';
 import {createForecastTranslations,TRANSLATION_LANGUAGES} from './forecast-translation.mjs';
 
@@ -337,10 +338,22 @@ async function renderDetail(sequence,preserve=false,cached=null){
     }
     marketClient.attach(data.market?.market??data.market,owner);
     main().innerHTML=detailMarkup(data);
+    recordShareView(data.forecast.id);
     if(data.market&&owner)void loadMarketBalance(sequence,owner);
     document.title=`${displayForecast(data.forecast,data.displayTranslation).title || displayForecast(data.forecast,data.displayTranslation).question} — Forecast`;
     scrollToHash();if(owner&&!currentPoints()&&!pointsState.accountChanged)void loadPoints();
   }catch(error){if(sequence===state.sequence)main().innerHTML=`<div class="narrow-page">${errorPanel(error)}</div>`;}
+}
+let viewedShare = null;
+function recordShareView(forecastId) {
+  const code = shareCode(location.search);
+  if (!code) return;
+  const visit = forecastId + ':' + code;
+  if (viewedShare === visit) return;
+  viewedShare = visit;
+  void api(`/api/forecasts/${encodeURIComponent(forecastId)}/share-view`,{
+    method:'POST', body:{shareCode:code}
+  }).catch(()=>{if(viewedShare===visit)viewedShare=null;});
 }
 function renderCreate(){
   main().innerHTML=`<div class="narrow-page"><div class="page-heading"><div><h1>${esc(t('ui.createQuestion'))}</h1><p>${esc(t('ui.createSubtitle'))}</p></div></div><form class="create-form" id="create-form"><div class="form-field"><label class="sr-only" for="question">${esc(t('ui.forecastQuestion'))}</label><textarea class="input question-input" id="question" name="question" maxlength="1200" minlength="12" required placeholder="${esc(t('ui.questionPlaceholder'))}">${esc(state.question)}</textarea><div class="field-row"><span>${esc(t('ui.questionTimingHint'))}</span><span id="question-count">${state.question.length} / 1,200</span></div></div><p class="error-message" id="create-error" role="alert"></p><div class="create-actions"><p>${esc(t('ui.aiChecksCriteria'))}<br>${esc(t('ui.confirmBeforePublish'))}</p><button class="button" type="submit">${icon('spark')}${esc(t('ui.refineAi'))}</button></div></form><div id="draft-preview">${state.draft?previewMarkup(state.draft):''}</div><section class="create-hints"><h2>${esc(t('ui.goodQuestion'))}</h2><button class="question-example" data-action="example" data-question="${esc(t('ui.lunarExampleInput'))}">${esc(t('ui.lunarExample'))} ${icon('arrow')}</button><button class="question-example" data-action="example" data-question="${esc(t('ui.phoneExampleInput'))}">${esc(t('ui.phoneExample'))} ${icon('arrow')}</button><p class="quiet-note separated-note">${esc(t('ui.examplesNote'))}</p></section></div>`;
@@ -466,6 +479,7 @@ function updateStakeFeedback(){
 async function submitForecast(form){
   const initiatingOwner=state.user?.id || null;const initiatingEpoch=pointsState.epoch;
   const forecast=state.detail?.forecast;
+  const sourceShareCode=shareCode(location.search);
   const outcome=state.selection;const confidence=state.confidence;
   const rawStake=(state.detail?.market?.market??state.detail?.market)?.mode==='active'?'0':form.querySelector('[name="stakePoints"]')?.value ?? '0';
   if(!outcome){showError(uiError('ui.chooseFirst'),document.querySelector('#cast-error'));return;}
@@ -481,6 +495,7 @@ async function submitForecast(form){
     if(!current())return;
     if(pointsState.accountChanged)throw Object.assign(uiError('ui.accountBeforeSubmit'),{code:'account_changed',status:409});
     const body=forecastSubmission({forecast,outcome,confidence,stakePoints:rawStake,expectedUserId:owner,points,position:currentStake()});
+    if(sourceShareCode)body.shareCode=sourceShareCode;
     const result=await api(`/api/forecasts/${encodeURIComponent(forecast.id)}/forecast`,{method:'POST',body,idempotent:true});
     if(!current())return;
     if(!acceptPoints(result.points,owner))await loadPoints();
@@ -802,13 +817,19 @@ async function updateProfileCard(action,value){
 async function shareForecast(id,title){
   shareDialog.classList.remove('profile-share-dialog');
   const locale=getLocale();const tr=(key,params={})=>t(key,params,locale);
+  const owner=state.user?.id;
+  const forecastPath=`/api/forecasts/${encodeURIComponent(id)}`;
   const session={kind:'forecast',id,title,locale,detail:null,asOf:null,renderVersion:0,url:new URL(`/forecasts/${encodeURIComponent(id)}`,location.origin).href,file:null,canShareFile:false,recorded:false};
   shareSession=session;
-  shareDialog.innerHTML=`${shareHeader(undefined,locale)}<p class="dialog-copy">${esc(tr('ui.shareLatestForecasts'))}</p><div class="share-loading" role="status"><span class="spinner" aria-hidden="true"></span> ${esc(tr('ui.preparingForecastCard'))}</div>${shareActions(session)}`;
+  shareDialog.innerHTML=`${shareHeader(undefined,locale)}<p class="dialog-copy">${esc(tr('ui.shareLatestForecasts'))}</p><div class="share-loading" role="status"><span class="spinner" aria-hidden="true"></span> ${esc(tr('ui.preparingForecastCard'))}</div>${owner?'':shareActions(session)}`;
   if(!shareDialog.open)shareDialog.showModal();
   try{
-    const detail=await api(`/api/forecasts/${encodeURIComponent(id)}`);
+    const [detail, referral]=await Promise.all([
+      api(forecastPath),
+      owner?api(`${forecastPath}/share-link`,{method:'POST',body:{}}).catch(()=>null):null,
+    ]);
     if(shareSession!==session||!shareDialog.open)return;
+    if(owner===state.user?.id)session.url=shareUrl(session.url,referral?.code);
     session.detail=detail;session.asOf=Date.now();
     await renderForecastShare(session);
   }catch(error){
@@ -849,7 +870,8 @@ async function renderForecastShare(session){
 function recordSuccessfulShare(session){
   if(session.kind==='profile'||session.recorded)return;
   session.recorded=true;
-  void api(`/api/forecasts/${encodeURIComponent(session.id)}/share`,{method:'POST',body:{}}).catch(()=>{});
+  const code=shareCode(new URL(session.url).search);
+  void api(`/api/forecasts/${encodeURIComponent(session.id)}/share`,{method:'POST',body:code?{shareCode:code}:{}}).catch(()=>{});
 }
 async function shareAction(action){
   const session=shareSession;

@@ -16,6 +16,7 @@ from http.cookies import SimpleCookie
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlsplit
 
+from forecast_application import share_growth
 from forecast_application.ai import AiCoordinator, ProviderConfig
 from forecast_application.analytics import product_analytics
 from forecast_application.errors import AppError
@@ -702,17 +703,20 @@ class Default(WorkerEntrypoint):
                 return api_response(await training_export(app.db, feed_id=export[1], now_ms=app.now_ms()))
             if path == "/api/admin/analytics" and method == "GET":
                 query = parse_qs(parsed.query, keep_blank_values=True)
-                if set(query) - {"start", "end", "cohortStart", "cohortEnd"} or any(len(v) != 1 for v in query.values()):
+                if set(query) - {"start", "end", "cohortStart", "cohortEnd", "shareGrowth"} or any(len(v) != 1 for v in query.values()):
                     raise ValueError("Analytics accepts one UTC window per parameter")
                 if any(not re.fullmatch(r"[0-9]{1,16}", v[0]) for v in query.values()):
                     raise ValueError("Analytics windows use integer UTC milliseconds")
+                if "shareGrowth" in query and query["shareGrowth"] != ["1"]:
+                    raise ValueError("Share growth uses shareGrowth=1")
                 now = app.now_ms()
                 end = int(query["end"][0]) if "end" in query else now // 86400000 * 86400000
                 start = int(query["start"][0]) if "start" in query else max(0, end - 30 * 86400000)
                 return api_response(await product_analytics(app.db, as_of_ms=now,
                     window_start_ms=start, window_end_ms=end,
                     cohort_start_ms=int(query["cohortStart"][0]) if "cohortStart" in query else None,
-                    cohort_end_ms=int(query["cohortEnd"][0]) if "cohortEnd" in query else None))
+                    cohort_end_ms=int(query["cohortEnd"][0]) if "cohortEnd" in query else None,
+                    include_share_growth="shareGrowth" in query))
             if path.startswith("/api/admin/risk/v2/") and method == "POST":
                 return await self.route_risk_v2(app, path, body)
             if path == "/api/admin/risk/seed" and method == "POST":
@@ -936,6 +940,12 @@ class Default(WorkerEntrypoint):
         user = await app.authenticate(session, auth_context)
         user_id = user["id"] if user else None
         query = parse_qs(parsed.query)
+        share_view = re.fullmatch(r"/api/forecasts/([A-Za-z0-9_.:-]{1,128})/share-view", path)
+        if share_view and method == "POST":
+            code = share_growth.share_code(body.get("shareCode"))
+            if code is not None:
+                await share_growth.open_link(app.db, share_view[1], code, user_id, app.now_ms())
+            return api_response({"ok": True})
         if path == "/api/billing/estimate" and method == "GET":
             return api_response(app.billing.estimate())
         receipt_request = re.fullmatch(r"/api/forecasts/([A-Za-z0-9_.:-]{1,128})/market/receipt", path)
@@ -1047,7 +1057,7 @@ class Default(WorkerEntrypoint):
             if attest[2] == "prepare":
                 return api_response(await app.attestations.prepare(user_id, attest[1], body), status=201)
             return api_response(await app.attestations.confirm(user_id, attest[1], body))
-        match = re.fullmatch(r"/api/forecasts/([A-Za-z0-9_.:-]{1,128})/(forecast|disputes|comments|share|evidence)", path)
+        match = re.fullmatch(r"/api/forecasts/([A-Za-z0-9_.:-]{1,128})/(forecast|disputes|comments|share|share-link|evidence)", path)
         if match and method == "POST":
             identifier, action = match.groups()
             if action == "forecast":
@@ -1055,6 +1065,12 @@ class Default(WorkerEntrypoint):
                     require_expected_user(body, user_id)
                     if type(body["stakePoints"]) is not int:
                         raise ValueError("Stake points must be a whole number")
+                code = share_growth.share_code(body.get("shareCode"))
+                if code is not None:
+                    try:
+                        await share_growth.claim_link(app.db, identifier, code, user_id, app.now_ms())
+                    except Exception:
+                        print("Forecast share attribution was unavailable for a submission")
                 result = await app.submit_forecast(user_id, identifier, body.get("outcome"),
                     body.get("confidence"), body.get("revision"), body.get("idempotencyKey", ""),
                     stake_points=body.get("stakePoints"))
@@ -1067,8 +1083,16 @@ class Default(WorkerEntrypoint):
                                                body.get("idempotencyKey", ""))
             elif action == "evidence":
                 result = await app.report_evidence(user_id, identifier, body.get("url", ""))
+            elif action == "share-link":
+                result = {"code": await share_growth.issue_link(app.db, identifier, user_id, app.now_ms())}
             else:
                 result = await app.record_share(identifier, user_id)
+                code = share_growth.share_code(body.get("shareCode"))
+                if code is not None:
+                    try:
+                        await share_growth.mark_shared(app.db, identifier, code, user_id, app.now_ms())
+                    except Exception:
+                        print("Forecast share attribution was unavailable for a completed share")
             return api_response(result)
         if path == "/api/activity" and method == "GET":
             return api_response(await app.activity(user_id))

@@ -55,6 +55,7 @@ pub mod risk_refresh;
 mod routes;
 pub mod scheduler;
 pub mod seeker;
+mod share_growth;
 pub mod solana;
 pub mod solana_rpc;
 pub mod source_watch;

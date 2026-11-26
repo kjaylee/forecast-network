@@ -137,9 +137,17 @@ pub fn owns_write(method: &Method, path: &str) -> bool {
                     .any(|phase| identifier(path, "/api/forecasts/", &format!("/attest{phase}")).is_some())
                 || path == "/api/forecasts"
                 || identifier(path, "/api/creators/", "/follow").is_some()
-                || ["/forecast", "/comments", "/share", "/evidence", "/disputes"]
-                    .iter()
-                    .any(|suffix| identifier(path, "/api/forecasts/", suffix).is_some())
+                || [
+                    "/forecast",
+                    "/comments",
+                    "/share",
+                    "/share-link",
+                    "/share-view",
+                    "/evidence",
+                    "/disputes",
+                ]
+                .iter()
+                .any(|suffix| identifier(path, "/api/forecasts/", suffix).is_some())
                 || ["/quote", "/fill"]
                     .iter()
                     .any(|suffix| identifier(path, "/api/forecasts/", &format!("/market{suffix}")).is_some())
@@ -293,6 +301,12 @@ pub async fn dispatch_write(
     if let Some(id) = identifier(path, "/api/forecasts/", "/translation") {
         return crate::translations::generate_route(context, req, &id, body).await;
     }
+    if let Some(id) = identifier(path, "/api/forecasts/", "/share-view") {
+        if let Some(code) = crate::share_growth::share_code(body.get("shareCode")) {
+            crate::share_growth::open_link(context, &id, code, user_id).await?;
+        }
+        return Ok(api_response(json!({"ok": true}), 200, false)?);
+    }
     let Some(user_id) = user_id else {
         return Err(RouteError::Unauthorized(
             "authentication_required",
@@ -375,13 +389,34 @@ pub async fn dispatch_write(
                 return Err(RouteError::Invalid);
             }
         }
+        if let Some(code) = crate::share_growth::share_code(body.get("shareCode")) {
+            if crate::share_growth::claim_link(context, &id, code, user_id)
+                .await
+                .is_err()
+            {
+                console_warn!("Forecast share attribution was unavailable for a submission");
+            }
+        }
         return crate::writes::submit_forecast(context, user_id, &id, body).await;
     }
     if let Some(id) = identifier(path, "/api/forecasts/", "/comments") {
         return crate::writes::add_comment(context, user_id, &id, body).await;
     }
+    if let Some(id) = identifier(path, "/api/forecasts/", "/share-link") {
+        let code = crate::share_growth::issue_link(context, &id, user_id).await?;
+        return Ok(api_response(json!({"code": code}), 200, false)?);
+    }
     if let Some(id) = identifier(path, "/api/forecasts/", "/share") {
-        return crate::writes::record_share(context, &id, Some(user_id)).await;
+        let response = crate::writes::record_share(context, &id, Some(user_id)).await?;
+        if let Some(code) = crate::share_growth::share_code(body.get("shareCode")) {
+            if crate::share_growth::mark_shared(context, &id, code, user_id)
+                .await
+                .is_err()
+            {
+                console_warn!("Forecast share attribution was unavailable for a completed share");
+            }
+        }
+        return Ok(response);
     }
     if let Some(id) = identifier(path, "/api/forecasts/", "/evidence") {
         return crate::writes::report_evidence(context, user_id, &id, body.get("url").unwrap_or(&null)).await;
