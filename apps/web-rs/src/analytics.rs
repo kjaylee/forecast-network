@@ -24,6 +24,7 @@ use serde_json::{json, Map, Value};
 use forecast_domain::content_hash;
 
 use crate::db::{text, Database};
+use crate::share_growth::SHARE_WINDOW_MS;
 
 /// `product-analytics-v1`.
 pub const VERSION: &str = "product-analytics-v1";
@@ -556,7 +557,7 @@ pub fn aggregate_product_analytics(
     }))
     .map_err(|error| error.to_string())?;
 
-    Ok(json!({
+    let mut report = json!({
         "formulaVersion": VERSION, "asOfMs": as_of_ms,
         "window": {"startMs": window_start_ms, "endMs": window_end_ms, "timezone": "UTC", "complete": true},
         "population": {
@@ -622,6 +623,130 @@ pub fn aggregate_product_analytics(
             "No complete provider/chain expense ledger exists; known subtotals are not total cost.",
             "Fixture retention tests do not prove real-user D30 retention.",
         ],
+    });
+    if snapshot.get("share_links").is_some() {
+        report["shareGrowth"] = share_growth_report(
+            snapshot,
+            &firsts,
+            &forecasts,
+            &identity,
+            as_of_ms,
+            cohort_start_ms,
+            cohort_end_ms,
+        )?;
+    }
+    Ok(report)
+}
+
+struct ObservedShareLink {
+    sharer: String,
+    forecast: String,
+    opened_at: Option<i64>,
+    shared_at: Option<i64>,
+}
+
+fn share_growth_report(
+    snapshot: &Value,
+    firsts: &BTreeMap<String, i64>,
+    forecasts: &BTreeMap<String, Map<String, Value>>,
+    identity: &dyn Fn(&str) -> Result<String, String>,
+    as_of: i64,
+    cohort_start: i64,
+    cohort_end: i64,
+) -> Result<Value, String> {
+    let cohort = firsts
+        .iter()
+        .filter(|(_, first)| (cohort_start..cohort_end).contains(first));
+    let cohort_size = cohort.clone().count();
+    let mature: BTreeSet<String> = cohort
+        .filter(|(_, first)| **first + SHARE_WINDOW_MS <= as_of)
+        .map(|(user, _)| user.clone())
+        .collect();
+    let mut first_questions: BTreeSet<(String, String)> = BTreeSet::new();
+    for row in rows(snapshot, "firsts") {
+        let user = identity(&words(&row, "user_id"))?;
+        let forecast = words(&row, "forecast_id");
+        if forecasts.contains_key(&forecast) && firsts.get(&user) == Some(&number(&row, "first_at")) {
+            first_questions.insert((user, forecast));
+        }
+    }
+    let mut links = BTreeMap::new();
+    for row in rows(snapshot, "share_links") {
+        let sharer = identity(&words(&row, "sharer_id"))?;
+        let forecast = words(&row, "forecast_id");
+        let Some(first) = firsts.get(&sharer) else {
+            continue;
+        };
+        let limit = (*first + SHARE_WINDOW_MS).min(as_of);
+        if !forecasts.contains_key(&forecast) || !(*first..limit).contains(&number(&row, "created_at")) {
+            continue;
+        }
+        let observed = |name| row.get(name).and_then(Value::as_i64).filter(|time| *time < limit);
+        links.insert(
+            words(&row, "code"),
+            ObservedShareLink {
+                sharer,
+                forecast,
+                opened_at: observed("opened_at"),
+                shared_at: observed("shared_at"),
+            },
+        );
+    }
+    let mut first_claims: BTreeMap<String, (i64, String)> = BTreeMap::new();
+    for claim in rows(snapshot, "share_claims") {
+        let code = words(&claim, "code");
+        let recipient = identity(&words(&claim, "recipient_id"))?;
+        let (Some(link), Some(first)) = (links.get(&code), firsts.get(&recipient)) else {
+            continue;
+        };
+        if recipient == link.sharer
+            || words(&claim, "forecast_id") != link.forecast
+            || !first_questions.contains(&(recipient.clone(), link.forecast.clone()))
+        {
+            continue;
+        }
+        let claimed_at = number(&claim, "claimed_at");
+        if !link.opened_at.is_some_and(|opened_at| opened_at <= claimed_at)
+            || claimed_at > *first
+            || *first >= firsts[&link.sharer] + SHARE_WINDOW_MS
+        {
+            continue;
+        }
+        let candidate = (claimed_at, code);
+        let selected = first_claims.entry(recipient).or_insert_with(|| candidate.clone());
+        if candidate < *selected {
+            *selected = candidate;
+        }
+    }
+    let referred: BTreeSet<String> = first_claims
+        .into_iter()
+        .filter(|(_, (_, code))| mature.contains(&links[code].sharer))
+        .map(|(user, _)| user)
+        .collect();
+    let mature_referred: BTreeSet<&String> = referred
+        .iter()
+        .filter(|user| firsts[*user] + SHARE_WINDOW_MS <= as_of)
+        .collect();
+    let shared_after_activation: BTreeSet<&String> = links
+        .values()
+        .filter(|link| link.shared_at.is_some())
+        .map(|link| &link.sharer)
+        .collect();
+    let source_links: Vec<&ObservedShareLink> = links.values().filter(|link| mature.contains(&link.sharer)).collect();
+    let mut reshare = ratio(
+        mature_referred.intersection(&shared_after_activation).count() as i64,
+        mature_referred.len() as i64,
+        "share",
+    );
+    reshare["immatureAccounts"] = json!(referred.len() - mature_referred.len());
+    Ok(json!({
+        "windowDays": 7,
+        "immatureSourceAccounts": cohort_size - mature.len(),
+        "issuedLinks": source_links.len(),
+        "copiedOrSharedLinks": source_links.iter().filter(|link| link.shared_at.is_some()).count(),
+        "openedLinks": source_links.iter().filter(|link| link.opened_at.is_some()).count(),
+        "viralCoefficient": ratio(referred.len() as i64, mature.len() as i64, "new_predictors_per_activated_account"),
+        "reshare": reshare,
     }))
 }
 
@@ -636,6 +761,7 @@ pub async fn product_analytics(
     cohort_end_ms: Option<i64>,
     population_kind: &str,
     excluded_user_ids: &[String],
+    include_share_growth: bool,
 ) -> Result<Value, String> {
     let cohort_start = cohort_start_ms.unwrap_or(window_start_ms);
     let cohort_end = cohort_end_ms.unwrap_or(window_end_ms);
@@ -740,9 +866,7 @@ pub async fn product_analytics(
         vec![json!(window_start_ms / DAY_MS), json!(window_end_ms / DAY_MS)],
     );
 
-    let results = db.batch(&statements).await.map_err(|error| error.to_string())?;
-    check(results.len() == statements.len(), "incomplete analytics snapshot")?;
-    let names = [
+    let mut names = vec![
         "users",
         "forecasts",
         "firsts",
@@ -754,6 +878,22 @@ pub async fn product_analytics(
         "deliveries",
         "reserved",
     ];
+    if include_share_growth {
+        push(
+            "SELECT code,forecast_id,sharer_id,created_at,CASE WHEN opened_at<? THEN opened_at END AS opened_at,\
+            CASE WHEN shared_at<? THEN shared_at END AS shared_at FROM forecast_share_links \
+            WHERE created_at<? ORDER BY created_at,code LIMIT ?",
+            vec![json!(as_of_ms), json!(as_of_ms), json!(as_of_ms), limit.clone()],
+        );
+        push(
+            "SELECT recipient_id,forecast_id,code,claimed_at FROM forecast_share_claims \
+            WHERE claimed_at<? ORDER BY recipient_id,forecast_id LIMIT ?",
+            vec![json!(as_of_ms), limit.clone()],
+        );
+        names.extend(["share_links", "share_claims"]);
+    }
+    let results = db.batch(&statements).await.map_err(|error| error.to_string())?;
+    check(results.len() == statements.len(), "incomplete analytics snapshot")?;
     let mut snapshot = Map::new();
     for (name, result) in names.iter().zip(results.iter()) {
         check(result.len() <= MAX_ROWS, "analytics snapshot exceeds row bound")?;
@@ -874,10 +1014,50 @@ mod tests {
             None,
             "application",
             &[],
+            true,
         ))
         .expect("the batch runs against the deployed schema");
         assert_eq!(report["formulaVersion"], VERSION);
         assert_eq!(report["activity"]["activePredictors"], 0);
         assert_eq!(report["retention"]["D1"]["status"], "no_denominator");
+        assert_eq!(report["shareGrowth"]["viralCoefficient"]["status"], "no_denominator");
+    }
+
+    #[test]
+    fn share_growth_uses_mature_sources_and_the_recipients_first_question() {
+        let later = DAY_MS + 3;
+        let snapshot = json!({
+            "firsts": [
+                {"user_id":"source","forecast_id":"question","first_at":1},
+                {"user_id":"recipient","forecast_id":"question","first_at":later},
+                {"user_id":"existing","forecast_id":"different","first_at":2},
+                {"user_id":"existing","forecast_id":"question","first_at":later},
+            ],
+            "share_links": [
+                {"code":"a","sharer_id":"source","forecast_id":"question","created_at":2,"opened_at":4,"shared_at":3},
+                {"code":"b","sharer_id":"recipient","forecast_id":"question","created_at":later+1,"shared_at":later+2},
+            ],
+            "share_claims": [
+                {"recipient_id":"recipient","forecast_id":"question","code":"a","claimed_at":later},
+                {"recipient_id":"existing","forecast_id":"question","code":"a","claimed_at":later},
+            ],
+        });
+        let firsts = BTreeMap::from([
+            ("source".to_string(), 1),
+            ("recipient".to_string(), later),
+            ("existing".to_string(), 2),
+        ]);
+        let forecasts = BTreeMap::from([
+            ("question".to_string(), Map::new()),
+            ("different".to_string(), Map::new()),
+        ]);
+        let identity = |value: &str| Ok(value.to_string());
+        let report = share_growth_report(&snapshot, &firsts, &forecasts, &identity, 10 * DAY_MS, 0, DAY_MS).unwrap();
+        assert_eq!(report["openedLinks"], 1);
+        assert_eq!(report["viralCoefficient"]["valueScaled"], 5_000);
+        assert_eq!(report["reshare"]["valueBp"], 10_000);
+        let immature = share_growth_report(&snapshot, &firsts, &forecasts, &identity, 8 * DAY_MS, 0, DAY_MS).unwrap();
+        assert_eq!(immature["reshare"]["immatureAccounts"], 1);
+        assert!(immature["reshare"]["valueBp"].is_null());
     }
 }

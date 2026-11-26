@@ -17,6 +17,7 @@ from types import SimpleNamespace
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
+from forecast_application import share_growth
 from forecast_application.errors import AppError
 
 
@@ -235,7 +236,7 @@ class PointsTransportTests(unittest.TestCase):
             "origin": "https://forecast.example", "X-Forecast-Client": "web"})
         route = scheduled_method("route_api", Response=Any, AppError=AppError, re=re, hmac=hmac,
             hashlib=hashlib, parse_qs=parse_qs, AUTH_CONTEXT_COOKIE="__Host-forecast_auth", cookie_token=lambda request, name=None: None,
-            require_expected_user=guard_scope["require_expected_user"], PointsService=Points,
+            require_expected_user=guard_scope["require_expected_user"], PointsService=Points, share_growth=share_growth,
             WalletService=Wallets, bounded_bytes=bounded_bytes, MAX_BODY_BYTES=16384,
             MAX_PROVIDER_BYTES=524288, api_response=lambda data, **kwargs: {"data": data, **kwargs})
         return asyncio.run(route(entry, request, urlsplit("https://forecast.example" + path), path.split("?")[0]))

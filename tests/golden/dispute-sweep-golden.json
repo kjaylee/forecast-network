@@ -203,6 +203,8 @@
           }
         ],
         "forecast_receipt_eligibility": [],
+        "forecast_share_claims": [],
+        "forecast_share_links": [],
         "forecast_timing_reviews": [],
         "forecast_translation_audit": [],
         "forecast_translations": [],
@@ -935,6 +937,8 @@
           }
         ],
         "forecast_receipt_eligibility": [],
+        "forecast_share_claims": [],
+        "forecast_share_links": [],
         "forecast_timing_reviews": [],
         "forecast_translation_audit": [],
         "forecast_translations": [],
@@ -1672,6 +1676,8 @@
           }
         ],
         "forecast_receipt_eligibility": [],
+        "forecast_share_claims": [],
+        "forecast_share_links": [],
         "forecast_timing_reviews": [],
         "forecast_translation_audit": [],
         "forecast_translations": [],
@@ -2404,6 +2410,8 @@
           }
         ],
         "forecast_receipt_eligibility": [],
+        "forecast_share_claims": [],
+        "forecast_share_links": [],
         "forecast_timing_reviews": [],
         "forecast_translation_audit": [],
         "forecast_translations": [],

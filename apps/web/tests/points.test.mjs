@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {pointsForUser,pointStakeLimit,pointStakeValue,validatePointStake,forecastSubmission,forecastIsOpen} from '../public/lib.mjs';
 import {profileAccuracyLabel,profileScoreLabel} from '../public/profile-card.mjs';
+import {shareCode} from '../public/share-link.mjs';
 
 function summary(userId='user-a',available=1000,committed=0){return {userId,available,committed,total:available+committed,
   policy:{version:'participation-points-v1',profileGrant:1000,walletGrant:500,minStake:0,maxStake:1000,winReturnMultiplier:2,invalidReturnMultiplier:1,practiceAllowed:true,purchasable:false,transferable:false,redeemable:false,reputationWeighted:false},
@@ -101,14 +102,14 @@ test('profile sharing remains about accuracy and Brier, never the Points balance
 
 const submitStart=source.indexOf('async function submitForecast(');const submitEnd=source.indexOf('function main()',submitStart);
 const submitCode=source.slice(submitStart,submitEnd);
-const submitFactory=localizedFunction('state','pointsState','ensureAuth','withForm','showError','document','forecastIsOpen','currentPoints','loadPoints','forecastSubmission','currentStake','api','acceptPoints','pointCount','toast','history','renderRoute',`${submitCode};return submitForecast;`);
+const submitFactory=localizedFunction('state','pointsState','ensureAuth','withForm','showError','document','forecastIsOpen','currentPoints','loadPoints','forecastSubmission','currentStake','api','acceptPoints','pointCount','toast','history','renderRoute','location','shareCode',`${submitCode};return submitForecast;`);
 function submitHarness(adapters={}){
   const state={user:{id:'user-a'},detail:{forecast:{id:'forecast-a',revision:3,state:'OPEN',openAt:0,closeAt:Date.now()+60000},stake:{amount:0,status:'practice'}},selection:'YES',confidence:70,sequence:1};
   const pointsState={snapshot:summary(),epoch:0,accountChanged:false};const requests=[];const notices=[];let rerenders=0;
   const submit=submitFactory(state,pointsState,adapters.auth || (async()=>true),async(form,id,operation)=>operation(),()=>{}, {},forecastIsOpen,
     ()=>pointsForUser(pointsState.snapshot,state.user?.id),adapters.load || (async()=>pointsState.snapshot),forecastSubmission,()=>state.detail.stake,
     async(path,options)=>{requests.push({path,...options});return adapters.api?adapters.api(path,options):{points:summary('user-a',950,50),stake:{amount:50,status:'committed'}};},
-    (points,owner)=>{if(owner!==state.user?.id||!pointsForUser(points,owner))return false;pointsState.snapshot=points;return true;},value=>String(value),message=>notices.push(message),{replaceState(){}},()=>{rerenders+=1;});
+    (points,owner)=>{if(owner!==state.user?.id||!pointsForUser(points,owner))return false;pointsState.snapshot=points;return true;},value=>String(value),message=>notices.push(message),{replaceState(){}},()=>{rerenders+=1;},{search:adapters.search||''},shareCode);
   return {state,pointsState,requests,notices,submit:raw=>submit({querySelector:()=>({value:raw})}),rerenders:()=>rerenders};
 }
 
@@ -116,6 +117,13 @@ test('the actual submit action sends explicit stake and the initiating account',
   const run=submitHarness();await run.submit('50');
   assert.deepEqual(run.requests[0].body,{outcome:'YES',confidence:70,revision:3,stakePoints:50,expectedUserId:'user-a'});
   assert.equal(run.pointsState.snapshot.available,950);assert.equal(run.rerenders(),1);
+});
+
+test('the actual submit action forwards a valid shared-question code',async()=>{
+  const code='a10b6a16c69b05f9332cd3d7ec099ef0';
+  const run=submitHarness({search:'?via='+code});
+  await run.submit('50');
+  assert.equal(run.requests[0].body.shareCode,code);
 });
 
 test('insufficient Points never silently reduce the requested commitment',async()=>{

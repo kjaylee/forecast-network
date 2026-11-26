@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {shareCode} from '../public/share-link.mjs';
 
 const source=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
 function section(start,end){
@@ -132,7 +133,7 @@ function anonymousCommentFixture(){
   const snapshot=comments=>({forecast:{id:'forecast-a',title:'A'},comments,myForecast:{outcome:'YES',confidence:70}});
   let getCount=0;let controller;
   const document={querySelector:selector=>selector==='#comment-list'&&mainNode.innerHTML==='detail'?list:null};
-  const context={state,pointsState,document,authLoaded:Promise.resolve(),
+  const context={state,pointsState,document,authLoaded:Promise.resolve(),shareCode,location:{search:''},
     api:(path,options)=>{requests.push({path,options});if(options?.method==='POST')return posted.promise;getCount+=1;return (getCount===1?oldGet:newGet).promise;},
     ensureAuth:()=>auth.promise,refreshAuthentication:async()=>{state.user={id:'user-a'};pointsState.epoch+=1;return {user:state.user};},closeAuth:()=>auth.resolve(true),
     main:()=>mainNode,skeleton:()=>{form.isConnected=false;return 'loading';},routeId:()=>state.detail.forecast.id,

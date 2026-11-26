@@ -16,6 +16,12 @@ monetary transactions or economic rewards for participation.
   site recovery code. Registration does not require an email address or password.
 - Hashes derived from IP addresses and request counts over a limited period for
   abuse prevention. The application does not store raw IP addresses in its database.
+- When you share a question while signed in, we may issue a random link code and
+  record the first opening and confirmed copy or share of that link. If you submit
+  a prediction from the shared question, we can associate the link with your
+  account to measure first predictions and repeat sharing in aggregate. The link
+  code contains no account details, and an anonymous opening does not add a visitor
+  identifier to these records. A code can be attributed for seven days after issue.
 
 ## Participation-point records
 

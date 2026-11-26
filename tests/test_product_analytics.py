@@ -10,6 +10,7 @@ from pathlib import Path
 
 from forecast_application.analytics import DAY_MS, _ratio, product_analytics
 from forecast_application.database import SQLiteDatabase
+from forecast_application.share_growth import claim_link, issue_link, mark_shared, open_link
 from forecast_domain.records import MAX_SAFE_INTEGER
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -120,6 +121,59 @@ class ProductAnalyticsTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result['retention']['D30']['valueBp'])
         self.assertEqual(result['population']['evidenceClass'], 'fixture_or_load_only')
         self.assertIsNone(result['costs']['provider']['completeActualTotalAtomic'])
+
+    async def test_share_growth_counts_one_first_prediction_and_a_completed_reshare(self):
+        write_db = SQLiteDatabase(self.connection)
+        self.user("new_predictor", BASE + DAY_MS)
+        self.predict("alice", BASE + HOUR)
+        self.predict("bob", BASE + HOUR)
+        code = await issue_link(write_db, "question", "alice", BASE + 2 * HOUR)
+        self.assertRegex(code, r"^[0-9a-f]{32}$")
+        await mark_shared(write_db, "question", code, "alice", BASE + 3 * HOUR)
+        await open_link(write_db, "question", code, "alice", BASE + 4 * HOUR)
+        await open_link(write_db, "different-question", code, None, BASE + 4 * HOUR)
+        self.assertIsNone((await write_db.first(
+            "SELECT opened_at FROM forecast_share_links WHERE code=?", (code,),
+        ))["opened_at"])
+        opened = BASE + 5 * HOUR
+        await open_link(write_db, "question", code, None, opened)
+        await open_link(write_db, "question", code, None, opened + HOUR)
+        self.assertEqual((await write_db.first(
+            "SELECT opened_at FROM forecast_share_links WHERE code=?", (code,),
+        ))["opened_at"], opened)
+        await claim_link(write_db, "question", code, "alice", BASE + DAY_MS)
+        self.assertEqual(await write_db.all("SELECT * FROM forecast_share_claims"), [])
+        await claim_link(write_db, "question", code, "new_predictor", BASE + DAY_MS + HOUR)
+        await claim_link(write_db, "question", code, "new_predictor", BASE + DAY_MS + 2 * HOUR)
+        self.assertEqual(len(await write_db.all("SELECT * FROM forecast_share_claims")), 1)
+        self.assertEqual((await self.report(include_share_growth=True))["shareGrowth"]["viralCoefficient"]["numerator"], 0)
+        self.predict("new_predictor", BASE + DAY_MS + HOUR)
+        onward_code = await issue_link(write_db, "question", "new_predictor", BASE + 2 * DAY_MS)
+        await mark_shared(write_db, "question", onward_code, "new_predictor", BASE + 2 * DAY_MS + HOUR)
+        result = await self.report(include_share_growth=True)
+        growth = result["shareGrowth"]
+        self.assertEqual((growth["issuedLinks"], growth["copiedOrSharedLinks"], growth["openedLinks"]), (1, 1, 1))
+        self.assertEqual(growth["viralCoefficient"]["valueScaled"], 5000)
+        self.assertEqual(growth["reshare"]["valueBp"], 10000)
+        self.assertNotIn(code, json.dumps(result))
+        immature = await self.report(include_share_growth=True, as_of_ms=BASE + 8 * DAY_MS)
+        self.assertEqual(immature["shareGrowth"]["reshare"]["immatureAccounts"], 1)
+        self.assertIsNone(immature["shareGrowth"]["reshare"]["valueBp"])
+
+    async def test_expired_link_and_first_prediction_on_another_question_do_not_count(self):
+        write_db = SQLiteDatabase(self.connection)
+        self.user("recipient", BASE + DAY_MS)
+        self.forecast("different-question", "owner", BASE)
+        self.predict("alice", BASE + HOUR)
+        code = await issue_link(write_db, "question", "alice", BASE + 2 * HOUR)
+        await claim_link(write_db, "question", code, "bob", BASE + 7 * DAY_MS + 2 * HOUR)
+        self.assertEqual(await write_db.all("SELECT * FROM forecast_share_claims"), [])
+        await claim_link(write_db, "question", code, "recipient", BASE + DAY_MS + HOUR)
+        self.predict("recipient", BASE + DAY_MS, "different-question")
+        self.predict("recipient", BASE + DAY_MS + HOUR)
+        growth = (await self.report(include_share_growth=True))["shareGrowth"]
+        self.assertEqual(growth["viralCoefficient"]["denominator"], 1)
+        self.assertEqual(growth["viralCoefficient"]["numerator"], 0)
 
     async def test_utc_days_funnels_weekly_and_retention(self):
         for day in (0, 1, 7, 30):

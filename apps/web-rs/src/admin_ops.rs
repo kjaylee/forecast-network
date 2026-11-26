@@ -27,8 +27,7 @@ use crate::db::Database;
 use crate::routes::{Context, RouteError};
 use crate::wallet_login::truthy;
 
-/// The four parameters the analytics window accepts, and no others.
-const ANALYTICS_PARAMETERS: [&str; 4] = ["start", "end", "cohortStart", "cohortEnd"];
+const ANALYTICS_PARAMETERS: [&str; 5] = ["start", "end", "cohortStart", "cohortEnd", "shareGrowth"];
 
 const DAY_MS: i64 = 86_400_000;
 
@@ -59,6 +58,9 @@ fn windows(query: &[(String, String)], now_ms: i64) -> Result<Windows, ()> {
         return Err(());
     }
     if query.iter().any(|(_, value)| !is_milliseconds(value)) {
+        return Err(());
+    }
+    if query.iter().any(|(name, value)| name == "shareGrowth" && value != "1") {
         return Err(());
     }
     let read = |name: &str| {
@@ -92,6 +94,7 @@ pub async fn analytics_route(context: &Context<'_>, url: &Url) -> Result<Respons
         asked.cohort_end,
         "application",
         &[],
+        query.iter().any(|(name, _)| name == "shareGrowth"),
     )
     .await
     .map_err(|_| refused())?;

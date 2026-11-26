@@ -138,6 +138,29 @@ its value is null. Zero mature members stays unavailable even if younger cohorts
 are large. The historical fixtures verify this rule; they do not establish any
 actual D30 retention in the deployed product.
 
+## Shared forecasts
+
+The operator can include `shareGrowth=1` in the same authenticated analytics
+request. For a rollout, set `cohortStart` to the first full UTC day with share
+links enabled. The source cohort uses first eligible predictions and includes
+accounts that never shared. Only accounts with a complete seven-day follow-up
+enter the denominator.
+
+Each tracked link belongs to one source account and one open question. Link
+counts cover issuance, a confirmed browser copy or share, and the first seen
+opening. An opening counts once per link. A prediction request from the shared
+question can associate that link with the submitting account. The report counts
+that account when its first eligible prediction is on the shared question and
+occurs within seven days of the source account's first eligible prediction.
+Identity merges, excluded accounts and excluded questions follow the same rules
+as the other KPIs. A canonical recipient can be credited once.
+
+`viralCoefficient` divides the newly activated referred accounts by all mature
+source accounts. `reshare` counts the share of mature referred accounts that copy
+or share an issued link within seven days of activation. The report exposes
+aggregate counts. Copies and opens come from tracked links, and attribution is
+observational.
+
 ## Actual, unknown and reserved cost
 
 Inspection found no durable complete AI invoice/usage ledger. `rate_limits` counts

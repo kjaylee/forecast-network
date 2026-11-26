@@ -40,7 +40,14 @@ class ProductAnalyticsHttpTests(unittest.IsolatedAsyncioTestCase):
         self.assertLessEqual(args["window_end_ms"], args["as_of_ms"])
 
     async def test_operator_cannot_change_population_or_duplicate_window_values(self):
-        for query in ("?population_kind=fixture", "?start=0&start=1", "?start=-1", "?start=1e3", "?end="):
+        for query in ("?population_kind=fixture", "?start=0&start=1", "?start=-1", "?start=1e3", "?end=",
+                      "?shareGrowth=0", "?shareGrowth=1&shareGrowth=1"):
             with self.subTest(query=query), self.assertRaises(ValueError):
                 await self.call(query)
             self.aggregate.assert_not_called()
+
+    async def test_share_growth_is_opt_in(self):
+        await self.call()
+        self.assertFalse(self.aggregate.call_args.kwargs["include_share_growth"])
+        await self.call("?shareGrowth=1")
+        self.assertTrue(self.aggregate.call_args.kwargs["include_share_growth"])

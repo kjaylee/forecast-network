@@ -7,13 +7,14 @@ The adapter takes one consistent D1/SQLite batch; pure aggregation is replayable
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any, Literal
 
 from forecast_domain.records import MAX_SAFE_INTEGER
 from forecast_domain.serialization import content_hash
 
 from .database import Database, Statement
+from .share_growth import SHARE_WINDOW_MS
 
 VERSION = "product-analytics-v1"
 DAY_MS = 86_400_000
@@ -74,6 +75,7 @@ async def product_analytics(
     db: Database, *, as_of_ms: int, window_start_ms: int, window_end_ms: int,
     cohort_start_ms: int | None = None, cohort_end_ms: int | None = None,
     population_kind: PopulationKind = "application", excluded_user_ids: tuple[str, ...] = (),
+    include_share_growth: bool = False,
 ) -> dict[str, Any]:
     """Single read batch; root may expose this only through its authenticated admin API.
 
@@ -129,11 +131,23 @@ async def product_analytics(
         ("SELECT COALESCE(SUM(reserved_lamports),0) AS reserved FROM registry_spend WHERE day>=? AND day<?",
          (window_start_ms // DAY_MS, window_end_ms // DAY_MS)),
     )
+    names: tuple[str, ...] = (
+        "users", "forecasts", "firsts", "activity", "disputes", "exclusions",
+        "identities", "costs", "deliveries", "reserved",
+    )
+    if include_share_growth:
+        statements += (
+            ("SELECT code,forecast_id,sharer_id,created_at,CASE WHEN opened_at<? THEN opened_at END AS opened_at,"
+             "CASE WHEN shared_at<? THEN shared_at END AS shared_at FROM forecast_share_links "
+             "WHERE created_at<? ORDER BY created_at,code LIMIT ?", (as_of_ms, as_of_ms, as_of_ms, MAX_ROWS + 1)),
+            ("SELECT recipient_id,forecast_id,code,claimed_at FROM forecast_share_claims "
+             "WHERE claimed_at<? ORDER BY recipient_id,forecast_id LIMIT ?", (as_of_ms, MAX_ROWS + 1)),
+        )
+        names += ("share_links", "share_claims")
     results = await db.batch(statements)
     _check(len(results) == len(statements), "incomplete analytics snapshot")
     rows = [result.get("results", []) for result in results]
     _check(all(type(items) is list and len(items) <= MAX_ROWS for items in rows), "analytics snapshot exceeds row bound")
-    names = ("users", "forecasts", "firsts", "activity", "disputes", "exclusions", "identities", "costs", "deliveries", "reserved")
     snapshot = dict(zip(names, rows, strict=True))
     return aggregate_product_analytics(snapshot, as_of_ms=as_of_ms, window_start_ms=window_start_ms,
                                       window_end_ms=window_end_ms, cohort_start_ms=cohort_start,
@@ -290,7 +304,7 @@ def aggregate_product_analytics(
     costs["chain"]["reservedLamportsAllPopulations"] = snapshot["reserved"][0]["reserved"]
     costs["provider"]["retainedAiForecastRecordsInWindow"] = sum(forecasts[f]["has_ai"] for f in new_questions)
     costs["provider"]["historicalProviderOperationCount"] = None
-    return {"formulaVersion": VERSION, "asOfMs": as_of_ms,
+    report = {"formulaVersion": VERSION, "asOfMs": as_of_ms,
             "window": {"startMs": window_start_ms, "endMs": window_end_ms, "timezone": "UTC", "complete": True},
             "population": {"kind": population_kind, "evidenceClass": "application_database_observations"
                            if population_kind == "application" else "fixture_or_load_only",
@@ -328,3 +342,60 @@ def aggregate_product_analytics(
                             "Identity merges require admitted account evidence; shared IPs are never merged.",
                             "No complete provider/chain expense ledger exists; known subtotals are not total cost.",
                             "Fixture retention tests do not prove real-user D30 retention."]}
+    if "share_links" in snapshot:
+        report["shareGrowth"] = _share_growth(
+            snapshot, firsts, forecasts, identity, as_of_ms, cohort_start_ms, cohort_end_ms,
+        )
+    return report
+
+
+def _share_growth(
+    snapshot: Mapping[str, list[dict[str, Any]]], firsts: Mapping[str, int],
+    forecasts: Mapping[str, dict[str, Any]], identity: Callable[[str], str],
+    as_of: int, cohort_start: int, cohort_end: int,
+) -> dict[str, Any]:
+    cohort = {user for user, first in firsts.items() if cohort_start <= first < cohort_end}
+    mature = {user for user in cohort if firsts[user] + SHARE_WINDOW_MS <= as_of}
+    first_questions = {(identity(row["user_id"]), row["forecast_id"]) for row in snapshot["firsts"]
+                       if row["forecast_id"] in forecasts and firsts.get(identity(row["user_id"])) == row["first_at"]}
+    links: dict[str, dict[str, Any]] = {}
+    for row in snapshot["share_links"]:
+        sharer = identity(row["sharer_id"])
+        first = firsts.get(sharer)
+        if first is None or row["forecast_id"] not in forecasts:
+            continue
+        limit = min(first + SHARE_WINDOW_MS, as_of)
+        if not first <= row["created_at"] < limit:
+            continue
+        links[row["code"]] = {
+            **row, "sharer_id": sharer,
+            "opened_at": row["opened_at"] if row["opened_at"] is not None and row["opened_at"] < limit else None,
+            "shared_at": row["shared_at"] if row["shared_at"] is not None and row["shared_at"] < limit else None,
+        }
+    first_claims: dict[str, tuple[int, str]] = {}
+    for claim in snapshot["share_claims"]:
+        link = links.get(claim["code"])
+        recipient = identity(claim["recipient_id"])
+        first = firsts.get(recipient)
+        if link is None or first is None or link["opened_at"] is None or recipient == link["sharer_id"]:
+            continue
+        if claim["forecast_id"] != link["forecast_id"] or (recipient, link["forecast_id"]) not in first_questions:
+            continue
+        if not link["opened_at"] <= claim["claimed_at"] <= first < firsts[link["sharer_id"]] + SHARE_WINDOW_MS:
+            continue
+        candidate = (claim["claimed_at"], claim["code"])
+        first_claims[recipient] = min(first_claims.get(recipient, candidate), candidate)
+    referred = {user for user, (_, code) in first_claims.items() if links[code]["sharer_id"] in mature}
+    mature_referred = {user for user in referred if firsts[user] + SHARE_WINDOW_MS <= as_of}
+    shared_after_activation = {link["sharer_id"] for link in links.values() if link["shared_at"] is not None}
+    source_links = [link for link in links.values() if link["sharer_id"] in mature]
+    return {
+        "windowDays": 7,
+        "immatureSourceAccounts": len(cohort - mature),
+        "issuedLinks": len(source_links),
+        "copiedOrSharedLinks": sum(link["shared_at"] is not None for link in source_links),
+        "openedLinks": sum(link["opened_at"] is not None for link in source_links),
+        "viralCoefficient": _ratio(len(referred), len(mature), unit="new_predictors_per_activated_account"),
+        "reshare": {**_ratio(len(mature_referred & shared_after_activation), len(mature_referred)),
+                    "immatureAccounts": len(referred - mature_referred)},
+    }
